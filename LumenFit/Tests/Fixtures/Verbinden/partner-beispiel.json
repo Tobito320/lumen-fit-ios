@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "geschrieben": "2026-10-29T08:00:00Z",
+  "profilName": "Beispiel Partner",
+  "freigaben": ["schritte", "gym", "schlaf", "essen"],
+  "heute": { "tag": "2026-10-29", "schritte": 6200, "gymTageWoche": 2, "schlafMinuten": 455, "kcal": 1450 },
+  "ereignisse": [
+    { "id": "gymStart-s1", "art": "gymStart", "zeit": "2026-10-29T07:15:00Z", "text": "Beispiel Partner ist im Gym" },
+    { "id": "gymEnde-s1", "art": "gymEnde", "zeit": "2026-10-29T08:00:00Z", "text": "Beispiel Partner war im Gym" },
+    { "id": "rekord-s1-3", "art": "rekord", "zeit": "2026-10-29T07:50:00Z", "text": "Beispiel Partner hat einen neuen Rekord" },
+    { "id": "schlafGut-2026-10-29", "art": "schlafGut", "zeit": "2026-10-29T06:00:00Z", "text": "Beispiel Partner hat gut geschlafen" }
+  ]
+}

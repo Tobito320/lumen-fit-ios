@@ -1,0 +1,22 @@
+{
+  "eigenePerson": "kennung-a",
+  "schritteHeute": { "kennung-a": 3800, "kennung-b": 10450 },
+  "zielSchritte": { "kennung-a": 10000, "kennung-b": 10000 },
+  "gymLetzte7": {
+    "kennung-a": [ { "datum": "2026-10-28", "erledigt": true } ],
+    "kennung-b": [
+      { "datum": "2026-10-26", "erledigt": true },
+      { "datum": "2026-10-27", "erledigt": false },
+      { "datum": "2026-10-29", "erledigt": true }
+    ]
+  },
+  "zielGymWoche": { "kennung-a": 3, "kennung-b": 3 },
+  "schlafMinutenHeute": { "kennung-a": 410, "kennung-b": 440 },
+  "zielSchlafMinuten": { "kennung-a": 450, "kennung-b": 450 },
+  "ort": { "kennung-b": "Ort, wird nie gelesen" },
+  "wetter": "Wetter, wird nie gelesen",
+  "akku": { "kennung-b": 41 },
+  "status": { "kennung-b": "Status, wird nie gelesen" },
+  "herzen": 5,
+  "punkte": { "kennung-a": 3, "kennung-b": 9 }
+}
