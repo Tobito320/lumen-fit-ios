@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Tagesform in Klartext: Gründe mit echten Werten und die Empfehlung mit Grund (Ahmed 15.10.: "so vage").
+/// Tagesform in Klartext: Gründe mit echten Werten und die Empfehlung mit Grund (Wunsch vom 15.10.: "so vage").
 final class TagesformKlartextTests: XCTestCase {
     private typealias K = TagesformKlartext
 

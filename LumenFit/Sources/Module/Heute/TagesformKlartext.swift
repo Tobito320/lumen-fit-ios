@@ -1,7 +1,7 @@
 // Quelle: Lovea Health/Heute/Tagesform/TagesformKlartext.swift
 import Foundation
 
-// Tagesform in Klartext (Ahmed 15.10.: "aktuell ist es so vage"). Reine Logik, ohne Modelle: aus den Werten, die `TagesformRechnung` schon
+// Tagesform in Klartext (Wunsch vom 15.10.: "aktuell ist es so vage"). Reine Logik, ohne Modelle: aus den Werten, die `TagesformRechnung` schon
 // hat, kommen zwei bis drei Gründe mit echten Zahlen und eine Empfehlung mit Grund. Fehlt ein Wert, fällt der Satz weg; nichts wird
 // angenommen. Die Karte (`TagesformKarte`) zeichnet nur, was hier herauskommt.
 

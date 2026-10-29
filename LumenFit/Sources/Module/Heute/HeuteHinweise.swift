@@ -144,7 +144,7 @@ enum HeuteHinweisLogik {
             basis: "Mittelwert der Gläser an Gym-Tagen gegen Ruhetage, je mindestens 5 Tage.", fortschritt: nil)]
     }
 
-    /// "Stimmung gegen Schlaf" until 14 days are collected. "Koffein gegen Schlaf" is gone with the Koffein tile (Ahmed 15.10.):
+    /// "Stimmung gegen Schlaf" until 14 days are collected. "Koffein gegen Schlaf" is gone with the Koffein tile:
     /// nothing counts coffee any more, so it would never unlock.
     private static func gesperrt(_ e: HeuteHinweisEingabe) -> [HeuteHinweis] {
         let kandidaten = [("stimmung", "Stimmung", e.stimmungTage, "Trag deine Stimmung im Kalender ein.")]
