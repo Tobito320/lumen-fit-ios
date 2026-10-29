@@ -148,4 +148,29 @@ final class FreundeKarteTests: XCTestCase {
         anderer.id = "b-2026-10-26"
         XCTAssertEqual(FreundeRangliste.aufnehmen(anderer, in: [alt]).count, 2)
     }
+
+    // MARK: Texte der Seite
+
+    func testWochenTextIstDeutschesDatum() {
+        XCTAssertEqual(FreundeText.woche("2026-10-26"), "26. Oktober")
+    }
+
+    func testZusammenfassungNenntSchritteGymUndSchlaf() {
+        var k = karte()
+        k.schritte = 61_400
+        k.gymTage = 1
+        k.schlafSchnittMinuten = 440
+        XCTAssertEqual(FreundeText.zusammenfassung(k), "\(61_400.formatted()) Schritte, 1 Gym-Tag, Schlaf im Schnitt 7 h 20 min")
+        k.gymTage = 3
+        k.schlafSchnittMinuten = nil
+        XCTAssertEqual(FreundeText.zusammenfassung(k), "\(61_400.formatted()) Schritte, 3 Gym-Tage")
+    }
+
+    func testJederFehlerHatTitelUndHilfe() {
+        for f in [FreundeKarteCodec.Fehler.leer, .format, .pruefsumme, .version, .werte] {
+            let t = FreundeText.fehler(f)
+            XCTAssertFalse(t.titel.isEmpty)
+            XCTAssertFalse(t.hilfe.isEmpty)
+        }
+    }
 }

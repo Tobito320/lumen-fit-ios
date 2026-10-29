@@ -1,9 +1,157 @@
 import Foundation
 
-/// Stub des Grundgerüsts: das Modul `verbinden` ersetzt den Inhalt. `start` ist idempotent und läuft synchron in `ModulStart.starteAlle`.
+/// Modulstart von verbinden (Lovea-Brücke, Mitteilungen, Band, Freundeskarten). `start` läuft synchron in `ModulStart.starteAlle`, ist idempotent und
+/// legt nichts an, was Strom oder Rechte braucht: ohne die Schalter `loveaVerbunden` und `bandAktiv` bleibt alles still (kein Bluetooth, keine Datei).
 enum VerbindenModul {
-    @MainActor static func start(_ umgebung: AppUmgebung) {}
+    @MainActor static func start(_ umgebung: AppUmgebung) {
+        guard VerbindenDienste.geteilt == nil else { return }
+        VerbindenDienste.geteilt = VerbindenDienste(umgebung)
+    }
 
-    /// Füllt für `-lumenFitDemo` ein glaubwürdiges Bild (erfundene Werte).
-    @MainActor static func demoSaat(_ umgebung: AppUmgebung) {}
+    /// Füllt für `-lumenFitDemo` ein glaubwürdiges Bild (erfundene Werte), aber nur mit der Fixture-Datei `Verbinden/verbunden.json`; sonst bleibt alles unsichtbar.
+    @MainActor static func demoSaat(_ umgebung: AppUmgebung) {
+        #if DEBUG
+        guard let fixtures = StartArgumente.lies().fixtures,
+              FileManager.default.fileExists(atPath: fixtures.appendingPathComponent("Verbinden/verbunden.json").path),
+              let daten = umgebung.daten,
+              let partner = try? Data(contentsOf: fixtures.appendingPathComponent("Verbinden/partner-beispiel.json")),
+              let datei = try? LoveaVertrag.decoder().decode(ZusammenfassungDatei.self, from: partner) else { return }
+        daten.einstellungen.aendere { $0.loveaVerbunden = true }
+        daten.verbindung.freigaben = [.schritte, .gym, .schlaf]
+        VerbindenDemo.partner = .verbunden(datei)
+        let woche = Datum.wochenstart(Datum.text(umgebung.uhr()))
+        let jetzt = umgebung.uhr()
+        daten.verbindung.freunde = [
+            FreundKarte(id: "demo-a-\(woche)", name: "Beispiel Freund A", woche: woche, schritte: 61_400, gymTage: 4, schlafSchnittMinuten: 440, erstellt: jetzt, respekt: true),
+            FreundKarte(id: "demo-b-\(woche)", name: "Beispiel Freund B", woche: woche, schritte: 38_900, gymTage: 2, schlafSchnittMinuten: 410, erstellt: jetzt, respekt: false)
+        ]
+        #endif
+    }
+}
+
+/// Nur für die Demo: der Partner-Stand aus der Fixture, weil die Demo-Umgebung `KeinePartnerBruecke` nutzt und `VerbindungStore.partner` nur lesbar ist
+/// (Wunsch ans Grundgerüst: die Demo soll die Brücke aus den Fixtures nehmen). Außerhalb der Demo immer `nil`.
+@MainActor
+enum VerbindenDemo {
+    static var partner: PartnerStand?
+}
+
+/// Verdrahtet die Teile des Moduls mit den Ereignissen der App: Datei für Lovea schreiben, Partner-Mitteilungen, Band, Wünsche. Es gibt eine Instanz
+/// (`geteilt`). Sie liest nur Stores und Dateien, nie Health (der Abruf läuft auch bei gesperrtem Gerät).
+@MainActor
+final class VerbindenDienste {
+    static var geteilt: VerbindenDienste?
+
+    private let umgebung: AppUmgebung
+    let bruecke: LoveaBrueckeDienst
+    let band: BandDienstImpl
+    private var regeln: [ProfilID: PartnerEreignisRegeln] = [:]
+    private var wuensche: BandWunschSchlange?
+    private var beobachter: [DarwinBeobachter] = []
+    private var strom: Task<Void, Never>?
+    private var bandWarAn = false
+    private var loveaWarAn = false
+
+    /// `startAbruf: false` lässt die erste Runde aus (Tests rufen `abruf()` selbst und warten darauf).
+    init(_ umgebung: AppUmgebung, startAbruf: Bool = true) {
+        self.umgebung = umgebung
+        bruecke = LoveaBrueckeDienst(bruecke: umgebung.bruecke,
+                                     quellen: .init(daten: { [weak umgebung] in umgebung?.daten }, gesundheit: umgebung.gesundheit,
+                                                    profilName: { [weak umgebung] in umgebung?.profil.aktiv?.name }),
+                                     uhr: umgebung.uhr)
+        let uhr = umgebung.uhr
+        band = BandDienstImpl(aktiv: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.bandAktiv ?? false },
+                              bruecke: umgebung.bruecke, uhr: uhr,
+                              training: { [weak umgebung] in umgebung?.daten?.training.laufende() != nil },
+                              modell: { [weak umgebung] in
+                                  TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
+                              })
+        umgebung.band = band
+        umgebung.beiAbruf { [weak self] in await self?.abruf() }
+        let ereignisse = umgebung.ereignisse.strom()
+        strom = Task { @MainActor [weak self] in
+            for await ereignis in ereignisse { await self?.behandle(ereignis) }
+        }
+        beobachter = [
+            DarwinBeobachter(name: DarwinKanal.partner) { [weak self] in Task { await self?.abruf() } },
+            DarwinBeobachter(name: DarwinKanal.bandWunsch) { [weak self] in self?.wuenscheAusfuehren() }
+        ]
+        bandWarAn = umgebung.daten?.einstellungen.werte.bandAktiv ?? false
+        loveaWarAn = umgebung.daten?.einstellungen.werte.loveaVerbunden ?? false
+        if startAbruf { Task { await abruf() } }
+    }
+
+    // MARK: Abruf
+
+    /// Eine Runde: Partner-Stand lesen, Mitteilungen, Band fortsetzen, Wünsche, Datei für Lovea. Läuft bei Start, Vordergrund, Hintergrund-Abruf und Darwin-Anstoß.
+    func abruf() async {
+        guard let daten = umgebung.daten else { return }
+        let jetzt = umgebung.uhr()
+        let werte = daten.einstellungen.werte
+        daten.verbindung.aktualisiere(jetzt: jetzt)
+        if werte.loveaVerbunden {
+            await regelnFuer(daten).verarbeite(daten.verbindung.partner, einstellungen: werte, jetzt: jetzt)
+            bruecke.schreibe()
+        }
+        if werte.bandAktiv {
+            band.starte()
+            wuenscheAusfuehren()
+            band.statusSchreiben()
+        }
+    }
+
+    private func regelnFuer(_ daten: DatenSatz) -> PartnerEreignisRegeln {
+        if let r = regeln[daten.profil] { return r }
+        let neu = PartnerEreignisRegeln(mitteiler: umgebung.mitteiler, ordner: daten.ordner)
+        neu.beiNeuem = { [weak self] ereignis in self?.band.partnerEreignis(ereignis) }
+        regeln[daten.profil] = neu
+        return neu
+    }
+
+    /// Wünsche aus `band-wuensche.json` ausführen: nur mit Lovea-Schalter und Band-Schalter.
+    func wuenscheAusfuehren() {
+        guard let werte = umgebung.daten?.einstellungen.werte, werte.loveaVerbunden, werte.bandAktiv else { return }
+        if wuensche == nil {
+            wuensche = BandWunschSchlange(bruecke: umgebung.bruecke, uhr: umgebung.uhr) { [weak self] in
+                self?.band.wunschAusfuehren($0) ?? .spaeter
+            }
+        }
+        wuensche?.verarbeite()
+    }
+
+    // MARK: Ereignisse
+
+    private func behandle(_ ereignis: Ereignis) async {
+        switch ereignis {
+        case .trainingGestartet, .trainingBeendet, .satzFertig:
+            bruecke.ereignis(ereignis)
+            bruecke.schreibe()
+        case .mahlzeitGespeichert, .habitGeaendert:
+            bruecke.schreibe()
+        case .einstellungenGeaendert:
+            await einstellungenGeaendert()
+        case .profilGewechselt:
+            await abruf()
+        case .vordergrund:
+            await abruf()
+            await umgebung.gesundheit.aktualisiere()
+            bruecke.schreibe()
+        case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .healthAktualisiert:
+            break
+        }
+    }
+
+    /// Schalter umgelegt: Lovea an/aus (Stand neu lesen), Band an/aus (starten, trennen und Lovea den Status melden).
+    private func einstellungenGeaendert() async {
+        guard let werte = umgebung.daten?.einstellungen.werte else { return }
+        if werte.loveaVerbunden != loveaWarAn || werte.bandAktiv != bandWarAn {
+            let bandAus = bandWarAn && !werte.bandAktiv
+            loveaWarAn = werte.loveaVerbunden
+            bandWarAn = werte.bandAktiv
+            if bandAus { band.ausschalten() }
+            await abruf()
+        } else if werte.loveaVerbunden {
+            bruecke.schreibe()
+        }
+    }
 }

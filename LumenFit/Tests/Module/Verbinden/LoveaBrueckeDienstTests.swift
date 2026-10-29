@@ -181,4 +181,20 @@ final class LoveaBrueckeDienstTests: XCTestCase {
 }
 
 /// Zählt die gesendeten Darwin-Namen (ein Verweistyp statt einer erfassten Variable).
-final class DarwinZaehler { var namen: [String] = [] }
+final class DarwinZaehler { var namen: [String] = [] 
+
+    // MARK: Vorschau
+
+    func testVorschauZeigtGenauDieFreigegebenenZeilenUndSchreibtNichts() async throws {
+        let a = try await aufbau(freigaben: [.schritte, .essen])
+        let datei = try XCTUnwrap(a.dienst.vorschau())
+        XCTAssertEqual(FreigabenVorschau.zeilen(datei).map(\.titel), ["Schritte", "Essen"])
+        XCTAssertTrue(a.fake.zusammenfassungen.isEmpty, "die Vorschau schreibt nichts")
+        XCTAssertTrue(a.angestossen.namen.isEmpty)
+    }
+
+    func testVorschauOhneFreigabeIstLeer() async throws {
+        let a = try await aufbau()
+        XCTAssertEqual(FreigabenVorschau.zeilen(try XCTUnwrap(a.dienst.vorschau())), [])
+    }
+}

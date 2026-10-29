@@ -79,16 +79,29 @@ final class LoveaBrueckeDienst {
         if let m = nacht?.schlafMinuten, m >= ziele.schlafMinuten, ziele.schlafMinuten > 0 {
             ereignisse.fuegeHinzu(PartnerEreignis(id: "schlafGut-\(heute)", art: .schlafGut, zeit: jetzt, text: "\(name) hat gut geschlafen"), jetzt: jetzt)
         }
-        let eingabe = ZusammenfassungBauer.Eingabe(
-            name: name, jetzt: jetzt, freigaben: daten.verbindung.freigaben, schritte: tag?.schritte,
-            gymTageWoche: Self.gymTageDerWoche(daten.training.sessions, heute: heute), schlafMinuten: nacht?.schlafMinuten,
-            kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse.liste)
-        let datei = ZusammenfassungBauer.baue(eingabe)
+        let datei = ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: jetzt, ereignisse: ereignisse.liste))
         if let alt = letzte, Self.gleich(alt, datei), jetzt.timeIntervalSince(alt.geschrieben) < Self.auffrischen { return false }
         bruecke.schreibe(zusammenfassung: datei)
         letzte = datei
         sende(DarwinKanal.zusammenfassung)
         return true
+    }
+
+    /// Die Eingabe aus den Stores: nur Zahlen von heute, die Freigaben begrenzt später der Bauer.
+    private func eingabeBauen(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis]) -> ZusammenfassungBauer.Eingabe {
+        let heute = Datum.text(jetzt)
+        let tag = quellen.gesundheit.tage[heute]
+        let nacht = quellen.gesundheit.naechte[heute]
+        return ZusammenfassungBauer.Eingabe(
+            name: quellen.profilName() ?? "Profil", jetzt: jetzt, freigaben: daten.verbindung.freigaben, schritte: tag?.schritte,
+            gymTageWoche: Self.gymTageDerWoche(daten.training.sessions, heute: heute), schlafMinuten: nacht?.schlafMinuten,
+            kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse)
+    }
+
+    /// Die Datei, wie sie jetzt geschrieben würde (Vorschau "das sieht dein Partner", Idee 84). Schreibt und merkt nichts.
+    func vorschau() -> ZusammenfassungDatei? {
+        guard let daten = quellen.daten() else { return nil }
+        return ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: uhr(), ereignisse: eigeneEreignisse(daten).liste))
     }
 
     /// Alles außer dem Zeitstempel gleich?
