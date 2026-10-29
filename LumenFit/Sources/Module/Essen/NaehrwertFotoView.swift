@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Ernaehrung/NaehrwertFoto.swift (Kamera und Ablauf; die Oberfläche ist neu im Lumen-Design)
 import PhotosUI
 import SwiftUI
 import UIKit

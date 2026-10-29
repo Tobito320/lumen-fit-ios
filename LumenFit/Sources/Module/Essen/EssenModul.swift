@@ -40,7 +40,7 @@ enum EssenModul {
                               portionMenge: 55, portionName: "ganze, mittelgroß", quelle: "bls")
         let skyr = Lebensmittel(id: "off-4311501679715", name: "Skyr Natur", marke: "Beispielmarke", barcode: "4311501679715",
                                 pro100: Naehrwerte(kcal: 63, protein: 11, kohlenhydrate: 4, fett: 0.2, zucker: 3.8, ballaststoffe: 0, salz: 0.1),
-                                portionMenge: 150, packungMenge: 450, zutaten: "Magermilch, Joghurtkulturen, Lab", quelle: "off")
+                                portionMenge: 150, packungMenge: 450, quelle: "off", zutaten: "Magermilch, Joghurtkulturen, Lab")
         let reis = Lebensmittel(id: "bls-demo-reis", name: "Reis gekocht", pro100: Naehrwerte(kcal: 130, protein: 2.7, kohlenhydrate: 28, fett: 0.3, ballaststoffe: 0.4), quelle: "bls")
         let haehnchen = Lebensmittel(id: "bls-demo-haehnchen", name: "Hähnchenbrust, gebraten", pro100: Naehrwerte(kcal: 165, protein: 31, kohlenhydrate: 0, fett: 3.6, zucker: 0, salz: 0.2), quelle: "bls")
         let brokkoli = Lebensmittel(id: "bls-demo-brokkoli", name: "Brokkoli, gegart", pro100: Naehrwerte(kcal: 35, protein: 2.4, kohlenhydrate: 4, fett: 0.4, zucker: 1.7, ballaststoffe: 3.3,

@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Ernaehrung/BarcodeScanner.swift (Kamera und Ablauf; die Oberfläche ist neu im Lumen-Design)
 import SwiftUI
 import VisionKit
 
@@ -51,6 +52,7 @@ struct ScanView: View {
     @State private var pfad: [EssenZiel] = []
     @State private var code = ""
     @State private var zustand: Zustand = .bereit
+    @State private var kameraNummer = 0
 
     private enum Zustand: Equatable {
         case bereit, sucht
@@ -89,7 +91,7 @@ struct ScanView: View {
 
     private var kamera: some View {
         ZStack {
-            EssenBarcodeKamera { code in Task { await suchen(code) } }
+            EssenBarcodeKamera { code in Task { await suchen(code) } }.id(kameraNummer)
             RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(.white, lineWidth: 3).frame(width: 260, height: 150).accessibilityHidden(true)
         }
         .overlay(alignment: .bottom) {
@@ -129,11 +131,22 @@ struct ScanView: View {
         case .offline(let c):
             FehlerKarte(titel: "Kein Netz", hilfe: "Der Code \(c) steht noch nicht auf deinem Gerät. Versuche es mit Netz noch einmal oder trag das Lebensmittel von Hand ein.")
             Button("Von Hand eintragen") { pfad = [.eigenes(barcode: c)] }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
+            nochEinmal
         case .limit(_, let s):
             FehlerKarte(titel: "Kurz warten", hilfe: "Open Food Facts erlaubt nur 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder.")
+            nochEinmal
         case .fehler(let c):
             FehlerKarte(titel: "Open Food Facts antwortet gerade nicht", hilfe: "Das liegt nicht an dir. Versuche es gleich noch einmal oder trag den Code \(c) von Hand ein.")
             Button("Von Hand eintragen") { pfad = [.eigenes(barcode: c)] }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
+            nochEinmal
+        }
+    }
+
+    /// Der Scanner meldet je Start nur einen Code; nach einem Fehler startet er auf Wunsch neu.
+    @ViewBuilder
+    private var nochEinmal: some View {
+        if kannScannen {
+            Button("Noch einmal scannen") { zustand = .bereit; kameraNummer += 1 }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
         }
     }
 

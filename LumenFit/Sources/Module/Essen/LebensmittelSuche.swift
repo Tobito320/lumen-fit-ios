@@ -41,7 +41,11 @@ final class LebensmittelSuche {
         var gesehen = Set<String>()
         var geteilt: [Lebensmittel] = []
         for variante in Self.teilungen(neu) {
-            for l in index.suchen(variante, vorne: [], anzahl: 10) where gesehen.insert(l.id).inserted { geteilt.append(l) }
+            let anfang = LebensmittelBasis.normal(variante)
+            // Nur Namen, die mit der Teilung beginnen: "haf erflocken" darf nicht über das Wortende eines Plätzchens treffen.
+            for l in index.suchen(variante, vorne: [], anzahl: 10) where LebensmittelBasis.schluessel(l).hasPrefix(anfang) && gesehen.insert(l.id).inserted {
+                geteilt.append(l)
+            }
         }
         if !geteilt.isEmpty {
             let ids = Set(geteilt.map(\.id))

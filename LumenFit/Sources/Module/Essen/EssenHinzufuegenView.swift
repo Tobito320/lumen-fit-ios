@@ -80,10 +80,14 @@ struct EssenHinzufuegenView: View {
                     pfad = [.eigenes(barcode: nil)]
                 }
             }
-            .task {
-                // Der BLS-Index lädt im Hintergrund (höchstens etwa drei Sekunden warten), danach läuft die erste Suche.
+            .task(id: text) {
+                // Kurz warten, bis das Tippen pausiert (die Suche über 7.140 Einträge läuft auf dem Hauptakteur), und auf den BLS-Index
+                // warten, der im Hintergrund lädt (höchstens etwa drei Sekunden). Nur lokal, nie Netz.
+                barcodeFehler = nil
                 LebensmittelIndex.shared.laden()
-                for _ in 0..<20 where !LebensmittelIndex.shared.bereit { try? await Task.sleep(for: .milliseconds(150)) }
+                try? await Task.sleep(for: .milliseconds(text.isEmpty ? 0 : 200))
+                for _ in 0..<20 where !Task.isCancelled && !LebensmittelIndex.shared.bereit { try? await Task.sleep(for: .milliseconds(150)) }
+                guard !Task.isCancelled else { return }
                 suche.eingabe(text, vorne: vorne)
             }
         }
@@ -114,10 +118,6 @@ struct EssenHinzufuegenView: View {
             .padding(.leading, Abstand.m)
             .frame(minHeight: Abstand.tippflaeche)
             .background(palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
-            .onChange(of: text) { _, neu in
-                barcodeFehler = nil
-                suche.eingabe(neu, vorne: vorne)
-            }
 
             werkzeuge
 

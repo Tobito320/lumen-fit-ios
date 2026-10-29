@@ -53,7 +53,12 @@ final class EssenMengeTests: XCTestCase {
         let r = EssenMenge.start(reis, letzte: nil)
         XCTAssertEqual(r.zahl, 100)
         XCTAssertEqual(r.option, .gramm)
+        let wasser = Lebensmittel(id: "bls-wasser", name: "Wasser", fluessig: true, pro100: Naehrwerte(kcal: 0, protein: 0, kohlenhydrate: 0, fett: 0))
+        XCTAssertEqual(EssenMenge.start(wasser, letzte: nil).option, .milliliter)
+        // Getränke mit Haushaltsmaßen (Milch: Teelöffel, Esslöffel, Glas, Tasse) starten mit einem Glas.
         let milch = Lebensmittel(id: "bls-milch", name: "Milch", fluessig: true, pro100: Naehrwerte(kcal: 64, protein: 3.4, kohlenhydrate: 4.8, fett: 3.6))
-        XCTAssertEqual(EssenMenge.start(milch, letzte: nil).option, .milliliter)
+        let m = EssenMenge.start(milch, letzte: nil)
+        XCTAssertEqual(m.zahl, 1)
+        if case .portion(let p) = m.option { XCTAssertEqual(p.name, "Glas") } else { XCTFail("Glas erwartet") }
     }
 }

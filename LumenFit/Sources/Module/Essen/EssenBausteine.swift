@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Ernaehrung/EssenAmpelKarte.swift und ErnaehrungRating.swift (Inhalt; die Ansichten sind neu im Lumen-Design)
 import SwiftUI
 
 /// Halal- und Zucker-Ampel: zwei Pillen mit Symbol und Text (nie nur Farbe), darunter der Grund. Nur ein Hinweis aus Zutaten und Nährwerten.

@@ -9,7 +9,8 @@ final class OpenFoodFactsQuelleTests: XCTestCase {
 
     func testBekannterBarcode() async throws {
         let lader = try SkriptLader(fixture: "Essen", "off-v2-product-4008400402222.json")
-        let l = try await XCTUnwrap(quelle(lader).produkt("4008400402222"))
+        let ergebnis = try await quelle(lader).produkt("4008400402222")
+        let l = try XCTUnwrap(ergebnis)
         XCTAssertEqual(l.id, "off-4008400402222")
         XCTAssertEqual(l.barcode, "4008400402222")
         XCTAssertEqual(l.pro100.kcal, 539, accuracy: 0.01)
@@ -59,7 +60,8 @@ final class OpenFoodFactsQuelleTests: XCTestCase {
         produkt["nutriments"] = n
         json["product"] = produkt
         let lader = SkriptLader(status: 200, daten: try JSONSerialization.data(withJSONObject: json))
-        let l = try await XCTUnwrap(quelle(lader).produkt("4008400402222"))
+        let ergebnis = try await quelle(lader).produkt("4008400402222")
+        let l = try XCTUnwrap(ergebnis)
         XCTAssertEqual(l.pro100.kcal, 2252 / 4.184, accuracy: 0.01)
     }
 

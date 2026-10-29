@@ -35,14 +35,16 @@ enum EssenMenge {
         return 0...1000
     }
 
-    /// Menge, mit der das Detailblatt startet: letzte Menge, sonst die erste mittlere Portion, sonst 100 g oder ml.
+    /// Menge, mit der das Detailblatt startet: letzte Menge, sonst Teelöffel, eine mittlere Portion, bei Getränken ein Glas oder die erste Portion, sonst 100 g oder ml.
     static func start(_ l: Lebensmittel, letzte: (menge: Double, einheit: Einheit)?) -> (option: MengenOption, zahl: Double) {
         if let letzte {
             return (MengenOption.auswahl(einheit: letzte.einheit, portionName: l.portionName, l: l), letzte.menge)
         }
         let portionen = ErnaehrungLogik.portionsAuswahl(l)
         if let teeloeffel = portionen.first(where: { $0.name == "Teelöffel, gestrichen" }) { return (.portion(teeloeffel), 1) }
-        if let erste = portionen.first(where: { $0.name.contains("mittel") }) ?? portionen.first { return (.portion(erste), 1) }
+        if let erste = portionen.first(where: { $0.name.contains("mittel") }) { return (.portion(erste), 1) }
+        if l.fluessig, let glas = portionen.first(where: { $0.name == "Glas" }) { return (.portion(glas), 1) }
+        if let erste = portionen.first { return (.portion(erste), 1) }
         return (l.fluessig ? .milliliter : .gramm, 100)
     }
 }
