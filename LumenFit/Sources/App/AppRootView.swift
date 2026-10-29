@@ -9,6 +9,7 @@ struct AppRootView: View {
         let einstellungen = umgebung.daten?.einstellungen.werte ?? Einstellungen()
         inhalt
             .lumenTheme(einstellungen.thema, erscheinung: einstellungen.erscheinung)
+            .toggleStyle(.lumenSchalter)
             .environment(\.haptikAn, einstellungen.haptik)
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))

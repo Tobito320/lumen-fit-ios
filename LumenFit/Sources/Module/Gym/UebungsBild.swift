@@ -23,12 +23,18 @@ struct UebungsBild: View {
     var koerper: String?
     @State private var bild: UIImage?
     @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var schema
 
     var body: some View {
         ZStack {
             palette.grund
             if let bild {
-                Image(uiImage: bild).resizable().scaledToFit()
+                // Die Bilder haben weißen Grund: hell mit multiply, dunkel invertiert (Farbton zurückgedreht) mit screen, sonst steht ein weißer Kasten auf der Seite.
+                if schema == .dark {
+                    Image(uiImage: bild).resizable().scaledToFit().colorInvert().hueRotation(.degrees(180)).blendMode(.screen)
+                } else {
+                    Image(uiImage: bild).resizable().scaledToFit().blendMode(.multiply)
+                }
             } else {
                 Image(systemName: UebungsSymbol.name(koerper: koerper))
                     .font(.title2)
