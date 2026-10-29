@@ -5,6 +5,7 @@ import SwiftUI
 /// einen Haken in der Zahl. Aufwärmsätze zählen nicht.
 struct SaetzeProMuskelKarte: View {
     let zeilen: [SatzZeile]
+    @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
@@ -12,8 +13,9 @@ struct SaetzeProMuskelKarte: View {
     var body: some View {
         DiagrammKarte(aussage: SaetzeProMuskel.aussage(zeilen), kernzeile: SaetzeProMuskel.kernzeile(zeilen)) {
             if zeilen.isEmpty {
-                Text("Lege im Profil deine Wochenziele fest, dann zählt Lumi mit.")
-                    .font(.subheadline).foregroundStyle(palette.text2)
+                LeerZustand(stimmung: .bereit, satz: "Lege deine Wochenziele fest, dann zählt Lumi mit.", handlung: "Ziele öffnen") {
+                    umgebung.router.oeffne(.profil(.ziele))
+                }
             } else {
                 diagramm
             }

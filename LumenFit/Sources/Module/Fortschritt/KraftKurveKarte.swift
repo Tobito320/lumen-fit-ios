@@ -32,6 +32,7 @@ struct KraftKurveKarte: View {
     let heute: String
     @State private var gewaehlt: String?
     @State private var messwert = KraftMesswert.gewicht
+    @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
@@ -52,7 +53,9 @@ struct KraftKurveKarte: View {
                 }
             }
         } else {
-            LeerZustand(stimmung: .bereit, satz: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit.")
+            LeerZustand(stimmung: .bereit, satz: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit.", handlung: "Training starten") {
+                umgebung.router.oeffne(.gym(.training))
+            }
                 .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
         }
     }
