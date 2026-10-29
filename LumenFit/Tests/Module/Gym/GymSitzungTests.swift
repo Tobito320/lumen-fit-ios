@@ -97,6 +97,8 @@ final class GymSitzungTests: XCTestCase {
         a.fruehereEinheit(kg: 60, wdh: 10)
         a.sitzung.starte(planTag: "push")
         a.sitzung.gewicht(0, 0, richtung: 1) // 62,5 kg
+        a.sitzung.wiederholungen(0, 0, richtung: -1) // die Zeile startet mit den 10 vom letzten Mal: zurück auf 8
+        a.sitzung.wiederholungen(0, 0, richtung: -1)
         a.sitzung.haken(0, 0)
         // 62,5 × 8 gegen 60 × 10: schwerer; 1RM 79,2 und Volumen 500 liegen unter 80 und 600.
         XCTAssertEqual(a.sitzung.toast?.titel, "Neuer Rekord: Gewicht")

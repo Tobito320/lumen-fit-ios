@@ -85,7 +85,7 @@ final class AusweichTests: XCTestCase {
     // MARK: - Tausch im Training
 
     private func op(_ d: GymD, art: String = "gym.uebung", zeit: Date) -> Op {
-        Op(id: UUID().uuidString, art: art, von: .testA, zeit: zeit, d: try! JSONEncoder().encode(d))
+        TestDaten.op(art, d, von: .testA, zeit: zeit)
     }
 
     private func session(_ ops: [Op]) throws -> GymSession {

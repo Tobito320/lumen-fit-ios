@@ -27,7 +27,7 @@ struct RechnerBlatt: View {
                                     .accessibilityLabel("Weniger")
                                 Spacer()
                                 Text("\(TrainingLogik.kgText(arbeit)) kg")
-                                    .font(.system(size: 44, weight: .bold, design: .rounded)).monospacedDigit()
+                                    .font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
                                     .contentTransition(.numericText())
                                 Spacer()
                                 Button { arbeit = min(500, arbeit + 2.5) } label: { Image(systemName: "plus.circle.fill").font(.largeTitle).frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche) }

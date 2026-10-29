@@ -1,4 +1,5 @@
 // Quelle: Lovea Health/UebungRekorde.swift (`UebungDetail`, neu im Lumen-Design)
+import Accessibility
 import Charts
 import SwiftUI
 
@@ -88,8 +89,9 @@ struct UebungDetailView: View {
                 }
                 .chartYScale(domain: .automatic(includesZero: false))
                 .frame(height: 180)
-                .accessibilityLabel("\(art.titel) über die Zeit")
-                .accessibilityValue("\(punkte.count) Werte, zuletzt \(RekordLogik.text(letzter.wert, art: art))")
+                .accessibilityChartDescriptor(VerlaufBeschreibung(
+                    titel: art.titel, einheit: art == .wiederholungen ? "Wdh" : "kg",
+                    werte: punkte.enumerated().map { (name: "\($0.offset + 1). Einheit, \(Datum.anzeige(Datum.text($0.element.datum)))", wert: $0.element.wert) }))
             }
         }
         Label("Persönliche Rekorde", systemImage: "medal.fill")
@@ -146,5 +148,20 @@ struct UebungDetailView: View {
             Haarlinie()
             GymZeile(titel: "Englisch") { Text(u.en.capitalized).foregroundStyle(palette.text2) }
         }
+    }
+}
+
+/// Die Sprachausgabe des Diagramms: jede Einheit mit ihrem Wert (die Kernzeile steht schon in der Karte darüber).
+private struct VerlaufBeschreibung: AXChartDescriptorRepresentable {
+    let titel: String
+    let einheit: String
+    let werte: [(name: String, wert: Double)]
+
+    func makeChartDescriptor() -> AXChartDescriptor {
+        let zahlen = werte.map(\.wert)
+        let x = AXCategoricalDataAxisDescriptor(title: "Einheit", categoryOrder: werte.map(\.name))
+        let y = AXNumericDataAxisDescriptor(title: titel, range: (zahlen.min() ?? 0)...(zahlen.max() ?? 0), gridlinePositions: []) { "\(TrainingLogik.kgText($0)) \(einheit)" }
+        let reihe = AXDataSeriesDescriptor(name: titel, isContinuous: true, dataPoints: werte.map { AXDataPoint(x: $0.name, y: $0.wert) })
+        return AXChartDescriptor(title: titel, summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
     }
 }

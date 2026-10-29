@@ -11,6 +11,8 @@ struct TrainingLaufView: View {
     @State private var suche = false
     @State private var tagWahl = false
     @State private var einstellungen = false
+    @State private var cardioOffen = false
+    @State private var cardioIndex = 0
 
     var body: some View {
         let _ = sitzung.pauseEndeZaehler // die Karte baut sich neu, wenn die Pause endet
@@ -40,6 +42,7 @@ struct TrainingLaufView: View {
         }
         .sheet(isPresented: $tagWahl) { TagWechselBlatt(sitzung: sitzung) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
+        .sheet(isPresented: $cardioOffen) { CardioAbschlussBlatt(sitzung: sitzung, index: cardioIndex) }
         .lumenToast($sitzung.toast)
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
@@ -81,11 +84,22 @@ struct TrainingLaufView: View {
 
     private var satzFertigLeiste: some View {
         Group {
-            if sitzung.dran != nil {
-                Button { sitzung.satzFertig() } label: {
-                    Text("Satz fertig").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            if let dran = sitzung.dran {
+                // Cardio hat keine Sätze zum Abhaken: der große Knopf öffnet dann die Eingabe, statt still nichts zu tun.
+                if sitzung.liste.indices.contains(dran.uebung), sitzung.liste[dran.uebung].planUebung.istCardio {
+                    Button {
+                        cardioIndex = dran.uebung
+                        cardioOffen = true
+                    } label: {
+                        Text("Cardio eintragen").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else {
+                    Button { sitzung.satzFertig() } label: {
+                        Text("Satz fertig").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
-                .buttonStyle(.borderedProminent)
             } else {
                 Button { beenden = true } label: {
                     Text("Training beenden").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)

@@ -2,6 +2,7 @@ import XCTest
 @testable import LumenFit
 
 /// Schreibt nichts nach Health, merkt sich nur die Trainings (Test-Fake des Moduls gym).
+// @unchecked Sendable: Zugriff nur unter dem NSLock.
 final class GymFakeHealthSchreiber: HealthSchreiber, @unchecked Sendable {
     private let schloss = NSLock()
     private var _trainings: [GymSession] = []
@@ -64,7 +65,7 @@ struct GymTestAufbau {
     }
 
     /// Ein Plantag "push" mit zwei Übungen (je drei Sätze 8 × 60 kg), die erste mit 90 s Pause.
-    static func plan(supersatz: Bool = false) -> TrainingsPlan {
+    nonisolated static func plan(supersatz: Bool = false) -> TrainingsPlan {
         func satz(_ kg: Double) -> PlanSatz { PlanSatz(wdh: 8, kg: kg, failure: false) }
         let a = PlanUebung(id: "a", uebung: "EIeI8Vf", name: nil, saetze: [satz(60), satz(60), satz(60)], minuten: nil, pause: 90, supersatz: supersatz ? true : nil)
         let b = PlanUebung(id: "b", uebung: "903mzG8", name: nil, saetze: [satz(20), satz(20)], minuten: nil)

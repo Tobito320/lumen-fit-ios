@@ -46,7 +46,7 @@ struct SplitBibliothekView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Abstand.s) {
                 chip("Alle", aktiv: art == nil) { art = nil }
-                ForEach(SplitLogik.artWahl, id: \.id) { a in chip(a.text, aktiv: art == a.id) { art = a.id } }
+                ForEach(Array(SplitLogik.artWahl.enumerated()), id: \.offset) { _, a in chip(a.text, aktiv: art == a.id) { art = a.id } }
                 Divider().frame(height: 24)
                 chip("Alle Tage", aktiv: tage == nil) { tage = nil }
                 ForEach(SplitLogik.tageWahl, id: \.self) { n in chip("\(n) Tage", aktiv: tage == n) { tage = n } }

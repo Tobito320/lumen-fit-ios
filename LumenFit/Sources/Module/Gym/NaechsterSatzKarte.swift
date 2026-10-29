@@ -9,6 +9,7 @@ struct NaechsterSatzKarte: View {
     @ScaledMetric(relativeTo: .largeTitle) private var heldenGroesse: CGFloat = 56
 
     var body: some View {
+        let _ = sitzung.pauseEndeZaehler // sonst bleibt die Karte nach dem Pausenende auf 0:00 stehen
         HeroKarte(platte: true) {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 if let pause = sitzung.pause {

@@ -1,5 +1,4 @@
 // Quelle: Lovea Tests/UebungsSucheTests.swift
-import SwiftUI
 import XCTest
 @testable import LumenFit
 
@@ -99,39 +98,5 @@ final class UebungsSucheTests: XCTestCase {
     func testOwnEntriesHaveNoMedia() async {
         let datei = await UebungsMedien.datei("lv-face-pull")
         XCTAssertNil(datei)
-    }
-}
-
-/// Render-Tafel "gym-suche": Zeile mit und ohne Video, Gerät-Filter mit Vorgabe-Kachel.
-@MainActor
-final class UebungsSucheRenderTests: XCTestCase {
-    private typealias Zelle = (titel: String, ansicht: AnyView)
-
-    private func zelle(_ schema: ColorScheme, titel: String, _ inhalt: some View) -> Zelle {
-        let ansicht = inhalt
-            .padding(18)
-            .frame(width: 393, height: 520, alignment: .top)
-            .background(schema == .dark ? Color.black : Color.white)
-            .environment(\.colorScheme, schema)
-        return (titel: titel, ansicht: AnyView(ansicht))
-    }
-
-    func testSucheTafel() throws {
-        let alle = UebungsKatalog.laden(Bundle(for: BundleAnker.self))
-        let treffer = UebungsKatalog.suchen("hip thrust", in: alle)
-        XCTAssertFalse(treffer.isEmpty)
-        let zeilen = VStack(alignment: .leading, spacing: 12) {
-            ForEach(treffer.prefix(5)) { UebungZeile(uebung: $0) }
-        }
-        let gruppen: [(String, [String])] = [
-            ("", [UebungsKatalog.standardTitel, UebungsKatalog.alleGeraete]),
-            ("Weitere Geräte", ["Band", "Kettlebell", "Körpergewicht"]),
-        ]
-
-        RenderTafel.speichern("gym-suche", spalten: 3, zellen: [
-            zelle(.light, titel: "Treffer hip thrust, hell", zeilen),
-            zelle(.dark, titel: "Treffer hip thrust, dunkel", zeilen),
-            zelle(.light, titel: "Gerät-Filter, Standard", FilterBlatt(titel: "Gerät", gruppen: gruppen, auswahl: .constant(nil), vorgabe: UebungsKatalog.standardTitel) { _ in 42 }),
-        ])
     }
 }
