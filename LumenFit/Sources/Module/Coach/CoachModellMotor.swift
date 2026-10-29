@@ -217,8 +217,10 @@ struct CoachEssenTool: Tool {
     func call(arguments: CoachNachladenArgumente) async throws -> String { await quelle.essen(arguments.anzahl) }
 }
 
+#endif
+
 /// Der Coach mit Apples Modell auf dem Gerät. Eine neue Sitzung je Frage: das bisherige Gespräch geht im Prompt mit, deshalb gibt es beim
-/// Wechsel zwischen den Motoren keinen Verlust.
+/// Wechsel zwischen den Motoren keinen Verlust. Ohne das Framework (andere Plattform) ist er nie verfügbar, damit alles andere trotzdem baut.
 struct ModellCoachMotor: CoachMotor {
     let nachladen: CoachNachladen
 
@@ -228,6 +230,19 @@ struct ModellCoachMotor: CoachMotor {
 
     func verfuegbar() async -> Bool { Self.modellBereit() }
 
+    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort {
+        guard Self.modellBereit() else { throw CoachMotorFehler.nichtBereit }
+        let roh = try await frageModell(anfrage)
+        return try CoachModellUebersetzer.antwort(text: roh.text, chips: roh.chips)
+    }
+
+    /// Der Rohtext und die Knöpfe des Modells.
+    private struct Roh {
+        var text: String
+        var chips: [CoachRohChip]
+    }
+
+    #if canImport(FoundationModels)
     /// Verfügbar und Deutsch unterstützt.
     static func modellBereit() -> Bool {
         let modell = SystemLanguageModel.default
@@ -235,27 +250,19 @@ struct ModellCoachMotor: CoachMotor {
         return modell.supportsLocale(Locale(identifier: "de_DE"))
     }
 
-    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort {
-        guard Self.modellBereit() else { throw CoachMotorFehler.nichtBereit }
+    private func frageModell(_ anfrage: CoachAnfrage) async throws -> Roh {
         let werkzeuge: [any Tool] = [CoachTrainingTool(quelle: nachladen), CoachRekordeTool(quelle: nachladen),
                                      CoachSchlafTool(quelle: nachladen), CoachEssenTool(quelle: nachladen)]
         let sitzung = LanguageModelSession(model: SystemLanguageModel.default, tools: werkzeuge) { CoachPersona.anweisung }
         let prompt = CoachModellPrompt.bauen(anfrage)
         let ergebnis = try await sitzung.respond(generating: CoachModellAntwort.self,
                                                  options: GenerationOptions(temperature: 0.5, maximumResponseTokens: 300)) { prompt }
-        let roh = ergebnis.content
-        return try CoachModellUebersetzer.antwort(text: roh.text, chips: roh.knoepfe.map { CoachRohChip(text: $0.text, art: $0.art, ziel: $0.ziel) })
+        let antwort = ergebnis.content
+        return Roh(text: antwort.text, chips: antwort.knoepfe.map { CoachRohChip(text: $0.text, art: $0.art, ziel: $0.ziel) })
     }
-}
-#else
-/// Ohne das Framework (andere Plattform): nie verfügbar, damit alles andere trotzdem baut.
-struct ModellCoachMotor: CoachMotor {
-    let nachladen: CoachNachladen
+    #else
+    static func modellBereit() -> Bool { false }
 
-    init(nachladen: CoachNachladen = .leer) { self.nachladen = nachladen }
-
-    var name: String { "Apple Intelligence" }
-    func verfuegbar() async -> Bool { false }
-    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort { throw CoachMotorFehler.nichtBereit }
+    private func frageModell(_ anfrage: CoachAnfrage) async throws -> Roh { throw CoachMotorFehler.nichtBereit }
+    #endif
 }
-#endif

@@ -141,9 +141,9 @@ final class CoachLokalTests: XCTestCase {
             nachricht("1", .nutzer, " Hallo ", zeit(5)),
             nachricht("2", .coach, "Hi.\n[[weiter: A?]]", zeit(5, 13)),
         ]
-        XCTAssertEqual(CoachLokal.export(liste, ich: "Ahmed") { _ in "12:00" },
-                       "[12:00] Ahmed: Hallo\n\n[12:00] Coach: Hi.")
-        XCTAssertEqual(CoachLokal.export([], ich: "Ahmed") { _ in "x" }, "")
+        XCTAssertEqual(CoachLokal.export(liste, ich: "Ich") { _ in "12:00" },
+                       "[12:00] Ich: Hallo\n\n[12:00] Coach: Hi.")
+        XCTAssertEqual(CoachLokal.export([], ich: "Ich") { _ in "x" }, "")
     }
 
     // MARK: - Schnellfragen nur bis zur ersten eigenen Nachricht des Tages
@@ -208,8 +208,8 @@ final class CoachLokalTests: XCTestCase {
 
     func testExportNenntDenEigenenNamen() {
         let liste = [nachricht("1", .nutzer, "Hallo", zeit(5)), nachricht("2", .coach, "Hi.", zeit(5, 13))]
-        XCTAssertEqual(CoachLokal.export(liste, ich: "Ahmed", coach: "Rex") { _ in "12:00" },
-                       "[12:00] Ahmed: Hallo\n\n[12:00] Rex: Hi.")
+        XCTAssertEqual(CoachLokal.export(liste, ich: "Ich", coach: "Rex") { _ in "12:00" },
+                       "[12:00] Ich: Hallo\n\n[12:00] Rex: Hi.")
     }
 
     // MARK: - Warten
