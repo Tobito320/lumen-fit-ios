@@ -118,9 +118,9 @@ struct ProfilPasswortBlatt: View {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 Text(erklaerung).font(.body).foregroundStyle(palette.text2)
                 VStack(spacing: Abstand.m) {
-                    feld("Passwort", text: ).focused()
+                    feld("Passwort", text: $passwort).focused($fokus)
                     if let neuTitel {
-                        feld(neuTitel, text: )
+                        feld(neuTitel, text: $neu)
                         if !neu.isEmpty, neu.count < Passwort.mindestLaenge {
                             Text("Mindestens \(Passwort.mindestLaenge) Zeichen.").font(.footnote).foregroundStyle(palette.text2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -136,6 +136,7 @@ struct ProfilPasswortBlatt: View {
                     Text(knopf).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.borderedProminent)
+                .foregroundStyle(zerstoererisch ? Color.white : palette.aufAkzent)
                 .disabled(!bereit)
                 Spacer()
             }

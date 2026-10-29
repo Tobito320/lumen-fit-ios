@@ -24,6 +24,7 @@ final class ProfilTexteTests: XCTestCase {
         for wort in ["Gesundheitsdaten", "Trainings", "Essen", "Gewicht", "kein Konto", "keinen Server"] {
             XCTAssertTrue(verlaesst.text.contains(wort) || verlaesst.text.lowercased().contains(wort.lowercased()), wort)
         }
+        XCTAssertTrue(verlaesst.text.contains("selbst teilst"), "Teilen von Hand ist die einzige Ausnahme und steht dabei")
         let titel = ProfilTexte.datenschutz.map(\.titel)
         XCTAssertTrue(titel.contains("Was gespeichert wird"))
         XCTAssertTrue(titel.contains("Alles löschen"))

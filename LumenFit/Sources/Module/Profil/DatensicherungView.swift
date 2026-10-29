@@ -32,6 +32,7 @@ struct DatensicherungView: View {
                                     .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                             }
                             .buttonStyle(.borderedProminent)
+                            .foregroundStyle(palette.aufAkzent)
                             if let datei {
                                 ShareLink(item: datei) {
                                     Label("\(datei.lastPathComponent) teilen", systemImage: "square.and.arrow.up")
@@ -72,6 +73,7 @@ struct DatensicherungView: View {
             Text(bestaetigungText)
         }
         .lumenToast($toast)
+        .onDisappear { if let datei { try? FileManager.default.removeItem(at: datei) } }
     }
 
     // MARK: - Willkommen zurück

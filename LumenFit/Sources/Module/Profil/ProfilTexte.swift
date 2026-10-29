@@ -14,7 +14,7 @@ enum ProfilTexte {
         Abschnitt(titel: "Was gespeichert wird",
                   text: "Auf deinem iPhone: dein Name, die Spur deines Passworts (nie das Passwort selbst), deine Trainings, dein Essenstagebuch, Gewohnheiten, Ziele, Körperdaten und Einstellungen. Der Name und die Passwort-Spur liegen im Schlüsselbund, alles andere in der App."),
         Abschnitt(titel: "Was dein iPhone nie verlässt",
-                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht und deine Gespräche mit dem Coach. Lumen Fit hat keinen Server, kein Konto, keine Werbung und kein Tracking."),
+                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht und deine Gespräche mit dem Coach. Lumen Fit hat keinen Server, kein Konto, keine Werbung und kein Tracking. Es geht nur etwas hinaus, wenn du es selbst teilst: eine Datensicherung, eine Tabelle oder eine Wochenkarte."),
         Abschnitt(titel: "Was ins Netz geht",
                   text: "Nur das Nötige: beim Scannen oder Suchen fragt die App Open Food Facts nach dem Barcode oder deinem Suchtext, und Übungsbilder werden geladen und gemerkt. Dabei gehen nie dein Name, deine Gesundheitsdaten oder dein Training mit."),
         Abschnitt(titel: "Was Lovea sieht",

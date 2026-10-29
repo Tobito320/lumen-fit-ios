@@ -179,6 +179,7 @@ struct ProfilAnlegenBlatt: View {
                 if let fehler { Text(fehler).font(.subheadline).foregroundStyle(palette.text) }
                 Button(action: anlegen) { Text("Profil anlegen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(palette.aufAkzent)
                 Spacer()
             }
             .padding(Abstand.l)

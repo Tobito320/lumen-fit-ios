@@ -76,6 +76,7 @@ struct ZieleBefragungView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var dismiss
     @Environment(\.palette) private var palette
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var schritt = 0
     @State private var ziele: Set<String> = []
     @State private var tage: Int?
@@ -95,7 +96,7 @@ struct ZieleBefragungView: View {
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.xl)
-        .animation(Feder.schnell, value: schritt)
+        .animation(reduceMotion ? nil : Feder.schnell, value: schritt)
         .lumenHintergrund()
         .haptik(.erfolg, bei: gespeichert)
     }
@@ -165,6 +166,7 @@ struct ZieleBefragungView: View {
             Text(schritt < 2 ? "Weiter" : "Ziele speichern").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
         }
         .buttonStyle(.borderedProminent)
+        .foregroundStyle(palette.aufAkzent)
         .disabled(!kannWeiter)
     }
 }

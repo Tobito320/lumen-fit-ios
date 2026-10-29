@@ -88,6 +88,7 @@ struct OnboardingView: View {
     private func knopf(_ titel: String, aktion: @escaping () -> Void) -> some View {
         Button(action: aktion) { Text(titel).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(palette.aufAkzent)
     }
 
     // MARK: - Karten

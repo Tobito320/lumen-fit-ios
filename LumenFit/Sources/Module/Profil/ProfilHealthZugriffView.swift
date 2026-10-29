@@ -38,6 +38,7 @@ struct ProfilHealthZugriffView: View {
                             Label("Health-Abfrage anzeigen", systemImage: "heart.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                         }
                         .buttonStyle(.borderedProminent)
+                        .foregroundStyle(palette.aufAkzent)
                     }
                     Button {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
