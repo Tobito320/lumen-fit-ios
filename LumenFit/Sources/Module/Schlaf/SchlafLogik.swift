@@ -14,6 +14,15 @@ enum SchlafLogik {
         let bis: Date
     }
 
+    /// Bitmaske wie bei den Food-Zielen: Montag ist Bit 0, Sonntag Bit 6; `wochentag` zählt 1 (Montag) bis 7 (Sonntag).
+    static func istExtraTag(_ extraTage: Int, _ wochentag: Int) -> Bool { extraTage & (1 << (wochentag - 1)) != 0 }
+
+    /// Ziel-Minuten für einen Wochentag: Basis, an den Extra-Tagen plus `extraMinuten` (nie unter 0).
+    /// Die Ziele von Lumen Fit haben noch keine Extra-Tage (Wunsch ans Grundgerüst); bis dahin gilt `Ziele.schlafMinuten` an jedem Tag.
+    static func ziel(basis: Int, extraMinuten: Int, extraTage: Int, wochentag: Int) -> Int {
+        istExtraTag(extraTage, wochentag) ? max(0, basis + extraMinuten) : basis
+    }
+
     /// Aufwachtag ist Samstag oder Sonntag.
     static func istWochenende(_ tag: String) -> Bool { Datum.wochentag(tag) >= 6 }
 
