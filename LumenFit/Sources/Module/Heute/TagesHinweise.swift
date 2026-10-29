@@ -1,0 +1,105 @@
+import Foundation
+import Observation
+
+/// Eine kleine, wegwischbare Karte des Tages (Idee 19). `id` ist je Anlass und Tag (oder Woche) eindeutig, damit eine weggewischte Karte nicht zurückkommt.
+struct TagesHinweis: Identifiable, Equatable, Sendable {
+    var id: String
+    var symbol: String
+    var titel: String
+    var text: String
+}
+
+/// Die Regeln der Hinweise des Tages. Reine Logik; jede Regel nennt ihre echte Zahl. Höchstens `hoechstens` Karten, wichtigste zuerst.
+enum TagesHinweisLogik {
+    static let hoechstens = 3
+
+    struct Eingabe: Sendable {
+        var heute: String
+        var stunde = 12
+        /// Schlafminuten je Aufwachtag.
+        var schlafMinuten: [String: Int] = [:]
+        var schritte: [String: Int] = [:]
+        var schritteZiel = 10_000
+        var gymTage: Set<String> = []
+        var gymZielWoche = 3
+        var gymInFolge = 0
+        var wasserHeute = 0
+        var wasserZiel = 8
+        /// Tage mit Gewichtseintrag.
+        var gewichtTage: [String] = []
+    }
+
+    static let kurzeNachtBis = 360
+
+    /// Alle Anlässe von heute in der Reihenfolge ihrer Wichtigkeit.
+    static func regeln(_ e: Eingabe) -> [TagesHinweis] {
+        var liste: [TagesHinweis] = []
+        let gestern = Datum.addTage(e.heute, -1)
+        if let heute = e.schlafMinuten[e.heute], let davor = e.schlafMinuten[gestern], heute < kurzeNachtBis, davor < kurzeNachtBis {
+            liste.append(TagesHinweis(id: "schlaf-kurz-\(e.heute)", symbol: "bed.double.fill", titel: "Zweimal unter 6 Stunden",
+                                      text: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett."))
+        }
+        if e.gymInFolge >= 3 {
+            liste.append(TagesHinweis(id: "gym-folge-\(e.heute)", symbol: "dumbbell.fill", titel: "\(e.gymInFolge) Tage Gym am Stück",
+                                      text: "Plane einen Ruhetag ein, dann bleibt die Kraft."))
+        }
+        let woche = HabitLogik.wochenTage(heute: e.heute)
+        let gym = e.gymTage.intersection(Set(woche)).count
+        let uebrig = 7 - Datum.wochentag(e.heute) + (e.gymTage.contains(e.heute) ? 0 : 1)
+        if e.gymZielWoche > 0, gym < e.gymZielWoche, Datum.wochentag(e.heute) >= 5 {
+            let fehlt = e.gymZielWoche - gym
+            liste.append(TagesHinweis(id: "gym-woche-\(woche[0])", symbol: "calendar", titel: "Noch \(fehlt) \(fehlt == 1 ? "Gym-Tag" : "Gym-Tage") bis zum Wochenziel",
+                                      text: "\(gym) von \(e.gymZielWoche) Tagen, noch \(uebrig) \(uebrig == 1 ? "Tag" : "Tage") in der Woche."))
+        }
+        if e.wasserZiel > 0, e.stunde >= 16, e.wasserHeute * 2 < e.wasserZiel {
+            liste.append(TagesHinweis(id: "wasser-\(e.heute)", symbol: "drop.fill", titel: "Wenig Wasser bisher",
+                                      text: "\(e.wasserHeute) von \(e.wasserZiel) Gläsern. Ein Glas jetzt hilft."))
+        }
+        if let letzter = e.gewichtTage.max(), Datum.tageZwischen(letzter, e.heute) >= 7 {
+            liste.append(TagesHinweis(id: "gewicht-\(e.heute)", symbol: "scalemass.fill", titel: "Länger nicht gewogen",
+                                      text: "Dein letzter Eintrag ist \(Datum.tageZwischen(letzter, e.heute)) Tage her. Drei Sekunden reichen."))
+        }
+        let serie = (0..<3).allSatisfy { (e.schritte[Datum.addTage(e.heute, -$0)] ?? 0) >= e.schritteZiel && e.schritteZiel > 0 }
+        if serie {
+            liste.append(TagesHinweis(id: "schritte-serie-\(e.heute)", symbol: "figure.walk", titel: "Drei Tage über dem Schrittziel",
+                                      text: "Das hält dein Herz fit. Weiter so."))
+        }
+        return liste
+    }
+
+    /// Die Insights aus dem Training (`HeuteHinweisLogik`, "Das fällt mir auf") als Karten. Gesperrte (noch ohne Daten) fehlen.
+    static func ausEinsichten(_ einsichten: [HeuteHinweis], heute: String) -> [TagesHinweis] {
+        einsichten.filter { $0.art != .gesperrt }.map {
+            TagesHinweis(id: "einsicht-\($0.id)-\(Datum.montagDerWoche(heute))", symbol: "lightbulb.fill", titel: $0.titel, text: "\($0.text) \($0.tipp)")
+        }
+    }
+
+    /// Was auf dem Bildschirm steht: ohne die weggewischten, höchstens drei.
+    static func zeige(_ alle: [TagesHinweis], weggewischt: Set<String>) -> [TagesHinweis] {
+        Array(alle.filter { !weggewischt.contains($0.id) }.prefix(hoechstens))
+    }
+}
+
+/// Merkt sich weggewischte Karten im Profilordner (`heute-hinweise.json`). Es bleiben die letzten 90 Ids.
+@MainActor @Observable
+final class TagesHinweisSpeicher {
+    static let dateiname = "heute-hinweise.json"
+    static let behalten = 90
+
+    private(set) var weggewischt: [String]
+    @ObservationIgnored private let datei: JSONDatei<[String]>?
+
+    /// Ohne Ordner nur im Speicher.
+    init(ordner: URL? = nil) {
+        datei = ordner.map { JSONDatei<[String]>($0.appendingPathComponent(Self.dateiname)) }
+        weggewischt = datei?.lade() ?? []
+    }
+
+    var ids: Set<String> { Set(weggewischt) }
+
+    func wische(_ id: String) {
+        guard !weggewischt.contains(id) else { return }
+        weggewischt = Array((weggewischt + [id]).suffix(Self.behalten))
+        datei?.speichere(weggewischt)
+    }
+}
