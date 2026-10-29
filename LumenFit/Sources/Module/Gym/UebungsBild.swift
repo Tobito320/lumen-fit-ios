@@ -1,0 +1,49 @@
+import SwiftUI
+import UIKit
+
+/// SF-Symbol je Körperteil: der Rückfall, wenn es kein Bild gibt (eigene Übungen, offline ohne Cache).
+enum UebungsSymbol {
+    static func name(koerper: String?) -> String {
+        switch koerper {
+        case "Cardio": "figure.run"
+        case "Beine": "figure.strengthtraining.functional"
+        case "Bauch": "figure.core.training"
+        default: "figure.strengthtraining.traditional"
+        }
+    }
+
+    /// "Face Pull, Schultern, Kabelzug" für VoiceOver, wenn ein Bild oder Symbol dasteht.
+    static func beschreibung(_ u: Uebung) -> String { "\(u.name), \(u.muskel), \(u.geraet)" }
+}
+
+/// Das Bild einer Übung (Idee 26): einmal aus dem Netz geholt und im Cache gehalten (`UebungsMedien`), nur das erste Bild, keine
+/// Dauer-Animation (Akku). Ohne Bild, offline oder bei eigenen Übungen steht ein Symbol da, nie ein leeres Feld.
+struct UebungsBild: View {
+    let id: String
+    var koerper: String?
+    @State private var bild: UIImage?
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        ZStack {
+            palette.grund
+            if let bild {
+                Image(uiImage: bild).resizable().scaledToFit()
+            } else {
+                Image(systemName: UebungsSymbol.name(koerper: koerper))
+                    .font(.title2)
+                    .foregroundStyle(palette.text2)
+            }
+        }
+        .clipShape(.rect(cornerRadius: Rundung.klein, style: .continuous))
+        .task(id: id) { await lade() }
+        .accessibilityHidden(true)
+    }
+
+    /// `UIImage(contentsOfFile:)` nimmt von einem GIF das erste Bild.
+    private func lade() async {
+        bild = nil
+        guard UebungsKatalog.hatVideo(id), let url = await UebungsMedien.datei(id) else { return }
+        bild = UIImage(contentsOfFile: url.path)
+    }
+}

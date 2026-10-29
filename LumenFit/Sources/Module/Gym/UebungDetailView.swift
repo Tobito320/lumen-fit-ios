@@ -1,7 +1,150 @@
+// Quelle: Lovea Health/UebungRekorde.swift (`UebungDetail`, neu im Lumen-Design)
+import Charts
 import SwiftUI
 
-/// Stub des Grundgerüsts: zeigt Lumi mit "Kommt bald", das Modul ersetzt ihn.
+/// Eine Übung im Detail (Route `.uebung(id:)`): oben das Bild, darunter drei Reiter. Übersicht (Diagramm und persönliche Rekorde),
+/// Historie (jede Einheit mit ihren Sätzen), So geht's (Muskeln und Gerät). Alles wird aus den Einheiten gerechnet, nichts Neues gespeichert.
 struct UebungDetailView: View {
     let id: String
-    var body: some View { KommtBaldSeite(titel: "Übung", avatar: false) }
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.palette) private var palette
+    @Environment(\.colorScheme) private var schema
+    @Environment(\.colorSchemeContrast) private var kontrast
+    @State private var reiter = Reiter.uebersicht
+    @State private var art = RekordArt.gewicht
+
+    private enum Reiter: String, CaseIterable, Identifiable {
+        case uebersicht = "Übersicht", historie = "Historie", sogehts = "So geht's"
+        var id: String { rawValue }
+    }
+
+    var body: some View {
+        Group {
+            if let u = UebungsKatalog.nachId[id] {
+                inhalt(u)
+            } else {
+                LeerZustand(stimmung: .denkt, satz: "Diese Übung gibt es im Katalog nicht (mehr).")
+            }
+        }
+        .lumenHintergrund()
+        .navigationTitle(UebungsKatalog.nachId[id]?.name ?? "Übung")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func inhalt(_ u: Uebung) -> some View {
+        let tage = RekordLogik.tage(katalogId: u.id, in: umgebung.daten?.training.sessions ?? [])
+        return ScrollView {
+            VStack(alignment: .leading, spacing: Abstand.l) {
+                UebungsBild(id: u.id, koerper: u.koerper)
+                    .aspectRatio(1.4, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: Abstand.xs) {
+                    Text(u.name).font(.title2.bold()).foregroundStyle(palette.text)
+                    Text("Primär: \(u.muskel)").font(.subheadline).foregroundStyle(palette.text2)
+                }
+                .accessibilityElement(children: .combine)
+                Picker("Ansicht", selection: $reiter) {
+                    ForEach(Reiter.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                switch reiter {
+                case .uebersicht: uebersicht(tage)
+                case .historie: historie(tage)
+                case .sogehts: soGehts(u)
+                }
+            }
+            .padding(Abstand.l)
+        }
+    }
+
+    // MARK: Übersicht
+
+    private struct Punkt: Identifiable {
+        var id: String
+        var datum: Date
+        var wert: Double
+    }
+
+    @ViewBuilder
+    private func uebersicht(_ tage: [UebungTag]) -> some View {
+        let punkte = tage.compactMap { t in RekordLogik.wert(t.saetze, art).map { Punkt(id: t.id, datum: t.datum, wert: $0) } }
+        let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
+        Picker("Wert im Diagramm", selection: $art) {
+            ForEach(RekordArt.allCases) { Text($0.titel).tag($0) }
+        }
+        .pickerStyle(.menu)
+        .frame(minHeight: Abstand.tippflaeche)
+        if punkte.isEmpty {
+            LeerZustand(stimmung: .bereit, satz: "Noch keine Daten. Mach die Übung einmal mit Gewicht, dann steht sie hier.")
+        } else {
+            let letzter = punkte[punkte.count - 1]
+            DiagrammKarte(aussage: "\(art.titel) über die Zeit", kernzeile: "Zuletzt \(RekordLogik.text(letzter.wert, art: art)), \(punkte.count) \(punkte.count == 1 ? "Einheit" : "Einheiten")") {
+                Chart(punkte) { p in
+                    LineMark(x: .value("Datum", p.datum), y: .value("Wert", p.wert))
+                        .foregroundStyle(gruen)
+                    PointMark(x: .value("Datum", p.datum), y: .value("Wert", p.wert))
+                        .foregroundStyle(gruen)
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .frame(height: 180)
+                .accessibilityLabel("\(art.titel) über die Zeit")
+                .accessibilityValue("\(punkte.count) Werte, zuletzt \(RekordLogik.text(letzter.wert, art: art))")
+            }
+        }
+        Label("Persönliche Rekorde", systemImage: "medal.fill")
+            .font(.headline).foregroundStyle(palette.text)
+        ListenKarte {
+            ForEach(RekordArt.allCases) { a in
+                GymZeile(titel: a.titel) {
+                    Text(RekordLogik.text(RekordLogik.rekord(tage, a), art: a)).font(.body.weight(.semibold)).monospacedDigit()
+                }
+                if a != RekordArt.allCases.last { Haarlinie() }
+            }
+        }
+    }
+
+    // MARK: Historie
+
+    @ViewBuilder
+    private func historie(_ tage: [UebungTag]) -> some View {
+        if tage.isEmpty {
+            LeerZustand(stimmung: .bereit, satz: "Noch nie gemacht. Nach dem ersten Training steht hier jeder Satz.")
+        }
+        ForEach(tage.reversed()) { t in
+            VStack(alignment: .leading, spacing: Abstand.s) {
+                Text(Datum.anzeige(Datum.text(t.datum))).font(.headline).foregroundStyle(palette.text)
+                ForEach(t.saetze.indices, id: \.self) { i in
+                    HStack(spacing: Abstand.m) {
+                        Text(WorkoutLogik.nummer(t.saetze, i)).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text2).frame(width: 24, alignment: .leading)
+                        Text(WorkoutLogik.satzText(t.saetze[i])).monospacedDigit().foregroundStyle(palette.text)
+                        Spacer(minLength: Abstand.s)
+                        if let rpe = t.saetze[i].rpe {
+                            Text("RPE \(TrainingLogik.kgText(rpe))").font(.subheadline).foregroundStyle(palette.text2)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(Abstand.l)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        }
+    }
+
+    // MARK: So geht's
+
+    private func soGehts(_ u: Uebung) -> some View {
+        ListenKarte {
+            GymZeile(titel: "Zielmuskel") { Text(u.muskel).foregroundStyle(palette.text2) }
+            Haarlinie()
+            GymZeile(titel: "Gerät") { Text(u.geraet).foregroundStyle(palette.text2) }
+            if !u.neben.isEmpty {
+                Haarlinie()
+                GymZeile(titel: "Hilft mit") { Text(u.neben.joined(separator: ", ")).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
+            }
+            Haarlinie()
+            GymZeile(titel: "Englisch") { Text(u.en.capitalized).foregroundStyle(palette.text2) }
+        }
+    }
 }
