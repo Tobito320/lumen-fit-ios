@@ -29,7 +29,7 @@ final class KraftKurveTests: XCTestCase {
         let p = KraftKurve.punkte(s, uebung: "bank", heute: heute)
         XCTAssertEqual(p.map(\.woche), ["2026-10-05", "2026-10-12"])
         XCTAssertEqual(p[0].gewicht, 65)
-        XCTAssertEqual(p[0].volumen, 60 * 8 + 65 * 5 + 60 * 10)
+        XCTAssertEqual(p[0].volumen, 1405, "60 x 8 + 65 x 5 + 60 x 10")
         XCTAssertEqual(p[1].gewicht, 70)
     }
 

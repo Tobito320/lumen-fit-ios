@@ -178,10 +178,6 @@ final class LoveaBrueckeDienstTests: XCTestCase {
                      session("d", start.addingTimeInterval(-86_400 * 3), ok: true)]
         XCTAssertEqual(LoveaBrueckeDienst.gymTageDerWoche(liste, heute: "2026-10-29"), 1, "zwei Einheiten am Montag zählen einen Tag, ohne Daten und vor der Woche zählt nichts")
     }
-}
-
-/// Zählt die gesendeten Darwin-Namen (ein Verweistyp statt einer erfassten Variable).
-final class DarwinZaehler { var namen: [String] = [] 
 
     // MARK: Vorschau
 
@@ -198,3 +194,6 @@ final class DarwinZaehler { var namen: [String] = []
         XCTAssertEqual(FreigabenVorschau.zeilen(try XCTUnwrap(a.dienst.vorschau())), [])
     }
 }
+
+/// Zählt die gesendeten Darwin-Namen (ein Verweistyp statt einer erfassten Variable).
+final class DarwinZaehler { var namen: [String] = [] }

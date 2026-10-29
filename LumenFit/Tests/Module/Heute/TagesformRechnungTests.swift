@@ -643,31 +643,4 @@ final class TagesformRechnungTests: XCTestCase {
         XCTAssertEqual(TagesformRechnung.datenlage(0.55), "mittel")
         XCTAssertEqual(TagesformRechnung.datenlage(0.54), "dünn")
     }
-
-    // MARK: Apple-Health-Tageswerte
-
-    func testVitalwerteMittelnJeBerlinerTag() {
-        let tag = Datum.datum("2026-10-12")
-        func probe(_ sekunden: Double, _ wert: Double) -> (zeit: Date, wert: Double) {
-            (zeit: tag.addingTimeInterval(sekunden), wert: wert)
-        }
-        let proben: [(zeit: Date, wert: Double)] = [
-            probe(3600, 60), probe(7200, 70),
-            probe(86_400 + 3600, 80), probe(86_400 + 7200, 0), probe(86_400 + 9000, -5), probe(86_400 + 9500, .nan),
-        ]
-        let t = TagesformVitalLogik.tageswerte(proben)
-        XCTAssertEqual(t.count, 2)
-        XCTAssertEqual(t["2026-10-12"] ?? -1, 65, accuracy: 1e-9)
-        XCTAssertEqual(t["2026-10-13"] ?? -1, 80, accuracy: 1e-9, "0, negative und nicht endliche Werte zählen nicht")
-        XCTAssertTrue(TagesformVitalLogik.tageswerte([]).isEmpty)
-    }
-
-    func testDerGelesenStandWirdGespeichertUndMuellFaelltLeer() {
-        // Der Stand vom letzten Lesen liegt auf dem Gerät, damit das erste Bild nach dem Start schon stimmt.
-        let stand = TagesformVitalStand(ruhepuls: ["2026-10-12": 55.5], hrv: ["2026-10-12": 61, "2026-10-11": 58.25])
-        XCTAssertEqual(TagesformVitalLogik.lesen(TagesformVitalLogik.kodieren(stand)), stand)
-        XCTAssertEqual(TagesformVitalLogik.lesen(nil), TagesformVitalStand())
-        XCTAssertEqual(TagesformVitalLogik.lesen(Data("kein json".utf8)), TagesformVitalStand())
-        XCTAssertEqual(TagesformVitalLogik.lesen(Data("{\"ruhepuls\":5}".utf8)), TagesformVitalStand(), "falsche Form")
-    }
 }

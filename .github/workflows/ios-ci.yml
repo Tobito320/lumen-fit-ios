@@ -167,7 +167,19 @@ jobs:
               "essen-scan|lumenfit://essen?bereich=scan" \
               "schlaf-verlauf|lumenfit://schlaf?bereich=verlauf" \
               "meilensteine|lumenfit://profil?bereich=meilensteine" \
-              "einstellungen|lumenfit://profil?bereich=einstellungen"; do
+              "einstellungen|lumenfit://profil?bereich=einstellungen" \
+              "gym-plan|lumenfit://gym?bereich=plaene" \
+              "essen-favoriten|lumenfit://essen?bereich=favoriten" \
+              "schlaf-werte|lumenfit://schlaf?bereich=werte" \
+              "verlauf|lumenfit://verlauf" \
+              "gewicht|lumenfit://gewicht" \
+              "uebung|lumenfit://uebung?id=2gPfomN" \
+              "coach-frage|lumenfit://coach?frage=Wie%20lief%20meine%20Woche" \
+              "lumi-seite|lumenfit://profil?bereich=lumi" \
+              "aussehen|lumenfit://profil?bereich=aussehen" \
+              "ziele|lumenfit://profil?bereich=ziele" \
+              "verbindungen|lumenfit://profil?bereich=verbindungen" \
+              "datensicherung|lumenfit://profil?bereich=datensicherung"; do
               name="${aufnahme%%|*}"
               link="${aufnahme#*|}"
               xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitRoute "$link" -lumenFitFixtures "$FIX"

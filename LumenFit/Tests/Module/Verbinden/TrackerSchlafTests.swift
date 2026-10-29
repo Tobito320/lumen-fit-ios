@@ -9,7 +9,7 @@ import XCTest
 final class TrackerSchlafTests: XCTestCase {
     private let heute = "2026-10-14"
     /// 14.10.2026, 09:00 in Berlin: alle Nächte unten sind schon zu Ende.
-    private var jetzt: Date { Calendar.berlin.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 9, minute: 0))! }
+    private var jetzt: Date { Datum.kalender.date(from: DateComponents(year: 2026, month: 10, day: 14, hour: 9, minute: 0))! }
 
     private func bytes(_ hex: String) -> [UInt8] {
         var ergebnis: [UInt8] = []
@@ -23,7 +23,7 @@ final class TrackerSchlafTests: XCTestCase {
     }
 
     private func zeit(_ tag: Int, _ stunde: Int, _ minute: Int) -> Date {
-        Calendar.berlin.date(from: DateComponents(year: 2026, month: 10, day: tag, hour: stunde, minute: minute))!
+        Datum.kalender.date(from: DateComponents(year: 2026, month: 10, day: tag, hour: stunde, minute: minute))!
     }
 
     /// Nutzdaten eines Rahmens (ohne die sechs Kopf-Byte).
