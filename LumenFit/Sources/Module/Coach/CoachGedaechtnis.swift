@@ -67,8 +67,8 @@ enum CoachGedaechtnisRegeln {
 /// Der Merkzettel des Coachs: dünne Schicht über `CoachStore` mit den Regeln. Neueste Einträge zuerst.
 @MainActor @Observable
 final class CoachGedaechtnis {
-    static let maxEintraege = CoachGedaechtnisRegeln.maxEintraege
-    static let maxLaenge = CoachGedaechtnisRegeln.maxLaenge
+    nonisolated static let maxEintraege = CoachGedaechtnisRegeln.maxEintraege
+    nonisolated static let maxLaenge = CoachGedaechtnisRegeln.maxLaenge
 
     @ObservationIgnored private let store: CoachStore
 

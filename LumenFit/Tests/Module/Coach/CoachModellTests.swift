@@ -105,6 +105,18 @@ final class CoachModellTests: XCTestCase {
         XCTAssertEqual(CoachModell(umgebung: u).frist, CoachLokal.denkGrenze, "Standard sind 15 Sekunden")
     }
 
+    func testHaengtDasModellAntwortenDieRegelnStattDesFehlertextes() async throws {
+        let regeln = FakeCoachMotor(name: "Regeln", texte: ["Die Regeln antworten."])
+        let wahl = CoachWahlMotor(modell: HaengenderMotor(), regeln: regeln, frist: 0.2)
+        let (u, _, _) = try CoachTestBau.umgebung(motor: wahl)
+        let modell = CoachModell(umgebung: u, frist: 3)
+        modell.senden("Wie war mein Schlaf?")
+        await warte(modell)
+        XCTAssertEqual(modell.verlauf.last?.text, "Die Regeln antworten.", "die Frist des Modells ist kürzer als die der Tippanzeige")
+        XCTAssertNil(modell.einstellungen?.stand.wartendeFrage)
+        XCTAssertEqual(regeln.anfragen, 1)
+    }
+
     func testGemerkteFrageWirdBeimNaechstenVordergrundNocheinmalGestellt() async throws {
         let (u, _, _) = try CoachTestBau.umgebung(motor: WerfenderMotor())
         let modell = CoachModell(umgebung: u)

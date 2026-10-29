@@ -29,7 +29,7 @@ struct CoachLokalStand: Codable, Equatable, Sendable {
 
 @MainActor @Observable
 final class CoachEinstellungen {
-    static let maxMerkliste = 50
+    nonisolated static let maxMerkliste = 50
 
     @ObservationIgnored private let datei: JSONDatei<CoachLokalStand>?
     private(set) var stand = CoachLokalStand()

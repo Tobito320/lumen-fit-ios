@@ -253,10 +253,9 @@ struct ModellCoachMotor: CoachMotor {
     private func frageModell(_ anfrage: CoachAnfrage) async throws -> Roh {
         let werkzeuge: [any Tool] = [CoachTrainingTool(quelle: nachladen), CoachRekordeTool(quelle: nachladen),
                                      CoachSchlafTool(quelle: nachladen), CoachEssenTool(quelle: nachladen)]
-        let sitzung = LanguageModelSession(model: SystemLanguageModel.default, tools: werkzeuge) { CoachPersona.anweisung }
-        let prompt = CoachModellPrompt.bauen(anfrage)
-        let ergebnis = try await sitzung.respond(generating: CoachModellAntwort.self,
-                                                 options: GenerationOptions(temperature: 0.5, maximumResponseTokens: 300)) { prompt }
+        let sitzung = LanguageModelSession(model: SystemLanguageModel.default, tools: werkzeuge, instructions: CoachPersona.anweisung)
+        let ergebnis = try await sitzung.respond(to: CoachModellPrompt.bauen(anfrage), generating: CoachModellAntwort.self,
+                                                 options: GenerationOptions(temperature: 0.5, maximumResponseTokens: 300))
         let antwort = ergebnis.content
         return Roh(text: antwort.text, chips: antwort.knoepfe.map { CoachRohChip(text: $0.text, art: $0.art, ziel: $0.ziel) })
     }

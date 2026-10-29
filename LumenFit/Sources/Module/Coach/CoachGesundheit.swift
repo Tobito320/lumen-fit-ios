@@ -48,7 +48,7 @@ enum CoachGesundheit {
 /// Lädt Kontext und Eingabe aus den Stores des aktiven Profils. Lesen nur, schreibt nie.
 @MainActor
 enum CoachDaten {
-    static let stimmungArt = "fit.lumi.stimmung"
+    nonisolated static let stimmungArt = "fit.lumi.stimmung"
 
     /// Die Stimmung von heute (letzte Op des Tages), falls der Morgen-Check beantwortet wurde.
     static func stimmungHeute(_ daten: DatenSatz, tag: String) -> StimmungsEintrag? {

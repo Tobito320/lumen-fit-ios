@@ -18,7 +18,7 @@ struct CoachHandlung: Identifiable {
 @MainActor @Observable
 final class CoachModell {
     /// Längste Frage in Zeichen.
-    static let maxZeichen = 1000
+    nonisolated static let maxZeichen = 1000
 
     var entwurf = ""
     private(set) var denkt = false

@@ -11,8 +11,9 @@ enum CoachWahl {
         await modell.verfuegbar() ? modell : regeln
     }
 
-    /// So lange darf das Modell antworten (die Tippanzeige steht höchstens so lange).
-    static let frist: TimeInterval = CoachLokal.denkGrenze
+    /// So lange darf das Modell antworten. Kürzer als die Tippanzeige (`CoachLokal.denkGrenze`, 15 s): sonst laufen beide Fristen gleichzeitig ab,
+    /// der Regelcoach käme nie zum Zug und die Person sähe den Fehlertext statt einer Antwort.
+    nonisolated static let frist: TimeInterval = CoachLokal.denkGrenze - 3
 }
 
 /// Der Motor, den die App benutzt (`AppUmgebung.coachMotor`): wählt je Frage, prüft die Antwort des Modells, fällt auf die Regeln zurück.

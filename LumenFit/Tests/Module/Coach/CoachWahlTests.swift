@@ -142,8 +142,8 @@ final class CoachWahlTests: XCTestCase {
         XCTAssertEqual(danach.name, "Regeln")
     }
 
-    func testDieFristIstDieDenkGrenze() {
-        XCTAssertEqual(CoachWahl.frist, 15)
-        XCTAssertEqual(CoachWahl.frist, CoachLokal.denkGrenze)
+    func testDieFristDesModellsIstKuerzerAlsDieTippanzeige() {
+        XCTAssertEqual(CoachWahl.frist, 12)
+        XCTAssertLessThan(CoachWahl.frist, CoachLokal.denkGrenze, "Platz für den Regelcoach, bevor der Fehlertext käme")
     }
 }
