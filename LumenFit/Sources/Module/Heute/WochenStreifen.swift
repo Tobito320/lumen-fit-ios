@@ -21,7 +21,7 @@ struct WochenStreifen: View {
                                 }
                                 .frame(width: 38, height: 38)
                                 Text(tag.kuerzel)
-                                    .font(.caption.weight(tag.istHeute ? .bold : .regular))
+                                    .font(.caption.weight(tag.istHeute ? .bold : .medium))
                                     .foregroundStyle(tag.istHeute ? palette.text : palette.text2)
                                 Capsule().fill(tag.istHeute ? palette.text : Color.clear).frame(width: 14, height: 2)
                             }

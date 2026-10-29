@@ -21,7 +21,7 @@ struct HabitsKarte: View {
                 HStack {
                     Text("Gewohnheiten verwalten").font(.subheadline).foregroundStyle(palette.text)
                     Spacer()
-                    Image(systemName: "chevron.right").font(.footnote).foregroundStyle(palette.text2).accessibilityHidden(true)
+                    Image(systemName: "chevron.right").font(.footnote.weight(.medium)).foregroundStyle(palette.text2).accessibilityHidden(true)
                 }
                 .padding(.horizontal, Abstand.l)
                 .frame(minHeight: Abstand.tippflaeche)
@@ -44,7 +44,7 @@ private struct HeuteHabitReihe: View {
             Image(systemName: zeile.habit.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(zeile.habit.name).font(.body).foregroundStyle(palette.text)
-                if let unter = unterzeile { Text(unter).font(.footnote).foregroundStyle(palette.text2) }
+                if let unter = unterzeile { Text(unter).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
             }
             Spacer(minLength: Abstand.s)
             steuerung

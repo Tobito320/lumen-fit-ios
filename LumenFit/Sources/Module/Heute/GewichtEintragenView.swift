@@ -23,7 +23,7 @@ struct GewichtEintragenView: View {
                 .tint(palette.akzent)
                 .foregroundStyle(palette.aufAkzent)
                 if fehler {
-                    Text("Das Gewicht muss zwischen 30 und 249,9 kg liegen.").font(.footnote).foregroundStyle(palette.text2)
+                    Text("Das Gewicht muss zwischen 30 und 249,9 kg liegen.").font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
                 }
                 healthSchalter
                 if let g = modell?.stand?.gewicht, g.punkte.count >= 2 {

@@ -83,8 +83,8 @@ enum TagesHinweisLogik {
 /// Merkt sich weggewischte Karten im Profilordner (`heute-hinweise.json`). Es bleiben die letzten 90 Ids.
 @MainActor @Observable
 final class TagesHinweisSpeicher {
-    static let dateiname = "heute-hinweise.json"
-    static let behalten = 90
+    nonisolated static let dateiname = "heute-hinweise.json"
+    nonisolated static let behalten = 90
 
     private(set) var weggewischt: [String]
     @ObservationIgnored private let datei: JSONDatei<[String]>?

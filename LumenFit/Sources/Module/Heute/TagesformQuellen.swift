@@ -15,9 +15,9 @@ struct HeuteNacht: Equatable, Sendable {
 @MainActor
 enum TagesformQuellen {
     /// Nächte für den Schlaf-Schnitt, Nächte für die Bettzeit, Tage für Vitalwerte und Training (der Tag selbst und 28 davor).
-    static let schlafNaechte = 14
-    static let bettNaechte = 7
-    static let vergleichsTage = 29
+    nonisolated static let schlafNaechte = 14
+    nonisolated static let bettNaechte = 7
+    nonisolated static let vergleichsTage = 29
 
     static func eingabe(daten: DatenSatz, gesundheit: GesundheitsStand, tag: String, jetzt: Date) -> TagesformEingabe {
         var e = TagesformEingabe()

@@ -31,7 +31,7 @@ private struct HeuteHinweisReihe: View {
             Image(systemName: hinweis.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Abstand.xs) {
                 Text(hinweis.titel).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
-                Text(hinweis.text).font(.footnote).foregroundStyle(palette.text2)
+                Text(hinweis.text).font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: weg) {
@@ -45,7 +45,8 @@ private struct HeuteHinweisReihe: View {
         .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
         .offset(x: versatz)
         .opacity(1 - min(abs(versatz) / 240, 0.6))
-        .gesture(
+        // simultan, sonst fängt die Karte das senkrechte Scrollen der Seite ab; nur waagerechtes Ziehen bewegt sie
+        .simultaneousGesture(
             DragGesture(minimumDistance: 24)
                 .onChanged { werte in if abs(werte.translation.width) > abs(werte.translation.height) { versatz = werte.translation.width } }
                 .onEnded { werte in

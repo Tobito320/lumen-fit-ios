@@ -35,12 +35,12 @@ struct EnergieBank: View {
         if let akku = energie.ergebnis.akku {
             HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                 RollZahl(wert: Double(akku), format: HeuteFormat.ganz())
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .heuteHeldenZahl(44)
                     .foregroundStyle(palette.text)
-                Text("von 100").font(.footnote).foregroundStyle(palette.text2)
+                Text("von 100").font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
             }
         } else {
-            Text("–").font(.system(size: 44, weight: .bold, design: .rounded)).foregroundStyle(palette.text2)
+            Text("–").heuteHeldenZahl(44).foregroundStyle(palette.text2)
         }
     }
 
@@ -69,7 +69,7 @@ struct EnergieBank: View {
             .chartYAxis(.hidden)
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { wert in
-                    AxisValueLabel { Text("\(wert.as(Int.self) ?? 0) Uhr").font(.caption2) }
+                    AxisValueLabel { Text("\(wert.as(Int.self) ?? 0) Uhr").font(.caption.weight(.medium)) }
                 }
             }
             .frame(height: 64)
@@ -117,7 +117,7 @@ struct EnergieDetail: View {
     private var kopf: some View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
             Text(energie.ergebnis.akku.map { "\($0) von 100" } ?? "Noch keine Zahl")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .heuteHeldenZahl(40)
             Text(energie.ergebnis.urteil + " · Datenlage " + energie.ergebnis.datenlage).font(.subheadline).foregroundStyle(palette.text2)
         }
         .accessibilityElement(children: .combine)
@@ -154,7 +154,7 @@ struct EnergieDetail: View {
                     .accessibilityAddTraits(gewaehlt ? .isSelected : [])
                 }
             }
-            if let v = energie.vergleich { Text(vergleichText(v)).font(.footnote).foregroundStyle(palette.text2) }
+            if let v = energie.vergleich { Text(vergleichText(v)).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
         }
     }
 
@@ -174,7 +174,7 @@ struct EnergieDetail: View {
                         Image(systemName: f.art.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: Abstand.xs) {
                             Text(f.kurz).font(.subheadline.weight(.semibold))
-                            if let d = f.detail { Text(d).font(.footnote).foregroundStyle(palette.text2) }
+                            if let d = f.detail { Text(d).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
                         }
                         Spacer(minLength: Abstand.s)
                         Text("\(Int(f.wert.rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(palette.text2)
@@ -190,7 +190,7 @@ struct EnergieDetail: View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             Text("Ohne Daten").font(.headline)
             ForEach(energie.ergebnis.fehlend, id: \.self) { art in
-                Text("\(art.titel): \(art.braucht)").font(.footnote).foregroundStyle(palette.text2)
+                Text("\(art.titel): \(art.braucht)").font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
             }
         }
     }

@@ -7,6 +7,7 @@ final class HeuteModellTests: XCTestCase {
     private let uhr = TestUhr()
     private let heute = "2026-09-23"
 
+    // @unchecked Sendable: veränderlicher Zustand liegt hinter einem NSLock (wie FakeHealthLeser).
     private final class HeuteSpurSchreiber: HealthSchreiber, @unchecked Sendable {
         private let schloss = NSLock()
         private var _gewichte: [Double] = []

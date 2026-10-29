@@ -2,8 +2,8 @@ import XCTest
 @testable import LumenFit
 
 final class BereitScoreTests: XCTestCase {
-    /// 29 Tage im Wechsel 48 und 52: Schnitt 50, Streuung 2 (die Streuung hat einen Boden von 8 % des Schnitts, also 4).
-    private var hrvBasis: [Double] { (0..<29).map { $0 % 2 == 0 ? 48 : 52 } }
+    /// 30 Tage im Wechsel 48 und 52: Schnitt genau 50, Streuung 2 (die Streuung hat einen Boden von 8 % des Schnitts, also 4).
+    private var hrvBasis: [Double] { (0..<30).map { $0 % 2 == 0 ? 48 : 52 } }
     private var pulsBasis: [Double] { [Double](repeating: 55, count: 29) }
     private func last(_ neu: Double, _ ueblich: Double) -> [Double?] { [Double?](repeating: neu, count: 3) + [Double?](repeating: ueblich, count: 28) }
 

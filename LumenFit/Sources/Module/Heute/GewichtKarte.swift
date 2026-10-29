@@ -14,10 +14,10 @@ struct GewichtKarte: View {
                 if let kg = gewicht.aktuellKg {
                     HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                         RollZahl(wert: kg, format: HeuteFormat.kilo())
-                            .font(.system(size: 40, weight: .bold, design: .rounded)).foregroundStyle(palette.text)
+                            .heuteHeldenZahl(40).foregroundStyle(palette.text)
                         Text("kg").font(.headline).foregroundStyle(palette.text2)
                         Spacer(minLength: Abstand.s)
-                        if let aenderung = gewicht.aenderung { Text(aenderung).font(.footnote).foregroundStyle(palette.text2) }
+                        if let aenderung = gewicht.aenderung { Text(aenderung).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
                     }
                     .accessibilityElement(children: .combine)
                     if gewicht.punkte.count >= 2 { HeuteGewichtDiagramm(punkte: gewicht.punkte, ziel: gewicht.zielKg).frame(height: 96) }
@@ -55,7 +55,7 @@ struct HeuteGewichtDiagramm: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .foregroundStyle(palette.text2)
                     .annotation(position: .top, alignment: .trailing) {
-                        Text("Ziel \(ziel, format: HeuteFormat.kilo()) kg").font(.caption2).foregroundStyle(palette.text2)
+                        Text("Ziel \(ziel, format: HeuteFormat.kilo()) kg").font(.caption.weight(.medium)).foregroundStyle(palette.text2)
                     }
             }
         }

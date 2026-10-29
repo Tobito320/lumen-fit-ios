@@ -16,7 +16,7 @@ struct Ringplatte: View {
                     .font(.title3.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
                 Text(stand.stimmung.beschreibung)
-                    .font(.footnote)
+                    .font(.footnote.weight(.medium))
                     .foregroundStyle(.white.opacity(0.8))
             }
         }
@@ -79,12 +79,12 @@ struct ScoreKarte: View {
         if let p = score.punkte {
             HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                 RollZahl(wert: Double(p), format: HeuteFormat.ganz())
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .heuteHeldenZahl(44)
                     .foregroundStyle(palette.text)
-                Text("von 100").font(.footnote).foregroundStyle(palette.text2)
+                Text("von 100").font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
             }
         } else {
-            Text("–").font(.system(size: 44, weight: .bold, design: .rounded)).foregroundStyle(palette.text2)
+            Text("–").heuteHeldenZahl(44).foregroundStyle(palette.text2)
         }
     }
 
@@ -92,7 +92,7 @@ struct ScoreKarte: View {
         let teil = score.teil(art)
         return VStack(spacing: Abstand.xs) {
             HeuteMiniBogen(anteil: (teil?.wert ?? 0) / 100, bereich: bereich).frame(width: 40, height: 40)
-            Text(name).font(.caption2).foregroundStyle(palette.text2)
+            Text(name).font(.caption.weight(.medium)).foregroundStyle(palette.text2)
         }
     }
 }
@@ -108,7 +108,7 @@ struct BereitScoreDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     Text(score.punkte.map { "\($0) von 100" } ?? "Noch keine Zahl")
-                        .font(.system(size: 40, weight: .bold, design: .rounded)).foregroundStyle(palette.text)
+                        .heuteHeldenZahl(40).foregroundStyle(palette.text)
                     Text(score.satz).font(.body).foregroundStyle(palette.text)
                     ListenKarte {
                         ForEach(Array(score.teile.enumerated()), id: \.element.id) { index, teil in

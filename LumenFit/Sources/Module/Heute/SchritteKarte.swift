@@ -13,9 +13,9 @@ struct SchritteKarte: View {
                 VStack(alignment: .leading, spacing: Abstand.m) {
                     HeuteKartenKopf(symbol: "figure.walk", titel: "Schritte", zusatz: "Ziel \(HeuteQuellen.zahl(schritte.ziel))")
                     RollZahl(wert: Double(schritte.schritte), format: HeuteFormat.ganz())
-                        .font(.system(size: 40, weight: .bold, design: .rounded)).foregroundStyle(palette.text)
+                        .heuteHeldenZahl(40).foregroundStyle(palette.text)
                     ProgressView(value: schritte.anteil).tint(palette.text)
-                    Text(unterzeile).font(.footnote).foregroundStyle(palette.text2)
+                    Text(unterzeile).font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
                 }
                 .padding(Abstand.l)
             }
@@ -99,7 +99,7 @@ struct SchritteDetailView: View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
             if let summe = s.summe {
                 RollZahl(wert: Double(summe), format: HeuteFormat.ganz())
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                    .heuteHeldenZahl(44)
                 Text(s.zeitraum == .tag ? "Schritte" : "Schritte zusammen").font(.subheadline).foregroundStyle(palette.text2)
             } else {
                 Text("Keine Daten").font(.title2.weight(.bold)).foregroundStyle(palette.text2)
@@ -119,7 +119,7 @@ struct SchritteDetailView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .foregroundStyle(palette.text2)
                     .annotation(position: .top, alignment: .trailing) {
-                        Text("Ziel \(HeuteQuellen.zahl(s.ziel))").font(.caption2).foregroundStyle(palette.text2)
+                        Text("Ziel \(HeuteQuellen.zahl(s.ziel))").font(.caption.weight(.medium)).foregroundStyle(palette.text2)
                     }
             }
             .foregroundStyle(palette.text)

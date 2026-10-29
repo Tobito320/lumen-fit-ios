@@ -75,3 +75,18 @@ enum HeuteFormat {
         .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))
     }
 }
+
+/// Heldenzahl nach design.md Abschnitt 4: Rounded, bold, wächst mit Dynamic Type (`@ScaledMetric` relativ zu `.largeTitle`) und schrumpft statt abzuschneiden.
+private struct HeuteHeldenZahl: ViewModifier {
+    @ScaledMetric(relativeTo: .largeTitle) private var groesse: CGFloat
+
+    init(basis: CGFloat) { _groesse = ScaledMetric(wrappedValue: basis, relativeTo: .largeTitle) }
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: groesse, weight: .bold, design: .rounded)).lineLimit(1).minimumScaleFactor(0.5)
+    }
+}
+
+extension View {
+    func heuteHeldenZahl(_ basis: CGFloat) -> some View { modifier(HeuteHeldenZahl(basis: basis)) }
+}
