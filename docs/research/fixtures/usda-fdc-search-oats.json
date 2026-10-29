@@ -1,0 +1,139 @@
+{
+  "totalHits": 53,
+  "currentPage": 1,
+  "totalPages": 53,
+  "pageList": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "foodSearchCriteria": {
+    "dataType": [
+      "Foundation",
+      "SR Legacy"
+    ],
+    "query": "oats",
+    "generalSearchInput": "oats",
+    "pageNumber": 1,
+    "numberOfResultsPerPage": 50,
+    "pageSize": 1,
+    "requireAllWords": false,
+    "foodTypes": [
+      "Foundation",
+      "SR Legacy"
+    ]
+  },
+  "foods": [
+    {
+      "fdcId": 2779253,
+      "description": "Oats, puffed",
+      "commonNames": "",
+      "additionalDescriptions": "",
+      "dataType": "Foundation",
+      "ndbNumber": 100441,
+      "publishedDate": "2026-10-29",
+      "foodCategory": "Cereal Grains and Pasta",
+      "allHighlightFields": "",
+      "score": 345.60175,
+      "microbes": [],
+      "foodNutrients": [
+        {
+          "nutrientId": 1079,
+          "nutrientName": "Fiber, total dietary",
+          "nutrientNumber": "291",
+          "unitName": "G",
+          "derivationCode": "A",
+          "derivationDescription": "Analytical",
+          "derivationId": 1,
+          "value": 8.79,
+          "foodNutrientSourceId": 1,
+          "foodNutrientSourceCode": "1",
+          "foodNutrientSourceDescription": "Analytical or derived from analytical",
+          "rank": 1200,
+          "indentLevel": 3,
+          "foodNutrientId": 35268655,
+          "dataPoints": 1,
+          "min": 8.79,
+          "max": 8.79,
+          "median": 8.79
+        },
+        {
+          "nutrientId": 1004,
+          "nutrientName": "Total lipid (fat)",
+          "nutrientNumber": "204",
+          "unitName": "G",
+          "derivationCode": "A",
+          "derivationDescription": "Analytical",
+          "derivationId": 1,
+          "value": 6.85,
+          "foodNutrientSourceId": 1,
+          "foodNutrientSourceCode": "1",
+          "foodNutrientSourceDescription": "Analytical or derived from analytical",
+          "rank": 800,
+          "indentLevel": 1,
+          "foodNutrientId": 35268715,
+          "dataPoints": 1,
+          "min": 6.85,
+          "max": 6.85,
+          "median": 6.85
+        },
+        {
+          "nutrientId": 1003,
+          "nutrientName": "Protein",
+          "nutrientNumber": "203",
+          "unitName": "G",
+          "derivationCode": "NC",
+          "derivationDescription": "Calculated",
+          "derivationId": 49,
+          "value": 14.6,
+          "foodNutrientSourceId": 2,
+          "foodNutrientSourceCode": "4",
+          "foodNutrientSourceDescription": "Calculated or imputed",
+          "rank": 600,
+          "indentLevel": 1,
+          "foodNutrientId": 35269286,
+          "min": 14.6,
+          "max": 14.6,
+          "median": 14.6
+        },
+        {
+          "nutrientId": 1005,
+          "nutrientName": "Carbohydrate, by difference",
+          "nutrientNumber": "205",
+          "unitName": "G",
+          "derivationCode": "NC",
+          "derivationDescription": "Calculated",
+          "derivationId": 49,
+          "value": 70.6,
+          "foodNutrientSourceId": 2,
+          "foodNutrientSourceCode": "4",
+          "foodNutrientSourceDescription": "Calculated or imputed",
+          "rank": 1110,
+          "indentLevel": 2,
+          "foodNutrientId": 35269287
+        }
+      ],
+      "finalFoodInputFoods": [],
+      "foodMeasures": [],
+      "foodAttributes": [],
+      "foodAttributeTypes": [],
+      "foodVersionIds": []
+    }
+  ],
+  "aggregations": {
+    "dataType": {
+      "Branded": 20473,
+      "SR Legacy": 48,
+      "Survey (FNDDS)": 27,
+      "Foundation": 5
+    },
+    "nutrients": {}
+  }
+}

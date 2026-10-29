@@ -1,0 +1,272 @@
+{
+  "count": 636,
+  "next": "https://wger.de/api/v2/exerciseinfo/?format=json&language__code=de&limit=2&offset=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 12,
+      "uuid": "53906cd1-61f1-4d56-ac60-e4fcc5824861",
+      "created": "2023-08-06T10:17:17.422900+02:00",
+      "last_update": "2026-01-14T03:00:17.174694+01:00",
+      "last_update_global": "2026-10-10T17:51:20.859906+02:00",
+      "category": {
+        "id": 9,
+        "name": "Legs"
+      },
+      "muscles": [
+        {
+          "id": 8,
+          "name": "Gluteus maximus",
+          "name_en": "Glutes",
+          "is_front": false,
+          "image_url_main": "https://wger.de/static/images/muscles/main/muscle-8.fbdfb46f3bc0.svg",
+          "image_url_secondary": "https://wger.de/static/images/muscles/secondary/muscle-8.605e4e1a0277.svg"
+        }
+      ],
+      "muscles_secondary": [],
+      "equipment": [],
+      "license": {
+        "id": 1,
+        "full_name": " Creative Commons Attribution Share Alike 3",
+        "short_name": "CC-BY-SA 3",
+        "url": "https://creativecommons.org/licenses/by-sa/3.0/deed.en"
+      },
+      "license_author": "flori",
+      "images": [
+        {
+          "id": 570,
+          "uuid": "4a42cc6f-648d-40cc-a72a-c49dd47e1667",
+          "exercise": 12,
+          "exercise_uuid": "53906cd1-61f1-4d56-ac60-e4fcc5824861",
+          "image": "https://wger.de/media/exercise-images/12/4a42cc6f-648d-40cc-a72a-c49dd47e1667.webp",
+          "thumbnails": {
+            "small": "https://wger.de/media/exercise-images/12/4a42cc6f-648d-40cc-a72a-c49dd47e1667.webp.200x200_q85.png",
+            "medium": "https://wger.de/media/exercise-images/12/4a42cc6f-648d-40cc-a72a-c49dd47e1667.webp.400x400_q85.png"
+          },
+          "is_main": true,
+          "style": "4",
+          "license": 2,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [],
+          "is_ai_generated": false
+        }
+      ],
+      "translations": [
+        {
+          "id": 174,
+          "uuid": "99881bdd-43d7-4c3b-82ed-9c187d0455b7",
+          "name": "Adduktoren-Maschine",
+          "exercise": 12,
+          "description": "<ul>\n<li>in eine aufrechte Position setzen, bei der die Beine hüftbreit geöffnet sind</li>\n<li>den Rücken, die Knie und die Oberschenkelaußenseite an die jeweiligen Polster pressen</li>\n<li>mit den Hä",
+          "description_source": "* in eine aufrechte Position setzen, bei der die Beine hüftbreit geöffnet sind\n* den Rücken, die Knie und die Oberschenkelaußenseite an die jeweiligen Polster pressen\n* mit den Händen an den Griffen festhalten\n* die Oberschenkel bis zum Anschlagpunkt der Hebelarme auseinander drücken\n* danach die Beine wieder zusammen führen\n* das Gesäß nicht vom Sitz abheben\n* beim Auseinanderdrücken der Hebelarme aus- und beim Zusammenführen einatmen",
+          "created": "2023-08-06T10:17:17.349574+02:00",
+          "language": 1,
+          "aliases": [],
+          "notes": [],
+          "license": 1,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "flori",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [
+            "flori"
+          ]
+        },
+        {
+          "id": 377,
+          "uuid": "4b3025a9-b717-4577-9e92-b1c200fe5f1c",
+          "name": "Seated Hip Adduction",
+          "exercise": 12,
+          "description": "<p>Starting Position: Sit on the machine with your knees inward and against the pads. Pull the pin to release the pads. Grab the handles on the sides.b</p>\n",
+          "description_source": "Starting Position: Sit on the machine with your knees inward and against the pads. Pull the pin to release the pads. Grab the handles on the sides.b",
+          "created": "2023-08-06T10:17:17.349574+02:00",
+          "language": 2,
+          "aliases": [],
+          "notes": [],
+          "license": 1,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "flori",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [
+            "flori",
+            "Araaosf"
+          ]
+        }
+      ],
+      "variation_group": "95132eef-ae4e-4185-87b8-a8588caff4fa",
+      "videos": [
+        {
+          "id": 74,
+          "uuid": "5148c579-5df2-4618-9a7b-a2e29ac4dd7d",
+          "exercise": 12,
+          "video": "https://wger.de/media/exercise-video/12/5148c579-5df2-4618-9a7b-a2e29ac4dd7d.MOV",
+          "is_main": false,
+          "size": 60138928,
+          "duration": "20.86",
+          "width": 1920,
+          "height": 1080,
+          "codec": "hevc",
+          "codec_long": "H.265 / HEVC (High Efficiency Video Coding)",
+          "license": 2,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "Goulart",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [
+            "Goulart"
+          ]
+        }
+      ],
+      "author_history": [
+        "flori"
+      ],
+      "total_authors_history": [
+        "Goulart",
+        "flori",
+        "wger.de",
+        "wgerjhn",
+        "Araaosf",
+        "aom44ja6w@mozmail.com"
+      ]
+    },
+    {
+      "id": 20,
+      "uuid": "f24cb758-9c0d-42d4-ad9e-6025c527dd13",
+      "created": "2023-08-06T10:17:17.422900+02:00",
+      "last_update": "2026-07-23T12:24:53.892041+02:00",
+      "last_update_global": "2026-10-24T16:00:08.717425+02:00",
+      "category": {
+        "id": 13,
+        "name": "Shoulders"
+      },
+      "muscles": [
+        {
+          "id": 2,
+          "name": "Anterior deltoid",
+          "name_en": "Shoulders",
+          "is_front": true,
+          "image_url_main": "https://wger.de/static/images/muscles/main/muscle-2.e1e1205a3202.svg",
+          "image_url_secondary": "https://wger.de/static/images/muscles/secondary/muscle-2.74ea636ad97b.svg"
+        }
+      ],
+      "muscles_secondary": [
+        {
+          "id": 9,
+          "name": "Trapezius",
+          "name_en": "",
+          "is_front": false,
+          "image_url_main": "https://wger.de/static/images/muscles/main/muscle-9.b491050a7108.svg",
+          "image_url_secondary": "https://wger.de/static/images/muscles/secondary/muscle-9.be1b5e41906b.svg"
+        },
+        {
+          "id": 5,
+          "name": "Triceps brachii",
+          "name_en": "Triceps",
+          "is_front": false,
+          "image_url_main": "https://wger.de/static/images/muscles/main/muscle-5.8a2b934b5486.svg",
+          "image_url_secondary": "https://wger.de/static/images/muscles/secondary/muscle-5.68eb84d675a5.svg"
+        }
+      ],
+      "equipment": [
+        {
+          "id": 3,
+          "name": "Dumbbell"
+        }
+      ],
+      "license": {
+        "id": 1,
+        "full_name": " Creative Commons Attribution Share Alike 3",
+        "short_name": "CC-BY-SA 3",
+        "url": "https://creativecommons.org/licenses/by-sa/3.0/deed.en"
+      },
+      "license_author": "trzr23",
+      "images": [],
+      "translations": [
+        {
+          "id": 228,
+          "uuid": "880bff63-6798-4ffc-a818-b2a1ccfec0f7",
+          "name": "Arnold Press",
+          "exercise": 20,
+          "description": "<p>Zwei Kurzhanteln mit den Handflächen nach innen vor der Brust halten, Ellbogen unterhalb der Handgelenke.</p>\n<p>Ellbogen nach außen bringen und Hanteln über den Kopf heben. Drehung kommt aus dem E",
+          "description_source": "Zwei Kurzhanteln mit den Handflächen nach innen vor der Brust halten, Ellbogen unterhalb der Handgelenke.\n\nEllbogen nach außen bringen und Hanteln über den Kopf heben. Drehung kommt aus dem Ellbogen, nicht aus den Armen!\n\nWenn die Arme durchgestreckt sind, die gleiche Bewegung rückwärts ausführen.",
+          "created": "2023-08-06T10:17:17.349574+02:00",
+          "language": 1,
+          "aliases": [],
+          "notes": [],
+          "license": 1,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "trzr23",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [
+            "trzr23",
+            "bloody_disgrace"
+          ]
+        },
+        {
+          "id": 227,
+          "uuid": "53ca25b3-61d9-4f72-bfdb-492b83484ff5",
+          "name": "Arnold Shoulder Press",
+          "exercise": 20,
+          "description": "<p>Sit on a bench with your back supported. Hold a pair of dumbbells in front of your shoulders, palms facing you and elbows in front of your body.</p>\n<p>Press the dumbbells overhead while rotating y",
+          "description_source": "Sit on a bench with your back supported. Hold a pair of dumbbells in front of your shoulders, palms facing you and elbows in front of your body.\n\nPress the dumbbells overhead while rotating your hands, so that your palms face forward at the top. Stop just before your elbows lock out.\n\nReverse the movement under control: lower the dumbbells and turn your palms back towards you until you are in the starting position again.\n\nAs shown here: https://www.youtube.com/watch?v=vj2w851ZHRM",
+          "created": "2023-08-06T10:17:17.349574+02:00",
+          "language": 2,
+          "aliases": [
+            {
+              "id": 611,
+              "uuid": "eb28e42d-9101-477c-a86e-288e922f55f0",
+              "alias": "Schwarzenegger Press"
+            },
+            {
+              "id": 613,
+              "uuid": "c003f1be-c2b3-4450-a394-ad406c6874d3",
+              "alias": "Palm-to-Palm Overhead Press"
+            },
+            {
+              "id": 610,
+              "uuid": "5fd0884f-3b72-4ad0-8808-ab7f18634d2f",
+              "alias": "Rotational Dumbbell Press"
+            },
+            {
+              "id": 612,
+              "uuid": "7419c7fc-c273-4edb-a077-0576bac44186",
+              "alias": "Dumbbell Corkscrew Press"
+            }
+          ],
+          "notes": [],
+          "license": 1,
+          "license_title": "",
+          "license_object_url": "",
+          "license_author": "trzr23",
+          "license_author_url": "",
+          "license_derivative_source_url": "",
+          "author_history": [
+            "trzr23"
+          ]
+        }
+      ],
+      "variation_group": "e3388987-305b-43b8-9e90-c3bce376b203",
+      "videos": [],
+      "author_history": [
+        "trzr23"
+      ],
+      "total_authors_history": [
+        "wgerjhn",
+        "jptjptjptjpt",
+        "trzr23",
+        "aom44ja6w@mozmail.com",
+        "bloody_disgrace"
+      ]
+    }
+  ]
+}
