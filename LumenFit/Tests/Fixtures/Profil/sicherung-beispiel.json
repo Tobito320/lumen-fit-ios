@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "erstellt": 1790496000,
+  "ops": [
+    {"id": "fx-gym-checkin", "art": "gym.checkin", "von": "fixture-geraet-a", "zeit": "2026-09-20T08:00:00.000Z",
+     "d": {"session": "fx-einheit", "tag": "push", "start": 811584000}},
+    {"id": "fx-gym-start", "art": "gym.uebung", "von": "fixture-geraet-a", "zeit": "2026-09-20T08:01:00.000Z",
+     "d": {"session": "fx-einheit", "plan": "p1", "uebung": "beispiel-bank", "status": "start"}},
+    {"id": "fx-gym-fertig", "art": "gym.uebung", "von": "fixture-geraet-a", "zeit": "2026-09-20T08:10:00.000Z",
+     "d": {"session": "fx-einheit", "plan": "p1", "uebung": "beispiel-bank", "status": "fertig",
+           "saetze": [{"wdh": 8, "kg": 60, "failure": false, "ok": true}, {"wdh": 8, "kg": 62.5, "failure": false, "ok": true}]}},
+    {"id": "fx-gym-checkout", "art": "gym.checkout", "von": "fixture-geraet-a", "zeit": "2026-09-20T09:00:00.000Z",
+     "d": {"session": "fx-einheit", "ende": 811587600, "status": "ende"}},
+    {"id": "fx-essen-hafer", "art": "essen.setzen", "von": "fixture-geraet-a", "zeit": "2026-09-20T07:00:00.000Z",
+     "d": {"id": "fx-essen-hafer", "datum": "2026-09-20", "mahlzeit": "fruehstueck", "menge": 60, "einheit": "g",
+           "lebensmittel": {"id": "eigen-fx-hafer", "name": "Beispiel-Haferflocken", "fluessig": false,
+                            "pro100": {"kcal": 370, "protein": 13, "kohlenhydrate": 59, "fett": 7}}}},
+    {"id": "fx-habit-wasser", "art": "habit.setzen", "von": "fixture-geraet-a", "zeit": "2026-09-20T18:00:00.000Z",
+     "d": {"art": "wasser", "datum": "2026-09-20", "wert": 6}}
+  ],
+  "einstellungen": {"thema": "wald", "erscheinung": "dunkel", "haptik": true, "gewichtsEinheit": "kg",
+                    "healthSchreiben": true, "bandAktiv": true, "loveaVerbunden": true, "mitteilungen": {}, "healthGefragt": true},
+  "ziele": {"schritte": 9000, "aktiveKcal": 500, "kalorien": 2300, "proteinGramm": 130, "schlafMinuten": 465,
+            "gymTageProWoche": 4, "wasserMl": 2600, "gewichtKg": 76.5, "art": "aufbauen"},
+  "koerper": {"groesseCm": 178, "geburtsjahr": 1998},
+  "essenZiele": {"kcal": 2300, "protein": 130, "kohlenhydrate": 260, "fett": 75, "geschlecht": 0, "alter": 28, "groesseCm": 178,
+                 "aktivitaet": 3, "richtung": 2, "tempo": 250, "makroProfil": 1, "fastenStunden": 16, "eingerichtet": 1, "extraKcal": 0, "extraTage": 0},
+  "freigaben": ["schritte", "gym"]
+}
