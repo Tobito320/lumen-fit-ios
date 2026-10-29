@@ -66,6 +66,8 @@ private struct TabsAnsicht: View {
                 }
             }
         }
+        // Medaillen aus Gym und Heute zeigen ihren Toast auf jedem Tab (die Seiten im Fortschritt hängen ihn auch an, gezeigt wird er nur einmal).
+        .fortschrittToast()
         .sheet(isPresented: Binding(get: { router.blatt != nil }, set: { if !$0 { router.blatt = nil } })) {
             if let blatt = router.blatt {
                 NavigationStack {
