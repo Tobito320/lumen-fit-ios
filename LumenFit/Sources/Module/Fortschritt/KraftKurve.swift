@@ -49,7 +49,7 @@ enum KraftKurve {
         }.sorted { $0.woche < $1.woche }
     }
 
-    /// Übungen mit gezählten Sätzen und Gewicht, die meistgemachte zuerst, bei Gleichstand nach Name. Eigene Übungen (nicht im Katalog) heißen nach ihrem Lauf-Namen.
+    /// Übungen mit gezählten Sätzen und Gewicht, die meistgemachte zuerst, bei Gleichstand nach Name. Übungen außerhalb des Katalogs (eigene Übungen) fehlen: sie haben keinen Namen und keine Muskelgruppe.
     static func uebungen(_ sessions: [GymSession], katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> [KraftUebung] {
         var einheiten: [String: Set<String>] = [:]
         var namen: [String: String] = [:]
