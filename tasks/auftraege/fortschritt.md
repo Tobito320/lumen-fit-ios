@@ -63,7 +63,7 @@ TESTS
 
 VOM GRUNDGERÜST NICHT PORTIERT (Stand Grundgerüst; Quelle bleibt Lovea, du holst es mit)
 - Lovea/Tests/WochenAbweichungTests: testWochenleisteZeigtVerlegtenTagAmNeuenTag (`KoerperWoche`, `KoerperLogik.Art`)
-- `MessPunkt`, `MessLogik`, `GewichtLogik`, `GewichtMittel` liegen schon in `Gemeinsam/Modelle/HealthLogik.swift` (nicht doppelt anlegen); die Tests dazu (HealthLogikTests) laufen im Grundgerüst
+- `MessPunkt`, `MessLogik`, `GewichtLogik`, `GewichtMittel` liegen schon in `Gemeinsam/Modelle/HealthLogik.swift` (nicht doppelt anlegen); sie haben im Grundgerüst keinen Test: `GewichtLogikTests` aus Lovea bringt das Modul fortschritt mit (gegen diese Typen)
 
 
 ABSCHLUSSBERICHT
