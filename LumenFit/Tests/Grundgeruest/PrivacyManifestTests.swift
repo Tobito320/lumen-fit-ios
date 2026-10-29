@@ -9,11 +9,13 @@ final class PrivacyManifestTests: XCTestCase {
         return try XCTUnwrap(PropertyListSerialization.propertyList(from: daten, format: nil) as? [String: Any])
     }
 
-    func testKeinTrackingKeineErhobenenDaten() throws {
+    func testKeinTrackingNurKontoDaten() throws {
         let m = try manifest()
         XCTAssertEqual(m["NSPrivacyTracking"] as? Bool, false)
         XCTAssertEqual((m["NSPrivacyTrackingDomains"] as? [Any])?.count, 0)
-        XCTAssertEqual((m["NSPrivacyCollectedDataTypes"] as? [Any])?.count, 0)
+        let erhoben = (m["NSPrivacyCollectedDataTypes"] as? [[String: Any]]) ?? []
+        XCTAssertEqual(Set(erhoben.compactMap { $0["NSPrivacyCollectedDataType"] as? String }), ["NSPrivacyCollectedDataTypeName", "NSPrivacyCollectedDataTypeDeviceID"], "Konto beim Server: nur Name und Gerätekennung")
+        for e in erhoben { XCTAssertEqual(e["NSPrivacyCollectedDataTypeTracking"] as? Bool, false) }
     }
 
     func testGenutzteRequiredReasonApisHabenEinenGrund() throws {
