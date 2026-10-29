@@ -1,0 +1,25 @@
+# Lumen-Fit-Server. Immer mit --env test oder --env live deployen (npm run deploy:test / deploy:live).
+# Secrets (wrangler secret put ... --env <env>, nie im Repo): APP_KEY, ADMIN_KEY, LOVEA_KEY. Siehe docs/research/konfiguration.md.
+name = "lumen-fit"
+main = "index.js"
+compatibility_date = "2026-09-23"
+
+[env.test]
+name = "lumen-fit-test"
+[[env.test.services]]
+binding = "LOVEA"
+service = "lovea-test"
+[[env.test.d1_databases]]
+binding = "DB"
+database_name = "lumen-fit-test"
+database_id = "ed3e9d71-fefa-4b6b-87ff-aa6aedb7d57b"
+
+[env.live]
+name = "lumen-fit-live"
+[[env.live.services]]
+binding = "LOVEA"
+service = "lovea-live"
+[[env.live.d1_databases]]
+binding = "DB"
+database_name = "lumen-fit-live"
+database_id = "32a9321e-b0ed-422e-93d2-9badf89d4331"

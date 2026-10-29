@@ -179,3 +179,21 @@ Nicht geprüft (nur CI, Portal oder Gerät beweisen es):
 - `POST /v1/users/<id>/relationships/visibleApps` mit dem Rumpf aus `testflight-gruppe.sh` (Form aus Lehre 5 abgeleitet, Antwortcode wird gemeldet).
 - Ob der Name "Lumen Fit" im App Store frei ist.
 - Die Annahmen in Abschnitt 8.
+
+## 10. Server-Secrets (Cloudflare Worker `lumen-fit`, Ordner `server/`)
+
+Stand 29.10.2026. Keine Werte hier, nur Namen und Orte. Die drei Secrets liegen als Worker-Secrets je Umgebung (`test`, `live`), gesetzt mit `wrangler secret put NAME --env test|live` (Wert über stdin, nie als Argument), nie im Repo, nie in Logs.
+
+| Secret | Zweck | Lokale Quelle (Arch, `chmod 600`) | Wer kennt es |
+|---|---|---|---|
+| `APP_KEY` | Header `X-App-Key` der App für `POST /konto`, `GET /config`, `/lovea/*` | `~/.config/lumenfit/app.key` | App (später in `PrivateDaten.json`), Server |
+| `ADMIN_KEY` | Header `X-Admin-Key` für `/admin/*` | `~/.config/lumenfit/admin.key` | nur MCP `lumenfit` und Server, nie die App |
+| `LOVEA_KEY` | Lovea-Zugang für den Proxy `/lovea/agent/ops` | `~/.config/lovea/lovea-app.key` (Lovea-Datei, nur gelesen) | nur der Server; die App bekommt ihn nie |
+
+Neu setzen oder drehen: Datei ändern, dann je Umgebung `tr -d '\n' < DATEI | npx wrangler secret put NAME --env live` im Ordner `server/`. `APP_KEY` drehen heißt neue App-Fassung (der Schlüssel steckt im Bundle); `ADMIN_KEY` und `LOVEA_KEY` lassen sich ohne Build tauschen.
+
+Konto-Geheimnisse (eines je Gerät) erzeugt die App selbst und legt sie in ihre Keychain; der Server speichert nur den SHA-256-Hash.
+
+Datenbanken (D1, kostenlos): `lumen-fit-test` (`ed3e9d71-fefa-4b6b-87ff-aa6aedb7d57b`), `lumen-fit-live` (`32a9321e-b0ed-422e-93d2-9badf89d4331`). Schema: `server/schema.sql`, einspielen mit `npx wrangler d1 execute lumen-fit-<env> --env <env> --remote --file schema.sql`.
+
+Deploy: `cd server && npm test && npm run deploy:test` (und `deploy:live`). Immer mit `--env`; die Datei hat bewusst keine Bindungen ohne Umgebung.

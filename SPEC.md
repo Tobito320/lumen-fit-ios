@@ -1099,3 +1099,27 @@ Weitergabe an Kollegen (Ahmed: "eine sehr gute App, die man ruhig mit mehr Kolle
 ## 17. Nicht-Ziele
 
 Wecker, Erinnerungen, Töne (eigene App); Konto-Server, Anmeldung über das Netz, Passwort-Reset per Mail; Live-Freunde-Feed, Wettbewerbe, Push von Gerät zu Gerät; Apple Watch, iPad, Mac, Android; Fitness+-artige Videos; ECG, biologisches Alter, Blutdruck, Glukose; Foto-Erkennung ganzer Mahlzeiten durch ein Modell; Kaufen, Abos, Werbung; Zyklus-Daten (bleiben in Lovea); Chat, Snaps, Karte, Kalender, Dates, Figur, Shop, Spiele (bleiben in Lovea).
+
+## 18. Server (Einstellungen ohne Build, Lovea-Freigabe)
+
+Stand 29.10.2026. Kleiner Cloudflare-Worker `lumen-fit` in `server/` (Muster: Lovea-Server). Er ersetzt nicht die lokale Datenhaltung und ist kein Login: Passwörter und Trainingsdaten bleiben auf dem Gerät. Er kennt nur ein Konto je Gerät, damit Einstellungen und die Lovea-Freigabe ohne neuen Build änderbar sind (Grund: Ahmed 29.10., zweites Profil sperren, Lovea-Verbinden nur für ihn und Annika).
+
+URLs: test `https://lumen-fit-test.ahmedhdplay12345.workers.dev`, live `https://lumen-fit-live.ahmedhdplay12345.workers.dev`. Speicher: D1 (`lumen-fit-test`, `lumen-fit-live`). Secrets: `docs/research/konfiguration.md` Abschnitt 10.
+
+### 18.1 Konten
+`POST /konto` (Header `X-App-Key`), JSON `{id, geheimnis, name, version}`. Die App erzeugt `id` (16 bis 64 Zeichen `A-Za-z0-9_-`) und `geheimnis` (32 bis 128 Zeichen, zufällig, in die Keychain) selbst. Server speichert nur SHA-256(geheimnis), Name (bis 40), Version, erstellt, zuletzt gesehen. Antworten: 201, 400 Form, 409 ID vergeben, 429 mehr als 200 Konten.
+
+### 18.2 App-Wege
+Header bei jedem Aufruf: `X-App-Key`, `X-Konto` (id), `X-Geheimnis`; optional `X-App-Version` (wird gespeichert). Unbekannte ID, falsches Geheimnis und fehlender App-Key sehen gleich aus: 401. Gesperrtes Konto: 403.
+- `GET /config` -> `{"config": {...}}`: Standard, dann globale Schalter, dann Schalter des Kontos (Konto gewinnt). Start: `profilAnlegenErlaubt` (global false), `loveaVerbinden` (false), `nameAendernTage` (7). Weitere Schlüssel beliebig (JSON); die App ignoriert unbekannte und nutzt bei Netzfehler den letzten gespeicherten Stand, sonst die Standardwerte.
+- `GET /lovea/freigabe` -> `{"erlaubt": true, "person": "ahmed"|"annika"}` oder `{"erlaubt": false}`.
+- `GET /lovea/agent/ops?seit=&limit=&aufsteigend=1&voll=1`: Proxy auf Lovea `GET /agent/ops`, genau wie der Import ihn erwartet (Antwort `{ops: [...], mehr}`), nur bei Freigabe, sonst 403. `von` und Person setzt der Server aus dem Konto (die App kann keine andere Person verlangen), `limit` höchstens 200, andere Parameter und Pfade gibt es nicht. Fehler von Lovea werden zu 502 ohne Inhalt. Der Lovea-Schlüssel verlässt den Server nie. Für den Import: `ProfilLoveaZugang.server` = `<Server>/lovea`, Header `X-App-Key`, `X-Konto`, `X-Geheimnis` statt `X-Lovea-Key`.
+
+### 18.3 Freigabe Lovea
+`loveaVerbinden` gilt nur, wenn das Konto selbst es auf true setzt UND `lovea_person` gesetzt ist; ein globaler Wert wird ignoriert und der Server lehnt `loveaVerbinden` global ab. Freigeben nur für Ahmeds und Annikas Konto.
+
+### 18.4 Verwaltung
+`/admin/*` nur mit `X-Admin-Key` (kein App-Key): `GET /admin/konten`, `PATCH /admin/konto/<id>` (`einstellungen` als Merge-Patch, null löscht; `lovea_person`; `gesperrt`), `PATCH /admin/config` (global). Agenten benutzen den MCP-Server `lumenfit` (`server/mcp.mjs`, `http://127.0.0.1:8935/mcp`): `lumenfit_konten`, `lumenfit_konto_setzen`, `lumenfit_config_setzen`, `lumenfit_konto_sperren`.
+
+### 18.5 Prüfen
+`cd server && npm test` (node --test). Deploy `npm run deploy:test`, `npm run deploy:live`.
