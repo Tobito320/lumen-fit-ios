@@ -14,7 +14,7 @@ final class VerlaufOhneSaetzeTests: XCTestCase {
     // MARK: - Helfer
 
     private func op(_ art: String, _ d: GymD, _ zeit: Date) -> Op {
-        Op(id: UUID().uuidString, art: art, von: .testA, zeit: zeit, d: try! JSONEncoder().encode(d))
+        Op(id: UUID().uuidString, art: art, von: .testA, zeit: zeit, d: (try? JSONEncoder().encode(d)) ?? Data())
     }
 
     private func satz(ok: Bool? = true, typ: String? = nil) -> PlanSatz {
