@@ -129,8 +129,9 @@ struct PersoenlicherBereich: Equatable, Sendable {
         guard let jetzt = aktuellerWert(werte, art: art, heute: heute) else { return nil }
         let basis = Array(werteImFenster(werte, art: art, heute: heute).filter { $0.key != jetzt.tag }.values)
         guard basis.count >= mindestWerte else { return nil }
-        let mittel = basis.reduce(0, +) / Double(basis.count)
-        let varianz = basis.reduce(0) { $0 + ($1 - mittel) * ($1 - mittel) } / Double(basis.count - 1)
+        let mittel: Double = basis.reduce(0, +) / Double(basis.count)
+        let quadrate: Double = basis.reduce(0) { (summe: Double, wert: Double) in summe + (wert - mittel) * (wert - mittel) }
+        let varianz: Double = quadrate / Double(basis.count - 1)
         return PersoenlicherBereich(art: art, mittel: mittel, streuung: varianz.squareRoot(), anzahl: basis.count, aktuell: jetzt.wert, aktuellTag: jetzt.tag)
     }
 

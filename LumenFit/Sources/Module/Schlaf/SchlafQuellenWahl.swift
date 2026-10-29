@@ -90,8 +90,9 @@ enum SchlafQuellenWahl {
     static func waehle(health: [String: SchlafNacht], band: [BandSchlafOp]) -> [SchlafGewaehlteNacht] {
         var bandJeTag: [String: SchlafNacht] = [:]
         for op in band { if let n = nacht(band: op) { bandJeTag[op.tag] = n } }
-        var kandidaten = health.values.map { Kandidat(nacht: $0, quelle: quelle(health: $0)) }
-            + bandJeTag.values.map { Kandidat(nacht: $0, quelle: .band) }
+        // Zwei einfache Zeilen statt einer Summe aus zwei Closures: der Typprüfer braucht dann keine Ratearbeit.
+        var kandidaten: [Kandidat] = health.values.map { Kandidat(nacht: $0, quelle: quelle(health: $0)) }
+        kandidaten += bandJeTag.values.map { Kandidat(nacht: $0, quelle: .band) }
         kandidaten.sort { ($0.nacht.von, $0.quelle.rang) < ($1.nacht.von, $1.quelle.rang) }
         var gruppen: [[Kandidat]] = []
         for k in kandidaten {

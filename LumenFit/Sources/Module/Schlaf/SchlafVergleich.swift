@@ -105,11 +105,10 @@ enum SchlafVergleich {
                 return SchlafUrteil(quelle: healthZuKurz ? .band : .health, wert: healthZuKurz ? b : h, grund: .ausreisser)
             }
             let gewicht = hoechstGewicht * streuungsHalbwert / (streuungsHalbwert + streuung)
-            let gemischt = SchlafWert(
-                von: mischen(h.von, b.von.addingTimeInterval(-einschlafen * 60), gewicht),
-                bis: mischen(h.bis, b.bis.addingTimeInterval(-aufwachen * 60), gewicht),
-                minuten: max(0, Int((Double(h.minuten) * (1 - gewicht) + (Double(b.minuten) - dauer) * gewicht).rounded()))
-            )
+            let von: Date = mischen(h.von, b.von.addingTimeInterval(-einschlafen * 60), gewicht)
+            let bis: Date = mischen(h.bis, b.bis.addingTimeInterval(-aufwachen * 60), gewicht)
+            let mischMinuten: Double = Double(h.minuten) * (1 - gewicht) + (Double(b.minuten) - dauer) * gewicht
+            let gemischt = SchlafWert(von: von, bis: bis, minuten: max(0, Int(mischMinuten.rounded())))
             return SchlafUrteil(quelle: .gemischt, wert: gemischt, grund: .gemischt(bandProzent: Int((gewicht * 100).rounded())))
         }
     }

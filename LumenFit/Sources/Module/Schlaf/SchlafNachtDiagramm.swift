@@ -8,7 +8,9 @@ struct SchlafNachtDiagramm: View {
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
 
-    private static let zeilenHoehe: CGFloat = 26
+    /// Zeilenhöhe und Breite der Namensspalte wachsen mit der Schriftgröße, sonst ragen die Namen bei großer Schrift aus ihrer Zeile.
+    @ScaledMetric(relativeTo: .caption) private var zeilenHoehe: CGFloat = 26
+    @ScaledMetric(relativeTo: .caption) private var spaltenBreite: CGFloat = 44
 
     var body: some View {
         let zeilen = nacht.phasen
@@ -18,7 +20,7 @@ struct SchlafNachtDiagramm: View {
         let von = nacht.von
         let spanne = max(nacht.bis.timeIntervalSince(nacht.von), 1)
         let abschnitte = nacht.abschnitte
-        let hoehe = Self.zeilenHoehe
+        let hoehe = zeilenHoehe
         VStack(alignment: .leading, spacing: Abstand.xs) {
             HStack(alignment: .top, spacing: Abstand.s) {
                 VStack(alignment: .trailing, spacing: 0) {
@@ -26,7 +28,9 @@ struct SchlafNachtDiagramm: View {
                         Text(phase.name)
                             .font(.caption.weight(.medium))
                             .foregroundStyle(palette.text2)
-                            .frame(height: hoehe)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(width: spaltenBreite, height: hoehe, alignment: .trailing)
                     }
                 }
                 .accessibilityHidden(true)
@@ -54,7 +58,7 @@ struct SchlafNachtDiagramm: View {
             .font(.caption.weight(.medium))
             .monospacedDigit()
             .foregroundStyle(palette.text2)
-            .padding(.leading, 52)
+            .padding(.leading, spaltenBreite + Abstand.s)
             .accessibilityHidden(true)
         }
         .accessibilityElement(children: .ignore)

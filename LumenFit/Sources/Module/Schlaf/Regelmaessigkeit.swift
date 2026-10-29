@@ -58,8 +58,9 @@ enum Regelmaessigkeit {
         let ab = Datum.addTage(heute, -(fenster - 1))
         let werte = naechte.filter { $0.tag >= ab && $0.tag <= heute }.map { Double(SchlafFormat.bettSkala($0.von)) }
         guard werte.count >= mindestNaechte else { return nil }
-        let mittel = werte.reduce(0, +) / Double(werte.count)
-        let varianz = werte.reduce(0) { $0 + ($1 - mittel) * ($1 - mittel) } / Double(werte.count)
+        let mittel: Double = werte.reduce(0, +) / Double(werte.count)
+        let quadrate: Double = werte.reduce(0) { (summe: Double, wert: Double) in summe + (wert - mittel) * (wert - mittel) }
+        let varianz: Double = quadrate / Double(werte.count)
         let streuung = varianz.squareRoot()
         let score = Int((100 * max(0, 1 - streuung / streuungNull)).rounded())
         return Ergebnis(score: score, streuungMinuten: Int(streuung.rounded()), typischeBettzeit: Int(mittel.rounded()), naechte: werte.count)

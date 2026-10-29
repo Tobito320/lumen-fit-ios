@@ -34,8 +34,8 @@ struct SchlafWerteChips: View {
                     .foregroundStyle(tief)
                 Text(stand.aktuell.map { SchlafVitalInfo.text(stand.art, $0.wert) } ?? "Keine Daten")
                     .font(.title3.weight(.bold))
-                    .fontDesign(.rounded)
                     .monospacedDigit()
+                    .fontDesign(.rounded)
                     .foregroundStyle(palette.text)
                 if stand.aktuell != nil {
                     HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
@@ -117,7 +117,7 @@ struct SchlafBereichKarte: View {
         return GeometryReader { geo in
             let breite = geo.size.width
             ZStack(alignment: .leading) {
-                Capsule().fill(palette.haar).frame(height: 10)
+                Capsule().fill(palette.haar).overlay(Capsule().stroke(palette.rand, lineWidth: 1)).frame(height: 10)
                 Capsule().fill(tief.opacity(0.3))
                     .overlay(Capsule().stroke(tief, lineWidth: 1))
                     .frame(width: breite * 0.5, height: 14)
@@ -178,14 +178,14 @@ struct SchlafRegelKarte: View {
                 Text("Regelmäßigkeit").font(.headline).foregroundStyle(palette.text)
                 if let ergebnis {
                     HStack(alignment: .firstTextBaseline, spacing: Abstand.s) {
-                        Text("\(ergebnis.score)").font(.title.weight(.bold)).fontDesign(.rounded).monospacedDigit().foregroundStyle(palette.text)
+                        Text("\(ergebnis.score)").font(.title.weight(.bold)).monospacedDigit().fontDesign(.rounded).foregroundStyle(palette.text)
                         Text("von 100").font(.subheadline).foregroundStyle(palette.text2)
                         Spacer(minLength: Abstand.s)
                         Label(ergebnis.stufe.name, systemImage: ergebnis.stufe.symbolName).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
                     }
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(palette.haar)
+                            Capsule().fill(palette.haar).overlay(Capsule().stroke(palette.rand, lineWidth: 1))
                             Capsule().fill(tief).frame(width: geo.size.width * CGFloat(ergebnis.score) / 100)
                         }
                     }
