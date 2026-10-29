@@ -839,6 +839,14 @@ extension View {
 
 **Test-Hilfen des Grundgerüsts** (`LumenFit/Tests/Grundgeruest/TestHilfen.swift`, nicht ändern; eigene Helfer mit eigenem Namen im Modulordner): `TestUhr` (`lesen`, `vor(sekunden:)`), `FakeHealthLeser` (feste Reihen), `SkriptLader` (liefert Antworten aus Fixture-Dateien, zählt Aufrufe), `SpeicherSchluesselbund` (liegt in `Sources/Konto/`, weil er auch der Rückfall ist), `FakeMitteiler`, `FakeLiveAnzeige`, `FakeBandDienst`, `FakeCoachMotor`, `FakePartnerAustausch`, `XCTestCase.tempOrdner()` (frischer Ordner, wird gelöscht), `TestDaten` (erfundenes Profil "Beispiel", Beispiel-Ops für Gym, Essen, Habits), `FixtureOrt` (Fixtures nur darüber). Umgebung in Tests: `AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)`; in Views: `@Environment(AppUmgebung.self) private var umgebung`.
 
+**Abweichungen und Ergänzungen des Grundgerüsts (gebaut, CI grün; Namen und Parameter der Skizzen oben gelten sonst unverändert)**
+- `Op` hat kein `seq` (`Op(id:art:von:zeit:d:)`). Wo Lovea nach `seq` entschied, gewinnt die zuletzt eingetroffene Op (`HealthFaltung.gewinner`, `HabitFaltung`); `TagesEintrag.seq` und `ZielAenderung.seq` bleiben als optionale Felder (im lokalen Log immer `nil`). Die Anlege-Reihenfolge der Habits ist die des Eintreffens.
+- `Datum.datum(_:)` liefert bei kaputtem Text den 01.01.1970 statt eines Absturzes. `RouteURL` kodiert Werte selbst (nur `A-Z a-z 0-9 - . _ ~` bleiben); ein leerer Text zählt als fehlend. `Einstellungen` und `Ziele` lesen unbekannte oder falsch typisierte Werte als Standard.
+- `SplitLogik.fuer(_:)` und `vorschlag(_:...)` nehmen `Geschlecht?` statt `Person` (weiblich: Gruppe "w", sonst "m"); "Für dich" sind die Splits mit ids `m-empf…`.
+- Zusätzlich im Grundgerüst, weil andere Dateien sie brauchen: `MessPunkt`, `MessLogik`, `GewichtLogik`, `GewichtMittel` (`HealthLogik.swift`), `GymTageLogik`, `Mikro`, `HaushaltsMasse`, `UebungsKatalog.suchen` mit `UebungenSynonyme`, `BundleAnker` (App, für `Bundle(for:)` in Tests).
+- Nicht im Grundgerüst, sondern bei den Modulen: `WorkoutLogik`, `RekordLogik`, `ZeitSchaetzung` (damit auch `GymStartLogik.umfang`), `SplitFrei`, `GymStartStand`, `KoerperWoche`, `FoodRating`, Orte und Studio, die Ansichts-Typen von Essen. Die zugehörigen Lovea-Tests stehen in `tasks/auftraege/*.md` unter "VOM GRUNDGERÜST NICHT PORTIERT".
+- Test-Hilfen zusätzlich: `ProfilID.testA`, `.testB`, `.testAlle`; `SkriptLader(fixture:_:)` und `SkriptLader.fehler(_:)`; `TestDaten.gymOps`, `essenOps`, `habitOps`, `op(_:_:von:zeit:id:)`; `FixtureOrt.url/daten`.
+
 **Stubs je Modul** (Grundgerüst legt die Dateien an; das Modul ersetzt ihren Inhalt und darf in seinem Ordner weitere Dateien anlegen). Jedes `*Modul` hat `@MainActor static func start(_ umgebung: AppUmgebung)` (idempotent) und `@MainActor static func demoSaat(_ umgebung: AppUmgebung)` (füllt für `-lumenFitDemo` ein glaubwürdiges Bild; erfundene Werte). Der Stub einer Ansicht zeigt Lumi mit "Kommt bald".
 
 | Modul | Ordner unter `LumenFit/Sources/Module/` | Stub-Dateien und feste Typnamen |
@@ -1058,6 +1066,8 @@ Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktr
 27. **Namens-Gate:** die Namensliste liegt außerhalb des Git, damit nirgends im Repo ein Name steht (einzige Ausnahme: das Zitat in Abschnitt 0); CI sieht sie nicht, das Gate läuft lokal und streng vor jedem öffentlichen Fenster.
 28. **Health-Zugriff-Seite:** zeigt "Daten da" oder "keine Daten", nie "erlaubt" oder "abgelehnt" für Lesetypen (HealthKit verrät es nicht).
 29. **Sicherung auf neues Gerät:** beim Einspielen werden die Ops dem Zielprofil zugeordnet (`von` wird umgeschrieben), sonst wären sie für das neue Profil unsichtbar. Die Sicherung ist eine Datei, kein Dienst: wer sie nie zieht, verliert Trainings bei einer Neuinstallation.
+30. **Kein `seq` im lokalen Log:** Faltungen entscheiden nach Eintreffen der Ops (die zuletzt eingetroffene gewinnt). Das ist im einen lokalen Log eindeutig; bei einem späteren Import fremder Ops (Annahme 22) muss die Reihenfolge der Quelle erhalten bleiben.
+31. **App-Icon:** ein einzelner offener Bogen mit grünem Punkt auf Schwarz, wie `design.md` Abschnitt 10 es erlaubt (einzelne Form, kein Ringsatz). Die Zeile in Abschnitt 6 ("kein Bogen im App-Icon", Annahme 15) widerspricht dem; ob Review den Bogen beanstandet, ist ungeprüft, der Ersatz ist ein Lumi-Icon (nur die PNG tauschen).
 
 ## 16. Offene Punkte und Folgearbeit
 

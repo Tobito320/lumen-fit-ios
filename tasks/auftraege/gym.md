@@ -13,7 +13,7 @@ DEINE ORDNER (nur hier schreiben; alles andere ist tabu)
 - LumenFit/Tests/Fixtures/Gym/
 
 DU NUTZT AUS DEM GRUNDGERÜST (Namen stehen in SPEC 5.9)
-- `AppUmgebung.daten.training` (`TrainingStore`: Port von Loveas `TrainingModell`: `plan`, `sessions`, `laufende`, `heutigerTag`, `planSichern`, `einchecken(tag:)`, `starten`, `saetzeSenden`, `fertig`, `tauschen`, `auschecken`, Cardio, Studio-Besuche; ohne `Person`-Parameter)
+- `AppUmgebung.daten.training` (`TrainingStore`: Port von Loveas `TrainingModell`: `plan`, `sessions`, `laufende`, `heutigerTag`, `planSichern`, `einchecken(tag:)`, `starten`, `saetzeSenden`, `fertig`, `tauschen`, `auschecken`, Cardio; ohne `Person`-Parameter; Studio-Besuche und Orte gibt es im Store nicht, sie kommen mit dem Modul)
 - Lovea-Typen im Grundgerüst: `TrainingsPlan`, `TrainingsTag`, `PlanUebung`, `PlanSatz` (hat `typ`, `rpe`, `ok`, `sek`, `pause`), `GymD`, `GymSession`, `UebungsLauf`, `Uebung`, `UebungsKatalog`, `SplitVorlage`, `SplitLogik`, `WochenLogik`, `RuhetagLogik`, `CardioEintrag`
 - Ports: `trainingSteuerung` (du setzt sie in `GymModul.start`), `liveAnzeige.training(_:)` mit `TrainingLiveStand`, `band.vibriere(.pauseEnde)`, `healthSchreiber.speichere(training:)`, `ereignisse` (`trainingGestartet`, `satzFertig`, `trainingBeendet`), `uhr`
 - Stubs, die du ersetzt: `GymModul`, `GymTabView(bereich:)`, `UebungDetailView(id:)`. Stub, den du einbettest: `FortschrittSegmentView`
