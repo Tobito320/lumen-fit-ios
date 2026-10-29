@@ -72,6 +72,7 @@ private struct TabsAnsicht: View {
             if let blatt = router.blatt {
                 NavigationStack {
                     RouteAnsicht(route: blatt)
+                        .toggleStyle(.lumenSchalter)
                         .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { router.blatt = nil } } }
                 }
             }

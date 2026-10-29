@@ -1,15 +1,37 @@
 import SwiftUI
 
-/// Schalter wie das System, nur die Farbe der "an"-Spur kommt aus der Palette. Im dunklen Monochrom und Graphit ist der Akzent weiß: die Spur
-/// wäre weiß wie der Knopf, der Zustand nur an der Lage des Knopfs zu erkennen (CI-Bild "Verbindungen"). Dort bekommt die Spur `text2`.
+/// Schalter aus der Palette: "an" ist die Akzentfläche mit Knopf in `aufAkzent`, "aus" eine blasse Spur mit Knopf in `text2`.
+/// Der Systemschalter malt die "an"-Spur im Akzent und den Knopf immer weiß: im dunklen Monochrom und Graphit ist der Akzent weiß,
+/// der Zustand war nur noch an der Lage des Knopfs zu erkennen (CI-Bild "Verbindungen"). Maße wie beim System (51 x 31 pt).
 struct LumenSchalterStil: ToggleStyle {
     @Environment(\.palette) private var palette
-    @Environment(\.lumenThema) private var thema
-    @Environment(\.colorScheme) private var schema
+    @Environment(\.isEnabled) private var aktiv
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
-        let akzentIstWeiss = schema == .dark && (thema == .monochrom || thema == .graphit)
-        Toggle(configuration).tint(akzentIstWeiss ? palette.text2 : palette.akzent)
+        Button { configuration.isOn.toggle() } label: {
+            HStack(spacing: Abstand.m) {
+                configuration.label
+                Spacer(minLength: Abstand.s)
+                spur(an: configuration.isOn)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(configuration.isOn ? "An" : "Aus")
+    }
+
+    private func spur(an: Bool) -> some View {
+        Capsule()
+            .fill(an ? palette.akzent : palette.text2.opacity(0.35))
+            .frame(width: 51, height: 31)
+            .overlay(alignment: an ? .trailing : .leading) {
+                Circle().fill(an ? palette.aufAkzent : palette.text2).padding(3)
+            }
+            .animation(reduceMotion ? nil : Feder.schnell, value: an)
+            .opacity(aktiv ? 1 : 0.4)
+            .accessibilityHidden(true)
     }
 }
 
