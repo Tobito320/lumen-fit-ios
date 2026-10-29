@@ -63,11 +63,24 @@ enum ProfilLoeschen {
         loesche(umgebung, id: id) { umgebung.profil.setzeZurueck(id) }
     }
 
+    /// Wie `fuehreAus`, aber die Passwort-Prüfung rechnet abseits des Hauptthreads. Die Oberfläche nutzt diese.
+    static func fuehreAusImHintergrund(_ umgebung: AppUmgebung, passwort: String) async -> Bool {
+        guard let aktiv = umgebung.profil.aktiv else { return false }
+        let ordner = umgebung.profilOrdner(aktiv.id)
+        guard await umgebung.profil.loescheImHintergrund(aktiv.id, passwort: passwort) else { return false }
+        raeumeAuf(ordner)
+        return true
+    }
+
     private static func loesche(_ umgebung: AppUmgebung, id: ProfilID, imStore: () -> Bool) -> Bool {
         let ordner = umgebung.profilOrdner(id)
         guard imStore() else { return false }
+        raeumeAuf(ordner)
+        return true
+    }
+
+    private static func raeumeAuf(_ ordner: URL) {
         try? FileManager.default.removeItem(at: ordner)
         ProfilSicherungLogik.raeumeTempAuf()
-        return true
     }
 }

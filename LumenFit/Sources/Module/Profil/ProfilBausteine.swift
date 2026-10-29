@@ -102,7 +102,7 @@ struct ProfilPasswortBlatt: View {
     var neuTitel: String?
     /// Mit einem Profil zeigt das Blatt "Passwort vergessen?" und öffnet das Zurücksetzen dieses Profils (ohne Passwort, nach zwei Bestätigungen).
     var zuruecksetzen: Profil?
-    let pruefen: @MainActor (_ passwort: String, _ neu: String) -> Bool
+    let pruefen: @MainActor (_ passwort: String, _ neu: String) async -> Bool
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.palette) private var palette
@@ -112,9 +112,11 @@ struct ProfilPasswortBlatt: View {
     @State private var versuche: CGFloat = 0
     @State private var falsch = false
     @State private var zeigeZuruecksetzen = false
+    /// Die Prüfung läuft abseits des Hauptthreads; solange sie rechnet, ist der Knopf aus.
+    @State private var rechnet = false
     @FocusState private var fokus: Bool
 
-    private var bereit: Bool { !passwort.isEmpty && (neuTitel == nil || neu.count >= Passwort.mindestLaenge) }
+    private var bereit: Bool { !rechnet && !passwort.isEmpty && (neuTitel == nil || neu.count >= Passwort.mindestLaenge) }
 
     var body: some View {
         NavigationStack {
@@ -177,12 +179,17 @@ struct ProfilPasswortBlatt: View {
 
     private func absenden() {
         guard bereit else { return }
-        if pruefen(passwort, neu) {
-            dismiss()
-        } else {
-            falsch = true
-            passwort = ""
-            if reduceMotion { versuche += 1 } else { withAnimation(.linear(duration: 0.4)) { versuche += 1 } }
+        rechnet = true
+        Task {
+            let ok = await pruefen(passwort, neu)
+            rechnet = false
+            if ok {
+                dismiss()
+            } else {
+                falsch = true
+                passwort = ""
+                if reduceMotion { versuche += 1 } else { withAnimation(.linear(duration: 0.4)) { versuche += 1 } }
+            }
         }
     }
 }

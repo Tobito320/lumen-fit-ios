@@ -104,14 +104,14 @@ struct ProfilBlattView: View {
             case .passwortAendern:
                 ProfilPasswortBlatt(titel: "Passwort ändern", erklaerung: "Gib dein aktuelles und dein neues Passwort ein.", knopf: "Passwort ändern",
                                     neuTitel: "Neues Passwort") { alt, neu in
-                    let ok = umgebung.profil.aenderePasswort(alt: alt, neu: neu)
+                    let ok = await umgebung.profil.aenderePasswortImHintergrund(alt: alt, neu: neu)
                     if ok { toast = ToastInhalt(titel: "Passwort geändert", zeile: nil, stimmung: .stolz) }
                     return ok
                 }
             case .wechseln(let ziel):
                 ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln", erklaerung: "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
                                     zuruecksetzen: ziel) { passwort, _ in
-                    umgebung.profil.wechsle(zu: ziel.id, passwort: passwort)
+                    await umgebung.profil.wechsleImHintergrund(zu: ziel.id, passwort: passwort)
                 }
             case .anlegen:
                 ProfilAnlegenBlatt()
@@ -163,6 +163,7 @@ struct ProfilAnlegenBlatt: View {
     @State private var name = ""
     @State private var passwort = ""
     @State private var fehler: String?
+    @State private var rechnet = false
 
     var body: some View {
         NavigationStack {
@@ -181,6 +182,7 @@ struct ProfilAnlegenBlatt: View {
                 Button(action: anlegen) { Text("Profil anlegen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                     .buttonStyle(.borderedProminent)
                     .foregroundStyle(palette.aufAkzent)
+                    .disabled(rechnet)
                 Spacer()
             }
             .padding(Abstand.l)
@@ -193,15 +195,20 @@ struct ProfilAnlegenBlatt: View {
     }
 
     private func anlegen() {
-        do {
-            try umgebung.profil.anlegen(name: name, passwort: passwort)
-            dismiss()
-        } catch ProfilFehler.nameLeer {
-            fehler = "Wie soll das Profil heißen?"
-        } catch ProfilFehler.passwortZuKurz {
-            fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
-        } catch {
-            fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
+        guard !rechnet else { return }
+        rechnet = true
+        Task {
+            defer { rechnet = false }
+            do {
+                try await umgebung.profil.anlegenImHintergrund(name: name, passwort: passwort)
+                dismiss()
+            } catch ProfilFehler.nameLeer {
+                fehler = "Wie soll das Profil heißen?"
+            } catch ProfilFehler.passwortZuKurz {
+                fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
+            } catch {
+                fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
+            }
         }
     }
 }
@@ -217,7 +224,7 @@ struct ProfilLoeschenBlatt: View {
         if weiter {
             ProfilPasswortBlatt(titel: "Alles löschen", erklaerung: "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen.",
                                 knopf: "Alles löschen", zerstoererisch: true, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
-                ProfilLoeschen.fuehreAus(umgebung, passwort: passwort)
+                await ProfilLoeschen.fuehreAusImHintergrund(umgebung, passwort: passwort)
             }
         } else {
             NavigationStack {

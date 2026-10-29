@@ -49,6 +49,12 @@ struct CoachChatView: View {
             modell.beiVordergrund()
             if let frage { modell.senden(frage) }
         }
+        .task(id: umgebung.router.coachEntwurf) {
+            guard let text = umgebung.router.coachEntwurf else { return }
+            modell.entwurf = String(text.prefix(CoachModell.maxZeichen))
+            umgebung.router.coachEntwurf = nil
+            fokus = true
+        }
         .task {
             for await ereignis in umgebung.ereignisse.strom() {
                 if case .vordergrund = ereignis {

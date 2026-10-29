@@ -71,9 +71,9 @@ struct BandQuelleAbschnitt: View {
         case .partner:
             "Ein Puls, wenn dein Partner etwas teilt (Gym, Ziel, Rekord, Schlaf). Braucht die Verbindung mit Lovea."
         case .wunsch:
-            "Wenn dein Partner in Lovea eine Vibration wünscht. Lumen Fit führt sie aus, sobald es läuft; ein Wunsch, der älter als 15 Minuten ist, verfällt."
+            VerbindenTexte.wunschFuss()
         case .gymPause:
-            "Wenn die Pause im offenen Training abläuft. Mit gesperrtem iPhone bleibt nur die Mitteilung auf dem Handy."
+            VerbindenTexte.pauseFuss
         case .gymPuls:
             "Nur im laufenden Training und nur mit Puls vom Band. Der Puls kommt im Takt der Pulsmessung (alle paar Minuten), nicht sofort."
         }

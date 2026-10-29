@@ -185,7 +185,7 @@ struct OnboardingView: View {
         arbeitet = true
         Task {
             if mitHealth { await fluss.healthFragen(leser: umgebung.healthLeser) }
-            fluss.abschliessen(in: umgebung)
+            await fluss.abschliessenImHintergrund(in: umgebung)
             arbeitet = false
         }
     }

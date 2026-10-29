@@ -66,7 +66,7 @@ private struct VerbindungenInhalt: View {
     // MARK: Freigaben und Vorschau
 
     private var freigabenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Das teilst du", fuss: "Standard: nichts. Dein Partner sieht nur, was du hier einschaltest, und immer nur eine Zusammenfassung von heute.") {
+        VerbindenAbschnitt(titel: "Das teilst du", fuss: VerbindenTexte.freigabenFuss()) {
             ForEach(FreigabeArt.allCases, id: \.self) { art in
                 Toggle(isOn: freigabe(art)) {
                     HStack(spacing: Abstand.m) {
@@ -96,7 +96,7 @@ private struct VerbindungenInhalt: View {
     private var vorschauAbschnitt: some View {
         let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau().map(FreigabenVorschau.zeilen) ?? []
         return VerbindenAbschnitt(titel: "Das sieht dein Partner",
-                                  fuss: "Genau diese Zeilen stehen in der Datei für Lovea, dazu Meldungen wie \"im Gym\", soweit die Art freigegeben ist.") {
+                                  fuss: VerbindenTexte.vorschauFuss()) {
             if verbindung.freigaben.isEmpty {
                 Text("Nichts. Du teilst noch keine Daten.").foregroundStyle(palette.text2)
             } else if zeilen.isEmpty {
@@ -116,7 +116,7 @@ private struct VerbindungenInhalt: View {
     // MARK: Mitteilungen
 
     private var mitteilungenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Mitteilungen", fuss: "Wenn dein Partner etwas teilt, zeigt Lumen Fit eine Mitteilung, einmal je Ereignis.") {
+        VerbindenAbschnitt(titel: "Mitteilungen", fuss: VerbindenTexte.mitteilungenFuss) {
             ForEach(Self.ereignisArten, id: \.self) { art in
                 Toggle(PartnerEreignisRegeln.name(art), isOn: Binding(
                     get: { PartnerEreignisRegeln.an(art, einstellungen.werte) },

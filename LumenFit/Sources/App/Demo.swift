@@ -17,7 +17,7 @@ extension AppUmgebung {
         }
         ModulStart.saeDemo(umgebung)
         if let tab = argumente.tab { umgebung.router.tab = tab }
-        if let link = argumente.route, let url = URL(string: link) { umgebung.router.oeffne(url: url) }
+        if let link = argumente.route, let url = URL(string: link) { umgebung.router.oeffne(url: url, vertraut: true) }
         return umgebung
     }
 }

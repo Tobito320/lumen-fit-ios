@@ -8,6 +8,8 @@ final class Router {
     var tab: LumenFitTab = .heute
     var pfade: [LumenFitTab: [Route]] = [:]
     var blatt: Route?
+    /// Ein Coach-Text aus einem Link von außen (Annahme 34): landet im Eingabefeld und wird nie von selbst gesendet.
+    var coachEntwurf: String?
 
     func oeffne(_ route: Route) {
         switch route {
@@ -24,10 +26,16 @@ final class Router {
     }
 
     /// Öffnet einen `lumenfit://`-Link. false, wenn er keine Seite der App ist.
+    /// Ein fremder Link darf dem Coach keine Frage stellen: ohne `vertraut` wird `coach?frage=` zum Entwurf im Eingabefeld. Nur der Demo-Start ist vertraut.
     @discardableResult
-    func oeffne(url: URL) -> Bool {
+    func oeffne(url: URL, vertraut: Bool = false) -> Bool {
         guard let route = RouteURL.route(aus: url) else { return false }
-        oeffne(route)
+        if !vertraut, case .coach(let frage?) = route {
+            coachEntwurf = frage
+            oeffne(.coach(frage: nil))
+        } else {
+            oeffne(route)
+        }
         return true
     }
 

@@ -32,7 +32,6 @@ struct EssenRateFenster: Sendable {
 actor OpenFoodFactsQuelle {
     static let produktLimit = 15
     static let sucheLimit = 10
-    static let projektAdresse = "https://github.com/Tobito320/lumen-fit-ios"
 
     private let lader: any HTTPLader
     private let uhr: Uhr
@@ -43,7 +42,7 @@ actor OpenFoodFactsQuelle {
     init(lader: any HTTPLader, uhr: @escaping Uhr = { Date() }, version: String = OpenFoodFactsQuelle.appVersion) {
         self.lader = lader
         self.uhr = uhr
-        self.kennung = "LumenFit/\(version) (+\(OpenFoodFactsQuelle.projektAdresse))"
+        self.kennung = "LumenFit/\(version) (iOS)" // Annahme 26: weder Mail noch Repo-Adresse (das Repo ist privat)
     }
 
     static var appVersion: String {

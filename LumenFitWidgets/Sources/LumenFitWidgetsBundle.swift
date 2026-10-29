@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// Das Bundle listet alle Widgets, Steuerelemente und die Live Activity; das Grundgerüst legt sie als Stubs an, das Modul widgets füllt sie.
+/// Das Bundle listet alle Widgets, Steuerelemente und die Live Activity (sieben Einträge, alle ausgefüllt, Modul widgets).
 @main
 struct LumenFitWidgetsBundle: WidgetBundle {
     var body: some Widget {

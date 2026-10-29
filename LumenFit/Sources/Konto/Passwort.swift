@@ -16,6 +16,15 @@ enum Passwort {
         gleich(hash(passwort, salz: spur.salz, runden: spur.runden), spur.hash)
     }
 
+    /// Dieselbe Rechnung abseits des Hauptthreads: 600.000 Runden sind auf dem Gerät spürbar (Hänger beim Tippen auf "Weiter").
+    static func spurImHintergrund(fuer passwort: String, runden: Int = standardRunden) async -> PasswortSpur {
+        await Task.detached(priority: .userInitiated) { spur(fuer: passwort, runden: runden) }.value
+    }
+
+    static func stimmtImHintergrund(_ passwort: String, mit spur: PasswortSpur) async -> Bool {
+        await Task.detached(priority: .userInitiated) { stimmt(passwort, mit: spur) }.value
+    }
+
     /// 32 Byte; bei einem Fehler der Funktion (kommt nicht vor) ein leerer Hash, der nie stimmt.
     static func hash(_ passwort: String, salz: Data, runden: Int) -> Data {
         var ergebnis = [UInt8](repeating: 0, count: 32)

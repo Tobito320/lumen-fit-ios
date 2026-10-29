@@ -69,6 +69,7 @@ targets:
     platform: iOS
     sources:
       - LumenFitWidgets/Sources
+      - LumenFitWidgets/Resources
       - Gemeinsam
     info:
       path: LumenFitWidgets/Info.plist

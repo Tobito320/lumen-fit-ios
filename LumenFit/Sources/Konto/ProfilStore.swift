@@ -84,10 +84,27 @@ final class ProfilStore {
     /// Legt ein Profil an und macht es aktiv. Name nicht leer, Passwort mindestens 4 Zeichen (es schützt nur lokale Handlungen).
     @discardableResult
     func anlegen(name: String, passwort: String) throws -> Profil {
+        let sauber = try bereinigt(name: name, passwort: passwort)
+        return try haengeAn(name: sauber, spur: Passwort.spur(fuer: passwort, runden: runden))
+    }
+
+    /// Wie `anlegen`, aber die 600.000 PBKDF2-Runden laufen abseits des Hauptthreads (die Oberfläche bleibt flüssig). Die Oberfläche nutzt nur diese.
+    @discardableResult
+    func anlegenImHintergrund(name: String, passwort: String) async throws -> Profil {
+        let sauber = try bereinigt(name: name, passwort: passwort)
+        let spur = await Passwort.spurImHintergrund(fuer: passwort, runden: runden)
+        return try haengeAn(name: sauber, spur: spur)
+    }
+
+    private func bereinigt(name: String, passwort: String) throws -> String {
         let sauber = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !sauber.isEmpty else { throw ProfilFehler.nameLeer }
         guard passwort.count >= Passwort.mindestLaenge else { throw ProfilFehler.passwortZuKurz }
-        let profil = Profil(id: .neu(), name: sauber, erstellt: uhr(), passwort: Passwort.spur(fuer: passwort, runden: runden))
+        return sauber
+    }
+
+    private func haengeAn(name: String, spur: PasswortSpur) throws -> Profil {
+        let profil = Profil(id: .neu(), name: name, erstellt: uhr(), passwort: spur)
         var neu = profile
         neu.append(profil)
         try speichere(neu, aktiv: profil.id)
@@ -99,6 +116,16 @@ final class ProfilStore {
     @discardableResult
     func wechsle(zu id: ProfilID, passwort: String) -> Bool {
         guard let ziel = profile.first(where: { $0.id == id }), Passwort.stimmt(passwort, mit: ziel.passwort) else { return false }
+        return aktiviere(id)
+    }
+
+    @discardableResult
+    func wechsleImHintergrund(zu id: ProfilID, passwort: String) async -> Bool {
+        guard let ziel = profile.first(where: { $0.id == id }), await Passwort.stimmtImHintergrund(passwort, mit: ziel.passwort) else { return false }
+        return aktiviere(id)
+    }
+
+    private func aktiviere(_ id: ProfilID) -> Bool {
         guard (try? speichere(profile, aktiv: id)) != nil else { return false }
         ereignisse.senden(.profilGewechselt(id))
         return true
@@ -120,11 +147,21 @@ final class ProfilStore {
     /// Ändert das Passwort des aktiven Profils; nur mit richtigem alten Passwort und neuem von mindestens 4 Zeichen.
     @discardableResult
     func aenderePasswort(alt: String, neu: String) -> Bool {
-        guard let aktuell = aktiv, Passwort.stimmt(alt, mit: aktuell.passwort), neu.count >= Passwort.mindestLaenge,
-              let i = profile.firstIndex(where: { $0.id == aktuell.id }) else { return false }
+        guard let aktuell = aktiv, Passwort.stimmt(alt, mit: aktuell.passwort), neu.count >= Passwort.mindestLaenge else { return false }
+        return setzeSpur(Passwort.spur(fuer: neu, runden: runden), fuer: aktuell.id)
+    }
+
+    @discardableResult
+    func aenderePasswortImHintergrund(alt: String, neu: String) async -> Bool {
+        guard let aktuell = aktiv, neu.count >= Passwort.mindestLaenge, await Passwort.stimmtImHintergrund(alt, mit: aktuell.passwort) else { return false }
+        return setzeSpur(await Passwort.spurImHintergrund(fuer: neu, runden: runden), fuer: aktuell.id)
+    }
+
+    private func setzeSpur(_ spur: PasswortSpur, fuer id: ProfilID) -> Bool {
+        guard let i = profile.firstIndex(where: { $0.id == id }) else { return false }
         var liste = profile
-        liste[i].passwort = Passwort.spur(fuer: neu, runden: runden)
-        return (try? speichere(liste, aktiv: aktuell.id)) != nil
+        liste[i].passwort = spur
+        return (try? speichere(liste, aktiv: id)) != nil
     }
 
     /// Löscht ein Profil aus dem Schlüsselbund (nur mit seinem Passwort). Die Daten im Profilordner räumt das Profil-Modul weg.
@@ -132,6 +169,12 @@ final class ProfilStore {
     @discardableResult
     func loesche(_ id: ProfilID, passwort: String) -> Bool {
         guard let ziel = profile.first(where: { $0.id == id }), Passwort.stimmt(passwort, mit: ziel.passwort) else { return false }
+        return entferne(id)
+    }
+
+    @discardableResult
+    func loescheImHintergrund(_ id: ProfilID, passwort: String) async -> Bool {
+        guard let ziel = profile.first(where: { $0.id == id }), await Passwort.stimmtImHintergrund(passwort, mit: ziel.passwort) else { return false }
         return entferne(id)
     }
 

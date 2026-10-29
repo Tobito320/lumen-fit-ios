@@ -60,18 +60,29 @@ final class ProfilOnboardingFluss {
     /// Legt das Profil an und schreibt Ziele und Einstellungen in einem Schritt. false mit `fehler`, wenn es nicht ging.
     @discardableResult
     func abschliessen(in umgebung: AppUmgebung) -> Bool {
-        do {
-            try umgebung.profil.anlegen(name: name, passwort: passwort)
-        } catch ProfilFehler.nameLeer {
-            fehler = "Wie soll Lumi dich nennen?"
-            karte = .profil
-            return false
-        } catch ProfilFehler.passwortZuKurz {
-            fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
-            karte = .profil
-            return false
-        } catch {
-            fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
+        beende(Result { try umgebung.profil.anlegen(name: name, passwort: passwort) }, in: umgebung)
+    }
+
+    /// Wie `abschliessen`, aber das Passwort wird abseits des Hauptthreads verarbeitet (die Oberfläche hängt nicht). Die Oberfläche nutzt diese.
+    @discardableResult
+    func abschliessenImHintergrund(in umgebung: AppUmgebung) async -> Bool {
+        let ergebnis: Result<Profil, Error>
+        do { ergebnis = .success(try await umgebung.profil.anlegenImHintergrund(name: name, passwort: passwort)) } catch { ergebnis = .failure(error) }
+        return beende(ergebnis, in: umgebung)
+    }
+
+    private func beende(_ ergebnis: Result<Profil, Error>, in umgebung: AppUmgebung) -> Bool {
+        if case .failure(let grund) = ergebnis {
+            switch grund as? ProfilFehler {
+            case .nameLeer:
+                fehler = "Wie soll Lumi dich nennen?"
+                karte = .profil
+            case .passwortZuKurz:
+                fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
+                karte = .profil
+            default:
+                fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
+            }
             return false
         }
         guard let daten = umgebung.daten else { return false }
