@@ -132,6 +132,8 @@ struct GymEinstellungenBlatt: View {
             .navigationTitle("Training")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { schliessen() } } }
+            // Mitten im Training eingeschaltet: die Messung startet gleich, nicht erst beim nächsten Training.
+            .onChange(of: pulsAn) { _, an in if an, sitzung.sessionId != nil { sitzung.puls.starten() } }
         }
         .presentationDetents([.medium])
     }

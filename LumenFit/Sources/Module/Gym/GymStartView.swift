@@ -13,6 +13,7 @@ struct GymStartView: View {
     /// Ein anderer Plantag statt des geplanten, nur für heute ("Heute Beine statt Push").
     @State private var andererTag: String?
     @State private var cardio = false
+    @State private var einstellungen = false
     @State private var fehler: String?
 
     var body: some View {
@@ -26,6 +27,7 @@ struct GymStartView: View {
             }
         }
         .sheet(isPresented: $cardio) { CardioEingabeView(sitzung: sitzung) }
+        .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
         .alert("Das geht gerade nicht", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
             Button("OK") { fehler = nil }
         } message: {
@@ -48,6 +50,10 @@ struct GymStartView: View {
             verlegenKarte(stand, training: training)
             Button { cardio = true } label: {
                 Label("Cardio eintragen", systemImage: "figure.run").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+            .buttonStyle(.bordered)
+            Button { einstellungen = true } label: {
+                Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
             .buttonStyle(.bordered)
             letzte(training, jetzt: jetzt)

@@ -143,6 +143,7 @@ final class GymPulsMessung: GymPulsQuelle {
         guard an, istIPhone, sitzung == nil, !startet, HKHealthStore.isHealthDataAvailable() else { return }
         startet = true
         abbruch = false
+        aufgeraeumt = true // eine Sitzung, die in diesem Lauf begann, ist nie verwaist (sonst verwirft verwaisteBeenden das Speichern nach dem Beenden)
         Task {
             defer { startet = false }
             do {
