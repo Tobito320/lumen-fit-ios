@@ -38,7 +38,7 @@ final class SaetzeProMuskelTests: XCTestCase {
         })
     }
 
-    private func zeile(_ g: MuskelGruppe, _ liste: [SatzZeile]) -> SatzZeile? { liste.first { $0.gruppe == g } }
+    private func zeile(_ g: MuskelGruppe, _ liste: [MuskelSatzZeile]) -> MuskelSatzZeile? { liste.first { $0.gruppe == g } }
 
     func testAufwaermsaetzeAusDerTrainingsansichtZaehlenNicht() {
         let s = sessions(am: "2026-10-13", uebung: "knie", saetze: [satz(typ: "w"), satz(), satz(), satz(ok: nil)], status: "satz")
@@ -72,12 +72,12 @@ final class SaetzeProMuskelTests: XCTestCase {
     }
 
     func testAnteilErreichtUndText() {
-        XCTAssertEqual(SatzZeile(gruppe: .brust, saetze: 6, ziel: 12).anteil, 0.5)
-        XCTAssertEqual(SatzZeile(gruppe: .brust, saetze: 20, ziel: 12).anteil, 1)
-        XCTAssertTrue(SatzZeile(gruppe: .brust, saetze: 12, ziel: 12).erreicht)
-        XCTAssertFalse(SatzZeile(gruppe: .brust, saetze: 11.5, ziel: 12).erreicht)
-        XCTAssertEqual(SatzZeile(gruppe: .brust, saetze: 4.5, ziel: 8).text, "4,5 von 8")
-        XCTAssertEqual(SatzZeile(gruppe: .brust, saetze: 0, ziel: 0).anteil, 0)
+        XCTAssertEqual(MuskelSatzZeile(gruppe: .brust, saetze: 6, ziel: 12).anteil, 0.5)
+        XCTAssertEqual(MuskelSatzZeile(gruppe: .brust, saetze: 20, ziel: 12).anteil, 1)
+        XCTAssertTrue(MuskelSatzZeile(gruppe: .brust, saetze: 12, ziel: 12).erreicht)
+        XCTAssertFalse(MuskelSatzZeile(gruppe: .brust, saetze: 11.5, ziel: 12).erreicht)
+        XCTAssertEqual(MuskelSatzZeile(gruppe: .brust, saetze: 4.5, ziel: 8).text, "4,5 von 8")
+        XCTAssertEqual(MuskelSatzZeile(gruppe: .brust, saetze: 0, ziel: 0).anteil, 0)
     }
 
     func testReihenfolgeFolgtDerPrioUndZielNullFehlt() {
@@ -89,11 +89,11 @@ final class SaetzeProMuskelTests: XCTestCase {
     }
 
     func testAussageUndKernzeile() {
-        let z = [SatzZeile(gruppe: .brust, saetze: 12, ziel: 12), SatzZeile(gruppe: .ruecken, saetze: 4, ziel: 16), SatzZeile(gruppe: .beine, saetze: 2, ziel: 8)]
+        let z = [MuskelSatzZeile(gruppe: .brust, saetze: 12, ziel: 12), MuskelSatzZeile(gruppe: .ruecken, saetze: 4, ziel: 16), MuskelSatzZeile(gruppe: .beine, saetze: 2, ziel: 8)]
         XCTAssertEqual(SaetzeProMuskel.aussage(z), "1 von 3 Muskelgruppen im Wochenziel")
         XCTAssertEqual(SaetzeProMuskel.kernzeile(z), "Am meisten fehlt Rücken: noch 12 Sätze.")
-        XCTAssertEqual(SaetzeProMuskel.kernzeile([SatzZeile(gruppe: .brust, saetze: 12, ziel: 12)]), "Alle Wochenziele sind erreicht.")
-        XCTAssertEqual(SaetzeProMuskel.kernzeile([SatzZeile(gruppe: .brust, saetze: 0, ziel: 12)]), "Diese Woche noch kein Satz. Tipp auf Starten, Lumi zählt mit.")
+        XCTAssertEqual(SaetzeProMuskel.kernzeile([MuskelSatzZeile(gruppe: .brust, saetze: 12, ziel: 12)]), "Alle Wochenziele sind erreicht.")
+        XCTAssertEqual(SaetzeProMuskel.kernzeile([MuskelSatzZeile(gruppe: .brust, saetze: 0, ziel: 12)]), "Diese Woche noch kein Satz. Tipp auf Starten, Lumi zählt mit.")
         XCTAssertEqual(SaetzeProMuskel.aussage([]), "Noch keine Wochenziele")
     }
 }

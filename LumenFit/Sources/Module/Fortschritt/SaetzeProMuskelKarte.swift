@@ -4,7 +4,7 @@ import SwiftUI
 /// Idee 32: Wochenbalken je Muskelgruppe. Der Wert steht rechts als Zahl ("9 von 12"), das Ziel als Raute im Diagramm; wer das Ziel erreicht hat, bekommt
 /// einen Haken in der Zahl. Aufwärmsätze zählen nicht.
 struct SaetzeProMuskelKarte: View {
-    let zeilen: [SatzZeile]
+    let zeilen: [MuskelSatzZeile]
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema

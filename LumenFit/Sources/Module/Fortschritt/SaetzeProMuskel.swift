@@ -1,7 +1,7 @@
 import Foundation
 
 /// Eine Zeile "Sätze je Muskel gegen Ziel": die Woche in Sätzen und das Wochenziel.
-struct SatzZeile: Identifiable, Equatable, Sendable {
+struct MuskelSatzZeile: Identifiable, Equatable, Sendable {
     let gruppe: MuskelGruppe
     /// Gezählte Sätze der Woche; Mitarbeit zählt halb (`MuskelLogik.teile`).
     let saetze: Double
@@ -34,25 +34,25 @@ enum SaetzeProMuskel {
 
     /// Je Gruppe in der Reihenfolge der Ziele (Prio zuerst): Sätze der Woche von `heute` gegen das Ziel. Gruppen mit Ziel 0 fehlen.
     static func zeilen(_ sessions: [GymSession], heute: String, ziele: KoerperZiele,
-                       katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> [SatzZeile] {
+                       katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> [MuskelSatzZeile] {
         let woche = MuskelLogik.wochenSaetze(ohneAufwaermen(sessions), woche: heute, katalog: katalog)
         return ziele.reihenfolge.compactMap { g in
             let ziel = ziele.saetze[g] ?? 0
             guard ziel > 0 else { return nil }
             let saetze = MuskelTeil.allCases.filter { $0.gruppe == g }.reduce(0.0) { $0 + (woche[$1] ?? 0) }
-            return SatzZeile(gruppe: g, saetze: saetze, ziel: ziel)
+            return MuskelSatzZeile(gruppe: g, saetze: saetze, ziel: ziel)
         }
     }
 
     /// Die Aussage als Titel: "4 von 9 Muskelgruppen im Wochenziel".
-    static func aussage(_ zeilen: [SatzZeile]) -> String {
+    static func aussage(_ zeilen: [MuskelSatzZeile]) -> String {
         guard !zeilen.isEmpty else { return "Noch keine Wochenziele" }
         let im = zeilen.filter(\.erreicht).count
         return "\(im) von \(zeilen.count) Muskelgruppen im Wochenziel"
     }
 
     /// Die Kernzeile: die Gruppe, die am meisten fehlt, und wie viele Sätze.
-    static func kernzeile(_ zeilen: [SatzZeile]) -> String {
+    static func kernzeile(_ zeilen: [MuskelSatzZeile]) -> String {
         let summe = zeilen.reduce(0) { $0 + $1.saetze }
         guard summe > 0 else { return "Diese Woche noch kein Satz. Tipp auf Starten, Lumi zählt mit." }
         guard let offen = zeilen.filter({ !$0.erreicht }).max(by: { Double($0.ziel) - $0.saetze < Double($1.ziel) - $1.saetze }) else {
