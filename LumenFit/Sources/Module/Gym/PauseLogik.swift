@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Workout.swift (WorkoutUhr, Pausenlogik ohne UserDefaults)
 import Foundation
 
 /// Die laufende Pause nach einem Satz. Gespeichert werden nur Zeitpunkte, die Anzeige rechnet daraus (`Text(timerInterval:)`),

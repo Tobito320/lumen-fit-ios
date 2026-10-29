@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Cardio.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Die Felder einer Cardio-Einheit (Idee 29): Dauer, Distanz, Energie, Puls. Mit Plus und Minus statt Tippen.

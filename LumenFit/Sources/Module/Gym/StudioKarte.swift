@@ -1,10 +1,12 @@
 // Quelle: Lovea Health/Studio/StudioKarte.swift (neu im Lumen-Design; Studio ist ein freies Textfeld, Vorschläge nur aus PrivateDaten.json)
 import SwiftUI
 
-/// Die Studio-Zeile der Gym-Seite (Idee 29): Name und Öffnungszeiten, Besuche, Einchecken und Auschecken. Warnt, wenn die feste Uhrzeit
+/// Die Studio-Zeile der Gym-Seite (Idee 29): Name und Öffnungszeiten, Besuche und Einchecken (Auschecken steht beim laufenden Training). Warnt, wenn die feste Uhrzeit
 /// des Profils an einem Trainingstag nicht in die Öffnungszeiten passt.
 struct StudioKarte: View {
     let sitzung: GymSitzung
+    /// Dasselbe wie der Startknopf der Startseite: Plantag von heute starten oder das gerade beendete Training fortsetzen.
+    let einchecken: () -> Void
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var bearbeiten = false
@@ -20,7 +22,7 @@ struct StudioKarte: View {
                 GymZeile(titel: profil.hatStudio ? profil.anzeigeName : "Kein Studio gewählt",
                          untertitel: profil.hatStudio ? GymOeffnung.kurztext(profil.oeffnung) : "Trag dein Studio ein, dann warnt Lumi dich außerhalb der Öffnungszeiten.") {
                     Button(profil.hatStudio ? "Ändern" : "Eintragen") { bearbeiten = true }
-                        .frame(minHeight: Abstand.tippflaeche)
+                        .buttonStyle(.bordered).controlSize(.large)
                 }
                 Haarlinie()
                 GymZeile(titel: StudioBesuche.wochenText(besuche),
@@ -33,13 +35,8 @@ struct StudioKarte: View {
                         .padding(Abstand.m)
                 }
                 Haarlinie()
-                GymZeile(titel: sitzung.sessionId == nil ? "Einchecken" : "Auschecken",
-                         untertitel: sitzung.sessionId == nil ? "Startet dein Training und zählt den Besuch" : "Beendet dein Training") {
-                    if sitzung.sessionId == nil {
-                        Button("Einchecken") { sitzung.starte(planTag: nil) }.buttonStyle(.borderedProminent)
-                    } else {
-                        Button("Auschecken") { sitzung.beende() }.buttonStyle(.bordered)
-                    }
+                GymZeile(titel: "Einchecken", untertitel: "Startet dein Training und zählt den Besuch") {
+                    Button("Einchecken", action: einchecken).buttonStyle(.borderedProminent).controlSize(.large)
                 }
             }
         }

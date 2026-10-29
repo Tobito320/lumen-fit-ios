@@ -97,7 +97,7 @@ struct PlanView: View {
                     GymZeile(titel: h.text) {
                         if let tausch = h.tausch, tausch.count == 2 {
                             Button("Übernehmen") { training.planSichern(RuhetagLogik.tauschen(plan, tausch[0], tausch[1])) }
-                                .buttonStyle(.bordered)
+                                .buttonStyle(.bordered).controlSize(.large)
                         }
                     }
                     if h.id != liste.last?.id { Haarlinie() }

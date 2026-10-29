@@ -11,6 +11,7 @@ struct PlanTagBlatt: View {
     @State private var suche = false
     @State private var name = ""
     @State private var loeschen = false
+    @State private var bearbeiten: EditMode = .inactive
 
     private var training: TrainingStore? { sitzung.training }
     private var tag: TrainingsTag? { training?.tag(id: tagId) }
@@ -27,8 +28,13 @@ struct PlanTagBlatt: View {
             .lumenHintergrund()
             .navigationTitle(tag?.name ?? "Tag")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { schliessen() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Fertig") { nameSichern(); schliessen() } }
+                ToolbarItem(placement: .cancellationAction) { EditButton() }
+            }
+            .environment(\.editMode, $bearbeiten)
             .onAppear { name = tag?.name ?? "" }
+            .onDisappear { nameSichern() }
             .sheet(isPresented: $suche) {
                 UebungsSucheView(titel: "Übung hinzufügen") { k in
                     guard let t = tag else { return }
@@ -48,6 +54,16 @@ struct PlanTagBlatt: View {
         }
     }
 
+    /// Name speichern, wenn er sich geändert hat und nicht leer ist. Läuft bei Return, bei "Fertig" und beim Schließen.
+    private func nameSichern() {
+        guard let t = tag else { return }
+        let sauber = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !sauber.isEmpty, sauber != t.name else { return }
+        var neu = t
+        neu.name = sauber
+        sichern(neu)
+    }
+
     private func sichern(_ neu: TrainingsTag) {
         guard let t = training else { return }
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
@@ -57,7 +73,7 @@ struct PlanTagBlatt: View {
         List {
             Section("Name") {
                 TextField("Name des Tages", text: $name)
-                    .onSubmit { var neu = tag; neu.name = name.trimmingCharacters(in: .whitespacesAndNewlines); sichern(neu) }
+                    .onSubmit { nameSichern() }
                     .submitLabel(.done)
             }
             Section {
@@ -84,8 +100,8 @@ struct PlanTagBlatt: View {
             }
             Section("Übungen · \(ZeitSchaetzung.umfang(tag))") {
                 if tag.uebungen.isEmpty { Text("Noch keine Übungen.").foregroundStyle(palette.text2) }
-                ForEach(tag.uebungen.indices, id: \.self) { i in
-                    UebungsPlanZeile(tag: tag, index: i, sichern: sichern)
+                ForEach(tag.uebungen) { u in
+                    UebungsPlanZeile(tag: tag, uebungId: u.id, sichern: sichern)
                 }
                 .onDelete { weg in
                     var neu = tag
@@ -103,36 +119,48 @@ struct PlanTagBlatt: View {
             }
         }
         .scrollContentBackground(.hidden)
-        .environment(\.editMode, .constant(.active))
     }
 }
 
 /// Eine Übung im Plantag: Sätze, Wiederholungen, Gewicht, Supersatz und Notiz (Idee 28). Bei Cardio die Dauer.
 private struct UebungsPlanZeile: View {
     let tag: TrainingsTag
-    let index: Int
+    /// Die Zeile hängt an der Übung, nicht an der Stelle: nach Löschen oder Verschieben bleibt die Notiz bei ihrer Übung.
+    let uebungId: String
     let sichern: (TrainingsTag) -> Void
     @Environment(\.palette) private var palette
     @State private var offen = false
     @State private var notiz = ""
 
-    private var u: PlanUebung { tag.uebungen[index] }
+    private var index: Int? { tag.uebungen.firstIndex { $0.id == uebungId } }
 
-    private func aendere(_ f: (PlanUebung) -> PlanUebung) {
+    var body: some View {
+        if let index { zeile(index, tag.uebungen[index]) }
+    }
+
+    private func aendere(_ index: Int, _ f: (PlanUebung) -> PlanUebung) {
         var neu = tag
-        neu.uebungen[index] = f(u)
+        neu.uebungen[index] = f(tag.uebungen[index])
         sichern(neu)
     }
 
-    var body: some View {
+    /// Die Notiz speichern, wenn sie sich geändert hat: bei Return, beim Zuklappen und beim Verschwinden der Zeile.
+    private func notizSichern(_ index: Int) {
+        let t = notiz.trimmingCharacters(in: .whitespacesAndNewlines)
+        let wert: String? = t.isEmpty ? nil : t
+        guard wert != tag.uebungen[index].notiz else { return }
+        aendere(index) { var x = $0; x.notiz = wert; return x }
+    }
+
+    private func zeile(_ index: Int, _ u: PlanUebung) -> some View {
         DisclosureGroup(isExpanded: $offen) {
             if u.istCardio {
-                Stepper("Dauer \(u.minuten ?? 20) min", value: Binding(get: { u.minuten ?? 20 }, set: { v in aendere { SplitFrei.dauer($0, v) } }), in: 5...180, step: 5)
+                Stepper("Dauer \(u.minuten ?? 20) min", value: Binding(get: { u.minuten ?? 20 }, set: { v in aendere(index) { SplitFrei.dauer($0, v) } }), in: 5...180, step: 5)
             } else {
-                Stepper("Sätze \(u.saetze.count)", value: Binding(get: { u.saetze.count }, set: { v in aendere { SplitFrei.saetzeAnzahl($0, v) } }), in: 1...SplitFrei.maxSaetze)
-                Stepper("Wiederholungen \(u.saetze.first?.wdh ?? 10)", value: Binding(get: { u.saetze.first?.wdh ?? 10 }, set: { v in aendere { SplitFrei.alleWdh($0, v) } }), in: 1...100)
+                Stepper("Sätze \(u.saetze.count)", value: Binding(get: { u.saetze.count }, set: { v in aendere(index) { SplitFrei.saetzeAnzahl($0, v) } }), in: 1...SplitFrei.maxSaetze)
+                Stepper("Wiederholungen \(u.saetze.first?.wdh ?? 10)", value: Binding(get: { u.saetze.first?.wdh ?? 10 }, set: { v in aendere(index) { SplitFrei.alleWdh($0, v) } }), in: 1...100)
                 Stepper("Gewicht \(u.saetze.first?.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
-                        value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
+                        value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere(index) { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
                 if index < tag.uebungen.count - 1 {
                     Toggle("Supersatz mit der nächsten", isOn: Binding(get: { u.supersatz == true }, set: { an in
                         var neu = tag
@@ -143,7 +171,7 @@ private struct UebungsPlanZeile: View {
                 }
             }
             TextField("Notiz, zum Beispiel Sitz auf Stufe 4", text: $notiz, axis: .vertical)
-                .onSubmit { let t = notiz.trimmingCharacters(in: .whitespacesAndNewlines); aendere { var x = $0; x.notiz = t.isEmpty ? nil : t; return x } }
+                .onSubmit { notizSichern(index) }
         } label: {
             HStack(spacing: Abstand.m) {
                 UebungsBild(id: u.uebung, koerper: u.katalog?.koerper).frame(width: 40, height: 40)
@@ -155,5 +183,7 @@ private struct UebungsPlanZeile: View {
             .frame(minHeight: Abstand.tippflaeche)
         }
         .onAppear { notiz = u.notiz ?? "" }
+        .onChange(of: offen) { _, neu in if !neu { notizSichern(index) } }
+        .onDisappear { if let i = self.index { notizSichern(i) } }
     }
 }

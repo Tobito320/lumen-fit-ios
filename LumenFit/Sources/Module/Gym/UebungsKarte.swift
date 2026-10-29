@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Eine Übung im laufenden Training: Kopf mit Bild und Menü, die Satzzeilen, darunter "Satz dazu". Cardio zeigt statt der Sätze die Dauer.
@@ -29,7 +30,7 @@ struct UebungsKarte: View {
                 cardioZeile(u, gruen)
             } else if u.ausgelassen {
                 GymZeile(titel: "Ausgelassen", untertitel: "Zählt nicht für Volumen und Rekorde") {
-                    Button("Wieder dazu") { sitzung.wiederAufnehmen(index) }.frame(minHeight: Abstand.tippflaeche)
+                    Button("Wieder dazu") { sitzung.wiederAufnehmen(index) }.buttonStyle(.bordered).controlSize(.large)
                 }
             } else {
                 ForEach(u.saetze.indices, id: \.self) { i in
@@ -38,9 +39,9 @@ struct UebungsKarte: View {
                 }
                 Haarlinie()
                 HStack {
-                    Button { sitzung.satzDazu(index) } label: { Label("Satz dazu", systemImage: "plus") }
+                    Button { sitzung.satzDazu(index) } label: { Label("Satz dazu", systemImage: "plus").frame(minHeight: Abstand.tippflaeche) }
                     Spacer()
-                    Button { blatt = .rechner } label: { Label("Rechner", systemImage: "scalemass") }
+                    Button { blatt = .rechner } label: { Label("Rechner", systemImage: "scalemass").frame(minHeight: Abstand.tippflaeche) }
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, Abstand.l)
@@ -111,9 +112,9 @@ struct UebungsKarte: View {
     private func cardioZeile(_ u: WorkoutUebung, _ gruen: Color) -> some View {
         GymZeile(titel: u.cardioFertig ? "Cardio erledigt" : "Cardio: \(u.planUebung.minuten ?? 20) min geplant", untertitel: "Dauer, Distanz und Puls eintragen") {
             if u.cardioFertig {
-                Button("Zurück") { sitzung.cardioZurueck(index) }.frame(minHeight: Abstand.tippflaeche)
+                Button("Zurück") { sitzung.cardioZurueck(index) }.buttonStyle(.bordered).controlSize(.large)
             } else {
-                Button("Eintragen") { blatt = .cardio }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+                Button("Eintragen") { blatt = .cardio }.buttonStyle(.borderedProminent).controlSize(.large)
             }
         }
     }

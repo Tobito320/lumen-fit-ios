@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Training beenden: Dauer, Sätze, Volumen und Rekorde auf einen Blick, dann beenden, weiter trainieren oder verwerfen.
@@ -23,10 +24,8 @@ struct TrainingBeendenView: View {
                         Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
                     .buttonStyle(.borderedProminent)
-                    Button("Weiter trainieren") { schliessen() }
-                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                    Button("Training verwerfen", role: .destructive) { verwerfen = true }
-                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    Button { schliessen() } label: { Text("Weiter trainieren").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
+                    Button(role: .destructive) { verwerfen = true } label: { Text("Training verwerfen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                 }
                 .padding(Abstand.l)
             }

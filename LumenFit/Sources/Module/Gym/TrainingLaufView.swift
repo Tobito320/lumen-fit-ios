@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Das laufende Training (Idee 21 bis 25, 28): die Karte "Als Nächstes" oder die Pause, jede Übung mit ihren Satzzeilen, der große Knopf

@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Scheiben- und Aufwärmrechner als Sheet (Idee 25). Das Arbeitsgewicht startet beim schwersten Satz der Übung, Plus und Minus ändern es in 2,5-kg-Schritten.
@@ -22,14 +23,14 @@ struct RechnerBlatt: View {
                         VStack(alignment: .leading, spacing: Abstand.s) {
                             Text("Arbeitsgewicht").font(.footnote.weight(.semibold)).textCase(.uppercase)
                             HStack {
-                                Button { arbeit = max(2.5, arbeit - 2.5) } label: { Image(systemName: "minus.circle.fill").font(.largeTitle) }
+                                Button { arbeit = max(2.5, arbeit - 2.5) } label: { Image(systemName: "minus.circle.fill").font(.largeTitle).frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche) }
                                     .accessibilityLabel("Weniger")
                                 Spacer()
                                 Text("\(TrainingLogik.kgText(arbeit)) kg")
                                     .font(.system(size: 44, weight: .bold, design: .rounded)).monospacedDigit()
                                     .contentTransition(.numericText())
                                 Spacer()
-                                Button { arbeit = min(500, arbeit + 2.5) } label: { Image(systemName: "plus.circle.fill").font(.largeTitle) }
+                                Button { arbeit = min(500, arbeit + 2.5) } label: { Image(systemName: "plus.circle.fill").font(.largeTitle).frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche) }
                                     .accessibilityLabel("Mehr")
                             }
                             .buttonStyle(.federnd)

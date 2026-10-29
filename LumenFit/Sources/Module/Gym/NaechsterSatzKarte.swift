@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Die eine mutige Karte im Training (schwarze Platte mit Streifen): läuft eine Pause, zeigt sie den Countdown mit Plus, Minus und
@@ -48,8 +49,8 @@ struct NaechsterSatzKarte: View {
             Button("Überspringen") { sitzung.pauseUeberspringen() }
         }
         .buttonStyle(.bordered)
+        .controlSize(.large)
         .tint(.white)
-        .frame(minHeight: Abstand.tippflaeche)
     }
 
     // MARK: Satz

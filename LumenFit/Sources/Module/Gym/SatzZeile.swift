@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
 /// Eine Satzzeile im laufenden Training (Idee 21 bis 23): Nummer mit Satztyp, Gewicht und Wiederholungen mit Plus und Minus,

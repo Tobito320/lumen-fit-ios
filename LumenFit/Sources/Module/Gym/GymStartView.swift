@@ -51,7 +51,7 @@ struct GymStartView: View {
             }
             .buttonStyle(.bordered)
             letzte(training, jetzt: jetzt)
-            StudioKarte(sitzung: sitzung)
+            StudioKarte(sitzung: sitzung) { heuteStarten(training) }
         }
     }
 
@@ -108,7 +108,7 @@ struct GymStartView: View {
                 }
                 if stand.knopf != nil {
                     HStack(spacing: Abstand.s) {
-                        if let knopf = stand.knopf { startKnopf(knopf, tag: tag) }
+                        if let knopf = stand.knopf { startKnopf(knopf, training: training) }
                         andereTageMenue(training: training, aktuell: tag)
                     }
                     .frame(minHeight: Abstand.tippflaeche)
@@ -118,13 +118,14 @@ struct GymStartView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func startKnopf(_ knopf: GymStartKnopf, tag: TrainingsTag?) -> some View {
+    /// Der Start von heute: nach kurzem Beenden fortsetzen, sonst der gewählte (oder geplante) Tag. Hero-Knopf und Studio-Karte teilen das.
+    private func heuteStarten(_ training: TrainingStore) {
+        if training.fortsetzbare() != nil { sitzung.fortsetzen() } else { sitzung.starte(planTag: andererTag ?? training.heutigerTag()?.id) }
+    }
+
+    private func startKnopf(_ knopf: GymStartKnopf, training: TrainingStore) -> some View {
         Button {
-            switch knopf {
-            case .starten: sitzung.starte(planTag: tag?.id)
-            case .fortsetzen: sitzung.fortsetzen()
-            case .weiter: sitzung.ladeWennNoetig()
-            }
+            if knopf == .weiter { sitzung.ladeWennNoetig() } else { heuteStarten(training) }
         } label: {
             Label(knopf.titel, systemImage: knopf.symbolName).font(.headline).frame(minHeight: Abstand.tippflaeche)
         }
@@ -153,7 +154,7 @@ struct GymStartView: View {
         ListenKarte {
             GymZeile(titel: "Auschecken vergessen?", untertitel: "Die Einheit von \(GymFormat.tag(s.start)) läuft noch. Das Ende wird auf 1,5 Stunden nach dem Start gesetzt.") {
                 Button("Auschecken") { training.auschecken(s.id, ende: s.start.addingTimeInterval(TrainingLogik.langNach / 2)) }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.bordered).controlSize(.large)
             }
         }
     }
@@ -168,7 +169,7 @@ struct GymStartView: View {
                 ListenKarte {
                     if let hinweis = stand.testHinweis {
                         GymZeile(titel: hinweis) {
-                            Button("Beenden") { training.testwocheAbbrechen() }.buttonStyle(.bordered)
+                            Button("Beenden") { training.testwocheAbbrechen() }.buttonStyle(.bordered).controlSize(.large)
                         }
                     }
                     if !stand.ziele.isEmpty {
@@ -179,13 +180,13 @@ struct GymStartView: View {
                                     Button(z.text) { if !training.verlegen(von: stand.gewaehlt, auf: z.datum) { fehler = "Dieser Tag lässt sich nicht verlegen." } }
                                 }
                             }
-                            .frame(minHeight: Abstand.tippflaeche)
+                            .buttonStyle(.bordered).controlSize(.large)
                         }
                     }
                     if stand.verlegt {
                         Haarlinie()
                         GymZeile(titel: "Zurück auf Plan", untertitel: "Verlegte Tage gelten wieder wie im Plan.") {
-                            Button("Zurücksetzen") { training.verlegungenLoeschen() }.buttonStyle(.bordered)
+                            Button("Zurücksetzen") { training.verlegungenLoeschen() }.buttonStyle(.bordered).controlSize(.large)
                         }
                     }
                 }

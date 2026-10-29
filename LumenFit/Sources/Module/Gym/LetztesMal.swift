@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Workout.swift ("Letztes Mal" und Schritte, neu gefasst)
 import Foundation
 
 /// "Letztes Mal" in der Satzzeile (Idee 21): je Satz der Wert vom letzten Training derselben Übung, dazu Plus und Minus

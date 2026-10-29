@@ -1,3 +1,4 @@
+// Quelle: Lovea Health/Workout.swift (Scheiben- und Aufwärmrechner, ausgelagert)
 import Foundation
 
 /// Scheibenrechner (Idee 25): welche Scheiben pro Seite auf die Stange. Stange 20 kg, Scheiben 25 bis 1,25 kg.
