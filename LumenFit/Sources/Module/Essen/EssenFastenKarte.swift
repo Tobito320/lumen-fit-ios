@@ -4,7 +4,6 @@ import SwiftUI
 /// Nur `ProgressView(timerInterval:)` und `Text(timerInterval:)`, kein eigener Timer.
 struct EssenFastenKarte: View {
     let essen: EssenStore
-    let jetzt: Date
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -50,21 +49,24 @@ struct EssenFastenKarte: View {
     private func laufendesFenster(_ e: FastenEintrag) -> some View {
         let plan = FastenLogik.planVon(e)
         let ende = FastenLogik.geplantesEnde(start: e.start, plan: plan)
-        if ende > jetzt {
-            ProgressView(timerInterval: e.start...ende, countsDown: false) {
-                Text("Fenster läuft").font(.subheadline).foregroundStyle(palette.text2)
-            } currentValueLabel: {
-                HStack(spacing: Abstand.xs) {
-                    Text("noch").foregroundStyle(palette.text2)
-                    Text(timerInterval: jetzt...ende, countsDown: true).monospacedDigit().foregroundStyle(palette.text)
+        // Der Wechsel auf "Geschafft" kommt vom System zum Zeitpunkt `ende`, nicht erst beim nächsten Neuzeichnen des Tabs.
+        TimelineView(.explicit([ende])) { zeit in
+            if ende > zeit.date {
+                ProgressView(timerInterval: e.start...ende, countsDown: false) {
+                    Text("Fenster läuft").font(.subheadline).foregroundStyle(palette.text2)
+                } currentValueLabel: {
+                    HStack(spacing: Abstand.xs) {
+                        Text("noch").foregroundStyle(palette.text2)
+                        Text(timerInterval: zeit.date...ende, countsDown: true).monospacedDigit().foregroundStyle(palette.text)
+                    }
+                    .font(.subheadline.weight(.semibold))
                 }
-                .font(.subheadline.weight(.semibold))
+                .tint(palette.akzent)
+                .accessibilityLabel("Fasten läuft seit \(FastenLogik.zeitpunktText(e.start)), Plan \(plan.name)")
+            } else {
+                Label("Geschafft: \(plan.name) voll", systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
             }
-            .tint(palette.akzent)
-            .accessibilityLabel("Fasten läuft seit \(FastenLogik.zeitpunktText(e.start)), Plan \(plan.name)")
-        } else {
-            Label("Geschafft: \(plan.name) voll", systemImage: "checkmark.circle.fill")
-                .font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
         }
         Button { essen.fastenFensterBeenden(e) } label: {
             Text("Fenster beenden").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)

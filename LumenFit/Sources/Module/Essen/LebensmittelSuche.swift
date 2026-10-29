@@ -36,7 +36,7 @@ final class LebensmittelSuche {
     func eingabe(_ neu: String, vorne: [Lebensmittel]) {
         text = neu
         online = .ruhig
-        var treffer = index.suchen(neu, vorne: vorne, anzahl: 50)
+        var treffer = Self.grundlebensmittelZuerst(index.suchen(neu, vorne: vorne, anzahl: 50), text: neu, vorne: vorne)
         // Der BLS schreibt "Hafer Flocken" in zwei Wörtern: ein langes Wort wird an jeder Stelle geteilt, echte Treffer stehen dann vorn.
         var gesehen = Set<String>()
         var geteilt: [Lebensmittel] = []
@@ -52,6 +52,17 @@ final class LebensmittelSuche {
             treffer = Array((geteilt + treffer.filter { !ids.contains($0.id) }).prefix(50))
         }
         stand = SuchStand(nummer: stand.nummer + 1, lokal: treffer, server: [], sichtbar: treffer)
+    }
+
+    /// Favoriten, Zuletzt und Eigene bleiben vorn. Danach steht ein Treffer, dessen erstes Wort genau der Suchtext ist ("Apfel roh"), vor
+    /// Zusammensetzungen ("Apfelmus"); sonst führt die Kürze des Namens. Gilt nur für ein einzelnes Suchwort.
+    nonisolated static func grundlebensmittelZuerst(_ treffer: [Lebensmittel], text: String, vorne: [Lebensmittel]) -> [Lebensmittel] {
+        let wort = LebensmittelBasis.normal(text)
+        guard !wort.isEmpty, !wort.contains(" ") else { return treffer }
+        let eigene = Set(vorne.map(\.id))
+        let genau: (Lebensmittel) -> Bool = { LebensmittelBasis.schluessel($0).split(separator: " ").first.map(String.init) == wort }
+        let basis = treffer.filter { !eigene.contains($0.id) }
+        return treffer.filter { eigene.contains($0.id) } + basis.filter(genau) + basis.filter { !genau($0) }
     }
 
     /// Ein einzelnes Wort ab 7 Zeichen an jeder Stelle in zwei Wörter geteilt ("haferflocken" -> "hafer flocken"); sonst leer.

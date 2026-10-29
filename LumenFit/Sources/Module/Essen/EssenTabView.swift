@@ -87,7 +87,7 @@ struct EssenTabView: View {
                     donutKarte(summe)
                 }
                 proteinKarte(woche)
-                EssenFastenKarte(essen: essen, jetzt: jetzt)
+                EssenFastenKarte(essen: essen)
                 favoritenAbschnitt(essen)
                 ForEach(Mahlzeit.allCases) { m in mahlzeitKarte(m, essen) }
                 EssenZielKarte(daten: daten, jetzt: jetzt) {

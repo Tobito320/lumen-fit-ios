@@ -52,6 +52,18 @@ final class LebensmittelSucheTests: XCTestCase {
         XCTAssertEqual(s.stand.sichtbar.first?.id, "eigen-1")
     }
 
+    func testGrundlebensmittelStehtVorZusammensetzungen() {
+        let mus = Lebensmittel(id: "bls-1", name: "Apfelmus", pro100: .null)
+        let roh = Lebensmittel(id: "bls-2", name: "Apfel roh", pro100: .null)
+        let kuchen = Lebensmittel(id: "eigen-1", name: "Apfelkuchen", pro100: .null)
+        let s = LebensmittelSuche(index: LebensmittelIndex(testDaten: [mus, roh]),
+                                  off: OpenFoodFactsQuelle(lader: SkriptLader.fehler(.notConnectedToInternet)), speicher: { _ in nil })
+        s.eingabe("Apfel", vorne: [])
+        XCTAssertEqual(s.stand.sichtbar.map(\.id), ["bls-2", "bls-1"], "Apfel roh vor Apfelmus, obwohl der Name länger ist")
+        s.eingabe("Apfel", vorne: [kuchen])
+        XCTAssertEqual(s.stand.sichtbar.first?.id, "eigen-1", "Eigene und Favoriten bleiben vorn")
+    }
+
     // MARK: - Online nur auf "Suchen"
 
     func testOnlineSuchenHaengtTrefferHintenAn() async throws {
