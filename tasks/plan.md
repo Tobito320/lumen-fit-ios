@@ -51,9 +51,9 @@ Auftrag `tasks/auftraege/grundgeruest.md`.
 - **G7 Hülle, Stubs, Demo, Widget-Hülle.** Akzeptanz: jede Route führt zu einem Stub; `-lumenFitDemo` zeigt jeden Tab; Screenshot-Schritt der CI liefert alle Bilder; Test-Host startet keine Module. Blockiert von: G3, G4, G5, G6.
 
 ### Checkpoint A: Grundgerüst
-- [ ] CI grün, Warnungen 0, Privat-Check und Namens-Gate sauber
-- [ ] Jeder Stub aus SPEC 5.9 existiert und ist eingehängt; Tag `grundgeruest-fertig`
-- [ ] Modulaufträge gegen den echten Code geprüft, Zweige und Worktrees angelegt
+- [x] CI grün, Warnungen 0, Privat-Check und Namens-Gate sauber
+- [x] Jeder Stub aus SPEC 5.9 existiert und ist eingehängt; Tag `grundgeruest-fertig`
+- [x] Modulaufträge gegen den echten Code geprüft, Zweige und Worktrees angelegt
 
 ## Phase 2: Module (parallel)
 

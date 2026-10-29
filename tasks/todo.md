@@ -9,36 +9,36 @@ Checkliste nach `tasks/plan.md`. "Blockiert von" sind die Kanten (Matt Pocock to
 
 ## Phase 1: Grundgerüst (Modul-ID grundgeruest, Auftrag `tasks/auftraege/grundgeruest.md`)
 
-- [ ] **G1: Repo-Gerüst und leere App grün**. Blockiert von: keine.
+- [x] **G1: Repo-Gerüst und leere App grün**. Blockiert von: keine.
   - Umfang: Vorlagen aus `docs/research/vorlagen` an ihren Platz, `project.yml`, beide Workflows, Skripte, Entitlements, Assets mit Icon ohne Alpha, `PrivateDaten.beispiel.json`; GitHub-Repo privat anlegen; erste grüne CI mit leerer App
-- [ ] **G2: Datenkern: Datum, Op, Raum, portierte Lovea-Typen und Tests**. Blockiert von: G1.
+- [x] **G2: Datenkern: Datum, Op, Raum, portierte Lovea-Typen und Tests**. Blockiert von: G1.
   - Umfang: Zeit, Daten, Speicher, Modelle und `LokalerOpLog`, `LokalerRaum` mit den Lovea-Tests der Datenkern-Tabelle (SPEC 5.8)
   - [ ] Idee 10: Fehler, die helfen
-- [ ] **G3: Stores und DatenSatz**. Blockiert von: G2.
+- [x] **G3: Stores und DatenSatz**. Blockiert von: G2.
   - Umfang: `TrainingStore`, `EssenStore`, `HabitStore`, `MeilensteinStore`, `CoachStore`, `EinstellungenStore`, `ZieleStore`, `VerbindungStore`, `DatenSatz`
-- [ ] **G4: Konto: Schlüsselbund, Passwort, ProfilStore**. Blockiert von: G1.
+- [x] **G4: Konto: Schlüsselbund, Passwort, ProfilStore**. Blockiert von: G1.
   - Umfang: Port `Schluesselbund` mit Keychain und Speicher-Fake, PBKDF2, mehrere Profile, Neuinstallations-Fall
   - [ ] Idee 1: Profil für immer
   - [ ] Idee 2: Mehrere Profile pro Gerät
-- [ ] **G5: Gesundheit: HealthLeser, GesundheitsStand, HealthSchreiber**. Blockiert von: G2.
+- [x] **G5: Gesundheit: HealthLeser, GesundheitsStand, HealthSchreiber**. Blockiert von: G2.
   - Umfang: HealthKit hinter dem Port, Fake, 60 Tage beim ersten Mal
   - [ ] Idee 8: Erster Tag schon voll
-- [ ] **G6: Design-System**. Blockiert von: G1.
+- [x] **G6: Design-System**. Blockiert von: G1.
   - Umfang: Farben, Themes, Muster, `LumiView`, `LumenBogen`, `LumenBalken`, Feder, Haptik, Bausteine; `FarbenKontrastTests`
   - [ ] Idee 3: Fünf Themes in Hell und Dunkel
   - [ ] Idee 4: Muster in jedem Theme
   - [ ] Idee 5: Lumi, die süße Figur
   - [ ] Idee 6: Lumen-Bögen
   - [ ] Idee 7: Haptik und Federn aus einem Guss
-- [ ] **G7: App-Hülle, Routen, Stubs, Demo, Widget-Hülle, grüne CI**. Blockiert von: G3, G4, G5, G6.
+- [x] **G7: App-Hülle, Routen, Stubs, Demo, Widget-Hülle, grüne CI**. Blockiert von: G3, G4, G5, G6.
   - Umfang: `AppUmgebung`, `Router`, `RouteURL`, `RouteAnsicht`, `ModulStart`, Stubs aller Module, Demo-Start-Argumente, Widget-Bundle mit Stub-Widgets, Lovea-Brücke-Dateien (`LoveaBruecke`), Test-Hilfen, Fixtures-Ordner
   - [ ] Idee 9: Jede Seite hat einen Link
 
 ### Checkpoint A: Grundgerüst
-- [ ] CI grün, Warnungen 0, Privat-Check und Namens-Gate sauber, `FarbenKontrastTests` grün
-- [ ] Jeder Stub aus SPEC 5.9 existiert und ist eingehängt (`RouteAnsicht` kennt jede Route); Tag `grundgeruest-fertig`
-- [ ] Alle portierten Lovea-Tests der Datenkern-Tabelle laufen
-- [ ] Modulaufträge gegen den echten Code geprüft (Typnamen), Zweige `modul/<id>` und Worktrees angelegt
+- [x] CI grün (348 Tests, 0 Fehler, 0 Warnungen), Privat-Check und Namens-Gate sauber, `FarbenKontrastTests` grün
+- [x] Jeder Stub aus SPEC 5.9 existiert und ist eingehängt (`RouteAnsicht` kennt jede Route); Tag `grundgeruest-fertig` (lokal, Push mit dem nächsten CI-Fenster)
+- [x] Alle portierten Lovea-Tests der Datenkern-Tabelle laufen (Rest je Modul: "VOM GRUNDGERÜST NICHT PORTIERT" in `tasks/auftraege/*.md`)
+- [x] Modulaufträge gegen den echten Code geprüft (Typnamen), Zweige `modul/<id>` und Worktrees angelegt (`/home/tobi/projects/lumen-fit-ios-wt/<id>`)
 
 ## Phase 2: Module (alle neun parallel, Blockiert von: Checkpoint A)
 
