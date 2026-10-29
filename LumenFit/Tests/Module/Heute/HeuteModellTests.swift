@@ -50,12 +50,20 @@ final class HeuteModellTests: XCTestCase {
         m.berechne()
         let s = try XCTUnwrap(m.stand)
         XCTAssertFalse(s.hatGesundheit)
+        XCTAssertFalse(s.healthGeprueft, "vor dem ersten Lesen kein Leerzustand: sonst blitzt beim Start \"Health erlauben\" auf")
         XCTAssertNil(s.score.punkte)
         XCTAssertEqual(s.boegen.map(\.anteil), [0, 0, 0])
         XCTAssertTrue(s.morgensatz.contains("Mir fehlen noch Daten"))
         XCTAssertEqual(s.stimmung, .denkt)
         XCTAssertTrue(s.hinweise.isEmpty)
         XCTAssertEqual(s.woche.count, 7)
+    }
+
+    func testNachDemLesenOhneDatenIstDerLeerzustandDa() async throws {
+        let m = HeuteModell(umgebung: try umgebung())
+        await m.lade()
+        XCTAssertEqual(m.stand?.hatGesundheit, false)
+        XCTAssertEqual(m.stand?.healthGeprueft, true)
     }
 
     // MARK: Mit Health
@@ -99,6 +107,22 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(s.score.teile.map(\.art), [.schlaf])
         XCTAssertTrue(s.score.fehlend.contains(.erholung))
         XCTAssertTrue(s.score.satz.contains("Ohne"))
+    }
+
+    func testVitalwerteUndLastSpeisenErholungUndBelastung() async throws {
+        let vitale: [VitalArt: [VitalMesswert]] = [
+            .hrv: (0..<20).map { VitalMesswert(art: .hrv, tag: Datum.addTage(heute, -$0), wert: $0 % 2 == 0 ? 48 : 52) },
+            .ruhepuls: (0..<20).map { VitalMesswert(art: .ruhepuls, tag: Datum.addTage(heute, -$0), wert: 55) },
+        ]
+        let tage = (0...31).map { TagesWerte(tag: Datum.addTage(heute, -$0), schritte: 5_000, aktiveKcal: 300) }
+        let leser = FakeHealthLeser(tage: tage, naechte: [nacht(heute, minuten: 480)], vitale: vitale)
+        let m = HeuteModell(umgebung: try umgebung(leser: leser))
+        await m.lade()
+        let score = try XCTUnwrap(m.stand?.score)
+        XCTAssertEqual(score.teile.map(\.art), [.schlaf, .erholung, .belastung])
+        XCTAssertTrue(score.fehlend.isEmpty)
+        XCTAssertEqual(score.teil(.belastung)?.wert ?? 0, 100, accuracy: 0.001, "300 kcal an jedem Tag: das Gleiche wie sonst")
+        XCTAssertNotNil(score.punkte)
     }
 
     func testBandSchlafGiltWennHealthKeinenHat() async throws {

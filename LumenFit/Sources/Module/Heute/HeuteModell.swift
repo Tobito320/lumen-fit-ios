@@ -237,7 +237,8 @@ final class HeuteModell {
         let hinweise = TagesHinweisLogik.zeige(TagesHinweisLogik.regeln(regelEingabe) + TagesHinweisLogik.ausEinsichten(einsichten, heute: heute),
                                                weggewischt: k.hinweise.ids)
 
-        stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty, boegen: boegen, boegenSatz: boegenSatz,
+        stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
+                           healthGeprueft: gesundheit.letzteAktualisierung != nil || gesundheit.zugriff == .nichtVerfuegbar, boegen: boegen, boegenSatz: boegenSatz,
                            boegenVoll: voll, stimmung: satz.stimmung, morgensatz: satz.satz, stimmungsWert: stimmungsWert, score: score, plan: plan,
                            energie: energie, habits: habits, gewicht: gewicht,
                            schritte: HeuteSchritte(schritte: schritteHeute, ziel: ziele.schritte, distanzKm: (tage[heute]?.distanzMeter ?? 0) / 1000,

@@ -24,7 +24,7 @@ private struct HeuteHinweisReihe: View {
     @Environment(\.palette) private var palette
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private static let schwelle: CGFloat = 80
+    private nonisolated static let schwelle: CGFloat = 80
 
     var body: some View {
         HStack(alignment: .top, spacing: Abstand.m) {
@@ -50,7 +50,8 @@ private struct HeuteHinweisReihe: View {
             DragGesture(minimumDistance: 24)
                 .onChanged { werte in if abs(werte.translation.width) > abs(werte.translation.height) { versatz = werte.translation.width } }
                 .onEnded { werte in
-                    if abs(werte.translation.width) > Self.schwelle {
+                    // Nur ein überwiegend waagerechtes Ziehen wischt weg; ein diagonales Scrollen setzt die Karte zurück.
+                    if abs(werte.translation.width) > abs(werte.translation.height), abs(werte.translation.width) > Self.schwelle {
                         weg()
                     } else if reduceMotion {
                         versatz = 0

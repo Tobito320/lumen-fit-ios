@@ -40,7 +40,7 @@ struct HeuteTabView: View {
             if s.hatGesundheit {
                 Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
                 ScoreKarte(score: s.score) { blatt = .score }
-            } else {
+            } else if s.healthGeprueft {
                 HeuteLeerKarte(modell: m)
             }
             if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }

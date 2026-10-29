@@ -86,6 +86,7 @@ struct EnergieDetail: View {
     let gefuehl: (Int) -> Void
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var schriftGroesse
 
     var body: some View {
         NavigationStack {
@@ -139,12 +140,14 @@ struct EnergieDetail: View {
     private var gefuehlKarte: some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             Text("Wie fühlst du dich?").font(.headline)
-            HStack(spacing: Abstand.s) {
+            let anordnung = schriftGroesse.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: Abstand.s)) : AnyLayout(HStackLayout(spacing: Abstand.s))
+            anordnung {
                 ForEach(1...5, id: \.self) { stufe in
                     let gewaehlt = energie.gefuehl == stufe
                     Button { gefuehl(stufe) } label: {
                         Text(TagesformGefuehl.name(stufe))
                             .font(.footnote.weight(.semibold))
+                            .lineLimit(1).minimumScaleFactor(0.7)
                             .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                             .foregroundStyle(gewaehlt ? palette.aufAkzent : palette.text)
                             .background(gewaehlt ? palette.akzent : palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))

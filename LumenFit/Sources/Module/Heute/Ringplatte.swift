@@ -41,18 +41,29 @@ struct ScoreKarte: View {
     let score: BereitScore.Ergebnis
     let oeffne: () -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.dynamicTypeSize) private var schriftGroesse
 
     var body: some View {
         Button(action: oeffne) {
             ListenKarte {
                 VStack(alignment: .leading, spacing: Abstand.m) {
                     HeuteKartenKopf(symbol: "gauge.with.dots.needle.67percent", titel: "Bereit-Score", zusatz: "Wie sie rechnet")
-                    HStack(alignment: .center, spacing: Abstand.l) {
-                        zahl
-                        Spacer(minLength: 0)
-                        teilBogen(.erholung, Datenbereich.erholen, "Erholung")
-                        teilBogen(.belastung, Datenbereich.trainieren, "Belastung")
-                        teilBogen(.schlaf, Datenbereich.erholen, "Schlaf")
+                    if schriftGroesse.isAccessibilitySize {
+                        // Ab den großen Schriftstufen untereinander, damit nichts abgeschnitten wird.
+                        VStack(alignment: .leading, spacing: Abstand.m) {
+                            zahl
+                            teilBogenZeile(.erholung, Datenbereich.erholen, "Erholung")
+                            teilBogenZeile(.belastung, Datenbereich.trainieren, "Belastung")
+                            teilBogenZeile(.schlaf, Datenbereich.erholen, "Schlaf")
+                        }
+                    } else {
+                        HStack(alignment: .center, spacing: Abstand.l) {
+                            zahl
+                            Spacer(minLength: 0)
+                            teilBogen(.erholung, Datenbereich.erholen, "Erholung")
+                            teilBogen(.belastung, Datenbereich.trainieren, "Belastung")
+                            teilBogen(.schlaf, Datenbereich.erholen, "Schlaf")
+                        }
                     }
                     Text(score.satz).font(.subheadline).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -85,6 +96,13 @@ struct ScoreKarte: View {
             }
         } else {
             Text("–").heuteHeldenZahl(44).foregroundStyle(palette.text2)
+        }
+    }
+
+    private func teilBogenZeile(_ art: BereitScore.Art, _ bereich: Datenbereich, _ name: String) -> some View {
+        HStack(spacing: Abstand.m) {
+            HeuteMiniBogen(anteil: (score.teil(art)?.wert ?? 0) / 100, bereich: bereich).frame(width: 40, height: 40)
+            Text(name).font(.subheadline).foregroundStyle(palette.text2)
         }
     }
 

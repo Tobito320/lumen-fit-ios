@@ -6,6 +6,8 @@ struct HeuteStand {
     var stunde: Int
     /// Health oder Band haben mindestens einen Tag oder eine Nacht geliefert. Ohne: Leerzustand mit "Health erlauben".
     var hatGesundheit: Bool
+    /// Health wurde schon gelesen (oder gibt es auf diesem Gerät nicht). Vorher zeigt der Tab keinen Leerzustand, sonst blitzt beim Start "Health erlauben" auf.
+    var healthGeprueft: Bool
     var boegen: [BogenWert]
     /// Die drei Bögen als ein Satz für VoiceOver ("Schritte: 8.412 von 10.000. Gym: 1 von 3 Tagen. Schlaf: 7:12 h von 8:00 h.").
     var boegenSatz: String
