@@ -5,7 +5,7 @@ import SwiftUI
 /// Ohne Eintrag: Lumi, ein Satz, eine Handlung (Gewicht eintragen).
 struct GewichtVerlaufKarte: View {
     let trend: GewichtTrend
-    let beiEintragen: () -> Void
+    let beiEintragen: @MainActor () -> Void
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast

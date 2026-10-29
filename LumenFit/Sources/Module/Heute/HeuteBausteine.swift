@@ -52,7 +52,7 @@ struct HeuteDiagrammBeschreibung: AXChartDescriptorRepresentable {
         let x = AXCategoricalDataAxisDescriptor(title: xTitel, categoryOrder: namen.isEmpty ? ["–"] : namen)
         let obergrenze = max(1, punkte.map(\.wert).max() ?? 1)
         let einheitText = self.einheit
-        let y = AXNumericDataAxisDescriptor(title: yTitel, range: 0...obergrenze, gridlinesOccurAtValues: []) { wert in
+        let y = AXNumericDataAxisDescriptor(title: yTitel, range: 0...obergrenze, gridlinePositions: []) { wert in
             "\(Int(wert.rounded())) \(einheitText)"
         }
         let serie = AXDataSeriesDescriptor(name: titel, isContinuous: false, dataPoints: punkte.map { AXDataPoint(x: $0.name, y: $0.wert) })
@@ -78,7 +78,7 @@ enum HeuteFormat {
 
 /// Heldenzahl nach design.md Abschnitt 4: Rounded, bold, wächst mit Dynamic Type (`@ScaledMetric` relativ zu `.largeTitle`) und schrumpft statt abzuschneiden.
 private struct HeuteHeldenZahl: ViewModifier {
-    @ScaledMetric(relativeTo: .largeTitle) private var groesse: CGFloat
+    @ScaledMetric(relativeTo: .largeTitle) private var groesse: CGFloat = 40
 
     init(basis: CGFloat) { _groesse = ScaledMetric(wrappedValue: basis, relativeTo: .largeTitle) }
 
