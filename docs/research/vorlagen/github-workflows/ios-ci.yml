@@ -38,6 +38,10 @@ jobs:
           if git grep -n -E 'try!|fatalError\(' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam; then
             echo "::error::try! und fatalError sind im Produktionscode nicht erlaubt (CONSTRAINTS.md)"; fail=1
           fi
+          if git grep -n -E 'AlarmKit|UNCalendarNotificationTrigger' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam; then
+            echo "::error::Wecker und Erinnerungen gehören nicht in Lumen Fit (nur Health)"; fail=1
+          fi
+          bash scripts/typnamen-doppelt.sh || fail=1
           exit "$fail"
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color

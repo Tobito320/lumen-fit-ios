@@ -43,7 +43,7 @@ Nutzer: Ahmed, seine Partnerin, Kollegen (mehrere Profile, auch mehrere auf eine
 | "ganze Health auslagern" | Alle Health-Teile aus Lovea (Gym, Essen/Scan, Schlaf, Schritte, Habits, Heute, Verlauf, Coach, Widgets Gym/Essen/Habit) wandern als fertige Logik in die neue App; Lovea wird danach in einer eigenen Runde verkleinert | Inventar `Lovea – Funktionen und Auslagerung.md`, Spur A; "Lovea selbst NICHT verändern" gilt für diesen Bau |
 | "sehr gute app, ruhig mit mehr Kollegen teilen" | Mehrere Profile, nichts Privates im Code, kein Zwang zu Lovea, sauberes Onboarding, Quellenangaben | Kollegen kennen Lovea nicht; Namen und Orte dürfen nicht im Quelltext stehen |
 | "kein girly Theme, einstellbar mehrere Themes, Standard monochrome Apple Design" | Fünf Themes (Monochrom Standard, Graphit, Stahl, Glut, Wald), jedes hell und dunkel, Auswahl in "Aussehen" | `design.md` Abschnitt 3 |
-| "Mit Lovea verknüpfen können" | Dateivertrag in der gemeinsamen App Group `group.com.onlyus.lovea` (Abschnitt 5.5); Lovea selbst bleibt unverändert, ihre Hälfte ist eine spätere Lovea-Runde | App Groups gelten nur auf einem Gerät; zwischen zwei Geräten trägt nur Loveas eigener Server; Lovea darf jetzt nicht geändert werden |
+| "Mit Lovea verknüpfen können" | Zwei Wege in der gemeinsamen App Group `group.com.onlyus.lovea` (Abschnitt 5.5): Quelle A sofort und ohne Änderung an Lovea (Lumen Fit liest Loveas vorhandenen `widget-stand.json`: Schritte, Gym-Woche, Schlaf der Partnerin) und Vertrag B für Band-Wünsche und Zusammenfassungen (Loveas Hälfte ist eine spätere Lovea-Runde) | Loveas Widgets lesen diesen Stand heute schon aus der Gruppe, Lovea füllt ihn über den eigenen Server; App Groups gelten nur auf einem Gerät; Lovea darf jetzt nicht geändert werden, also wäre Vertrag B allein am ersten Tag leer |
 | "Neue name kein herz oder love ish" | Lumen Fit (Marke Lumen); kein Wort mit Herz, Love, Fit-Bindestrich-Gym | `konfiguration.md`; "Forma" wurde abgelehnt |
 | "simple profil, Passwort legen, wird gespeichert; nie mehr erneut anmelden" | Lokales Profil: Name plus Passwort; Passwort nur als Salz und Hash im Schlüsselbund; die App fragt beim Start nie nach einem Passwort; das Passwort schützt nur Profilwechsel, Passwort ändern und Löschen | Client-only (Abschnitt 5.4); der ältere Entwurf mit Cloudflare-Konten ist verworfen, Annahme 2 |
 | "Coach AI besser und menschlicher" | Coach-Motor auf dem Gerät (Apple Foundation Models) mit regelbasiertem Rückfall, Ton eines Freundes, Gedächtnis, Antwort-Chips mit Handlung, ehrlich über Wissenslücken | Recherche FitWoody/Whoop; kein Server nötig |
@@ -86,8 +86,11 @@ Bewusst nicht in v1: Abschnitt 17.
 | Barcode live | VisionKit `DataScannerViewController` | Foto: Vision `VNDetectBarcodesRequest`; Text: `VNRecognizeTextRequest` | NSCameraUsageDescription |
 | Coach | Apple Foundation Models (`SystemLanguageModel`, `LanguageModelSession`, `@Generable`; iOS 26, nur mit Apple Intelligence, Deutsch mit `supportsLocale` prüfen) | regelbasierte deutsche Textbausteine aus Lovea (`CoachRegeln`, `CoachLokal`, `CoachTraining`, `CoachGesundheit`) | Typnamen am Compiler und in der Apple-Doku prüfen |
 | Band | CoreBluetooth (`TrackerFunk` aus Lovea) | – | NSBluetoothAlwaysUsageDescription, Hintergrund `bluetooth-central` |
-| Lovea-Kopplung, geteiltes Band | JSON-Dateien in `group.com.onlyus.lovea` (Abschnitt 5.5) | nicht verbunden: alles lokal | – |
+| Partner-Werte, sofort | Loveas vorhandener `widget-stand.json` in `group.com.onlyus.lovea`, nur lesen (Quelle A, Abschnitt 5.5) | Vertrag B (`partner.json`), sonst nicht verbunden | nur Schritte, Gym-Woche, Schlaf und Ziele dekodieren, nie Ort, Wetter, Akku, Status, Punkte oder Bilder |
+| Lovea-Kopplung, geteiltes Band | JSON-Dateien in `group.com.onlyus.lovea` (Vertrag B, Abschnitt 5.5) | nicht verbunden: alles lokal | – |
 | Widgets, Live Activity | WidgetKit, ActivityKit, App Intents | – | App Group `group.com.onlyus.lumen-fit` |
+
+**Wer liefert was (Realismus).** Nur mit iPhone gibt es Schritte, Distanz, Etagen und eine Schlafzeit, aber keine Schlafphasen. Phasen, HRV, Ruhepuls, Atmung, SpO2, Temperatur und VO2max liefern nur eine Apple Watch oder ein Gerät, das nach Health schreibt; Loveas Band-Schritte und -Schlaf landen nicht in Health (Lovea liest Health nur, `HealthModell` ohne `toShare`). Ohne diese Quellen zeigen Chips und Diagramme einen ehrlichen Leerzustand mit Handlung, der Bereit-Score rechnet mit den vorhandenen Werten und sagt, was fehlt (nie erfinden). Für den Besitzer des Bands ist das Band die Quelle für Schritte und Schlaf (Lovea nimmt dort das Maximum aus Band und Health): seine Tage und Nächte kommen als Ops `fit.band.tag` und `fit.band.schlaf` (Abschnitt 5.3). HealthKit verrät nie, ob Lesen abgelehnt wurde (Datenschutz): "keine Daten" ist die einzige ehrliche Aussage, `HealthZugriff.verweigert` ist nur für Schreibtypen feststellbar; `getRequestStatusForAuthorization` sagt nur, ob das Blatt noch erscheinen muss.
 
 Verworfen (Begründung in `daten.md`): USDA FoodData Central (englisch, geteilter Demo-Schlüssel), Pollinations (Limit, Gesundheitsdaten an Dritte), Groq und Cerebras (Schlüssel nötig), Open-Meteo (nicht im Auftrag).
 
@@ -117,6 +120,17 @@ Lovea speichert Gym, Essen, Habits und Körperwerte als Ereignisse ("Ops", Art a
 - `LokalerOpLog` (neu, Vorbild Loveas `OpLog`): eine Zeile JSON je Op in `<Profilordner>/ops.jsonl`, nur anhängen, doppelte `id` überspringen, eine kaputte letzte Zeile wird übersprungen und gesichert. Kein Server, keine `seq`, kein Entwurfs- und Zeichen-Sonderfall.
 - `LokalerRaum` (neu): dieselbe kleine Oberfläche, die Loveas Health-Code von `Raum.shared` braucht: `senden(art, daten)`, `einreihen(op)`, `beobachten(arten) { op in }` (spielt beim Anmelden zuerst alle vorhandenen Ops der Arten ab, dann live), `ops(arten:)`, `leer()` (wartet, bis geschriebene Ops gefaltet sind). Ein Raum je `DatenSatz`, keine Singletons (`static let shared` entfällt überall; Stores bekommen den Raum per Initialisierer).
 - Arten aus Lovea bleiben unverändert, damit ein späterer Import aus Loveas `ops.jsonl` ohne Umbau läuft. Neue Arten von Lumen Fit tragen die Vorsilbe `fit.` (`fit.lumi.meilenstein`, `fit.coach.nachricht`, `fit.coach.merke`, `fit.lumi.stimmung`).
+- Op-Katalog `fit.*` (Rumpf-Typen gehören dem Grundgerüst, `Gemeinsam/Modelle/Lumi.swift`, `Coach.swift`, `Gesundheit.swift`; Schreiber ändern den Rumpf nie, Leser benutzen den Typ; gleiche `id` bzw. gleicher `tag` ersetzt, die letzte Op gewinnt):
+
+  | Art | Rumpf | Schreibt | Liest |
+  |---|---|---|---|
+  | `fit.lumi.meilenstein` | `MeilensteinStand` (`id`, `erreicht`) | fortschritt über `MeilensteinStore.markiere` | `MeilensteinStore` (Grundgerüst), fortschritt |
+  | `fit.lumi.stimmung` | `StimmungsEintrag` (`tag`, `wert` 1 bis 5, `stimmung`) | coach (Morgen-Check) | heute (Lumis Stimmung, Plan-Karte), widgets (Snapshot) |
+  | `fit.coach.nachricht` | `CoachNachricht` | coach über `CoachStore.haenge` | `CoachStore` |
+  | `fit.coach.merke` | `MerkEintrag` (`text`, `entfernt`) | coach über `CoachStore.merke` und `vergiss` | `CoachStore` |
+  | `fit.band.schlaf` | `BandSchlafOp` (`tag`, `start`, `ende`, `phasen: [SchlafAbschnitt]`) | verbinden (`TrackerSchlaf`) | schlaf (`SchlafQuellenWahl`) |
+  | `fit.band.tag` | `BandTagOp` (`tag`, `schritte`, `meter`) | verbinden (`TrackerTage`) | `GesundheitsStand`: je Tag das Maximum aus Health und Band, nie die Summe (wie Lovea `HealthLogik.schritteTag`) |
+
 - Alles, was nicht aus Lovea kommt und klein ist, liegt als Datei im Profilordner (`JSONDatei`, atomar, defekte Datei wird `.defekt` gesichert): `einstellungen.json`, `ziele.json`, `freigaben.json`, `freunde.json`, `schlaf-cache.json`.
 - Profilordner: `<AppGruppe.ordner>/profile/<ProfilID>/`. Widgets lesen nur `widget-stand.json` im Gruppenordner (Snapshot des aktiven Profils, geschrieben vom Modul widgets).
 - Neue Felder in gespeicherten Typen sind immer optional (`decodeIfPresent`); jede Änderung bekommt einen Fall in `AlteDateienLadenTests` (eingefrorene Datei vom letzten Stand).
@@ -127,7 +141,7 @@ Warum so (Ponytail): wenig neuer Code, die Lovea-Tests laufen mit, "Import aus L
 
 - `Profil`: `id` (UUID), `name`, `erstellt`, `passwort` (`PasswortSpur`: Salz 16 Byte, Hash 32 Byte, Runden). Das Passwort selbst wird nie gespeichert.
 - Hash: PBKDF2-HMAC-SHA256 über CommonCrypto (`CCKeyDerivationPBKDF`), 600.000 Runden (OWASP 2023, in der Spur gespeichert, damit sie steigen können), Vergleich in konstanter Zeit. Mindestlänge 4 Zeichen ("ganz simple"); das Passwort schützt nur lokale Handlungen, kein Konto im Netz.
-- Ablage: Schlüsselbund hinter dem Port `Schluesselbund`. Zwei Einträge: `konto.profile` (Liste der Profile als JSON) und `konto.aktiv` (UUID). Attribute: `kSecAttrAccessibleAfterFirstUnlock`, `kSecAttrSynchronizable = true` (iCloud-Schlüsselbund, wenn der Nutzer ihn an hat; sonst lokal), Dienst `com.onlyus.lumen-fit.konto`. Kein eigenes Entitlement.
+- Ablage: Schlüsselbund hinter dem Port `Schluesselbund`. Zwei Einträge: `konto.profile` (Liste der Profile als JSON) und `konto.aktiv` (UUID). Attribute: `kSecAttrAccessibleAfterFirstUnlock`, `kSecAttrSynchronizable = true` (iCloud-Schlüsselbund, wenn der Nutzer ihn an hat; sonst lokal), Dienst `com.onlyus.lumen-fit.konto`. Kein eigenes Entitlement. Lesen und Löschen immer mit `kSecAttrSynchronizable: kSecAttrSynchronizableAny` (sonst findet die Abfrage die synchronisierbaren Einträge nicht); schlägt das Schreiben als synchronisierbar fehl (iCloud-Schlüsselbund aus), wird lokal geschrieben. Beide Wege sind Tests am Fake. Die Liste enthält Name und Passwort-Spur, nie das Passwort.
 - Start: gibt es im Schlüsselbund ein aktives Profil, zeigt die App direkt die Tabs. Es gibt nirgends einen Anmeldebildschirm. Das Onboarding hängt am Schlüsselbund-Profil, nicht an Datendateien (nach einer Neuinstallation überlebt der Schlüsselbund meist, der Container nicht).
 - Passwort gefragt wird nur bei: Profil wechseln, Passwort ändern, Profil oder alle Daten löschen, Datensicherung einspielen in ein anderes Profil. Falsches Passwort: Haptik `.error`, Schütteln, "Passwort stimmt nicht. Versuch es nochmal."
 - Neuinstallation: Profil ist wieder da, `profile/<ID>/` fehlt: Willkommen-zurück-Karte "Datensicherung einspielen?" (Idee 74), Health-Verlauf kommt aus Health (Idee 8), Trainings und Essen nur aus der Sicherung. Das ist eine Grenze (Annahme 5).
@@ -136,7 +150,11 @@ Warum so (Ponytail): wenig neuer Code, die Lovea-Tests laufen mit, "Import aus L
 
 ### 5.5 Lovea-Brücke: Dateivertrag in der gemeinsamen Gruppe (Idee 81 bis 84, 86)
 
-Eine App Group gilt nur auf einem Gerät. Die Partnerin ist auf einem anderen Gerät; ihre Daten erreichen Ahmeds Gerät nur über Loveas eigenen Server. Lumen Fit definiert deshalb nur den Vertrag; Loveas Hälfte (Dateien schreiben und lesen) ist eine spätere Lovea-Runde (Abschnitt 16). Ordner: `<group.com.onlyus.lovea>/LumenFit/` (`containerURL(forSecurityApplicationGroupIdentifier:)`, nil ohne Signierung: dann gilt "nicht verbunden").
+Eine App Group gilt nur auf einem Gerät. Die Partnerin ist auf einem anderen Gerät; ihre Daten erreichen Ahmeds Gerät nur über Loveas eigenen Server, und Lovea legt sie auf Ahmeds Gerät schon heute in der Gruppe ab (Quelle A). Lovea darf in diesem Bau nicht geändert werden; darum gibt es zwei Wege: Quelle A funktioniert am ersten Tag, Vertrag B (Band-Wünsche, Zusammenfassungen von Lumen Fit an Lovea) wartet auf eine spätere Lovea-Runde (Abschnitt 16).
+
+**Quelle A: Loveas vorhandener `widget-stand.json`** (Ordner `<group.com.onlyus.lovea>/`, nur lesen). Lovea schreibt ihn für ihre Widgets (gedrosselt, bei jeder relevanten Änderung) mit Werten je Person unter deren Kennung: `schritteHeute`, `zielSchritte`, `gymLetzte7` (Montag bis Sonntag, je `datum` und `erledigt`), `zielGymWoche`, `schlafMinutenHeute`, `zielSchlafMinuten`; `eigenePerson` nennt die Person dieses Geräts, die andere Kennung ist die Partnerin. `LoveaBruecke` (Grundgerüst) dekodiert nur diese Felder, alle optional, und macht aus der anderen Kennung eine `ZusammenfassungDatei`: `profilName` = Kennung mit großem Anfangsbuchstaben (Laufzeitwert, nie im Quelltext), `freigaben` = vorhandene Felder, `heute.schritte`, `heute.gymTageWoche` (Anzahl `erledigt`), `heute.schlafMinuten`, `geschrieben` = Änderungsdatum der Datei, `ereignisse` zustandslos aus dem einen Stand: `gymEnde-<tag>` wenn der heutige Gym-Tag `erledigt` ist, `ziel-<tag>` wenn Schritte mindestens das Ziel sind, `schlafGut-<tag>` wenn die Schlafminuten mindestens das Ziel sind (die `id` macht jedes Ereignis einmal je Tag; die Mitteilungs-Regeln merken sich die Ids). Ort, Wetter, Akku, Status, Herzen, Punkte und Bilder aus der Datei werden nie dekodiert. Das Format gehört Lovea: unbekannt oder kaputt heißt "nicht verbunden", nie ein falscher Wert. Test mit `lovea-widget-stand-beispiel.json` (erfundene Kennungen).
+
+**Vertrag B** (Ordner `<group.com.onlyus.lovea>/LumenFit/`, `containerURL(forSecurityApplicationGroupIdentifier:)`, nil ohne Signierung: dann gilt "nicht verbunden"). `partner.json` mit `version` 1 gewinnt gegen Quelle A.
 
 | Datei | Schreibt | Liest | Inhalt (`version` 1) |
 |---|---|---|---|
@@ -148,15 +166,15 @@ Eine App Group gilt nur auf einem Gerät. Die Partnerin ist auf einem anderen Ge
 
 Regeln:
 - Schreiben atomar. Lesen verträgt fehlende und kaputte Dateien (= nicht verbunden) und unbekannte `version` (= Hinweis "Lovea ist neuer, bitte Lumen Fit aktualisieren", sonst nichts).
-- **Verbunden** heißt genau: Einstellung `loveaVerbunden` an, `partner.json` liegt da, `version` ist 1, `geschrieben` ist höchstens 48 Stunden alt. Sonst zeigt keine Oberfläche etwas vom Partner, nicht einmal einen Platzhalter ("wenn nicht connected dann funktioniert es ganz normal").
+- **Verbunden** heißt genau: Einstellung `loveaVerbunden` an, und entweder `partner.json` liegt da (`version` 1) oder Quelle A liefert eine Partnerin; `geschrieben` (bei Quelle A das Änderungsdatum) ist höchstens 48 Stunden alt. Sonst zeigt keine Oberfläche etwas vom Partner, nicht einmal einen Platzhalter ("wenn nicht connected dann funktioniert es ganz normal").
 - Datenschutz: nur Zusammenfassungen, nie Rohdaten (keine Sätze, keine Herzfrequenz, keine Mahlzeiten); jede Art hat ihre eigene Freigabe, Standard aus (Idee 84).
-- Darwin-Benachrichtigungen als Anstoß (`CFNotificationCenterGetDarwinNotifyCenter`): `com.onlyus.lumen-fit.zusammenfassung`, `com.onlyus.lumen-fit.band-status` (an Lovea), `com.onlyus.lovea.partner`, `com.onlyus.lovea.band-wunsch` (an Lumen Fit). Namen sind eine Annahme; sie wecken keine beendete App, gelesen wird beim Öffnen, beim Rückkehren in den Vordergrund und im Hintergrund-Abruf (`com.onlyus.lumen-fit.aktualisieren`).
+- Darwin-Benachrichtigungen als Anstoß (`CFNotificationCenterGetDarwinNotifyCenter`): `com.onlyus.lumen-fit.zusammenfassung`, `com.onlyus.lumen-fit.band-status` (an Lovea), `com.onlyus.lovea.partner`, `com.onlyus.lovea.band-wunsch` (an Lumen Fit). Namen sind eine Annahme; sie wecken keine beendete App, gelesen wird beim Öffnen (`Ereignis.vordergrund`) und im Hintergrund-Abruf (`com.onlyus.lumen-fit.aktualisieren`, Aufgaben melden Module mit `AppUmgebung.beiAbruf`). Lovea sendet für Quelle A keine Darwin-Benachrichtigung; das Lesen beim Vordergrund und im Abruf genügt. Zusätzlicher Weckruf: die HealthKit-Hintergrundlieferung (`HealthLeser.beobachte` für Schritte, Schlaf und Training, Entitlement vorhanden) startet die App im Hintergrund, wenn neue Health-Daten ankommen; `ModulStart.starteAlle` meldet die Beobachtung synchron an, `Ereignis.healthAktualisiert` und alle `beiAbruf`-Aufgaben laufen dann, der Partner-Stand wird gelesen, die Mitteilung kommt. Die Häufigkeit bestimmt iOS (ungeprüft); gelesen wird nur die Datei, nie Health, damit es auch bei gesperrtem Gerät geht.
 - Mitteilungen "Partner ist im Gym" entstehen deshalb nur, wenn Lumen Fit läuft oder der Abruf es weckt; Echtzeit liefert Loveas eigener Push (Annahme 8).
 - Ohne Signierung (Tests): `LoveaBruecke(ordner:)` bekommt einen Temp-Ordner; der Vertrag wird gegen Fixtures in `LumenFit/Tests/Fixtures/Verbinden/` getestet.
 
 ### 5.6 Band: geteilt und opt-in (Idee 85 bis 88)
 
-Lovea `TrackerFunk` zeigt: das Band nimmt nur eine Verbindung und sendet nach dem Trennen erst, wenn man es antippt. Solange Lovea seinen Band-Code behält, würden zwei Apps um die Verbindung kämpfen. Darum: Lumen Fit schaltet das Band nur auf Wunsch ein (`bandAktiv`, Standard aus; ohne Schalter wird kein `CBCentralManager` angelegt, damit auch keine Bluetooth-Frage kommt). Ist es an, hält Lumen Fit die Verbindung (Wiederherstellungs-Kennung, Hintergrund `bluetooth-central`), führt Wünsche aus `band-wuensche.json` aus und meldet Status und Akku. Das Band-Protokoll (`TrackerProtokoll`, `TrackerFunk`, `TrackerModell`, `BandPuls`, `BandNachrichtVibration`, `BandRegeln`) kommt aus Lovea. Auf dem Gerät offen: ob iOS dem zweiten Prozess `retrieveConnectedPeripherals` erlaubt und das Band es duldet (Testliste). Wecker, Töne und AlarmKit aus Loveas `Wecker/` kommen nicht mit. Der Schlaf, den das Band meldet (`TrackerSchlaf`), geht als Op der Art `fit.band.schlaf` (Rumpf: `tag`, `start`, `ende`, `phasen`) in den Raum; das Modul schlaf liest sie in seiner Quellenwahl (Idee 60).
+Lovea `TrackerFunk` zeigt: das Band nimmt nur eine Verbindung und sendet nach dem Trennen erst, wenn man es antippt. Solange Lovea seinen Band-Code behält, würden zwei Apps um die Verbindung kämpfen. Darum: Lumen Fit schaltet das Band nur auf Wunsch ein (`bandAktiv`, Standard aus; ohne Schalter wird kein `CBCentralManager` angelegt, damit auch keine Bluetooth-Frage kommt). Ist es an, hält Lumen Fit die Verbindung (Wiederherstellungs-Kennung, Hintergrund `bluetooth-central`), führt Wünsche aus `band-wuensche.json` aus und meldet Status und Akku. Das Band-Protokoll (`TrackerProtokoll`, `TrackerFunk`, `TrackerModell`, `BandPuls`, `BandNachrichtVibration`, `BandRegeln`) kommt aus Lovea. Auf dem Gerät offen: ob iOS dem zweiten Prozess `retrieveConnectedPeripherals` erlaubt und das Band es duldet (Testliste). Wecker, Töne und AlarmKit aus Loveas `Wecker/` kommen nicht mit. Der Schlaf, den das Band meldet (`TrackerSchlaf`), geht als Op `fit.band.schlaf` (`BandSchlafOp`), seine Schritte (`TrackerTage`, je Viertelstunde das Maximum, nie summieren) gehen als Op `fit.band.tag` (`BandTagOp`) in den Raum (Katalog in 5.3); das Modul schlaf liest die Nächte in seiner Quellenwahl (Idee 60), `GesundheitsStand` nimmt je Tag das Maximum aus Health und Band. Verbindungsweg im zweiten Prozess: zuerst `retrieveConnectedPeripherals(withServices:)` (eine Verbindung, die Lovea schon hält, wird womöglich mitbenutzt; ob iOS und das Band das erlauben, wird am Gerät geprüft, Annahmen 9 und 24), dann `retrievePeripherals(withIdentifiers:)`, zuletzt Scan; die Peripherie-Kennung ist je App verschieden, Lovea-Kennungen sind nicht übertragbar. Die Akku-Warnung ist ein Status in der App und im Band-Blatt, keine geplante Mitteilung.
 
 ### 5.7 Coach-Motor (Idee 61 bis 70)
 
@@ -185,11 +203,12 @@ Ersetzungen (gehören dem Grundgerüst; Module bauen keine eigenen):
 Regeln:
 1. Zuerst die reinen `*Logik`-Dateien und ihre Tests, dann Stores, dann Oberflächen. Oberflächen werden im Lumen-Design neu geschrieben (Modus N); Lovea-Views sind nur Inhaltsvorbild.
 2. Die Tests einer Datei kommen mit (gleiche Namen, `@testable import LumenFit`). Nicht mitnehmen: `RenderGalerie*`, `*RenderTests`, alles zu Chat, Figuren, Punkte, Wecker. Bei Umbenennung Tests anpassen, nie löschen oder abschwächen.
-3. Private Werte im Lovea-Code (Personennamen, konkrete Studios mit Öffnungszeiten, persönliche Ziele, Orte) nie übernehmen. Studios kommen aus `PrivateDaten.json` (Beispiel: `PrivateDaten.beispiel.json`) oder sind erfunden (Tests). Gate: `rg -n -i -w 'annika|ahmed|kausar|mohammed|fitx|absolut' LumenFit Gemeinsam LumenFitWidgets` muss leer sein.
+3. Private Werte im Lovea-Code (Personennamen, konkrete Studios mit Öffnungszeiten, persönliche Ziele, Orte) nie übernehmen. Studios kommen aus `PrivateDaten.json` (Beispiel: `PrivateDaten.beispiel.json`) oder sind erfunden (Tests). Gate: `bash scripts/namen-gate.sh` muss sauber sein (die Namensliste liegt in `~/.config/lumen-fit/namen.txt`, nie im Git; Treffer erscheinen nur als Pfad:Zeile).
 4. Jede portierte Datei trägt oben eine Zeile `// Quelle: Lovea Health/<Pfad>` (Nachweis, spätere Lovea-Auslagerung).
 5. Lovea-Ressourcen: `uebungen.json`, `splits.json`, `lebensmittel-basis.json` (BLS, CC BY 4.0) kommen mit. `muskelkarte.json` kommt NICHT mit (stammt aus openGym unter AGPL-3.0, die Freigabe galt nur für die private App; Weitergabe an Kollegen wäre Verteilung, Annahme 13): die Erholungs-Silhouette wird selbst aus SwiftUI-Formen gezeichnet.
 6. Im Zweifel zeigt Loveas Test, was gelten soll; weicht Lumen Fit ab, steht der Grund im Commit.
 7. Ressourcen eines Moduls (JSON, Listen) liegen in dessen `Sources`-Ordner (XcodeGen nimmt sie als Resources, im Bundle liegen sie flach: eindeutiger Dateiname mit Modul-Präfix). Die drei großen Daten-JSON des Datenkerns liegen im Grundgerüst unter `LumenFit/Resources/Daten/`.
+8. Typnamen sind im ganzen Ziel eindeutig, denn neun Module bauen parallel und sehen einander nicht: neue Typen eines Moduls stehen in den Aufträgen oder sind `private`/`fileprivate` oder tragen die Modulsilbe als Vorsilbe (`HeuteZahlenrad`); Erweiterungen auf Fremdtypen sind `fileprivate`; Testklassen heißen nach ihrem Thema und nie wie eine Grundgerüst-Klasse. Prüfung: `bash scripts/typnamen-doppelt.sh` (läuft in `check-schnell.sh`, im Job `patterns` und vor dem Zusammenführen, Ablauf I1).
 
 Datenkern (Eigentümer: Grundgerüst; alles hier ist von mehreren Modulen gelesen und deshalb nicht Sache eines Moduls):
 
@@ -218,7 +237,7 @@ Das Grundgerüst baut ALLE gemeinsam genutzten Teile und legt für jedes Modul f
 
 ```
 project.yml  .gitignore  .github/workflows/{ios-ci.yml,testflight.yml}
-scripts/{pruefe-privat,check-schnell,ci-fenster,ci-fehler,symbole-sammeln,testflight-fenster}.sh   (aus docs/research/vorlagen; check-schnell um das Namens-Gate aus 5.8 erweitern)
+scripts/{pruefe-privat,namen-gate,typnamen-doppelt,check-schnell,ci-fenster,ci-fehler,symbole-sammeln,testflight-fenster}.sh   (alle fertig in docs/research/vorlagen, inklusive Namens-, Typnamen- und Umfang-Gate)
 signing/  (gitignored; Skripte aus docs/research/vorlagen/signing-skripte, asc.mjs aus Bahnherz kopieren)
 LumenFit/LumenFit.entitlements  LumenFitWidgets/LumenFitWidgets.entitlements
 LumenFit/Resources/{Assets.xcassets (AppIcon ohne Alpha, AccentColor), PrivateDaten.beispiel.json, Daten/{uebungen,splits,lebensmittel-basis}.json}
@@ -226,7 +245,7 @@ Gemeinsam/Zeit/{Datum,Uhr}.swift      Gemeinsam/Daten/{Op,JSONValue}.swift      
 Gemeinsam/Modelle/{Profil,Einstellungen,Ziele,Gesundheit,Training,Splits,WochenAbweichung,Ruhetage,Cardio,Uebungen,Ernaehrung,LebensmittelBasis,ErnaehrungZiele,Habit,HabitLogik,SchlafNacht,Muskeln,Lumi,Coach,Verbindung,LiveStand}.swift
 Gemeinsam/Navigation/{Route,RouteURL}.swift
 Gemeinsam/Design/{Farben,Abstand,Theme,Muster,LumiStimmung,LumiView,LumenBogen,LumenBalken}.swift
-Gemeinsam/Bruecke/{LoveaVertrag,LoveaBruecke}.swift      Gemeinsam/Widgets/{WidgetSnapshot,TrainingAktivitaet}.swift (Stubs, danach Modul widgets)
+Gemeinsam/Bruecke/{LoveaVertrag,LoveaBruecke}.swift (beide Quellen aus 5.5, auch den Leser für Loveas `widget-stand.json`)      Gemeinsam/Widgets/{WidgetSnapshot,TrainingAktivitaet}.swift (Stubs, danach Modul widgets)
 LumenFit/Sources/App/{LumenFitApp,AppRootView,LumenFitTab,Router,RouteAnsicht,AppUmgebung,Ereignis,ModulStart,Demo}.swift
 LumenFit/Sources/Konto/{Schluesselbund,KeychainSchluesselbund,SpeicherSchluesselbund,Passwort,ProfilStore}.swift
 LumenFit/Sources/Daten/{LokalerOpLog,LokalerRaum,DatenSatz,TrainingStore,EssenStore,HabitStore,MeilensteinStore,CoachStore,EinstellungenStore,ZieleStore,VerbindungStore}.swift
@@ -329,6 +348,19 @@ enum HealthZugriff: Sendable { case unbekannt, angefragt, verweigert, nichtVerfu
 
 // ===== Gemeinsam/Modelle: Lumi, Coach, Verbindung, Live =====
 enum LumiStimmung: String, Codable, CaseIterable, Sendable { case bereit, muede, stolz, schlaeft, denkt }
+
+/// Antwort des Morgen-Checks (Op `fit.lumi.stimmung`): 1 bis 5, 1 = schwer, 5 = top.
+struct StimmungsEintrag: Codable, Hashable, Sendable { var tag: String; var wert: Int; var stimmung: LumiStimmung }
+
+/// Lumis Stufe 1 bis 9 aus der Zahl erreichter Meilensteine (25 Medaillen). Fortschritt zeigt den Pfad, rechnet die Stufe nicht neu.
+enum LumiStufe {
+    nonisolated static let schwellen = [0, 1, 3, 5, 8, 11, 15, 19, 23]    // erreichte Meilensteine ab Stufe 1 ... 9
+    static func stufe(erreicht: Int) -> Int { fatalError() }
+}
+
+struct MerkEintrag: Codable, Hashable, Sendable { var text: String; var entfernt: Bool }                                   // Op fit.coach.merke
+struct BandSchlafOp: Codable, Hashable, Sendable { var tag: String; var start: Date; var ende: Date; var phasen: [SchlafAbschnitt] }   // Op fit.band.schlaf
+struct BandTagOp: Codable, Hashable, Sendable { var tag: String; var schritte: Int; var meter: Int }                       // Op fit.band.tag
 
 struct MeilensteinStand: Codable, Hashable, Identifiable, Sendable { var id: String; var erreicht: Date }   // Op fit.lumi.meilenstein
 
@@ -437,11 +469,12 @@ enum Route: Hashable, Codable, Sendable {
     case verlauf
     case gewichtEintragen
     case uebung(id: String)
+    case freund(daten: String?)          // Freundeskarte importieren (Nutzlast des Links) oder die Freunde-Seite öffnen
 }
 
 /// lumenfit://heute | gym?bereich=training|plaene|fortschritt | essen?bereich=heute|scan|favoriten | schlaf?bereich=letzteNacht|verlauf|werte
 /// | coach?frage=... | profil?bereich=uebersicht|einstellungen|aussehen|ziele|verbindungen|datensicherung|quellen|meilensteine|lumi
-/// | verlauf | gewicht | uebung?id=...   (fehlender oder unbekannter bereich = erster Fall)
+/// | verlauf | gewicht | uebung?id=... | freund?d=<Nutzlast, base64url>   (fehlender oder unbekannter bereich = erster Fall)
 enum RouteURL {
     nonisolated static let schema = "lumenfit"
     static func route(aus url: URL) -> Route? { fatalError() }
@@ -489,8 +522,9 @@ struct MusterFlaeche: View {
     var body: some View { Color.clear }
 }
 
-struct LumiView: View {
+struct LumiView: View {                         // Form und Farben: v10 aus design.html, Vorlagen docs/research/lumi/*.svg
     let stimmung: LumiStimmung; let groesse: CGFloat
+    var stufe: Int = 1                          // 1 bis 9 (`MeilensteinStore.stufe`): +3 % Größe je Stufe, ab 3 Hof, ab 6 Funken
     var body: some View { Color.clear }
 }
 
@@ -526,6 +560,8 @@ protocol HealthLeser: Sendable {
     func vitalwerte(_ art: VitalArt, von: String, bis: String) async -> [VitalMesswert]
     func gewichte(von: String, bis: String) async -> [GewichtsMesswert]
     func workouts(von: String, bis: String) async -> [HealthWorkout]
+    /// `HKObserverQuery` mit Hintergrundlieferung: ruft `aenderung` bei neuen Daten, auch wenn iOS die App dafür im Hintergrund startet. Der Fake tut nichts.
+    func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void)
 }
 
 protocol HealthSchreiber: Sendable {
@@ -596,6 +632,7 @@ enum Ereignis: Sendable {
     case meilensteinErreicht(id: String)
     case partnerAktualisiert
     case healthAktualisiert
+    case vordergrund                  // scenePhase wird .active (auch Rückkehr aus dem Hintergrund)
 }
 
 @MainActor final class EreignisKanal {
@@ -700,7 +737,8 @@ enum Passwort {
     private(set) var naechte: [String: SchlafNacht] = [:]
     private(set) var vitale: [VitalArt: [VitalMesswert]] = [:]
     private(set) var gewichte: [GewichtsMesswert] = []
-    init(leser: any HealthLeser, uhr: @escaping Uhr) {}
+    /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (AppUmgebung verdrahtet es); je Tag gilt das Maximum, nie die Summe.
+    init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] }) {}
     /// Erster Aufruf holt 60 Tage (Idee 8), spätere nur das Neue.
     func aktualisiere() async {}
 }
@@ -724,6 +762,8 @@ enum Passwort {
     private(set) var daten: DatenSatz?          // nil, solange es kein Profil gibt
     /// Die eine Instanz der laufenden App; im Test-Host (XCTestConfigurationFilePath) eine Vorschau ohne Modulstarts.
     static let geteilt: AppUmgebung = fatalError()
+    /// Module melden Aufgaben für den Hintergrund-Abruf an (BGTask `com.onlyus.lumen-fit.aktualisieren`); das Grundgerüst führt alle aus (höchstens 20 s) und plant neu.
+    func beiAbruf(_ aufgabe: @escaping @MainActor () async -> Void) {}
     static func vorschau(fixtures: URL? = nil, uhr: @escaping Uhr = { Date() }) -> AppUmgebung { fatalError() }
     static func live() -> AppUmgebung { fatalError() }
     #if DEBUG
@@ -778,6 +818,23 @@ struct FehlerKarte: View { let titel: String; let hilfe: String; var body: some 
 struct AvatarKapsel: View {                     // öffnet .profil(.uebersicht)
     var body: some View { Color.clear }
 }
+
+struct DiagrammKarte<Inhalt: View>: View {      // Titel ist die Aussage, darunter die Kernzeile; den Descriptor setzt der Aufrufer am Chart
+    let aussage: String; let kernzeile: String; let inhalt: Inhalt
+    var body: some View { inhalt }
+}
+
+struct RollZahl: View {                         // rollt nur beim ersten Anzeigen (0,8 s), danach 0,38 s bei Änderung; Reduce Motion: sofort
+    let wert: Double; let format: FloatingPointFormatStyle<Double>
+    var body: some View { Text(wert, format: format) }
+}
+
+struct ToastInhalt: Equatable, Sendable { var titel: String; var zeile: String?; var stimmung: LumiStimmung }
+
+extension View {
+    /// Toast mit Lumi, steht 3 s, einmal je Wert (Rekord, Meilenstein); gleitet ein, Haptik `.erfolg`.
+    func lumenToast(_ inhalt: Binding<ToastInhalt?>) -> some View { self }
+}
 ```
 
 **Test-Hilfen des Grundgerüsts** (`LumenFit/Tests/Grundgeruest/TestHilfen.swift`, nicht ändern; eigene Helfer mit eigenem Namen im Modulordner): `TestUhr` (`lesen`, `vor(sekunden:)`), `FakeHealthLeser` (feste Reihen), `SkriptLader` (liefert Antworten aus Fixture-Dateien, zählt Aufrufe), `SpeicherSchluesselbund` (liegt in `Sources/Konto/`, weil er auch der Rückfall ist), `FakeMitteiler`, `FakeLiveAnzeige`, `FakeBandDienst`, `FakeCoachMotor`, `FakePartnerAustausch`, `XCTestCase.tempOrdner()` (frischer Ordner, wird gelöscht), `TestDaten` (erfundenes Profil "Beispiel", Beispiel-Ops für Gym, Essen, Habits), `FixtureOrt` (Fixtures nur darüber). Umgebung in Tests: `AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)`; in Views: `@Environment(AppUmgebung.self) private var umgebung`.
@@ -793,7 +850,7 @@ struct AvatarKapsel: View {                     // öffnet .profil(.uebersicht)
 | schlaf | `Schlaf/` | `SchlafModul`, `SchlafTabView(bereich: SchlafBereich = .letzteNacht)`, `SchlafVerlaufView` |
 | coach | `Coach/` | `CoachModul` (setzt `coachMotor`), `CoachTabView(frage: String? = nil)` |
 | profil | `Profil/` | `ProfilModul`, `OnboardingView`, `ProfilBlattView`, `AussehenView`, `ZieleView`, `DatensicherungView`, `QuellenView` |
-| verbinden | `Verbinden/` | `VerbindenModul` (setzt `band`), `VerbindungenView`, `PartnerKarte(bereich: PartnerBereich)` (leer, wenn nicht verbunden; Heute und Schlaf betten sie ein), `FreundeView` |
+| verbinden | `Verbinden/` | `VerbindenModul` (setzt `band`), `VerbindungenView`, `PartnerKarte(bereich: PartnerBereich)` (leer, wenn nicht verbunden; Heute und Schlaf betten sie ein), `FreundeView(daten: String? = nil)` (Route `.freund`) |
 | widgets | `Widgets/` | `WidgetsModul` (setzt `liveAnzeige`); im Widget-Ziel die sieben Stub-Widgets aus der Dateiliste (das Bundle listet sie schon, das Modul füllt sie), in `Gemeinsam/Widgets/` `WidgetSnapshot` und `TrainingAktivitaet` |
 
 `RouteAnsicht` (Grundgerüst, `AppRootView` benutzt es in `.navigationDestination(for: Route.self)` und für Blätter) bildet jede `Route` auf genau einen dieser Typen ab. Die Avatar-Kapsel (Grundgerüst) öffnet `.profil(.uebersicht)`.
@@ -806,6 +863,9 @@ struct AvatarKapsel: View {                     // öffnet .profil(.uebersicht)
 5. Ein Modul ändert nie Dateien außerhalb seiner Ordner; Wünsche an das Grundgerüst stehen im Abschlussbericht.
 6. Start-Argumente für CI und Demo (Vertrag mit `ios-ci.yml`, nur Debug): `-lumenFitDemo YES` (gefüllte Demo-Daten eines erfundenen Profils, ohne Onboarding), `-lumenFitTab <heute|gym|essen|schlaf|coach>`, `-lumenFitTheme <monochrom|graphit|stahl|glut|wald>`, `-lumenFitLumi YES` (Ansicht aller fünf Stimmungen), `-lumenFitRoute <lumenfit://-Link>`, `-lumenFitFixtures <Ordner>` (Fixture-Quellen statt Netz). Ohne Argumente startet das Onboarding.
 7. `Info.plist` und Entitlements sind fertig (HealthKit, zwei App Groups, Bluetooth, Kamera, Bewegung, Live Activities, Hintergrund `bluetooth-central` und `fetch`); ein Modul, das einen weiteren Schlüssel braucht, meldet es im Abschlussbericht.
+8. `LumenFitApp` verdrahtet allein (Grundgerüst; Module ändern es nie): `.onOpenURL` und `.onContinueUserActivity(CSSearchableItemActionType)` rufen `router.oeffne(url:)` (die `uniqueIdentifier` eines Spotlight-Eintrags ist ein `lumenfit://`-Link, Widgets und Live Activity nutzen `widgetURL`); `scenePhase == .active` sendet `Ereignis.vordergrund`; der BGTask führt die über `beiAbruf` angemeldeten Aufgaben aus.
+9. Intents: ein `LiveActivityIntent` läuft im Prozess der App, nicht im Widget. Er liegt in `Gemeinsam/Widgets/` (beide Ziele kompilieren ihn), enthält keinen App-Typ und ruft in `perform()` einen statischen `@MainActor`-Haken (wie Loveas `GymSchrittIntent.ausfuehren`), den `WidgetsModul.start` setzt; im Widget-Prozess bleibt er nil. `GymModul.start` setzt `trainingSteuerung` synchron und ohne Oberfläche, damit ein Intent die App im Hintergrund starten und `satzFertig` ausführen kann. Intents, die im Widget-Prozess laufen (`HabitAbhakenIntent`), schreiben nur Dateien in die Gruppe.
+10. Darwin-Benachrichtigungen: der Rückruf ist eine C-Funktion ohne Erfassung; Zustand über einen `Unmanaged`-Zeiger, danach `Task { @MainActor in ... }`.
 
 ## 6. Design-System
 
@@ -818,7 +878,7 @@ Vollständig und verbindlich in `docs/research/design.md` (847 Zeilen, Kontraste
 - **Schrift:** SF Pro, Zahlen SF Rounded `.bold` mit `.monospacedDigit()` und `.contentTransition(.numericText())`, nur Textstile (Dynamic Type bis Accessibility 3), kleinste Schrift 12 pt, kein Gewicht unter `.regular`.
 - **Liquid Glass nur für Steuerung:** Tab-Leiste, Toolbar, Sheets vom System, höchstens zwei Glas-Gruppen je Bildschirm (Scan- und Plus-Knopf, Avatar). Karten, Zeilen, Chips und der Hauptknopf (`.borderedProminent`) sind deckend. Karten flach, ohne Schatten.
 - **Bewegung nur bei Ereignissen:** Tabelle in `design.md` Abschnitt 9; einzige Dauerbewegung ist die Coach-Tippanzeige (höchstens 15 s). Reduce Motion, Stromsparmodus und erhöhter Kontrast schalten Bewegung, Einfahren und Muster ab. Haptik über `.sensoryFeedback` mit Schalter.
-- **Lumi:** SwiftUI-Formen, fünf Stimmungen (`bereit`, `muede`, `stolz`, `schlaeft`, `denkt`), Größen 24 bis 120, Stufen 1 bis 9, auf hellen Flächen 2-pt-Kontur, Stimmung steht auch als Text.
+- **Lumi:** Form und Farben sind **v10 aus `design.html`** (Ahmed: "Mag ich ist sehr gut", Lumi-Design fest), nicht der ältere Flammenpfad aus `design.md` Abschnitt 10: Locken-Tropfen, große Augen mit Doppel-Glanz, Bäckchen, Ärmchen, Füßchen, Glanzlicht, Halo. Die drei SVG-Vorlagen liegen in `docs/research/lumi/` (`lumi-bereit.svg`, `lumi-muede.svg`, `lumi-stolz.svg`, viewBox 100 x 104); der Körper wird als SwiftUI-`Path` und Formen daraus gebaut, `schlaeft` und `denkt` leiten sich von `muede` und `bereit` ab. Fünf Stimmungen (`bereit`, `muede`, `stolz`, `schlaeft`, `denkt`), Größen 24 bis 190, Stufen 1 bis 9 über `LumiView(stufe:)`, auf hellen Flächen 2-pt-Kontur, Stimmung steht auch als Text.
 - **Navigation:** fünf Tabs mit Einwort-Beschriftung, höchstens Tab > Liste > Detail, Profil über die Avatar-Kapsel.
 - **Texte:** Deutsch, liebevoll, klar, kurz; Fehler sagen, was schiefging und was jetzt hilft; Leerzustände mit Lumi, einem Satz und einer Handlung.
 - **Abweichungen vom Entwurf v9** mit Grund: `design.md` Abschnitt 17 (zum Beispiel Essen-Donut monochrom, Hero-Nebentext ohne Dimmen, Muster-Einfahren 1,1 s statt 7 s).
@@ -839,6 +899,7 @@ Vollständig in `docs/research/konfiguration.md`; die fertigen Dateien liegen in
 | CI | `ios-ci.yml` und `testflight.yml` auf `macos-26`, Cache, Warnungszähler, `rm -rf derived/Build` vor dem Test-Bau, Screenshot-Schritt mit den Start-Argumenten aus 5.9 |
 | Signierung | Manual Signing nur in Release; Profile "Lumen Fit App Store" und "Lumen Fit Widgets App Store"; neun Secrets (`konfiguration.md` Abschnitt 7.1) |
 | Privatdatei | `LumenFit/Resources/PrivateDaten.json` (gitignored), Beispiel im Repo, Secret `PRIVATE_DATEN_JSON`, `scripts/pruefe-privat.sh` prüft die Historie |
+| Namens-Gate | `scripts/namen-gate.sh`, Namensliste in `~/.config/lumen-fit/namen.txt` (außerhalb des Git, gilt in jedem Worktree); läuft in `check-schnell.sh` und vor jedem öffentlichen Fenster (`ci-fenster.sh`, streng); CI sieht die Liste nicht |
 
 `PrivateDaten.json` (Annahme 17): Form `{version, personen:[{id, name, orte:[{name, art, adresse, breite, laenge}]}]}`. Einziger Zweck in v1: Studio-Vorgaben für Idee 29 (`art: "gym"`, Name und Öffnungszeiten-Hinweis); das Modul gym liest sie, wenn der Profilname einer `personen[].name` entspricht, und sie dürfen nie in Quelltext, Tests, Fixtures oder Commit-Texte wandern. Ohne Datei ist das Studio ein freies Textfeld.
 
@@ -851,6 +912,8 @@ Lehren aus Bahnherz, die gelten: `nonisolated static let` für Konstanten in `@M
 swift-syntax-check <Dateien>                  # Syntax, Sekunden
 bash scripts/check-schnell.sh                 # Syntax, JSON, Shell, actionlint, Namens-Gate, Privat-Check
 bash scripts/pruefe-privat.sh                 # Historie auf Privatwerte und Signierdateien
+bash scripts/namen-gate.sh                    # keine Personennamen und Studios in Code, Tests, Fixtures, Commit-Texten
+bash scripts/typnamen-doppelt.sh              # jeder Typname nur einmal (neun Module bauen parallel)
 python3 -I docs/research/kontrast.py          # Kontrast der Tokens, Exit 0 = alle Pflichtpaare bestehen
 
 # In CI (macOS-Runner, steht in ios-ci.yml)
@@ -898,12 +961,24 @@ final class SchlafSchuldTests: XCTestCase {
 }
 ```
 
+### Fallen (Swift 6, iOS 26), vor dem Schreiben lesen
+
+- `HKHealthStore` und `CBCentralManager` sind nicht `Sendable`: nur im Port-Objekt halten (`HKHealthLeser`, `TrackerFunk` mit eigener serieller Queue und `Sendable`-Ereignissen); `@unchecked Sendable` nur mit einzeiligem Grund.
+- `Activity<...>` ist nicht `Sendable`; `Activity.request` geht nur im Vordergrund (Siri, Steuerelement und Kurzbefehle öffnen die App: `openAppWhenRun`).
+- App Intents: `perform()` auf `@MainActor`, wenn sie Stores berühren; `AppShortcutsProvider` nur im App-Ziel; jede Phrase enthält `\(.applicationName)`; Intent-Typen in `Gemeinsam/` enthalten keine App-Typen (Vertrag 9).
+- FoundationModels: alle Aufrufe in einer Datei hinter `#if canImport(FoundationModels)`; das Kontextfenster ist klein (rund 4.000 Token): Verlauf kürzen, jede Fehlerart (Kontext zu groß, Sicherheitsfilter, Sprache nicht unterstützt, Modell nicht bereit) fällt auf den Regelmotor.
+- `ImageRenderer` nur auf dem `MainActor`, `scale` setzen. `DataScannerViewController.isSupported` und `isAvailable` prüfen (im Simulator nie verfügbar). `SectorMark` für den Donut, `accessibilityChartDescriptor` am Chart.
+- Countdown nur mit `Text(timerInterval:)` und `ProgressView(timerInterval:)` (das System tickt, kein Update nötig).
+- BGTask-Kennungen früh registrieren (Vertrag 2); der Abruf ist nicht garantiert, nichts darf davon abhängen.
+- `UserDefaults` ist kein Speicher für Profildaten (Lovea-Altlast beim Band: dort nur für Gerätekennung und Schalter).
+- `@Entry`-Standardwerte und alle Konstanten, die `nonisolated` Code liest, sind `Sendable` bzw. `nonisolated static let`.
+
 ## 11. Teststrategie
 
 - **Ein Test-Ziel** `LumenFitTests` (XCTest, `@testable import LumenFit`), eine Datei je Thema, Fixtures als Ordnerreferenz im Test-Bundle (`Fixtures/<Modul>/<datei>`), Dateinamen projektweit eindeutig (Präfix Modulname), geladen nur über `FixtureOrt`. Ein Rauchtest als UI-Test höchstens im Integrationsschritt.
 - **Portierte Tests** aus Lovea sind der Grundstock (Abschnitt 5.8); sie laufen mit dem Code, den sie schützen.
 - **Nähte (Matt Pocock to-spec, wenige und hohe):** (1) `LokalerRaum` mit Temp-Ordner: Faltungen und Stores gegen echte Ops; (2) `HealthLeser` mit `FakeHealthLeser`; (3) `HTTPLader` mit `SkriptLader` und den echten, gekürzten Antworten aus `docs/research/fixtures`; (4) `Schluesselbund` mit `SpeicherSchluesselbund`; (5) `PartnerAustausch` mit `LoveaBruecke(ordner: Temp)` und Fixtures; (6) injizierte `Uhr`; (7) `Mitteiler`, `BandDienst`, `CoachMotor`, `LiveAnzeige` als Fakes.
-- **Fixture-Zuordnung** (kopiert das Grundgerüst aus `docs/research/fixtures`): `Essen/` bekommt `bls-4-0-lovea-auszug.json`, `off-v2-product-4008400402222.json`, `off-v2-product-nicht-gefunden.json`, `off-search-haferflocken.json`, `off-cgi-search-haferflocken.json`; `Gym/` bekommt `lovea-uebungen-auszug.json`, `free-exercise-db-3.json`, `wger-exerciseinfo-de.json`, `wger-language.json`; `open-meteo-forecast-berlin.json` und `usda-fdc-search-oats.json` bleiben unbenutzt. `Verbinden/` schreibt das Modul selbst (`zusammenfassung-beispiel.json`, `partner-beispiel.json`, `band-wuensche-beispiel.json`).
+- **Fixture-Zuordnung** (kopiert das Grundgerüst aus `docs/research/fixtures`): `Essen/` bekommt `bls-4-0-lovea-auszug.json`, `off-v2-product-4008400402222.json`, `off-v2-product-nicht-gefunden.json`, `off-search-haferflocken.json`, `off-cgi-search-haferflocken.json`; `Gym/` bekommt `lovea-uebungen-auszug.json`, `free-exercise-db-3.json`, `wger-exerciseinfo-de.json`, `wger-language.json`; `open-meteo-forecast-berlin.json` und `usda-fdc-search-oats.json` bleiben unbenutzt. `Verbinden/` schreibt das Modul selbst (`zusammenfassung-beispiel.json`, `partner-beispiel.json`, `band-wuensche-beispiel.json`, `lovea-widget-stand-beispiel.json` mit erfundenen Kennungen); die Fixtures für die Leser in `LoveaBruecke` legt das Grundgerüst unter `LumenFit/Tests/Fixtures/Grundgeruest/` an.
 - **Gute Tests** prüfen Verhalten an der Naht (Eingabe, Ausgabe, Zustandsänderung). Zeitlogik an Sommer-/Winterzeit-Rändern und um Mitternacht. Jede neue Logik bekommt zuerst einen roten Test.
 - **Automatische Prüfungen:** Symbole (`UIImage(systemName:) != nil`, `SymbolNamenTests`), Kontrast der Tokens (`FarbenKontrastTests`, Port von `kontrast.py`), `InfoPlistTests` (Schlüssel, keine AlarmKit), Warnungen null, Privat-Check, Namens-Gate, `AlteDateienLadenTests`, Schlüsselbund-Fake gegen Neuinstallations-Fall, Passwort-Hash gegen bekannte Werte.
 - **Ungeprüft ohne Gerät:** Aussehen (Glas, Canvas-Muster, Charts), HealthKit-Werte, Foundation Models, Kamera-Scan, Band, Live Activity und Widgets im Hintergrund, App-Group-Austausch mit Lovea, Schlüsselbund nach Neuinstallation, Review-Urteil zu den Bögen. Diese Punkte stehen als Testliste in `tasks/plan.md`.
@@ -925,7 +1000,7 @@ Das Anliegen bündelt neun unabhängig testbare Fähigkeiten. Jedes Modul hängt
 | widgets | Widgets, Live Activity, Intents, Siri, Spotlight, Steuerelement | 91 bis 100 | `LumenFit/Sources/Module/Widgets/`, `LumenFit/Tests/Module/Widgets/`, `LumenFit/Tests/Fixtures/Widgets/`, `LumenFitWidgets/Sources/Widgets/`, `Gemeinsam/Widgets/` |
 | grundgeruest | Projekt, Datenkern, Design, Konto, Stubs (kein Modul, vor den Modulen) | 1 bis 10 | Abschnitt 5.9 |
 
-Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktrees (Zweig `modul/<id>`), danach Integration (Zusammenführen, CI, Barrierefreiheits-Durchgang, Signierung, TestFlight). Die Ordnerlisten sind paarweise disjunkt (Skriptprüfung steht in `tasks/plan.md`). Tickets mit Blockierkanten: `tasks/todo.md`; vollständige Aufträge: `tasks/auftraege/<id>.md`.
+Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktrees (Zweig `modul/<id>`), danach Integration (Zusammenführen, CI, Barrierefreiheits-Durchgang, Signierung, TestFlight). Die Ordnerlisten sind paarweise disjunkt (Skriptprüfung steht in `tasks/plan.md`). Tickets mit Blockierkanten: `tasks/todo.md`; vollständige Aufträge: `tasks/auftraege/<id>.md` (die Datei im Worktree ist maßgeblich; das Grundgerüst zieht sie nach dem echten Code nach).
 
 ## 13. Akzeptanzkriterien (gesamt)
 
@@ -937,13 +1012,14 @@ Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktr
 6. Essen: Scan oder Texteingabe findet ein Lebensmittel aus BLS oder Open Food Facts, Ampel mit Symbol und Text, Quellen-Seite nennt BLS (CC BY 4.0) und Open Food Facts (ODbL).
 7. Schlaf und Heute zeigen Werte aus Health, im Leerzustand eine Handlung; Diagramme haben `accessibilityChartDescriptor` und eine Kernzeile.
 8. Coach antwortet mit beiden Motoren; die Ton-Tests (Länge, "du", keine Diagnose, kein "Als KI") sind grün.
-9. Nicht verbunden: keine Partner-Teile, keine Platzhalter, keine Fehlermeldung. Verbunden (Fixture-Datei): Partner-Karte, Mitteilungen, Freigaben.
+9. Nicht verbunden: keine Partner-Teile, keine Platzhalter, keine Fehlermeldung. Verbunden (Fixture-Dateien für Quelle A und Vertrag B): Partner-Karte, Mitteilungen, Freigaben. Am Gerät mit installiertem Lovea: die Partner-Karte zeigt ohne Änderung an Lovea Schritte, Gym und Schlaf der Partnerin.
 10. Das Band ist standardmäßig aus; ohne den Schalter entsteht kein `CBCentralManager`.
-11. Kein Wecker, keine Erinnerung: `rg -n 'AlarmKit|UNCalendarNotificationTrigger' LumenFit Gemeinsam LumenFitWidgets` ist leer, `NSAlarmKitUsageDescription` fehlt.
+11. Kein Wecker, keine Erinnerung: `git grep -n -E 'AlarmKit|UNCalendarNotificationTrigger' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam` ist leer (läuft in `check-schnell.sh` und im Job `patterns`; Tests dürfen den Schlüsselnamen prüfen), `NSAlarmKitUsageDescription` fehlt.
 12. Barrierefreiheit: VoiceOver-Sätze, Dynamic Type bis Accessibility 3, Reduce Motion, erhöhter Kontrast, Tippflächen mindestens 44 pt.
 13. Kein Git-Commit und kein Log enthält einen Personennamen, eine Adresse oder einen Ort aus `PrivateDaten.json`; `bash scripts/pruefe-privat.sh` und das Namens-Gate sind sauber.
 14. Lovea ist unverändert (`git -C ~/projects/lovea-app-ios rev-parse HEAD` und `status --short` vor und nach dem Bau gleich).
 15. Die App sendet nichts an Menschen, kauft nichts, speichert keine Zugangsdaten außer dem eigenen Profil.
+16. Typnamen sind eindeutig (`bash scripts/typnamen-doppelt.sh`), jede `fit.*`-Op hat genau einen Rumpf-Typ aus 5.3.
 
 ## 14. Grenzen
 
@@ -975,12 +1051,19 @@ Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktr
 20. **Apple-Login:** App-Eintrag und App Group legt das Portal an; Ahmed loggt sich einmal im Agenten-Chrome ein (Fernfunk-Aufgabe, wenn CI grün ist), danach klickt der Agent allein.
 21. **Vornamen im Zitat:** Der 1:1-Auftragstext oben enthält den Vornamen der Partnerin; Ahmed steht als Auftraggeber im Text. Alles andere in Spec, Plan, Ideen und Code sagt "Partner" und "Freund", der Quelltext enthält gar keinen Namen (Namens-Gate).
 22. **Import aus Lovea:** wegen der gleichen Op-Form später möglich (Lovea-Export als `ops.jsonl`), nicht in v1.
+23. **Quelle A (Loveas `widget-stand.json`):** das Format gehört Lovea und kann sich ändern; Lumen Fit liest nur Schritte, Gym-Woche, Schlaf und Ziele, alles optional, und zeigt bei Abweichung "nicht verbunden". Die Partnerin sieht in Lumen Fit nichts, was Lovea nicht ohnehin auf demselben Gerät zeigt. Echtzeit-Mitteilungen gibt es nur beim Öffnen und im Hintergrund-Abruf.
+24. **Band-Schritte und -Schlaf:** der Schlaf des Bandbesitzers kommt nur vom Band (Lovea schreibt ihn nicht nach Health), seine Schritte kommen vom Band und vom iPhone (das Maximum zählt). Solange das Band in Lumen Fit aus ist, gibt es keine Band-Nächte und die iPhone-Schritte zählen allein. Ob Lumen Fit die Verbindung mitbenutzen kann, die Lovea hält, ist am Gerät zu prüfen (Testliste 11).
+25. **Lumi-Form:** v10 aus `design.html` gilt; `design.md` Abschnitt 10 beschreibt nur noch die Stimmungen und Größen. Stufen-Schwellen (0, 1, 3, 5, 8, 11, 15, 19, 23 Meilensteine) sind eine Annahme.
+26. **Open-Food-Facts-Kennung:** der User-Agent trägt die Repo-Adresse statt einer Mail (keine Mail im Quelltext); eine Mail käme nur über `PrivateDaten.json`.
+27. **Namens-Gate:** die Namensliste liegt außerhalb des Git, damit nirgends im Repo ein Name steht (einzige Ausnahme: das Zitat in Abschnitt 0); CI sieht sie nicht, das Gate läuft lokal und streng vor jedem öffentlichen Fenster.
+28. **Health-Zugriff-Seite:** zeigt "Daten da" oder "keine Daten", nie "erlaubt" oder "abgelehnt" für Lesetypen (HealthKit verrät es nicht).
+29. **Sicherung auf neues Gerät:** beim Einspielen werden die Ops dem Zielprofil zugeordnet (`von` wird umgeschrieben), sonst wären sie für das neue Profil unsichtbar. Die Sicherung ist eine Datei, kein Dienst: wer sie nie zieht, verliert Trainings bei einer Neuinstallation.
 
 ## 16. Offene Punkte und Folgearbeit
 
 Für Ahmed (Fernfunk-Aufgabe, nicht Lovea-Notiz): einmal Apple-Login im Agenten-Chrome, wenn der Agent meldet, dass CI grün ist (Schritt I3 in `tasks/plan.md`).
 
-Folgearbeit in Lovea (eigene Runde, nicht Teil dieses Baus): `zusammenfassung.json` lesen und `partner.json` schreiben, `band-wuensche.json` schreiben und `band-status.json` lesen, Band-Code und Health-Module entfernen, Paar-Karte Schritte-Duell auf die Dateien umstellen, App-ID von Lumen Fit prüfen (beide Gruppen).
+Folgearbeit in Lovea (eigene Runde, nicht Teil dieses Baus; bis dahin liefert Quelle A die Partner-Karte): `zusammenfassung.json` lesen und `partner.json` schreiben, `band-wuensche.json` schreiben und `band-status.json` lesen, Band-Code und Health-Module entfernen, Paar-Karte Schritte-Duell auf die Dateien umstellen, App-ID von Lumen Fit prüfen (beide Gruppen).
 
 ## 17. Nicht-Ziele
 

@@ -461,6 +461,8 @@ Ton: keiner (Band und System übernehmen Hinweise).
 
 ## 10. Maskottchen: Lumi
 
+> Stand 29.10. (nach dem Entwurf v10): Form und Farben von Lumi gelten nach `design.html` v10, Ahmed hat sie freigegeben. Die drei SVG-Vorlagen liegen in `docs/research/lumi/` und gehen dem Flammenpfad unten vor; Stimmungen, Größen, Stufen und Einsatz unten gelten weiter.
+
 Idee: ein kleines Licht, rund wie ein Tropfen mit kleiner Flamme oben (Pfad im Entwurf: `M40 8 C44 14 47 16 50 14 C50 20 62 28 64 44 A24 24 0 0 1 16 44 C17 30 28 24 31 14 C34 17 37 15 40 8Z`,
 viewBox 80x80), große glänzende Augen mit Lichtpunkt, Bäckchen, zwei Ärmchen, Leucht-Hof, kleiner Schatten. Süß und bunt, das einzig bunte
 Wesen (Oberfläche bleibt Apple-ruhig).

@@ -75,7 +75,7 @@ Jedes Modul: Auftrag `tasks/auftraege/<id>.md`, Ordner und Ideen dort und in SPE
 - [ ] Alle Ideen des Moduls eingebaut oder mit Grund als nicht umsetzbar gemeldet
 - [ ] Nur Dateien der eigenen Ordner geändert
 - [ ] `swift-syntax-check` OK; Tests geschrieben (Test zuerst); portierte Lovea-Tests liegen bei
-- [ ] Namens-Gate und Umfang-Gate leer; Abschlussbericht mit ungeprüften Punkten
+- [ ] `bash scripts/check-schnell.sh` sauber (Namens-, Umfang- und Typnamen-Gate); Abschlussbericht mit ungeprüften Punkten
 
 Prüfung der Disjunktheit (vor dem Anlegen der Worktrees und bei I1):
 
@@ -92,7 +92,7 @@ done
 
 ## Phase 3: Integration und Auslieferung
 
-- **I1 Zusammenführen.** Reihenfolge profil, schlaf, essen, heute, gym, fortschritt, coach, verbinden, widgets auf `main`; ein öffentliches CI-Fenster für alle (`scripts/ci-fenster.sh` im Hintergrund, danach einmal `gh run watch`); Kompilierfehler gehen an das Modul zurück. Akzeptanz: CI grün, 0 Warnungen, alle Tests grün. Abhängig von: alle Module.
+- **I1 Zusammenführen.** Reihenfolge profil, schlaf, essen, heute, gym, fortschritt, coach, verbinden, widgets auf `main`; vor dem Fenster nach jedem Merge `bash scripts/typnamen-doppelt.sh` (doppelte Typnamen sind der wahrscheinlichste Fehler paralleler Module, der Compiler meldet sie erst nach 15 Minuten) und am Ende `bash scripts/check-schnell.sh --alle`; ein öffentliches CI-Fenster für alle (`scripts/ci-fenster.sh` im Hintergrund, danach einmal `gh run watch`); Kompilierfehler gehen an das Modul zurück. Akzeptanz: CI grün, 0 Warnungen, alle Tests grün. Abhängig von: alle Module.
 - **I2 Qualitäts- und Barrierefreiheits-Durchgang.** `agent-skills:code-review-and-quality`, `code-simplification`, `frontend-ui-engineering`; Checkliste: Labels an jedem Symbol, 44 pt, Dynamic Type bis Accessibility 3, Reduce Motion und Transparency, erhöhter Kontrast, Diagramm-Descriptor, keine Namen und Orte in Code und Logs, Umfang-Gate, `grep "Kommt bald"` leer, Lovea unverändert (SPEC 13 Nr. 14). Akzeptanz: Checkliste abgehakt, `/constraints guard` ohne Funde. Abhängig von: I1.
 - **I3a PrivateDaten.json und Secret.** Nur wenn gym Studio-Vorgaben nutzt; sonst Streichungen nach `konfiguration.md` 7.3. Nie Werte in Logs oder Chat. Abhängig von: G1.
 - **I3 Signierung und Secrets.** Nach `konfiguration.md` Abschnitt 6: Bundle IDs per Skript (`HEALTHKIT` und `APP_GROUPS`), Portal-Handarbeit (App Group, App-Eintrag; einmal Apple-Login durch Ahmed im Agenten-Chrome, Fernfunk-Aufgabe), Profile mit Pflichtliste (beide Gruppen, HealthKit), neun Secrets, Icon, Tester (Sichtbarkeit für eingeschränkte Nutzer, Gruppe, je Person `betaTesters`). Abhängig von: G1, parallel zu den Modulen.
@@ -115,7 +115,7 @@ done
 7. Essen: eine Packung scannen, Ampel und Quelle sichtbar?
 8. Schlaf: letzte Nacht, HRV im eigenen Bereich, Werte-Chips stimmen mit Health überein?
 9. Coach: drei Fragen, klingt er wie ein Freund? Auch auf einem Gerät ohne Apple Intelligence?
-10. Ohne Lovea: ist wirklich nichts vom Partner zu sehen? Mit Lovea (erst nach der Lovea-Runde): Partner-Karte und Mitteilung?
+10. Ohne Lovea: ist wirklich nichts vom Partner zu sehen? Mit Lovea auf demselben Handy (ohne Lovea-Update): zeigt die Partner-Karte Schritte, Gym und Schlaf deiner Partnerin, kommt "Partner war im Gym" beim Öffnen genau einmal? Band-Wünsche aus Lovea erst nach der Lovea-Runde.
 11. Band einschalten: Pause vibriert; hält Lovea das Band noch fest (dann ausgelassen)?
 12. Widgets, Steuerelement, Siri; Reduce Motion an; große Schrift; wie schnell ist der Akku nach einem Tag weg?
 
@@ -125,7 +125,10 @@ done
 |---|---|
 | Nur der Compiler in CI findet Fehler; viele Dateien parallel | kleine Dateien, `swift-syntax-check`, Grundgerüst zuerst grün, I1 mit einem Fenster für alle |
 | 76 von 207 Lovea-Health-Dateien hängen an Op-Log, Raum, Punkten, Figuren, Chat | feste Ersetzungstabelle im Grundgerüst (SPEC 5.8), Module bauen keine eigenen Ersatzteile |
-| Namen und Studios stecken im Lovea-Code | Namens-Gate in `check-schnell.sh` und Job `patterns`, Studios nur aus `PrivateDaten.json` |
+| Namen und Studios stecken im Lovea-Code | Namens-Gate `scripts/namen-gate.sh` (Namensliste außerhalb des Git) in `check-schnell.sh` und vor jedem öffentlichen Fenster, Studios nur aus `PrivateDaten.json` |
+| Neun Module vergeben denselben Typnamen | Typnamen-Regel (SPEC 5.8 Nr. 8), `scripts/typnamen-doppelt.sh` in `check-schnell.sh`, Job `patterns` und vor dem Fenster in I1 |
+| Lovea ändert das Format von `widget-stand.json` (Quelle A) | nur vier Felder, alle optional; unbekannt heißt "nicht verbunden", nie falsch; Vertrag B als Ausweg |
+| Der Besitzer des Bands hat ohne Band in Lumen Fit keinen Schlaf und eventuell weniger Schritte (Lovea schreibt beides nicht nach Health) | Annahme 24: iPhone-Schritte als Rückfall, Band-Schalter in Verbindungen, Test am Gerät (Testliste 11) |
 | FoundationModels-Namen ungeprüft | alles in einer Datei, vorher gegen Apple-Doku, Regelmotor als Rückfall |
 | Schlüsselbund im unsignierten Simulator (-34018) | Port mit Speicher-Fake und Rückfall |
 | Band nimmt eine Verbindung; Lovea hält sie | opt-in Standard aus, Warteschlange statt zweiter Verbindung, Gerätetest |

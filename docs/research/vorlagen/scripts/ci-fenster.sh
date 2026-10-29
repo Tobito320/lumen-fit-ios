@@ -10,6 +10,7 @@ tag=""
 [ "${1:-}" = "--tag" ] && tag="${2:-}"
 
 PRIVAT_STRENG=1 bash scripts/pruefe-privat.sh || { echo "Privat-Check nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
+NAMEN_STRENG=1 bash scripts/namen-gate.sh || { echo "Namens-Gate nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
 
 zurueck() {
   gh repo edit "$REPO" --visibility private --accept-visibility-change-consequences >/dev/null 2>&1

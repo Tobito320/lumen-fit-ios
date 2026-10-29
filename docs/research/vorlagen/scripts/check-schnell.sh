@@ -23,4 +23,10 @@ if command -v actionlint >/dev/null 2>&1; then
   actionlint -ignore 'label "macos-26" is unknown' || fehler=1
 fi
 bash scripts/pruefe-privat.sh || fehler=1
+# Namens-Gate (Liste liegt außerhalb des Git, siehe scripts/namen-gate.sh), Typnamen eindeutig, Umfang-Gate (kein Wecker, keine Erinnerung)
+bash scripts/namen-gate.sh || fehler=1
+bash scripts/typnamen-doppelt.sh || fehler=1
+if git grep -n -E --untracked -e 'AlarmKit|UNCalendarNotificationTrigger' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam; then
+  echo "Umfang: Wecker oder Erinnerung gefunden (Lumen Fit ist nur Health)"; fehler=1
+fi
 exit "$fehler"

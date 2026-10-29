@@ -17,6 +17,7 @@ Eine client-only App mit fünf Tabs (Heute, Gym, Essen, Schlaf, Coach). Der Kern
 - Apple Intelligence ist nicht auf jedem Gerät da; der Regel-Coach muss gut genug sein (Idee 62).
 - Das Schlüsselbund-Profil überlebt eine Neuinstallation meistens, die Daten nicht (Idee 74 fängt das ab).
 - Die Bögen der Ringplatte (Idee 6) sind kein Review-Problem (nicht geprüft).
+- Loveas `widget-stand.json` in der gemeinsamen Gruppe enthält Schritte, Gym-Woche und Schlaf beider Personen und bleibt lesbar (Quelle A, SPEC 5.5); ändert Lovea das Format, wird die Verbindung still "nicht verbunden".
 
 ## MVP Scope
 

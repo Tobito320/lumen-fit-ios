@@ -1,7 +1,8 @@
 AUFTRAG: Modul „profil“ (Profil: Onboarding, Profil-Blatt, Aussehen, Ziele, Sicherung, Quellen, Datenschutz, Export) der iOS-App Lumen Fit.
+Maßgeblich ist `tasks/auftraege/profil.md` im eigenen Worktree; weicht dieser Text von der Datei ab, gilt die Datei.
 
 KONTEXT
-Lumen Fit: iOS-App (SwiftUI, Swift 6, iOS 26, iPhone) für Gesundheit und Fitness, client-only (kein Server, keine Konten), Standard-Design monochrom, Figur Lumi. Repo /home/tobi/projects/lumen-fit-ios, Zweig modul/profil im eigenen Worktree, Grundgerüst ist gemergt. Lies zuerst CLAUDE.md, CONSTRAINTS.md, CONTEXT.md, SPEC.md (Abschnitte 5.3, 5.8, 5.9, 6, 11) und docs/research/design.md. Kein Mac: lokal nur swift-syntax-check, Compiler und Tests laufen im Integrationsschritt in CI (starte kein CI). Test zuerst, kleinster korrekter Diff. Quelle für Fertiges ist /home/tobi/projects/lovea-app-ios/Lovea/Sources (nur lesen, Lovea nie ändern; Portierungsregeln SPEC 5.8). Vorlage für Konfiguration war Bahnherz.
+Lumen Fit: iOS-App (SwiftUI, Swift 6, iOS 26, iPhone) für Gesundheit und Fitness, client-only (kein Server, keine Konten), Standard-Design monochrom, Figur Lumi. Repo /home/tobi/projects/lumen-fit-ios, Zweig modul/profil im eigenen Worktree, Grundgerüst ist gemergt. Lies zuerst CLAUDE.md, CONSTRAINTS.md, CONTEXT.md, SPEC.md (Abschnitte 5.3, 5.5, 5.8, 5.9, 6, 10 mit den Fallen, 11) und docs/research/design.md. Kein Mac: lokal nur swift-syntax-check, Compiler und Tests laufen im Integrationsschritt in CI (starte kein CI). Test zuerst, kleinster korrekter Diff. Quelle für Fertiges ist /home/tobi/projects/lovea-app-ios/Lovea/Sources (nur lesen, Lovea nie ändern; Portierungsregeln SPEC 5.8). Vorlage für Konfiguration war Bahnherz.
 
 ZIEL
 Das Profil-Blatt (Avatar-Kapsel auf jedem Tab) und das Onboarding: Profil anlegen in einer Minute, Themes wählen, Ziele und Körperdaten, Health-Zugriff, Datensicherung als Datei, Quellen und Lizenzen, Datenschutz, Export. Hier darf nichts nach Anmeldung aussehen: es gibt nach dem Anlegen nie wieder einen Anmeldebildschirm.
@@ -26,8 +27,8 @@ NEU ZU BAUEN
 - Onboarding in vier Karten (Willkommen mit Lumi, Name und Passwort mit Hinweis "Du meldest dich nie wieder an", ein Ziel, Health erlauben ohne Zwang) und Willkommen-zurück-Karte nach Neuinstallation (Profil im Schlüsselbund, Daten fehlen): "Datensicherung einspielen?"
 - Profil-Blatt: Name ändern, Passwort ändern (Passwort-Abfrage mit Schütteln und `.error`), Profil wechseln (Passwort des Zielprofils), Profil anlegen, Alles löschen (Passwort, vorher Liste, was gespeichert war)
 - `AussehenView`: fünf Theme-Karten mit Mini-Vorschau (Farbe, Muster), Erscheinung System/Hell/Dunkel, wirkt sofort über `EinstellungenStore`; Graphit und Glut wählen beim Aktivieren einmalig Dunkel vor
-- `ZieleView` und Körperdaten (Größe, Geburtsjahr, Geschlecht optional, kg/lb) mit Vorschlägen aus `ErnaehrungsZiele`; Health-Zugriff-Seite je `HealthTyp` mit Grund und Weg in die Einstellungen
-- `Datensicherung`: eine JSON-Datei `lumenfit-sicherung-<datum>.json` mit Version, Ops-Zeilen, `einstellungen`, `ziele`, `freigaben` (ohne Passwort-Spur); Teilen über das Share-Sheet, Einspielen mit Prüfung (Version, doppelte Op-Ids); Roundtrip-Test; `QuellenView` mit Open Food Facts (ODbL), BLS (CC BY 4.0, Datenstand), Übungsbilder, Apple-Frameworks; Datenschutz-Seite; CSV-Export von Training und Essen
+- `ZieleView` und Körperdaten (Größe, Geburtsjahr, Geschlecht optional, kg/lb) mit Vorschlägen aus `ErnaehrungsZiele`; Health-Zugriff-Seite je `HealthTyp` mit Grund, einer Zeile "Daten da" oder "keine Daten in 30 Tagen" (Probe über `HealthLeser`; HealthKit verrät eine Ablehnung beim Lesen nie, also nie "erlaubt" oder "abgelehnt" behaupten) und dem Weg in die Einstellungen (Health, Datenzugriff)
+- `Datensicherung`: eine JSON-Datei `lumenfit-sicherung-<datum>.json` mit Version, Ops-Zeilen, `einstellungen`, `ziele`, `freigaben` (ohne Passwort-Spur); Teilen über das Share-Sheet, Einspielen mit Prüfung (Version, doppelte Op-Ids) und Umschreiben von `von` auf das Zielprofil (sonst sind die Ops auf einem neuen Gerät mit neuer `ProfilID` unsichtbar); im Profil-Blatt eine Zeile "Letzte Sicherung: vor 12 Tagen" (nur Text, keine Erinnerung); Roundtrip-Test; `QuellenView` mit Open Food Facts (ODbL), BLS (CC BY 4.0, Datenstand), Übungsbilder, Apple-Frameworks; Datenschutz-Seite; CSV-Export von Training und Essen
 
 IDEEN, DIE DU EINBAUST (alle müssen am Ende drin sein)
 71. **Einstieg in einer Minute** – Name, Passwort, ein Ziel, Health erlauben; Lumi führt durch vier Karten.
@@ -48,9 +49,10 @@ AKZEPTANZ
 - Onboarding legt ein Profil an und zeigt danach nie wieder Passwort-Eingaben beim Start; Test mit `SpeicherSchluesselbund` und Neustart der `AppUmgebung`
 - Neuinstallation-Fall getestet: Schlüsselbund-Profil da, Profilordner fehlt, Willkommen-zurück-Karte erscheint
 - Theme-Wechsel wirkt ohne Neustart in allen zehn Kombinationen (Vorschau-Test auf `Palette`); die Standardwahl ist Monochrom/System
-- Die Sicherung enthält keine Passwort-Spur; Einspielen ist idempotent (doppelte Op-Ids werden übersprungen)
+- Die Sicherung enthält keine Passwort-Spur; Einspielen ist idempotent (doppelte Op-Ids werden übersprungen) und funktioniert in ein Profil mit anderer `ProfilID` (Test `SicherungTests.fremdeProfilId`)
+- Health-Zugriff-Seite: kein Satz sagt "abgelehnt" oder "erlaubt" für Lesetypen, nur "Daten da" oder "keine Daten"
 - Quellen-Seite nennt BLS (CC BY 4.0) und Open Food Facts (ODbL) im Wortlaut; Datenschutz-Seite sagt, was das Gerät nie verlässt
-- Gemeinsam: alle Ideen oben eingebaut oder mit Grund als nicht umsetzbar gemeldet; nur die eigenen Ordner geändert (`git diff --name-only main...modul/profil`); `swift-syntax-check` OK auf allen neuen Dateien; Namens-Gate und Umfang-Gate (CONSTRAINTS) leer; alle Stub-Dateien des Moduls ersetzt ("Kommt bald" kommt nirgends mehr vor); keine Unterdrückungen; alle Texte Deutsch ohne Emojis; jede portierte Datei trägt oben `// Quelle: Lovea Health/<Pfad>`.
+- Gemeinsam: alle Ideen oben eingebaut oder mit Grund als nicht umsetzbar gemeldet; nur die eigenen Ordner geändert (`git diff --name-only main...modul/profil`); `swift-syntax-check` OK auf allen neuen Dateien; `bash scripts/check-schnell.sh` sauber (Namens-, Umfang- und Typnamen-Gate); alle Stub-Dateien des Moduls ersetzt ("Kommt bald" kommt nirgends mehr vor); keine Unterdrückungen; alle Texte Deutsch ohne Emojis; jede portierte Datei trägt oben `// Quelle: Lovea Health/<Pfad>`.
 
 TESTS
 - `SicherungTests` (Roundtrip, Version, Idempotenz), `OnboardingFlussTests`, `WillkommenZurueckTests`, `ThemaWahlTests`, `CsvExportTests`
