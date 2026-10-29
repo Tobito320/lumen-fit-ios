@@ -26,11 +26,11 @@ struct NaechstesTrainingKarte: View {
                 }
                 zeitWahl
                 Button(action: beiStart) {
-                    Text("Training starten").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    // Der Text trägt seine Farbe selbst: ein Stil überschreibt sonst die Farbe von außen.
+                    Text("Training starten").font(.headline).foregroundStyle(palette.akzent).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(palette.aufAkzent)
-                .foregroundStyle(palette.akzent)
             }
         }
         .accessibilityElement(children: .contain)

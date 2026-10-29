@@ -103,7 +103,7 @@ enum Rueckblick {
         if let r = rekorde { return "Rekord: \(r.name), \(satzText(r.satz))" }
 
         let schwerster = inZeitraum.compactMap { uebung, bestes -> (name: String, satz: PlanSatz)? in
-            katalog(uebung).map { ($0.name, bestes.satz) }
+            katalog(uebung).map { (name: $0.name, satz: bestes.satz) }
         }.max { ($0.satz.kg ?? 0) != ($1.satz.kg ?? 0) ? ($0.satz.kg ?? 0) < ($1.satz.kg ?? 0) : $0.name > $1.name }
         if let s = schwerster { return "Schwerster Satz: \(s.name), \(satzText(s.satz))" }
 

@@ -8,13 +8,14 @@ struct FortschrittSegmentView: View {
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
+        let koerper = q.koerper
         ScrollView {
             VStack(spacing: Abstand.l) {
                 if q.hatTraining {
-                    NaechstesTrainingKarte(erholung: q.koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
+                    NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
                     KraftKurveKarte(sessions: q.sessions, heute: q.heute)
-                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: q.koerper.ziele))
-                    SilhouetteKarte(daten: q.koerper)
+                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
+                    SilhouetteKarte(daten: koerper)
                 } else {
                     LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))

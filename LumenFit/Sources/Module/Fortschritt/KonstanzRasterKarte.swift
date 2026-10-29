@@ -24,13 +24,13 @@ struct KonstanzRasterKarte: View {
     }
 
     /// Kantenlänge eines Kästchens bei der Breite des Zeichenbereichs.
-    private static func zelle(breite: CGFloat) -> CGFloat {
+    nonisolated private static func zelle(breite: CGFloat) -> CGFloat {
         max(4, (breite - luecke * CGFloat(KonstanzRaster.wochen - 1)) / CGFloat(KonstanzRaster.wochen))
     }
 
     private var raster: some View {
         let farbe = LumenFarben.tief(.trainieren, dunkel: schema == .dark, kontrastHoch: kontrast == .increased)
-        let leer = palette.haar, linie = palette.text2
+        let leer = palette.haar, linie = palette.text2, streifen = palette.grund
         let spalten = gitter.spalten
         let gewaehlterTag = gewaehlt?.tag
         return GeometryReader { geo in
@@ -40,7 +40,7 @@ struct KonstanzRasterKarte: View {
                     for (t, tag) in woche.enumerated() {
                         let rahmen = CGRect(x: CGFloat(w) * (z + Self.luecke), y: CGFloat(t) * (z + Self.luecke), width: z, height: z)
                         let pfad = Path(roundedRect: rahmen, cornerRadius: 2)
-                        Self.zeichne(tag, pfad: pfad, rahmen: rahmen, farbe: farbe, leer: leer, linie: linie, in: &kontext)
+                        Self.zeichne(tag, pfad: pfad, rahmen: rahmen, farbe: farbe, leer: leer, streifen: streifen, in: &kontext)
                         if tag.tag == gewaehlterTag {
                             kontext.stroke(Path(roundedRect: rahmen.insetBy(dx: -1.5, dy: -1.5), cornerRadius: 3), with: .color(linie), lineWidth: 1.5)
                         }
@@ -64,7 +64,7 @@ struct KonstanzRasterKarte: View {
     }
 
     /// Ein Kästchen im Muster seiner Stufe.
-    nonisolated private static func zeichne(_ z: KonstanzRaster.Zelle, pfad: Path, rahmen: CGRect, farbe: Color, leer: Color, linie: Color, in kontext: inout GraphicsContext) {
+    nonisolated private static func zeichne(_ z: KonstanzRaster.Zelle, pfad: Path, rahmen: CGRect, farbe: Color, leer: Color, streifen: Color, in kontext: inout GraphicsContext) {
         if z.zukunft {
             kontext.stroke(pfad, with: .color(leer), style: StrokeStyle(lineWidth: 1, dash: [2, 2]))
             return
@@ -79,7 +79,7 @@ struct KonstanzRasterKarte: View {
             kontext.fill(pfad, with: .color(farbe.opacity(0.62)))
             var ausschnitt = kontext
             ausschnitt.clip(to: pfad)
-            ausschnitt.stroke(MusterZeichner.streifen(rahmen.size, winkel: 135, abstand: 4).offsetBy(dx: rahmen.minX, dy: rahmen.minY), with: .color(.white.opacity(0.55)), lineWidth: 1)
+            ausschnitt.stroke(MusterZeichner.streifen(rahmen.size, winkel: 135, abstand: 4).offsetBy(dx: rahmen.minX, dy: rahmen.minY), with: .color(streifen.opacity(0.7)), lineWidth: 1)
         case .stark:
             kontext.fill(pfad, with: .color(farbe))
         }
@@ -109,11 +109,11 @@ struct KonstanzRasterKarte: View {
 
     private func probe(_ stufe: KonstanzRaster.Stufe) -> some View {
         let farbe = LumenFarben.tief(.trainieren, dunkel: schema == .dark, kontrastHoch: kontrast == .increased)
-        let leer = palette.haar, linie = palette.text2
+        let leer = palette.haar, streifen = palette.grund
         return Canvas { kontext, groesse in
             let rahmen = CGRect(origin: .zero, size: groesse)
             let beispiel = KonstanzRaster.Zelle(tag: "", stufe: stufe, saetze: 0, zukunft: false)
-            Self.zeichne(beispiel, pfad: Path(roundedRect: rahmen, cornerRadius: 2), rahmen: rahmen, farbe: farbe, leer: leer, linie: linie, in: &kontext)
+            Self.zeichne(beispiel, pfad: Path(roundedRect: rahmen, cornerRadius: 2), rahmen: rahmen, farbe: farbe, leer: leer, streifen: streifen, in: &kontext)
         }
     }
 }

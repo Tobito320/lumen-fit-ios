@@ -80,7 +80,7 @@ final class MeilensteinWaechter {
     }
 
     /// Der Text des Toasts: bei neuer Lumi-Stufe die Stufe, sonst die eine Medaille, sonst die Zahl. Ohne bekannte Kennung nil.
-    static func toastInhalt(_ ids: [String], neueStufe: Int?) -> ToastInhalt? {
+    nonisolated static func toastInhalt(_ ids: [String], neueStufe: Int?) -> ToastInhalt? {
         let medaillen = ids.compactMap { MeilensteinKatalog.nachId[$0] }
         if let stufe = neueStufe {
             return ToastInhalt(titel: "Lumi ist jetzt Stufe \(stufe)", zeile: medaillen.first.map { "Neue Medaille: \($0.titel)" }, stimmung: .stolz)
