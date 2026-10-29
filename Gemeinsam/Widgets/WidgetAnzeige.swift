@@ -93,9 +93,6 @@ enum WidgetAnzeige {
         return EssenRest(kcal: e.kcalZiel - e.kcal, protein: max(0, e.proteinZiel - e.protein), anteil: anteil(e.kcal, e.kcalZiel))
     }
 
-    /// "840" bei Rest, "120 drüber" bei Überschreitung.
-    static func restText(_ kcal: Int) -> String { kcal >= 0 ? zahlText(kcal) : "\(zahlText(-kcal)) drüber" }
-
     // MARK: - Gewohnheiten
 
     /// Der Wert, den ein Tipp setzt: zählende Gewohnheiten +1 und nach dem Ziel zurück auf 0, andere wechseln zwischen 0 und 1.

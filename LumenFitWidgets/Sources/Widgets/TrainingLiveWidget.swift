@@ -1,22 +1,147 @@
+// Quelle: Lovea Health/LoveaWidgets/Sources/GymLiveWidget.swift
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// Stub des Grundgerüsts: die Training-Live-Activity. Das Modul widgets baut Sperrbildschirm, Dynamic Island und den Knopf "Satz fertig".
+/// Idee 94 und 95: die Training-Live-Activity. Sperrbildschirm mit Übung, "Satz 3 von 4", Pausen-Countdown, Fortschrittsbalken in Trainieren-Tief und dem Knopf
+/// "Satz fertig" (`SatzFertigIntent`, ohne die App zu öffnen); Dynamic Island kompakt mit Lumi und Dauer, erweitert mit Übung, Satz und Pause.
+/// Zähler laufen als `Text(timerInterval:)` und `Text(_, style: .timer)`: das System tickt, die App muss nichts aktualisieren. Ein Tipp öffnet das Gym.
 struct TrainingLiveWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TrainingAktivitaet.self) { kontext in
-            Text(kontext.state.stand.uebung).padding()
+            TrainingSperrbildschirm(planName: kontext.attributes.planName, stand: kontext.state.stand)
+                .widgetURL(RouteURL.url(fuer: .gym(.training)))
         } dynamicIsland: { kontext in
-            DynamicIsland {
-                DynamicIslandExpandedRegion(.center) { Text(kontext.state.stand.uebung) }
+            let stand = kontext.state.stand
+            return DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    LumiView(stimmung: .bereit, groesse: 28)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(stand.start, style: .timer)
+                        .font(.headline.monospacedDigit())
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: 72, alignment: .trailing)
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    Text(stand.uebung).font(.headline).lineLimit(1)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    TrainingInselUnten(stand: stand)
+                }
             } compactLeading: {
-                Text("\(kontext.state.stand.satz)")
+                LumiView(stimmung: .bereit, groesse: 22)
             } compactTrailing: {
-                Text("\(kontext.state.stand.von)")
+                Text(stand.start, style: .timer)
+                    .monospacedDigit()
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 52, alignment: .trailing)
             } minimal: {
-                Text("\(kontext.state.stand.satz)")
+                LumiView(stimmung: .bereit, groesse: 22)
             }
+            .widgetURL(RouteURL.url(fuer: .gym(.training)))
+        }
+    }
+}
+
+/// Die Farben der Live Activity aus dem Theme der App (Snapshot der Gruppe); Dynamic Island ist immer schwarz und nimmt deshalb die dunklen Töne.
+private func trainingFarben(systemDunkel: Bool, kontrastHoch: Bool) -> WidgetFarben {
+    let snapshot = WidgetSnapshotDatei.lade()
+    return WidgetFarben.bau(thema: snapshot?.thema ?? .monochrom, erscheinung: snapshot?.erscheinung, systemDunkel: systemDunkel,
+                            kontrastHoch: kontrastHoch, modus: .fullColor)
+}
+
+/// Der Knopf "Satz fertig": mindestens 44 pt, Schrift auf Trainieren-Tief mit Kontrast.
+private struct SatzFertigKnopf: View {
+    let farben: WidgetFarben
+
+    var body: some View {
+        Button(intent: SatzFertigIntent()) {
+            Image(systemName: "checkmark")
+                .font(.title3.weight(.bold))
+                .foregroundStyle(farben.aufTrainieren)
+                .frame(width: 52, height: 52)
+                .background(farben.trainieren, in: .circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Satz fertig")
+    }
+}
+
+/// Die Pause als Zähler, solange sie läuft; danach nichts (die nächste Aktualisierung kommt mit dem nächsten Satz).
+private struct PausenZeile: View {
+    let stand: TrainingLiveStand
+    let farben: WidgetFarben
+
+    var body: some View {
+        let jetzt = Date.now   // einmal gelesen: die Spanne darf nie rückwärts laufen
+        if let ende = stand.pauseEnde, ende > jetzt {
+            HStack(spacing: 4) {
+                Text("Pause").font(.subheadline.weight(.semibold))
+                Text(timerInterval: jetzt...ende, countsDown: true)
+                    .font(.subheadline.monospacedDigit())
+                    .frame(maxWidth: 64, alignment: .leading)
+            }
+            .foregroundStyle(farben.text)
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+/// Sperrbildschirm: Plan und Dauer oben, Übung und Satz mit dem Knopf in der Mitte, unten der Fortschritt der Sätze dieser Übung.
+private struct TrainingSperrbildschirm: View {
+    let planName: String?
+    let stand: TrainingLiveStand
+    @Environment(\.colorScheme) private var schema
+    @Environment(\.colorSchemeContrast) private var kontrast
+
+    var body: some View {
+        let farben = trainingFarben(systemDunkel: schema == .dark, kontrastHoch: kontrast == .increased)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                LumiView(stimmung: .bereit, groesse: 24)
+                Text(planName ?? stand.planName ?? "Training")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(farben.text2)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Text(stand.start, style: .timer)
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(farben.text2)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: 80, alignment: .trailing)
+            }
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(stand.uebung).font(.headline).foregroundStyle(farben.text).lineLimit(1)
+                    Text("Satz \(stand.satz) von \(stand.von)").font(.subheadline).foregroundStyle(farben.text2)
+                    PausenZeile(stand: stand, farben: farben)
+                }
+                Spacer(minLength: 8)
+                SatzFertigKnopf(farben: farben)
+            }
+            WidgetBalken(anteil: WidgetAnzeige.anteil(max(stand.satz - 1, 0), stand.von), farbe: farben.trainieren, spur: farben.trainieren.opacity(0.22))
+        }
+        .padding(16)
+        .activityBackgroundTint(farben.grund)
+        .accessibilityElement(children: .contain)
+    }
+}
+
+/// Dynamic Island erweitert, unten: Satz, Pause und der Knopf. Immer dunkel, weil die Insel schwarz ist.
+private struct TrainingInselUnten: View {
+    let stand: TrainingLiveStand
+
+    var body: some View {
+        let farben = trainingFarben(systemDunkel: true, kontrastHoch: false)
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Satz \(stand.satz) von \(stand.von)").font(.subheadline.weight(.semibold))
+                PausenZeile(stand: stand, farben: farben)
+            }
+            Spacer(minLength: 8)
+            SatzFertigKnopf(farben: farben)
         }
     }
 }

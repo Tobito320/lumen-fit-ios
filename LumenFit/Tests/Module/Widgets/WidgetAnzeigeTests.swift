@@ -96,8 +96,6 @@ final class WidgetAnzeigeTests: XCTestCase {
         XCTAssertEqual(rest.kcal, 840)
         XCTAssertEqual(rest.protein, 42)
         XCTAssertEqual(rest.anteil, 0.65, accuracy: 0.0001)
-        XCTAssertEqual(WidgetAnzeige.restText(840), "840")
-        XCTAssertEqual(WidgetAnzeige.restText(-1_120), "1.120 drüber")
         var drueber = beispiel()
         drueber.essen = WidgetEssenStand(kcal: 2_500, kcalZiel: 2_400, protein: 150, proteinZiel: 140)
         let r = try XCTUnwrap(WidgetAnzeige.essenRest(drueber, jetzt: jetzt))

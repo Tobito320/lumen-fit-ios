@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import LumenFit
 
@@ -83,5 +84,32 @@ final class SatzFertigIntentTests: XCTestCase {
         await laufzeit.verarbeite(.trainingBeendet(session: "s1"))
         let aufrufe = await fabrik.aufrufe
         XCTAssertEqual(aufrufe, [.starte(stand), .beende])
+    }
+
+    // MARK: - Steuerelement (Idee 100)
+
+    func testSchnellzugriffTrainingStartetUndScanOeffnetDenScan() async throws {
+        let (u, steuerung) = try start()
+        _ = try await SchnellzugriffIntent(aktion: .training).perform()
+        XCTAssertEqual(steuerung.gestartet.count, 1)
+        XCTAssertEqual(u.router.tab, .gym)
+        _ = try await SchnellzugriffIntent(aktion: .scan).perform()
+        XCTAssertEqual(u.router.tab, .essen)
+        XCTAssertEqual(u.router.pfade[.essen], [.essen(.scan)])
+    }
+
+    func testSchnellzugriffImWidgetProzessTutNichts() async throws {
+        KurzbefehlHaken.trainingStarten = nil
+        KurzbefehlHaken.oeffne = nil
+        _ = try await SchnellzugriffIntent(aktion: .training).perform()
+        _ = try await SchnellzugriffIntent(aktion: .scan).perform()
+    }
+
+    func testSchnellzugriffSymboleGibtEsUndSindBenannt() {
+        for aktion in SchnellzugriffAktion.allCases {
+            XCTAssertNotNil(UIImage(systemName: aktion.symbolName), aktion.symbolName)
+            XCTAssertFalse(aktion.titel.isEmpty)
+        }
+        XCTAssertEqual(SchnellzugriffAktion.allCases.count, 2)
     }
 }
