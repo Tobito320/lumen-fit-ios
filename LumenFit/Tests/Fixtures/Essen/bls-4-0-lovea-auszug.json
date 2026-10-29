@@ -1,0 +1,83 @@
+[
+  {
+    "id": "bls-C131000",
+    "name": "Hafer ganzes Korn, roh",
+    "quelle": "bls",
+    "fluessig": false,
+    "suche": "hafer ganzes korn roh",
+    "pro100": {
+      "kcal": 343.0,
+      "protein": 11.375,
+      "kohlenhydrate": 53.7,
+      "fett": 7.09,
+      "zucker": 1.08,
+      "ballaststoffe": 9.3,
+      "salz": 0.02,
+      "gesFett": 1.43,
+      "mikro": {
+        "vitaminA": 0.0,
+        "vitaminD": 0.0,
+        "vitaminE": 1.342,
+        "vitaminK": 2.1
+      }
+    },
+    "portionen": []
+  },
+  {
+    "id": "bls-E111100",
+    "name": "Hühnerei roh",
+    "quelle": "bls",
+    "fluessig": false,
+    "suche": "huhnerei roh",
+    "pro100": {
+      "kcal": 135.0,
+      "protein": 13.175,
+      "kohlenhydrate": 0.34,
+      "fett": 9.0,
+      "zucker": 0.34,
+      "ballaststoffe": 0.0,
+      "salz": 0.385,
+      "gesFett": 2.437,
+      "mikro": {
+        "vitaminA": 261.9,
+        "vitaminD": 1.8,
+        "vitaminE": 1.23,
+        "vitaminK": 8.0
+      }
+    },
+    "portionen": [
+      {
+        "name": "Ei, mittelgroß",
+        "gramm": 60
+      },
+      {
+        "name": "Ei, groß",
+        "gramm": 70
+      }
+    ]
+  },
+  {
+    "id": "bls-E111500",
+    "name": "Hühnerei Pulver",
+    "quelle": "bls",
+    "fluessig": false,
+    "suche": "huhnerei pulver",
+    "pro100": {
+      "kcal": 562.0,
+      "protein": 46.0,
+      "kohlenhydrate": 0.56,
+      "fett": 41.8,
+      "zucker": 0.56,
+      "ballaststoffe": 0.0,
+      "salz": 1.302,
+      "gesFett": 11.62,
+      "mikro": {
+        "vitaminA": 549.0,
+        "vitaminD": 5.0,
+        "vitaminE": 9.0,
+        "vitaminB1": 0.44
+      }
+    },
+    "portionen": []
+  }
+]

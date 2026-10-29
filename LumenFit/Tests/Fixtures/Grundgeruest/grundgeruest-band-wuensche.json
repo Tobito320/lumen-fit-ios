@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "wuensche": [
+    { "id": "w1", "muster": "kurz", "zeit": "2026-10-29T08:00:00Z", "von": "person-zwei" },
+    { "id": "w2", "muster": "doppelt", "zeit": "2026-10-29T08:05:00Z", "von": "person-zwei" }
+  ]
+}

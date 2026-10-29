@@ -1,0 +1,19 @@
+{
+  "eigenePerson": "person-eins",
+  "schritteHeute": { "person-eins": 4200, "person-zwei": 9100 },
+  "zielSchritte": { "person-eins": 10000, "person-zwei": 8000 },
+  "gymLetzte7": {
+    "person-eins": [ { "datum": "2026-10-28", "erledigt": true } ],
+    "person-zwei": [
+      { "datum": "2026-10-27", "erledigt": true },
+      { "datum": "2026-10-28", "erledigt": false },
+      { "datum": "2026-10-29", "erledigt": true }
+    ]
+  },
+  "zielGymWoche": { "person-eins": 3, "person-zwei": 3 },
+  "schlafMinutenHeute": { "person-eins": 400, "person-zwei": 470 },
+  "zielSchlafMinuten": { "person-eins": 450, "person-zwei": 450 },
+  "ort": { "person-zwei": "wird nie gelesen" },
+  "herzen": 3,
+  "punkte": { "person-eins": 12, "person-zwei": 15 }
+}

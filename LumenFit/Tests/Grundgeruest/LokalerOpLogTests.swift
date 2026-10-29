@@ -1,0 +1,105 @@
+import XCTest
+@testable import LumenFit
+
+/// `ops.jsonl`: anhängen, doppelte Ids, kaputte und abgeschnittene Zeilen.
+final class LokalerOpLogTests: XCTestCase {
+    private struct Probe: Codable, Equatable { var wert: Int }
+
+    private let t0 = Datum.datum("2026-09-23").addingTimeInterval(12 * 3600)
+
+    private func op(_ id: String, wert: Int, art: String = "probe.setzen", von: ProfilID = .testA) -> Op {
+        Op(id: id, art: art, von: von, zeit: t0, d: (try? JSONEncoder().encode(Probe(wert: wert))) ?? Data())
+    }
+
+    func testAnhaengenUndNeuLadenBehaeltReihenfolgeUndInhalt() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        XCTAssertTrue(log.lade().isEmpty, "ohne Datei ist der Log leer")
+        XCTAssertTrue(log.haengeAn(op("a", wert: 1)))
+        XCTAssertTrue(log.haengeAn(op("b", wert: 2, von: .testB)))
+        XCTAssertTrue(log.haengeAn(op("c", wert: 3)))
+
+        var neu = LokalerOpLog(datei: datei)
+        let ops = neu.lade()
+        XCTAssertEqual(ops.map(\.id), ["a", "b", "c"])
+        XCTAssertEqual(ops.map(\.von), [.testA, .testB, .testA])
+        XCTAssertEqual(ops.compactMap { $0.daten(Probe.self)?.wert }, [1, 2, 3])
+        XCTAssertEqual(ops[0].zeit.timeIntervalSince1970, t0.timeIntervalSince1970, accuracy: 0.001)
+    }
+
+    func testDoppelteIdWirdNichtGeschrieben() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        XCTAssertTrue(log.haengeAn(op("a", wert: 1)))
+        XCTAssertFalse(log.haengeAn(op("a", wert: 99)), "gleiche Id: nichts schreiben")
+        var neu = LokalerOpLog(datei: datei)
+        let ops = neu.lade()
+        XCTAssertEqual(ops.count, 1)
+        XCTAssertEqual(ops.first?.daten(Probe.self)?.wert, 1, "die erste Op bleibt")
+    }
+
+    func testKaputteZeileWirdUebersprungenGesichertUndDieDateiRepariert() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        log.haengeAn(op("a", wert: 1))
+        log.haengeAn(op("b", wert: 2))
+        var inhalt = try String(contentsOf: datei, encoding: .utf8).components(separatedBy: "\n").filter { !$0.isEmpty }
+        inhalt.insert("{das ist kein json", at: 1)
+        try (inhalt.joined(separator: "\n") + "\n").write(to: datei, atomically: true, encoding: .utf8)
+
+        var neu = LokalerOpLog(datei: datei)
+        XCTAssertEqual(neu.lade().map(\.id), ["a", "b"])
+        let sicherung = datei.appendingPathExtension("defekt")
+        XCTAssertTrue(try String(contentsOf: sicherung, encoding: .utf8).contains("{das ist kein json"))
+
+        // Danach ist die Datei sauber: nochmal laden findet nichts Defektes mehr, Anhängen geht.
+        var wieder = LokalerOpLog(datei: datei)
+        XCTAssertEqual(wieder.lade().map(\.id), ["a", "b"])
+        XCTAssertFalse(try String(contentsOf: datei, encoding: .utf8).contains("kein json"))
+        XCTAssertTrue(wieder.haengeAn(op("c", wert: 3)))
+    }
+
+    func testAbgeschnittenerLetzterSatzBeschaedigtDenNaechstenNicht() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        log.haengeAn(op("a", wert: 1))
+        // Abbruch mitten im Schreiben: Datei endet ohne Zeilenumbruch.
+        let handle = try FileHandle(forWritingTo: datei)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(#"{"id":"halb","art":"probe.setzen"#.utf8))
+        try handle.close()
+
+        var neu = LokalerOpLog(datei: datei)
+        XCTAssertEqual(neu.lade().map(\.id), ["a"])
+        XCTAssertTrue(neu.haengeAn(op("b", wert: 2)))
+        var wieder = LokalerOpLog(datei: datei)
+        XCTAssertEqual(wieder.lade().map(\.id), ["a", "b"])
+    }
+
+    func testBeiFehlenderEndzeileSetztAnhaengenEinenZeilenumbruch() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        log.haengeAn(op("a", wert: 1))
+        var text = try String(contentsOf: datei, encoding: .utf8)
+        text.removeLast()   // den Umbruch der ersten Zeile wegnehmen
+        try text.write(to: datei, atomically: true, encoding: .utf8)
+
+        var offen = LokalerOpLog(datei: datei)
+        XCTAssertEqual(offen.lade().map(\.id), ["a"])
+        XCTAssertTrue(offen.haengeAn(op("b", wert: 2)))
+        var wieder = LokalerOpLog(datei: datei)
+        XCTAssertEqual(wieder.lade().map(\.id), ["a", "b"])
+    }
+
+    func testDatenFeldBleibtInhaltlichGleich() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        let roh = Data(#"{"zahl":1.50,"liste":[1,2,3],"text":"Ä \" \\ ü"}"#.utf8)
+        var log = LokalerOpLog(datei: datei)
+        log.haengeAn(Op(id: "x", art: "probe.roh", von: .testA, zeit: t0, d: roh))
+        var neu = LokalerOpLog(datei: datei)
+        let gelesen = try XCTUnwrap(neu.lade().first)
+        let vorher = try JSONSerialization.jsonObject(with: roh) as? NSDictionary
+        let nachher = try JSONSerialization.jsonObject(with: gelesen.d) as? NSDictionary
+        XCTAssertEqual(vorher, nachher)
+    }
+}

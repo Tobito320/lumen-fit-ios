@@ -1,0 +1,37 @@
+[
+  {
+    "id": "2gPfomN",
+    "name": "3/4 Sit-up",
+    "en": "3/4 sit-up",
+    "muskel": "Bauch",
+    "koerper": "Bauch",
+    "geraet": "Körpergewicht",
+    "neben": [
+      "Hüftbeuger",
+      "unterer Rücken"
+    ]
+  },
+  {
+    "id": "xnInPfE",
+    "name": "Ab Rollout stehend mit Langhantel",
+    "en": "barbell standing ab rollerout",
+    "muskel": "Bauch",
+    "koerper": "Bauch",
+    "geraet": "Langhantel",
+    "neben": [
+      "Schultern",
+      "unterer Rücken"
+    ]
+  },
+  {
+    "id": "NAgVB3t",
+    "name": "Ab Wheel Rollout",
+    "en": "wheel rollerout",
+    "muskel": "Bauch",
+    "koerper": "Bauch",
+    "geraet": "Bauchroller",
+    "neben": [
+      "unterer Rücken"
+    ]
+  }
+]
