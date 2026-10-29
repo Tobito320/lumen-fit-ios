@@ -94,6 +94,12 @@ struct LoveaBruecke: PartnerAustausch {
         schreibe(BandErledigtDatei(version: LoveaVertrag.version, ids: Array(neu.suffix(LoveaVertrag.erledigteMaximal))), LoveaVertrag.erledigtDatei)
     }
 
+    /// Entfernt den ganzen Ordner `<Lovea-Gruppe>/LumenFit/` (Zusammenfassung, Status, erledigte Wünsche; Loveas eigene Dateien daneben bleiben).
+    func loescheEigeneDateien() {
+        guard let ordner = vertragsOrdner else { return }
+        try? FileManager.default.removeItem(at: ordner)
+    }
+
     private func schreibe<T: Encodable>(_ wert: T, _ dateiName: String) {
         guard let ordner = vertragsOrdner, let daten = try? LoveaVertrag.encoder().encode(wert) else { return }
         try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)

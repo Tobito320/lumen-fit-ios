@@ -38,6 +38,9 @@ struct AppRootView: View {
     private var hauptinhalt: some View {
         if umgebung.profil.hatProfil {
             TabsAnsicht()
+        } else if let problem = umgebung.profil.ladeProblem {
+            // Nicht lesbar heißt nicht leer: kein Onboarding, das ein neues Profil über die alten schriebe (SPEC 5.4).
+            ProfilLadeProblemView(problem: problem)
         } else {
             OnboardingView()
         }

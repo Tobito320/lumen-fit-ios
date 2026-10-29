@@ -89,6 +89,12 @@ final class BandDienstImpl: BandDienst {
         statusSchreiben(erzwingen: true)
     }
 
+    /// Das letzte Profil ist gelöscht: Band trennen und vergessen, alle Spuren in `UserDefaults` weg.
+    func vergessen() {
+        modell?.vergessen()
+        BandReste.loesche(defaults)
+    }
+
     // MARK: BandDienst
 
     func status() async -> BandStatus {

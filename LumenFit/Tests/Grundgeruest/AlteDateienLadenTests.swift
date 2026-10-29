@@ -76,4 +76,63 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(ops[0].daten(HabitSetzenD.self)?.wert, 5)
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("ops.jsonl.defekt").path))
     }
+
+    // MARK: - Profil im Schlüsselbund (SPEC 5.3: jede Änderung an einem gespeicherten Typ bekommt hier einen Fall)
+
+    /// Der eingefrorene Eintrag `konto.profile` des ersten Stands: `erstellt` als Sekunden seit 1970, Salz und Hash als Base64, Passwort "abcd", 1.000 Runden.
+    private static let ersterStand = #"[{"id":"11111111-2222-3333-4444-555555555555","name":"Eins","erstellt":1790000000,"passwort":{"salz":"AQIDBAUGBwgJCgsMDQ4PEA==","hash":"3n0ScAtNMoU/rPrXCLQlLu3qN/Ybs35X6LSHpuiSiAI=","runden":1000}}]"#
+
+    private func storeMit(json: String) throws -> (store: ProfilStore, bund: SpeicherSchluesselbund) {
+        let bund = SpeicherSchluesselbund()
+        try bund.schreibe(Data(json.utf8), fuer: ProfilStore.profileSchluessel)
+        return (ProfilStore(schluesselbund: bund, ereignisse: EreignisKanal(), runden: 1_000), bund)
+    }
+
+    func testProfilDesErstenStandsBleibtLesbarUndDasPasswortStimmt() throws {
+        let (store, bund) = try storeMit(json: Self.ersterStand)
+        XCTAssertNil(store.ladeProblem)
+        let profil = try XCTUnwrap(store.profile.first)
+        XCTAssertEqual(profil.name, "Eins")
+        XCTAssertEqual(profil.erstellt.timeIntervalSince1970, 1_790_000_000)
+        XCTAssertEqual(store.aktiv?.id, profil.id, "ohne konto.aktiv gilt das erste Profil")
+        XCTAssertTrue(store.pruefe(passwort: "abcd", fuer: profil.id))
+        XCTAssertFalse(store.pruefe(passwort: "abce", fuer: profil.id))
+        XCTAssertEqual(bund.lese(ProfilStore.profileSchluessel), Data(Self.ersterStand.utf8), "Lesen schreibt nichts")
+    }
+
+    func testProfilMitUnbekanntemZusatzfeldBleibtLesbar() throws {
+        let json = Self.ersterStand
+            .replacingOccurrences(of: #""name":"Eins""#, with: #""name":"Eins","farbe":"blau","neu":{"a":[1,2]}"#)
+            .replacingOccurrences(of: #""runden":1000"#, with: #""runden":1000,"verfahren":"pbkdf2""#)
+        let (store, _) = try storeMit(json: json)
+        XCTAssertNil(store.ladeProblem)
+        let profil = try XCTUnwrap(store.profile.first)
+        XCTAssertTrue(store.pruefe(passwort: "abcd", fuer: profil.id))
+    }
+
+    func testProfilMitFehlendenFeldernBleibtLesbarUndStimmtNie() throws {
+        let ohneNameUndDatum = #"[{"id":"11111111-2222-3333-4444-555555555555","passwort":{"salz":"AQIDBAUGBwgJCgsMDQ4PEA==","hash":"3n0ScAtNMoU/rPrXCLQlLu3qN/Ybs35X6LSHpuiSiAI=","runden":1000}}]"#
+        var (store, _) = try storeMit(json: ohneNameUndDatum)
+        var profil = try XCTUnwrap(store.profile.first)
+        XCTAssertEqual(profil.name, "Profil", "fehlender Name: Standard")
+        XCTAssertTrue(store.pruefe(passwort: "abcd", fuer: profil.id), "das Passwort ist unversehrt")
+
+        let ohnePasswort = #"[{"id":"11111111-2222-3333-4444-555555555555","name":"Eins","erstellt":1790000000}]"#
+        (store, _) = try storeMit(json: ohnePasswort)
+        profil = try XCTUnwrap(store.profile.first)
+        XCTAssertEqual(profil.name, "Eins")
+        XCTAssertFalse(store.pruefe(passwort: "abcd", fuer: profil.id), "ohne Spur stimmt kein Passwort, das Profil bleibt aber da und lässt sich zurücksetzen")
+        XCTAssertTrue(store.setzeZurueck(profil.id))
+
+        let ohneRunden = #"[{"id":"11111111-2222-3333-4444-555555555555","name":"Eins","erstellt":1790000000,"passwort":{"salz":"AQIDBAUGBwgJCgsMDQ4PEA==","hash":"3n0ScAtNMoU/rPrXCLQlLu3qN/Ybs35X6LSHpuiSiAI="}}]"#
+        (store, _) = try storeMit(json: ohneRunden)
+        XCTAssertEqual(store.profile.count, 1, "fehlende Rundenzahl macht den Eintrag nicht unlesbar")
+    }
+
+    func testEinTypfehlerInEinemFeldKostetNurDiesesFeld() throws {
+        let json = Self.ersterStand.replacingOccurrences(of: #""erstellt":1790000000"#, with: #""erstellt":"gestern""#)
+        let (store, _) = try storeMit(json: json)
+        XCTAssertNil(store.ladeProblem)
+        XCTAssertEqual(store.profile.first?.name, "Eins")
+    }
 }

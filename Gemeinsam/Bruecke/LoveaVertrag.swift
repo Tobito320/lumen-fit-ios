@@ -62,6 +62,12 @@ protocol PartnerAustausch: Sendable {
     func wuensche() -> [BandWunsch]
     func melde(erledigt ids: [String])
     func schreibe(status: BandStatusDatei)
+    /// Löscht die eigenen Dateien im Lovea-Ordner (nach dem Löschen des letzten Profils). Der Standard tut nichts (Fakes, `KeinePartnerBruecke`).
+    func loescheEigeneDateien()
+}
+
+extension PartnerAustausch {
+    func loescheEigeneDateien() {}
 }
 
 /// `band-wuensche.json` (Lovea schreibt).

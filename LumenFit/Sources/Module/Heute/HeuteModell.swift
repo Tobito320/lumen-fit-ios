@@ -41,7 +41,7 @@ final class HeuteModell {
             switch ereignis {
             case .vordergrund, .healthAktualisiert: await lade()
             case .habitGeaendert, .gewichtGespeichert, .trainingBeendet, .trainingGestartet, .mahlzeitGespeichert, .einstellungenGeaendert,
-                 .profilGewechselt, .partnerAktualisiert, .meilensteinErreicht:
+                 .profilGewechselt, .profilGeloescht, .partnerAktualisiert, .meilensteinErreicht:
                 berechne()
             case .satzFertig: break
             }

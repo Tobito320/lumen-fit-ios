@@ -20,15 +20,50 @@ struct ProfilID: Hashable, Codable, Sendable, RawRepresentable, Identifiable {
 }
 
 /// Salz, Hash und Rundenzahl des Passworts. Das Passwort selbst wird nie gespeichert.
+/// Lesen verträgt fehlende Felder (`decodeIfPresent`): ein später ergänztes oder fehlendes Feld macht keinen Schlüsselbund-Eintrag unlesbar.
+/// Eine Spur ohne Salz oder Hash stimmt nie (leerer Hash), das Profil bleibt aber lesbar und lässt sich zurücksetzen.
 struct PasswortSpur: Codable, Hashable, Sendable {
     var salz: Data
     var hash: Data
     var runden: Int
+
+    enum CodingKeys: String, CodingKey { case salz, hash, runden }
+
+    init(salz: Data, hash: Data, runden: Int) {
+        self.salz = salz
+        self.hash = hash
+        self.runden = runden
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        salz = (try? c.decodeIfPresent(Data.self, forKey: .salz)) ?? Data()
+        hash = (try? c.decodeIfPresent(Data.self, forKey: .hash)) ?? Data()
+        runden = (try? c.decodeIfPresent(Int.self, forKey: .runden)) ?? 600_000   // Standard der ersten Fassung
+    }
 }
 
+/// Wie `PasswortSpur` tolerant beim Lesen. Ohne `id` gibt es kein Profil (der Eintrag wird beim Laden übersprungen und gesichert).
 struct Profil: Codable, Hashable, Identifiable, Sendable {
     var id: ProfilID
     var name: String
     var erstellt: Date
     var passwort: PasswortSpur
+
+    enum CodingKeys: String, CodingKey { case id, name, erstellt, passwort }
+
+    init(id: ProfilID, name: String, erstellt: Date, passwort: PasswortSpur) {
+        self.id = id
+        self.name = name
+        self.erstellt = erstellt
+        self.passwort = passwort
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(ProfilID.self, forKey: .id)
+        name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? "Profil"
+        erstellt = (try? c.decodeIfPresent(Date.self, forKey: .erstellt)) ?? Date(timeIntervalSince1970: 0)
+        passwort = (try? c.decodeIfPresent(PasswortSpur.self, forKey: .passwort)) ?? PasswortSpur(salz: Data(), hash: Data(), runden: 1)
+    }
 }

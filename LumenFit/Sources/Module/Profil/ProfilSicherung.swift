@@ -133,6 +133,14 @@ enum ProfilSicherungLogik {
         return url
     }
 
+    /// Löscht Sicherungs- und Tabellen-Dateien aus dem Temp-Ordner (sie enthalten Daten im Klartext): nach "Alles löschen" und "Zurücksetzen".
+    static func raeumeTempAuf(ordner: URL = FileManager.default.temporaryDirectory) {
+        let fm = FileManager.default
+        for name in (try? fm.contentsOfDirectory(atPath: ordner.path)) ?? [] where name.hasPrefix("lumenfit-") && (name.hasSuffix(".json") || name.hasSuffix(".csv")) {
+            try? fm.removeItem(at: ordner.appendingPathComponent(name))
+        }
+    }
+
     /// Ist im Profil schon etwas gespeichert? Dann bleibt Neueres Sieger (siehe `letzteGewinnt`).
     static func hatDaten(_ daten: DatenSatz) -> Bool { !alleOps(daten).isEmpty }
 

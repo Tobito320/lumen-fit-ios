@@ -109,7 +109,8 @@ struct ProfilBlattView: View {
                     return ok
                 }
             case .wechseln(let ziel):
-                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln", erklaerung: "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln") { passwort, _ in
+                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln", erklaerung: "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
+                                    zuruecksetzen: ziel) { passwort, _ in
                     umgebung.profil.wechsle(zu: ziel.id, passwort: passwort)
                 }
             case .anlegen:
@@ -215,7 +216,7 @@ struct ProfilLoeschenBlatt: View {
     var body: some View {
         if weiter {
             ProfilPasswortBlatt(titel: "Alles löschen", erklaerung: "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen.",
-                                knopf: "Alles löschen", zerstoererisch: true) { passwort, _ in
+                                knopf: "Alles löschen", zerstoererisch: true, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
                 ProfilLoeschen.fuehreAus(umgebung, passwort: passwort)
             }
         } else {
@@ -245,6 +246,72 @@ struct ProfilLoeschenBlatt: View {
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
             }
             .presentationDetents([.large])
+        }
+    }
+}
+
+/// "Passwort vergessen" (SPEC 5.4): löscht das Profil samt Daten ohne Passwort. Zwei Schritte: erst der Text mit der Liste, was verschwindet
+/// (und für das aktive Profil der Weg zur Datensicherung), dann die Rückfrage. Es gibt keinen Rückweg per Mail, weil es keinen Server gibt.
+struct ProfilZuruecksetzenBlatt: View {
+    let profil: Profil
+    let fertig: () -> Void
+
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
+    @State private var frage = false
+    @State private var misslungen = false
+
+    private var istAktiv: Bool { umgebung.profil.aktiv?.id == profil.id }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Abstand.l) {
+                    Text(ProfilTexte.zuruecksetzenTitel(name: profil.name)).font(.title3.bold()).foregroundStyle(palette.text)
+                    Text(ProfilTexte.zuruecksetzenText).font(.body).foregroundStyle(palette.text2)
+                    if istAktiv, let daten = umgebung.daten {
+                        ListenKarte {
+                            let zeilen = ProfilLoeschen.liste(daten)
+                            ForEach(zeilen) { zeile in
+                                Text(zeile.text).font(.body).foregroundStyle(palette.text).padding(Abstand.l)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                if zeile.id != zeilen.last?.id { Haarlinie() }
+                            }
+                        }
+                        NavigationLink { DatensicherungView() } label: {
+                            Label("Erst eine Datensicherung machen", systemImage: "externaldrive.fill")
+                                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+                        }
+                    }
+                    if misslungen {
+                        FehlerKarte(titel: "Das hat nicht geklappt", hilfe: "Das Profil konnte nicht gelöscht werden. Versuch es nochmal.")
+                    }
+                    Button(role: .destructive) { frage = true } label: { Text("Profil zurücksetzen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(Abstand.l)
+            }
+            .lumenHintergrund()
+            .navigationTitle("Zurücksetzen")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
+            .confirmationDialog(ProfilTexte.zuruecksetzenFrage(name: profil.name), isPresented: $frage, titleVisibility: .visible) {
+                Button("Endgültig löschen", role: .destructive, action: ausfuehren)
+                Button("Abbrechen", role: .cancel) {}
+            } message: {
+                Text(ProfilTexte.zuruecksetzenWarnung)
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    private func ausfuehren() {
+        if ProfilLoeschen.setzeZurueck(umgebung, profil: profil.id) {
+            fertig()
+            dismiss()
+        } else {
+            misslungen = true
         }
     }
 }

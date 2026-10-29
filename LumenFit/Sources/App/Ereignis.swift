@@ -2,6 +2,7 @@ import Foundation
 
 enum Ereignis: Sendable {
     case profilGewechselt(ProfilID)
+    case profilGeloescht              // das letzte Profil ist weg (Alles löschen, Zurücksetzen): Reste aufräumen
     case einstellungenGeaendert
     case trainingGestartet(session: String)
     case satzFertig(session: String, rekord: Bool)

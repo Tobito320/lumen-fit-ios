@@ -133,6 +133,14 @@ final class VerbindenDienste {
             await einstellungenGeaendert()
         case .profilGewechselt:
             await einstellungenGeaendert(immer: true)
+        case .profilGeloescht:
+            // Letztes Profil weg: Band vergessen, die eigenen Dateien in Loveas Gruppe löschen (nichts schreiben, nichts abrufen).
+            band.vergessen()
+            umgebung.bruecke.loescheEigeneDateien()
+            regeln = [:]
+            wuensche = nil
+            bandWarAn = false
+            loveaWarAn = false
         case .vordergrund:
             await abruf()
             await umgebung.gesundheit.aktualisiere()

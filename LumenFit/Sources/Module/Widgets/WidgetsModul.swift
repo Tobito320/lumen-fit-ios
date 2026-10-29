@@ -78,6 +78,11 @@ final class WidgetsLaufzeit {
             uebernimmTipps()
             spotlight.aktualisiere()
             schreiber.anfordern(sofort: true)
+        case .profilGeloescht:
+            // Letztes Profil weg: Live Activity beenden, den leeren Stand schreiben (die Widgets zeigen ihren Leerzustand), Suchindex leeren.
+            await live.training(nil)
+            spotlight.aktualisiere()
+            schreiber.anfordern(sofort: true)
         case .trainingBeendet:
             await live.training(nil)
             spotlight.aktualisiere()

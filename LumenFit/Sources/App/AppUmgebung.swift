@@ -66,6 +66,12 @@ final class AppUmgebung {
 
     func profilOrdner(_ id: ProfilID) -> URL { Self.profilOrdner(ordner, id) }
 
+    /// Liest die Profile erneut ("Erneut versuchen" nach einem Lesefehler) und prüft, ob es eine Neuinstallation ist.
+    func ladeProfileNeu() {
+        profil.ladeNeu()
+        if let aktiv = profil.aktiv { neuinstallationErkannt = !FileManager.default.fileExists(atPath: profilOrdner(aktiv.id).path) }
+    }
+
     /// Die Willkommen-zurück-Karte ist beantwortet (Sicherung eingespielt oder abgelehnt).
     func neuinstallationQuittieren() { neuinstallationErkannt = false }
 

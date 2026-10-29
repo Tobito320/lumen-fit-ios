@@ -40,8 +40,9 @@ enum ProfilModul {
     }
 }
 
-/// Profil löschen (Idee 79): Passwort prüfen, Eintrag im Schlüsselbund löschen, danach den Profilordner. In dieser Reihenfolge, damit der alte
-/// `DatenSatz` den Ordner nicht neu anlegt, bevor das Profil weg ist.
+/// Profil löschen (Idee 79): Eintrag im Schlüsselbund löschen (der Store prüft das Passwort genau einmal), danach den Profilordner. In dieser
+/// Reihenfolge, damit der alte `DatenSatz` den Ordner nicht neu anlegt, bevor das Profil weg ist. "Passwort vergessen" (`setzeZurueck`) geht dieselbe
+/// Folge ohne Passwort. Beim letzten Profil sendet der Store `Ereignis.profilGeloescht`; die Module räumen ihre Reste (Widgets, Lovea-Dateien, Band) selbst auf.
 @MainActor
 enum ProfilLoeschen {
     static func liste(_ daten: DatenSatz) -> [ProfilTexte.Loeschzeile] {
@@ -52,10 +53,21 @@ enum ProfilLoeschen {
     /// true, wenn das aktive Profil samt Daten gelöscht ist. Daten in Health bleiben unberührt.
     @discardableResult
     static func fuehreAus(_ umgebung: AppUmgebung, passwort: String) -> Bool {
-        guard let aktiv = umgebung.profil.aktiv, umgebung.profil.pruefe(passwort: passwort, fuer: aktiv.id) else { return false }
-        let ordner = umgebung.profilOrdner(aktiv.id)
-        guard umgebung.profil.loesche(aktiv.id, passwort: passwort) else { return false }
+        guard let aktiv = umgebung.profil.aktiv else { return false }
+        return loesche(umgebung, id: aktiv.id) { umgebung.profil.loesche(aktiv.id, passwort: passwort) }
+    }
+
+    /// "Passwort vergessen": löscht das Profil `id` (aktiv oder nicht) und seine Daten ohne Passwort. Die Bestätigung verlangt die Oberfläche.
+    @discardableResult
+    static func setzeZurueck(_ umgebung: AppUmgebung, profil id: ProfilID) -> Bool {
+        loesche(umgebung, id: id) { umgebung.profil.setzeZurueck(id) }
+    }
+
+    private static func loesche(_ umgebung: AppUmgebung, id: ProfilID, imStore: () -> Bool) -> Bool {
+        let ordner = umgebung.profilOrdner(id)
+        guard imStore() else { return false }
         try? FileManager.default.removeItem(at: ordner)
+        ProfilSicherungLogik.raeumeTempAuf()
         return true
     }
 }

@@ -100,6 +100,8 @@ struct ProfilPasswortBlatt: View {
     let knopf: String
     var zerstoererisch = false
     var neuTitel: String?
+    /// Mit einem Profil zeigt das Blatt "Passwort vergessen?" und öffnet das Zurücksetzen dieses Profils (ohne Passwort, nach zwei Bestätigungen).
+    var zuruecksetzen: Profil?
     let pruefen: @MainActor (_ passwort: String, _ neu: String) -> Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -109,6 +111,7 @@ struct ProfilPasswortBlatt: View {
     @State private var neu = ""
     @State private var versuche: CGFloat = 0
     @State private var falsch = false
+    @State private var zeigeZuruecksetzen = false
     @FocusState private var fokus: Bool
 
     private var bereit: Bool { !passwort.isEmpty && (neuTitel == nil || neu.count >= Passwort.mindestLaenge) }
@@ -138,6 +141,13 @@ struct ProfilPasswortBlatt: View {
                 .buttonStyle(.borderedProminent)
                 .foregroundStyle(zerstoererisch ? Color.white : palette.aufAkzent)
                 .disabled(!bereit)
+                if zuruecksetzen != nil {
+                    Button { zeigeZuruecksetzen = true } label: {
+                        Text("Passwort vergessen?").font(.subheadline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(palette.text2)
+                }
                 Spacer()
             }
             .padding(Abstand.l)
@@ -147,6 +157,9 @@ struct ProfilPasswortBlatt: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
             .onAppear { fokus = true }
             .haptik(.fehler, bei: versuche)
+            .sheet(isPresented: $zeigeZuruecksetzen) {
+                if let zuruecksetzen { ProfilZuruecksetzenBlatt(profil: zuruecksetzen) { dismiss() } }
+            }
         }
         .presentationDetents([.medium])
     }
