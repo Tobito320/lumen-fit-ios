@@ -49,15 +49,17 @@ struct EssenFastenKarte: View {
     private func laufendesFenster(_ e: FastenEintrag) -> some View {
         let plan = FastenLogik.planVon(e)
         let ende = FastenLogik.geplantesEnde(start: e.start, plan: plan)
-        // Der Wechsel auf "Geschafft" kommt vom System zum Zeitpunkt `ende`, nicht erst beim nächsten Neuzeichnen des Tabs.
-        TimelineView(.explicit([ende])) { zeit in
-            if ende > zeit.date {
+        // Das System zeichnet kurz nach `ende` neu und die Ansicht wechselt auf "Geschafft", ohne dass der Tab neu zeichnen muss.
+        // Verglichen wird mit `Date.now`, nicht mit dem Zeitpunkt der Timeline: so kommt es auf deren erste Zeichnung nicht an.
+        TimelineView(.explicit([ende.addingTimeInterval(1)])) { _ in
+            let jetzt = Date.now
+            if ende > jetzt {
                 ProgressView(timerInterval: e.start...ende, countsDown: false) {
                     Text("Fenster läuft").font(.subheadline).foregroundStyle(palette.text2)
                 } currentValueLabel: {
                     HStack(spacing: Abstand.xs) {
                         Text("noch").foregroundStyle(palette.text2)
-                        Text(timerInterval: zeit.date...ende, countsDown: true).monospacedDigit().foregroundStyle(palette.text)
+                        Text(timerInterval: jetzt...ende, countsDown: true).monospacedDigit().foregroundStyle(palette.text)
                     }
                     .font(.subheadline.weight(.semibold))
                 }
