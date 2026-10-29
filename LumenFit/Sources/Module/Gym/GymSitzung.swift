@@ -143,12 +143,12 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     /// Beendet das Training: Sätze, Rekorde, Energie und Puls (nur mit Sensor) gehen an `auschecken`; Health bekommt es nur mit dem Schalter.
-    func beende() {
+    func beende(notiz: String? = nil) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }
         let rekorde = RekordLogik.anzahl(liste, frueher: fruehere(s))
-        d.training.auschecken(sid, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt)
+        d.training.auschecken(sid, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
         let schreiben = d.einstellungen.werte.healthSchreiben
         let beendet = d.training.sessions.first { $0.id == sid }
         let schreiber = umgebung.healthSchreiber
@@ -356,10 +356,16 @@ final class GymSitzung: TrainingSteuerung {
         guard let p = pause, PauseLogik.vorbei(p, jetzt: umgebung.uhr()), !pauseGemeldet else { return }
         pauseGemeldet = true
         pauseEndeZaehler += 1
-        let band = umgebung.band
-        bandAufgabe = Task { await band.vibriere(.pauseEnde) }
+        // Annahme 32: kein geplanter Wecker für das Pausen-Ende. Hat iOS die App schlafen gelegt und weckt sie erst Minuten später, summt das Band nicht mehr nachträglich.
+        if (p.ende.map { umgebung.uhr().timeIntervalSince($0) } ?? 0) <= Self.bandSpaetGrenze {
+            let band = umgebung.band
+            bandAufgabe = Task { await band.vibriere(.pauseEnde) }
+        }
         liveSenden()
     }
+
+    /// Wie spät das Pausen-Ende höchstens noch am Band summt (Sekunden).
+    private static let bandSpaetGrenze: TimeInterval = 30
 
     // MARK: - Übungen im Training
 

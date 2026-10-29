@@ -126,6 +126,9 @@ struct GymD: Codable, Equatable, Sendable {
     /// Nur bei status "satz": die Plan-Übung wurde im Training gegen `uebung` getauscht (Gerät besetzt,
     /// `AusweichLogik`); hier steht die Katalog-id der ursprünglichen. Alte Builds lesen es nicht.
     var ersatzFuer: String? = nil
+    /// Notiz zum ganzen Training (nicht zur Plan-Übung): beim Beenden mitgeschickt oder später als `gym.checkout` nur mit `notiz` geändert
+    /// (ohne `ende` ändert so ein Checkout keine Zeit); die neueste gilt, leer löscht. Alte Builds lesen das Feld nicht.
+    var notiz: String? = nil
 }
 
 struct GymEintrag: Equatable, Sendable {
@@ -165,6 +168,8 @@ struct GymSession: Identifiable, Equatable, Sendable {
     /// Aktive Kalorien und Puls im Schnitt aus dem Beenden-Op; nil ohne Messung.
     var kcal: Int? = nil
     var puls: Int? = nil
+    /// Notiz zum Training (`GymD.notiz`); nil ohne Notiz.
+    var notiz: String? = nil
 
     /// Mit Satzzeilen (wie Hevy) erst, wenn alle abgehakt sind; alte Einheiten über `fertig`.
     func erledigt(_ plan: String) -> Bool {
@@ -202,6 +207,7 @@ enum TrainingLogik {
         // Checkout mit status "wieder" = Auschecken rückgängig, die Einheit läuft weiter.
         let aus = liste.last(where: { $0.art == "gym.checkout" && ($0.d.ende != nil || $0.d.status == "wieder") })?.d
         var s = GymSession(id: id, tag: checkin.d.tag, start: start, ende: aus?.ende, laeufe: [], kcal: aus?.kcal, puls: aus?.puls)
+        if let notiz = liste.last(where: { $0.art == "gym.checkout" && $0.d.notiz != nil })?.d.notiz, !notiz.isEmpty { s.notiz = notiz }
         for e in liste where e.art == "gym.uebung" {
             guard let plan = e.d.plan else { continue }
             switch e.d.status {
@@ -249,6 +255,12 @@ enum TrainingLogik {
             }
         }
         return s
+    }
+
+    /// Notiz bereinigt: ohne Leerraum am Rand, höchstens 500 Zeichen; leer wird nil.
+    static func notiz(_ text: String?) -> String? {
+        let sauber = (text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return sauber.isEmpty ? nil : String(sauber.prefix(500))
     }
 
     /// Checked in, not out, and started less than `langNach` ago.

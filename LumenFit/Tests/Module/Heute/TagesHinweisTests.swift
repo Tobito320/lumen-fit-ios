@@ -103,4 +103,43 @@ final class TagesHinweisTests: XCTestCase {
         XCTAssertEqual(speicher.weggewischt.last, "id99")
         XCTAssertFalse(speicher.ids.contains("id0"))
     }
+
+    // MARK: - Sonntagskarte (Idee 39)
+
+    func testSonntagsKommtDerWochenrueckblickMitDerZahlDerGymTage() {
+        // Sonntag, 27.09.2026; die Woche beginnt am 21.09.
+        let karten = TagesHinweisLogik.regeln(eingabe { $0.heute = "2026-09-27"; $0.gymTage = ["2026-09-21", "2026-09-23", "2026-09-14"] })
+        let karte = karten.first { $0.id == "rueckblick-woche-2026-09-21" }
+        XCTAssertEqual(karte?.titel, "Dein Wochenrückblick ist da")
+        XCTAssertEqual(karte?.text, "2 Gym-Tage diese Woche. Tippe, um ihn anzusehen und zu teilen.", "nur die Tage dieser Woche zählen")
+        XCTAssertEqual(karte?.ziel, .rueckblick, "ein Tipp öffnet den Rückblick")
+        XCTAssertEqual(karten.first?.id, "rueckblick-woche-2026-09-21", "die Karte steht oben")
+    }
+
+    func testEinGymTagStehtInDerEinzahl() {
+        let karten = TagesHinweisLogik.regeln(eingabe { $0.heute = "2026-09-27"; $0.gymTage = ["2026-09-22"] })
+        XCTAssertEqual(karten.first?.text, "1 Gym-Tag diese Woche. Tippe, um ihn anzusehen und zu teilen.")
+    }
+
+    func testAnAnderenWochentagenKommtKeineRueckblickKarte() {
+        for tag in ["2026-09-21", "2026-09-23", "2026-09-26"] {
+            XCTAssertFalse(ids(eingabe { $0.heute = tag }).contains { $0.hasPrefix("rueckblick") }, tag)
+        }
+    }
+
+    func testAmLetztenTagDesMonatsKommtDerMonatsrueckblick() {
+        // Mittwoch, 30.09.2026 ist der letzte Tag; der 29. nicht.
+        let karten = TagesHinweisLogik.regeln(eingabe { $0.heute = "2026-09-30" })
+        XCTAssertEqual(karten.map(\.id), ["rueckblick-monat-2026-09"])
+        XCTAssertEqual(karten.first?.titel, "Dein Monatsrückblick ist da")
+        XCTAssertEqual(karten.first?.ziel, .rueckblick)
+        XCTAssertFalse(ids(eingabe { $0.heute = "2026-09-29" }).contains { $0.hasPrefix("rueckblick") })
+        // Fällt der letzte Tag auf einen Sonntag (31.05.2026), kommen beide, die Woche zuerst.
+        XCTAssertEqual(TagesHinweisLogik.regeln(eingabe { $0.heute = "2026-05-31" }).map(\.id).prefix(2), ["rueckblick-woche-2026-05-25", "rueckblick-monat-2026-05"])
+    }
+
+    func testEineWeggewischteSonntagskarteKommtNichtZurueck() {
+        let alle = TagesHinweisLogik.regeln(eingabe { $0.heute = "2026-09-27" })
+        XCTAssertTrue(TagesHinweisLogik.zeige(alle, weggewischt: ["rueckblick-woche-2026-09-21"]).allSatisfy { $0.id != "rueckblick-woche-2026-09-21" })
+    }
 }

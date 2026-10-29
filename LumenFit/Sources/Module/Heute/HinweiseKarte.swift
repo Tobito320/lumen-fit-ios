@@ -26,14 +26,28 @@ private struct HeuteHinweisReihe: View {
 
     private nonisolated static let schwelle: CGFloat = 80
 
+    /// Die Texte der Karte; mit einem Ziel (Sonntagskarte) öffnet ein Tipp darauf die Seite.
+    @ViewBuilder
+    private var texte: some View {
+        let inhalt = VStack(alignment: .leading, spacing: Abstand.xs) {
+            Text(hinweis.titel).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
+            Text(hinweis.text).font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        switch hinweis.ziel {
+        case .rueckblick:
+            NavigationLink { RueckblickView() } label: { inhalt }
+                .buttonStyle(.plain)
+                .accessibilityHint("Öffnet den Rückblick")
+        case nil:
+            inhalt
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: Abstand.m) {
             Image(systemName: hinweis.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: Abstand.xs) {
-                Text(hinweis.titel).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
-                Text(hinweis.text).font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            texte
             Button(action: weg) {
                 Image(systemName: "xmark").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2)
                     .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)

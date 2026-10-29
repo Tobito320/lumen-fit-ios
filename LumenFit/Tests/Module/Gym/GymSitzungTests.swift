@@ -80,6 +80,17 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertEqual(a.band.muster, [.pauseEnde])
     }
 
+    func testPauseEndeMinutenSpaeterSummtDasBandNichtMehr() async throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.haken(0, 0)
+        a.uhr.vor(sekunden: 90 + 300) // die App war eingeschlafen
+        a.sitzung.pauseIstVorbei()
+        XCTAssertEqual(a.sitzung.pauseEndeZaehler, 1, "die Anzeige zieht nach")
+        await a.sitzung.bandAufgabe?.value
+        XCTAssertEqual(a.band.muster, [])
+    }
+
     func testNochmalTippenNimmtDenHakenUndDiePauseZurueck() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")

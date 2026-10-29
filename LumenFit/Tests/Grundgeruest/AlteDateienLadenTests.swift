@@ -135,4 +135,15 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertNil(store.ladeProblem)
         XCTAssertEqual(store.profile.first?.name, "Eins")
     }
+
+    /// `GymD.notiz` ist neu (Notiz je Training): ältere Ops haben das Feld nicht, neuere Builds dürfen weitere haben.
+    func testGymBodyOhneNotizMitNotizUndMitFremdemFeldIstLesbar() {
+        func op(_ json: String) -> Op { Op(id: "x", art: "gym.checkout", von: .testA, zeit: Date(timeIntervalSince1970: 1_790_000_000), d: Data(json.utf8)) }
+        let alt = op(#"{"session":"s1","status":"ende","minuten":60}"#).daten(GymD.self)
+        XCTAssertEqual(alt?.session, "s1")
+        XCTAssertEqual(alt?.minuten, 60)
+        XCTAssertNil(alt?.notiz)
+        let neu = op(#"{"session":"s1","notiz":"Schulter zwickt","zukunft":{"a":[1,2]}}"#).daten(GymD.self)
+        XCTAssertEqual(neu?.notiz, "Schulter zwickt")
+    }
 }

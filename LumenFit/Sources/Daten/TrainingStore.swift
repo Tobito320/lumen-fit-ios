@@ -119,12 +119,18 @@ final class TrainingStore {
     }
 
     /// Beendet die Einheit. `saetze`, `rekorde`, `kcal` und `puls` rechnet das Modul gym (Workout- und Rekordlogik) und reicht sie her.
-    func auschecken(_ session: String, ende: Date? = nil, saetze: Int? = nil, rekorde: Int? = nil, kcal: Int? = nil, puls: Int? = nil) {
+    func auschecken(_ session: String, ende: Date? = nil, saetze: Int? = nil, rekorde: Int? = nil, kcal: Int? = nil, puls: Int? = nil, notiz: String? = nil) {
         let ende = ende ?? uhr()
         let start = sessions.first { $0.id == session }?.start
         let minuten = start.map { max(1, Int(ende.timeIntervalSince($0) / 60)) }
-        raum.senden("gym.checkout", GymD(session: session, ende: ende, status: "ende", minuten: minuten, zahl: saetze, rekorde: rekorde, kcal: kcal, puls: puls))
+        raum.senden("gym.checkout", GymD(session: session, ende: ende, status: "ende", minuten: minuten, zahl: saetze, rekorde: rekorde, kcal: kcal, puls: puls,
+                                                   notiz: TrainingLogik.notiz(notiz)))
         ereignisse?.senden(.trainingBeendet(session: session))
+    }
+
+    /// Notiz zum Training ändern (Idee 28): ein Checkout nur mit `notiz`, die Zeiten bleiben. Leer löscht die Notiz.
+    func notizAendern(_ s: GymSession, _ text: String) {
+        raum.senden("gym.checkout", GymD(session: s.id, notiz: TrainingLogik.notiz(text) ?? ""))
     }
 
     /// Auschecken rückgängig: die Einheit läuft weiter (`TrainingLogik.session`, Status "wieder").

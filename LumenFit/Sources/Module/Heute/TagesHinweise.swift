@@ -3,10 +3,14 @@ import Observation
 
 /// Eine kleine, wegwischbare Karte des Tages (Idee 19). `id` ist je Anlass und Tag (oder Woche) eindeutig, damit eine weggewischte Karte nicht zurückkommt.
 struct TagesHinweis: Identifiable, Equatable, Sendable {
+    /// Wohin ein Tipp auf die Karte führt; nil = die Karte ist nur zum Lesen.
+    enum Ziel: Equatable, Sendable { case rueckblick }
+
     var id: String
     var symbol: String
     var titel: String
     var text: String
+    var ziel: Ziel? = nil
 }
 
 /// Die Regeln der Hinweise des Tages. Reine Logik; jede Regel nennt ihre echte Zahl. Höchstens `hoechstens` Karten, wichtigste zuerst.
@@ -35,6 +39,7 @@ enum TagesHinweisLogik {
     static func regeln(_ e: Eingabe) -> [TagesHinweis] {
         var liste: [TagesHinweis] = []
         let gestern = Datum.addTage(e.heute, -1)
+        liste += rueckblickKarten(e)
         if let heute = e.schlafMinuten[e.heute], let davor = e.schlafMinuten[gestern], heute < kurzeNachtBis, davor < kurzeNachtBis {
             liste.append(TagesHinweis(id: "schlaf-kurz-\(e.heute)", symbol: "bed.double.fill", titel: "Zweimal unter 6 Stunden",
                                       text: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett."))
@@ -65,6 +70,23 @@ enum TagesHinweisLogik {
                                       text: "Das hält dein Herz fit. Weiter so."))
         }
         return liste
+    }
+
+    /// Die Sonntagskarte (Idee 39): sonntags der Wochenrückblick, am letzten Tag des Monats der Monatsrückblick. Ein Tipp öffnet den Rückblick.
+    /// Nur eine Karte beim Öffnen der App, keine Mitteilung und keine Erinnerung (Lumen Fit ist nur Health).
+    static func rueckblickKarten(_ e: Eingabe) -> [TagesHinweis] {
+        var karten: [TagesHinweis] = []
+        let woche = HabitLogik.wochenTage(heute: e.heute)
+        if Datum.wochentag(e.heute) == 7 {
+            let gym = e.gymTage.intersection(Set(woche)).count
+            karten.append(TagesHinweis(id: "rueckblick-woche-\(woche[0])", symbol: "calendar", titel: "Dein Wochenrückblick ist da",
+                                       text: "\(gym) \(gym == 1 ? "Gym-Tag" : "Gym-Tage") diese Woche. Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
+        }
+        if Datum.addTage(e.heute, 1).prefix(7) != e.heute.prefix(7) {
+            karten.append(TagesHinweis(id: "rueckblick-monat-\(e.heute.prefix(7))", symbol: "calendar.badge.clock", titel: "Dein Monatsrückblick ist da",
+                                       text: "Der Monat ist rum. Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
+        }
+        return karten
     }
 
     /// Die Insights aus dem Training (`HeuteHinweisLogik`, "Das fällt mir auf") als Karten. Gesperrte (noch ohne Daten) fehlen.

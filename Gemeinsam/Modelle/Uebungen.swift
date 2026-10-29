@@ -136,13 +136,23 @@ enum UebungsMedien {
 
     static func lokal(_ id: String) -> URL { ordner.appending(path: "\(id).gif") }
 
+    /// Für das Vorladen im Hintergrund: kein Abruf im Datensparmodus (Low Data Mode) und nie auf Verbindungen, die iOS als Constrained meldet;
+    /// wer das Bild ansieht, lädt trotzdem (der Aufruf ohne `sparsam`).
+    private static let sparsamSession: URLSession = {
+        let konfiguration = URLSessionConfiguration.default
+        konfiguration.allowsConstrainedNetworkAccess = false
+        konfiguration.waitsForConnectivity = false
+        return URLSession(configuration: konfiguration)
+    }()
+
     /// The local GIF, downloaded first if needed; nil offline without a copy (or an unknown id).
     // ponytail: Caches may be purged by iOS under storage pressure; the next view or `vorladen` fetches again.
-    static func datei(_ id: String) async -> URL? {
+    static func datei(_ id: String, sparsam: Bool = false) async -> URL? {
         guard UebungsKatalog.hatVideo(id) else { return nil }
         let ziel = lokal(id)
         if FileManager.default.fileExists(atPath: ziel.path) { return ziel }
-        guard let (daten, antwort) = try? await URLSession.shared.data(from: quelle.appending(path: "\(id).gif")),
+        let sitzung = sparsam ? sparsamSession : URLSession.shared
+        guard let (daten, antwort) = try? await sitzung.data(from: quelle.appending(path: "\(id).gif")),
               (antwort as? HTTPURLResponse)?.statusCode == 200, daten.starts(with: Data("GIF".utf8)) else { return nil }
         try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
         try? daten.write(to: ziel, options: .atomic)
@@ -150,9 +160,9 @@ enum UebungsMedien {
     }
 
     /// One after another, so a long plan doesn't hit the CDN all at once.
-    static func vorladen(_ ids: [String]) async {
+    static func vorladen(_ ids: [String], sparsam: Bool = false) async {
         for id in ids where id != PlanUebung.eigen {
-            _ = await datei(id)
+            _ = await datei(id, sparsam: sparsam)
         }
     }
 }

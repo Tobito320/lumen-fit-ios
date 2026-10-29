@@ -15,6 +15,9 @@ struct GymStartView: View {
     @State private var cardio = false
     @State private var einstellungen = false
     @State private var fehler: String?
+    /// Die Einheit, deren Notiz gerade bearbeitet wird.
+    @State private var notizFuer: GymSession?
+    @State private var notizText = ""
 
     var body: some View {
         ScrollView {
@@ -32,6 +35,11 @@ struct GymStartView: View {
             Button("OK") { fehler = nil }
         } message: {
             Text(fehler ?? "")
+        }
+        .alert("Notiz zum Training", isPresented: Binding(get: { notizFuer != nil }, set: { if !$0 { notizFuer = nil } })) {
+            TextField("Notiz", text: $notizText)
+            Button("Speichern") { if let s = notizFuer { sitzung.training?.notizAendern(s, notizText) } }
+            Button("Abbrechen", role: .cancel) {}
         }
         .task { sitzung.ladeWennNoetig() }
     }
@@ -211,11 +219,18 @@ struct GymStartView: View {
                 ListenKarte {
                     ForEach(Array(liste)) { s in
                         let tag = Datum.text(s.start)
-                        GymZeile(titel: training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training",
-                                 untertitel: GymFormat.tag(s.start)) {
-                            Text(GymStartLogik.status([s], datum: tag, heute: Datum.text(jetzt), geplant: nil, jetzt: jetzt))
-                                .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.trailing)
+                        Button {
+                            notizText = s.notiz ?? ""
+                            notizFuer = s
+                        } label: {
+                            GymZeile(titel: training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training",
+                                     untertitel: GymFormat.tag(s.start) + (s.notiz.map { " · \($0.prefix(60))" } ?? "")) {
+                                Text(GymStartLogik.status([s], datum: tag, heute: Datum.text(jetzt), geplant: nil, jetzt: jetzt))
+                                    .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.trailing)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Notiz zum Training ändern")
                         .accessibilityElement(children: .combine)
                         if s.id != liste.last?.id { Haarlinie() }
                     }

@@ -10,6 +10,7 @@ struct TrainingBeendenView: View {
     @Environment(\.palette) private var palette
     @State private var planBehalten = true
     @State private var tagName = ""
+    @State private var notiz = ""
     @State private var verwerfen = false
 
     var body: some View {
@@ -18,6 +19,12 @@ struct TrainingBeendenView: View {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     zusammenfassung
                     fragen
+                    TextField("Notiz zum Training (optional)", text: $notiz, axis: .vertical)
+                        .lineLimit(1...4)
+                        .padding(Abstand.m)
+                        .frame(minHeight: Abstand.tippflaeche)
+                        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
+                        .accessibilityLabel("Notiz zum Training")
                     Button {
                         abschliessen()
                     } label: {
@@ -102,7 +109,7 @@ struct TrainingBeendenView: View {
     private func abschliessen() {
         if sitzung.tag != nil, sitzung.neuerTag != nil, planBehalten { sitzung.planAktualisieren() }
         if sitzung.tag == nil, !tagName.trimmingCharacters(in: .whitespaces).isEmpty { sitzung.alsTagSpeichern(name: tagName) }
-        sitzung.beende()
+        sitzung.beende(notiz: notiz)
         schliessen()
     }
 }

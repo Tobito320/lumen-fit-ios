@@ -8,6 +8,7 @@ enum GymModul {
         let sitzung = GymSitzung(umgebung: umgebung, puls: GymPulsMessung())
         umgebung.trainingSteuerung = sitzung
         sitzung.ladeWennNoetig()
+        PlanBilder.beobachte(umgebung)   // Bilder der Plan-Übungen vorab holen (Idee 26)
         // Zurück in der App: ein Training, das im Hintergrund per Intent oder Band begann, übernimmt die Sitzung.
         Task { @MainActor in
             for await ereignis in umgebung.ereignisse.strom() {
