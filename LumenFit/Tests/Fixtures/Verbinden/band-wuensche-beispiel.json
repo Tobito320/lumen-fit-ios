@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "wuensche": [
+    { "id": "wunsch-1", "muster": "kurz", "zeit": "2026-10-29T09:50:00Z", "von": "kennung-b" },
+    { "id": "wunsch-2", "muster": "doppelt", "zeit": "2026-10-29T09:52:00Z", "von": "kennung-b" },
+    { "id": "wunsch-alt", "muster": "ruf", "zeit": "2026-10-29T07:00:00Z", "von": "kennung-b" }
+  ]
+}

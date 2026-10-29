@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "geschrieben": "2026-10-25T08:00:00Z",
+  "profilName": "Beispiel Partner",
+  "freigaben": ["schritte"],
+  "heute": { "tag": "2026-10-25", "schritte": 3100 },
+  "ereignisse": []
+}

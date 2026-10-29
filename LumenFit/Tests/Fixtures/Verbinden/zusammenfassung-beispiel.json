@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "geschrieben": "2026-10-29T09:00:00.000Z",
+  "profilName": "Beispiel Profil",
+  "freigaben": ["schritte", "gym"],
+  "heute": { "tag": "2026-10-29", "schritte": 7400, "gymTageWoche": 2 },
+  "ereignisse": [
+    { "id": "gymEnde-s1", "art": "gymEnde", "zeit": "2026-10-29T08:30:00.000Z", "text": "Beispiel Profil war im Gym" }
+  ]
+}
