@@ -52,9 +52,21 @@ struct SchlafUebersicht: Sendable {
     var ohnePhasen: Bool { letzte.map { !$0.hatPhasen } ?? false }
 
     /// Die Vergleichsnacht der gezeigten Nacht, wenn Band und Health sie beide kennen.
-    var vergleichLetzte: SchlafVergleichNacht? {
-        guard let tag = letzte?.nacht.tag else { return nil }
-        return vergleich.first { $0.tag == tag && $0.band != nil && $0.health != nil }
+    var vergleichLetzte: SchlafVergleichNacht? { letzte.flatMap { vergleichsnacht(fuer: $0.nacht.tag) } }
+
+    /// Die Vergleichsnacht des Aufwachtags, wenn Band und Health sie beide kennen.
+    func vergleichsnacht(fuer tag: String) -> SchlafVergleichNacht? {
+        vergleich.first { $0.tag == tag && $0.band != nil && $0.health != nil }
+    }
+
+    /// Die letzten Tage bis heute (so viele wie `anzahl`), älteste zuerst; ohne Nacht ist `minuten` leer.
+    func tage(_ anzahl: Int) -> [WochenVergleich.Tag] {
+        var jeTag: [String: Int] = [:]
+        for n in naechte { jeTag[n.nacht.tag] = n.nacht.schlafMinuten }
+        return (0..<max(anzahl, 0)).map { i in
+            let tag = Datum.addTage(heute, -(anzahl - 1 - i))
+            return WochenVergleich.Tag(tag: tag, minuten: jeTag[tag])
+        }
     }
 
     func lumi(jetzt: Date) -> LumiStimmung {

@@ -2,7 +2,7 @@ import XCTest
 @testable import LumenFit
 
 /// Aus Lovea `SchlafVergleichTests`: Schätzung wird zum Band, Uhr zu Health. Nicht mitgenommen sind `testSchaetzungNurEinmalJeNacht` und
-/// `testSpeichernUndLaden`: es gibt keine eigene Schätzung mehr und nichts mehr in UserDefaults, der Verlauf wird aus Health und Ops gerechnet.
+/// `testSpeichernUndLaden`: es gibt keine eigene Schätzung mehr und keinen eigenen Speicher, der Verlauf wird aus Health und Ops gerechnet.
 final class SchlafVergleichTests: XCTestCase {
     private func zeit(_ tag: Int, _ stunde: Int, _ minute: Int = 0) -> Date {
         SchlafTestBau.zeit(String(format: "2026-09-%02d", tag), stunde, minute)

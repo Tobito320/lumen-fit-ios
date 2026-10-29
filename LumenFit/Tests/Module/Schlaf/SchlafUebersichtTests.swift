@@ -86,6 +86,14 @@ final class SchlafUebersichtTests: XCTestCase {
         XCTAssertEqual(u.wochenende?.text, "00:30 bis 09:00")
     }
 
+    func testTageSindDieLetztenNTageMitLuecken() {
+        let u = SchlafUebersicht.bauen(health: health([420, 430], ab: "2026-09-21"), band: [], vitale: [:], zielMinuten: 480, heute: heute)
+        let tage = u.tage(5)
+        XCTAssertEqual(tage.map(\.tag), ["2026-09-19", "2026-09-20", "2026-09-21", "2026-09-22", "2026-09-23"])
+        XCTAssertEqual(tage.map(\.minuten), [nil, nil, 420, 430, nil])
+        XCTAssertTrue(u.tage(0).isEmpty)
+    }
+
     // MARK: - Lumi
 
     func testLumiSchlaeftNachtsZwischen22Und5() {
