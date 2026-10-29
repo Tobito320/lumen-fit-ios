@@ -91,8 +91,9 @@ final class TagesHinweisSpeicher {
 
     /// Ohne Ordner nur im Speicher.
     init(ordner: URL? = nil) {
-        datei = ordner.map { JSONDatei<[String]>($0.appendingPathComponent(Self.dateiname)) }
-        weggewischt = datei?.lade() ?? []
+        let d = ordner.map { JSONDatei<[String]>($0.appendingPathComponent(Self.dateiname)) }
+        datei = d
+        weggewischt = d?.lade() ?? []
     }
 
     var ids: Set<String> { Set(weggewischt) }

@@ -196,6 +196,11 @@ final class TagesformQuellenTests: XCTestCase {
 final class TagesformQuellenAdapterTests: XCTestCase {
     private let jetzt = Datum.datum("2026-10-12").addingTimeInterval(12 * 3600)
 
+    private func gesundheitsStand(_ leser: FakeHealthLeser) -> GesundheitsStand {
+        let j = jetzt
+        return GesundheitsStand(leser: leser, uhr: { j })
+    }
+
     private func satz(_ ordner: URL) -> DatenSatz {
         DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: { Date(timeIntervalSince1970: 1_790_000_000) })
     }
@@ -209,7 +214,7 @@ final class TagesformQuellenAdapterTests: XCTestCase {
 
     func testEinTagInDerZukunftHatKeineWerte() throws {
         let daten = satz(try tempOrdner())
-        let stand = GesundheitsStand(leser: FakeHealthLeser(), uhr: { self.jetzt })
+        let stand = gesundheitsStand(FakeHealthLeser())
         XCTAssertEqual(TagesformQuellen.eingabe(daten: daten, gesundheit: stand, tag: "2026-10-13", jetzt: jetzt), TagesformEingabe())
         XCTAssertEqual(TagesformQuellen.eingabe(daten: daten, gesundheit: stand, tag: "2099-01-01", jetzt: jetzt), TagesformEingabe())
     }
@@ -217,7 +222,7 @@ final class TagesformQuellenAdapterTests: XCTestCase {
     func testSchlafAusHealthMitQuelleUndZiel() async throws {
         let daten = satz(try tempOrdner())
         let leser = FakeHealthLeser(naechte: [nacht("2026-10-12", minuten: 400, mitPhasen: true), nacht("2026-10-11", minuten: 430, mitPhasen: false)])
-        let stand = GesundheitsStand(leser: leser, uhr: { self.jetzt })
+        let stand = gesundheitsStand(leser)
         await stand.aktualisiere()
         let e = TagesformQuellen.eingabe(daten: daten, gesundheit: stand, tag: "2026-10-12", jetzt: jetzt)
         XCTAssertEqual(e.schlaf.prefix(3).map { $0 }, [400, 430, nil])
@@ -235,7 +240,7 @@ final class TagesformQuellenAdapterTests: XCTestCase {
         let ende = Datum.datum("2026-10-12").addingTimeInterval(7 * 3600)
         let start = ende.addingTimeInterval(-6 * 3600)
         daten.raum.senden("fit.band.schlaf", BandSchlafOp(tag: "2026-10-12", start: start, ende: ende, phasen: []))
-        let stand = GesundheitsStand(leser: FakeHealthLeser(), uhr: { self.jetzt })
+        let stand = gesundheitsStand(FakeHealthLeser())
         let n = TagesformQuellen.nacht("2026-10-12", daten: daten, gesundheit: stand)
         XCTAssertEqual(n?.minuten, 360)
         XCTAssertEqual(n?.quelle, .armband)
@@ -246,7 +251,7 @@ final class TagesformQuellenAdapterTests: XCTestCase {
         let daten = satz(try tempOrdner())
         daten.habits.setze(Habit.wasser.id, datum: "2026-10-11", wert: 6)
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: "2026-10-11", schritte: 9000)])
-        let stand = GesundheitsStand(leser: leser, uhr: { self.jetzt })
+        let stand = gesundheitsStand(leser)
         await stand.aktualisiere()
         let e = TagesformQuellen.eingabe(daten: daten, gesundheit: stand, tag: "2026-10-12", jetzt: jetzt)
         XCTAssertEqual(e.stunde, 12)
