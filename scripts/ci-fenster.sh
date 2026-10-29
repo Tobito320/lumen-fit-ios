@@ -46,13 +46,19 @@ for _ in $(seq 1 24); do
 done
 [ -z "$id" ] && { echo "Kein CI-Lauf für $sha gefunden"; exit 5; }
 echo "Lauf: https://github.com/$REPO/actions/runs/$id"
-if gh run watch "$id" --repo "$REPO" --exit-status --interval 30 >/dev/null 2>&1; then
+# `gh run watch` bricht bei einem Netzfehler ab, der Lauf läuft weiter: erst als rot werten, wenn GitHub "completed" meldet.
+# Würde das Repo bei einem laufenden Lauf wieder privat, bräche GitHub den Lauf ab (Ergebnis wertlos).
+rc=1
+for _ in $(seq 1 12); do
+  if gh run watch "$id" --repo "$REPO" --exit-status --interval 30 >/dev/null 2>&1; then rc=0; break; fi
+  [ "$(gh run view "$id" --repo "$REPO" --json status -q .status 2>/dev/null)" = "completed" ] && break
+  sleep 20
+done
+if [ "$rc" = 0 ]; then
   echo "ERGEBNIS: grün ($id)"
   if [ -n "$tag" ]; then git tag -f "$tag" "$sha" && git push -f origin "$tag" 2>&1 | tail -1; fi
-  rc=0
 else
   echo "ERGEBNIS: rot ($id)"
-  rc=1
 fi
 gh run view "$id" --repo "$REPO" --json jobs -q '.jobs[] | "\(.name): \(.conclusion)"'
 exit "$rc"

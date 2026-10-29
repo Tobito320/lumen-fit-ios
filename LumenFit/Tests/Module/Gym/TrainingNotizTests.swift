@@ -26,12 +26,14 @@ final class TrainingNotizTests: XCTestCase {
         satz.training.auschecken(id, notiz: "alt")
         let vorher = try XCTUnwrap(satz.training.sessions.first)
 
+        uhr.vor(sekunden: 60) // zwei Ops mit gleicher Zeit hätten keine feste Reihenfolge; im echten Gebrauch liegt immer Zeit dazwischen
         satz.training.notizAendern(vorher, "neu")
         let danach = try XCTUnwrap(satz.training.sessions.first)
         XCTAssertEqual(danach.notiz, "neu")
         XCTAssertEqual(danach.start, vorher.start)
         XCTAssertEqual(danach.ende, vorher.ende, "ein Checkout nur mit Notiz ändert keine Zeit")
 
+        uhr.vor(sekunden: 60)
         satz.training.notizAendern(danach, "   ")
         XCTAssertNil(satz.training.sessions.first?.notiz, "leer löscht")
     }
