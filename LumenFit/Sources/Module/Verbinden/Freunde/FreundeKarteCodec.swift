@@ -25,7 +25,8 @@ enum FreundeKarteCodec {
         case leer, format, pruefsumme, version, werte
     }
 
-    private static let schluessel = SymmetricKey(data: Data("lumen-fit.freundeskarte.v1".utf8))
+    // Berechnet statt gespeichert: ob SymmetricKey Sendable ist, hängt vom SDK ab (Swift 6: statische Konstante muss Sendable sein).
+    private static var schluessel: SymmetricKey { SymmetricKey(data: Data("lumen-fit.freundeskarte.v1".utf8)) }
 
     // MARK: Erzeugen
 

@@ -40,6 +40,8 @@ final class BandDienstImpl: BandDienst {
     @ObservationIgnored private let training: @MainActor () -> Bool
     @ObservationIgnored private var puls: BandPuls?
     @ObservationIgnored private var letzterStatus: BandStatusDatei?
+    /// Nach jeder fertigen Runde (das Band ist verbunden und hat geantwortet): wartende Wünsche von Lovea ausführen. Setzt `VerbindenDienste`.
+    @ObservationIgnored var beiVerbunden: (@MainActor () -> Void)?
 
     init(aktiv: @escaping @MainActor () -> Bool, bruecke: any PartnerAustausch, defaults: UserDefaults = .standard, uhr: @escaping Uhr = { Date() },
          sende: @escaping (String) -> Void = DarwinKanal.sende, training: @escaping @MainActor () -> Bool = { false },
@@ -76,6 +78,7 @@ final class BandDienstImpl: BandDienst {
             guard let self, let m else { return }
             self.puls?.rundeEnde(training: self.training(), puls: m.letzterPuls?.wert, zeit: m.letzterPuls?.zeit)
             self.statusSchreiben()
+            self.beiVerbunden?()
         }
         return m
     }

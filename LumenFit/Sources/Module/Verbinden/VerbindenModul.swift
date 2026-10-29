@@ -67,6 +67,7 @@ final class VerbindenDienste {
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
                               })
         umgebung.band = band
+        band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren() }
         umgebung.beiAbruf { [weak self] in await self?.abruf() }
         let ereignisse = umgebung.ereignisse.strom()
         strom = Task { @MainActor [weak self] in
@@ -131,7 +132,7 @@ final class VerbindenDienste {
         case .einstellungenGeaendert:
             await einstellungenGeaendert()
         case .profilGewechselt:
-            await abruf()
+            await einstellungenGeaendert(immer: true)
         case .vordergrund:
             await abruf()
             await umgebung.gesundheit.aktualisiere()
@@ -142,9 +143,10 @@ final class VerbindenDienste {
     }
 
     /// Schalter umgelegt: Lovea an/aus (Stand neu lesen), Band an/aus (starten, trennen und Lovea den Status melden).
-    private func einstellungenGeaendert() async {
+    /// `immer`: auch ohne umgelegten Schalter einen Abruf machen (Profilwechsel: das neue Profil hat eigene Schalter, ein Band des alten wird getrennt).
+    private func einstellungenGeaendert(immer: Bool = false) async {
         guard let werte = umgebung.daten?.einstellungen.werte else { return }
-        if werte.loveaVerbunden != loveaWarAn || werte.bandAktiv != bandWarAn {
+        if immer || werte.loveaVerbunden != loveaWarAn || werte.bandAktiv != bandWarAn {
             let bandAus = bandWarAn && !werte.bandAktiv
             loveaWarAn = werte.loveaVerbunden
             bandWarAn = werte.bandAktiv
