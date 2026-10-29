@@ -111,6 +111,12 @@ jobs:
           COUNT=$({ grep "warning:" iphone.log || true; } | sort -u | wc -l | tr -d ' ')
           echo "### Compiler-Warnungen: $COUNT" >> "$GITHUB_STEP_SUMMARY"
           grep "warning:" iphone.log | sort -u | head -50 | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+          # CONSTRAINTS.md: 0 Compiler-Warnungen als Tor. Die Zeilen stehen zusätzlich oben in der Zusammenfassung.
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error::$COUNT Compiler-Warnungen (CONSTRAINTS.md verlangt 0)"
+            grep "warning:" iphone.log | sort -u | head -20
+            exit 1
+          fi
       # Auch nach roten Tests speichern: sonst wird der Cache bei jedem roten Lauf verworfen.
       - name: Cache speichern
         if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}

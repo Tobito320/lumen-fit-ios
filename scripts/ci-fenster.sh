@@ -9,7 +9,9 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 tag=""
 [ "${1:-}" = "--tag" ] && tag="${2:-}"
 
-PRIVAT_STRENG=1 bash scripts/pruefe-privat.sh || { echo "Privat-Check nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
+privat_aus=$(PRIVAT_STRENG=1 bash scripts/pruefe-privat.sh) || { echo "$privat_aus"; echo "Privat-Check nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
+# Ohne Adressen in der lokalen Datei sagt der Check "EINGESCHRÄNKT": dann gilt er nicht als Beweis für "keine Adressen im Git".
+echo "Privat-Check: $(printf '%s\n' "$privat_aus" | head -n 1)"
 NAMEN_STRENG=1 bash scripts/namen-gate.sh || { echo "Namens-Gate nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
 
 zurueck() {

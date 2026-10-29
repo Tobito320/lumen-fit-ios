@@ -48,13 +48,22 @@ jobs:
           set -euo pipefail
           printf '%s' "$PRIVATE_DATEN_JSON" > LumenFit/Resources/PrivateDaten.json
           # Nicht nur gültiges JSON: Version 1 und mindestens eine Person mit Namen. Ein Secret wie {} wäre sonst ein grüner Build ohne Daten.
-          # Form (Annahme, SPEC): {"version":1,"personen":[{"id","name","orte":[{"name","adresse","breite","laenge"}]}]}
+          # Form (Annahme, SPEC): {"version":1,"personen":[{"id","name","orte":[{"name","art","oeffnung","adresse","breite","laenge"}]}]}
           if ! jq -e '.version == 1 and (.personen | length) >= 1 and all(.personen[]; (.name // "") != "")' \
               LumenFit/Resources/PrivateDaten.json >/dev/null 2>&1; then
             echo "::error::PRIVATE_DATEN_JSON ist unvollständig: version 1 und mindestens eine Person mit Namen nötig"
             exit 1
           fi
-          echo "PrivateDaten.json: $(wc -c < LumenFit/Resources/PrivateDaten.json | tr -d ' ') Bytes, Version 1"
+          # Auf das kürzen, was die App liest (Name und Öffnungszeiten, StudioVorgaben): Adressen und Koordinaten liegen sonst in jeder IPA,
+          # also auch auf den Geräten der Kollegen.
+          jq '{version, personen: [.personen[] | {id, name, orte: [(.orte // [])[] | {name, art, oeffnung}]}]}' \
+            LumenFit/Resources/PrivateDaten.json > "$RUNNER_TEMP/privat-gekuerzt.json"
+          mv "$RUNNER_TEMP/privat-gekuerzt.json" LumenFit/Resources/PrivateDaten.json
+          if jq -e '[.personen[].orte[] | keys[]] | any(. == "adresse" or . == "breite" or . == "laenge")' LumenFit/Resources/PrivateDaten.json >/dev/null; then
+            echo "::error::PrivateDaten.json enthält nach dem Kürzen noch Adresse oder Koordinaten"
+            exit 1
+          fi
+          echo "PrivateDaten.json: $(wc -c < LumenFit/Resources/PrivateDaten.json | tr -d ' ') Bytes, Version 1, ohne Adressen und Koordinaten"
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -100,7 +109,7 @@ jobs:
             done
             for gruppe in "$@"; do
               if ! grep -q "$gruppe" "$ziel.plist"; then
-                echo "::error::Das Profil '$name' enthält $gruppe nicht (App Group oder HealthKit). Im Apple-Portal anlegen und der App-ID zuweisen, die Profile mit signing/profile-und-secrets.sh neu erzeugen."
+                echo "::error::Das Profil '$name' enthält $gruppe nicht (App Group oder einer der drei HealthKit-Schlüssel). Im Apple-Portal anlegen und der App-ID zuweisen, die Profile mit signing/profile-und-secrets.sh neu erzeugen."
                 exit 1
               fi
             done
@@ -109,7 +118,8 @@ jobs:
           }
 
           installiere_profil "$APPSTORE_PROFILE_BASE64" "$RUNNER_TEMP/profile-app.mobileprovision" LUMENFIT_APP_PROFILE \
-            group.com.onlyus.lumen-fit group.com.onlyus.lovea com.apple.developer.healthkit
+            group.com.onlyus.lumen-fit group.com.onlyus.lovea com.apple.developer.healthkit \
+            com.apple.developer.healthkit.access com.apple.developer.healthkit.background-delivery
           installiere_profil "$APPSTORE_WIDGETS_PROFILE_BASE64" "$RUNNER_TEMP/profile-widgets.mobileprovision" LUMENFIT_WIDGETS_PROFILE \
             group.com.onlyus.lumen-fit
 

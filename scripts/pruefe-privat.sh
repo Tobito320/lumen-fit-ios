@@ -21,7 +21,7 @@ fi
 
 if [ ! -f "$DATEI" ]; then
   if [ "${PRIVAT_STRENG:-0}" = "1" ]; then echo "FEHLT: $DATEI (Streng-Modus)"; exit 2; fi
-  echo "Hinweis: keine lokale $DATEI, Suche nach Privatwerten übersprungen"
+  echo "EINGESCHRÄNKT: keine lokale $DATEI. Geprüft nur: Datei nicht im Git, keine Signierdateien, keine Schlüsselmuster. Adressen und Orte werden NICHT gesucht."
   exit "$fund"
 fi
 
@@ -36,7 +36,11 @@ L=$(mktemp); trap 'rm -f "$L"' EXIT
 } | awk 'length >= 6 && $0 !~ /^[0-9][0-9][0-9][0-9][0-9] [^0-9]*$/' | sort -u > "$L"
 
 # Datei ohne Adressen (nur Namen): nichts zu suchen, die Signier- und Schlüsselprüfung oben gilt trotzdem.
-if [ ! -s "$L" ]; then echo "Hinweis: keine Adressen in $DATEI, nur Signier- und Schlüsselprüfung"; exit "$fund"; fi
+if [ ! -s "$L" ]; then
+  echo "EINGESCHRÄNKT: keine Suchbegriffe (die lokale Datei hat keine Adressen oder Koordinaten). Geprüft nur: Datei nicht im Git, keine Signierdateien, keine Schlüsselmuster."
+  echo "Das ist KEIN Beweis, dass keine Adressen im Git stehen: dafür die Adressen in $DATEI eintragen."
+  exit "$fund"
+fi
 
 # Arbeitsbaum (tracked und untracked, ohne ignorierte Dateien) und alle Commits
 treffer=$(git grep -l -i -F -f "$L" --untracked -- . ":!$DATEI" 2>/dev/null)
