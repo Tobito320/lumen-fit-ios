@@ -59,6 +59,8 @@ struct DatensicherungView: View {
                         .padding(Abstand.l)
                     }
                 }
+
+                ProfilLoveaImportKarte()
             }
             .padding(Abstand.l)
         }
