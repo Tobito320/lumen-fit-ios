@@ -1,5 +1,9 @@
 import Foundation
 
+/// Was `LokalerOpLog.fuegeAn` getan hat: `doppelt` ist kein Fehler (die Op ist schon da), `fehlgeschlagen` heißt: nichts steht in der Datei
+/// (Speicher voll, Dateirechte) und die Person muss es erfahren.
+enum OpAnhang: Equatable, Sendable { case angehaengt, doppelt, fehlgeschlagen }
+
 /// Der lokale Log eines Profils: eine Zeile JSON je `Op` in `ops.jsonl`, nur anhängen (SPEC 5.3).
 /// Doppelte `id` werden übersprungen. Eine kaputte Zeile (meist die letzte, nach einem Abbruch beim Schreiben) wird übersprungen
 /// und samt Text in `<datei>.defekt` gesichert; die Datei wird danach ohne sie neu geschrieben, damit Anhängen wieder auf einer sauberen Zeile beginnt.
@@ -29,16 +33,17 @@ struct LokalerOpLog: Sendable {
         return ops
     }
 
-    /// Hängt eine Op an. false bei doppelter `id` (nichts geschrieben) oder wenn das Schreiben nicht ging.
+    /// Hängt eine Op an, mit Ergebnis: angehängt, doppelte `id` (nichts geschrieben, kein Fehler) oder Schreiben fehlgeschlagen.
     @discardableResult
-    mutating func haengeAn(_ op: Op) -> Bool {
-        guard !ids.contains(op.id), var zeile = try? JSONEncoder().encode(op) else { return false }
+    mutating func fuegeAn(_ op: Op) -> OpAnhang {
+        guard !ids.contains(op.id) else { return .doppelt }
+        guard var zeile = try? JSONEncoder().encode(op) else { return .fehlgeschlagen }
         zeile.append(UInt8(ascii: "\n"))
         try? FileManager.default.createDirectory(at: datei.deletingLastPathComponent(), withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: datei.path) {
-            guard (try? zeile.write(to: datei, options: .atomic)) != nil else { return false }
+            guard (try? zeile.write(to: datei, options: .atomic)) != nil else { return .fehlgeschlagen }
         } else {
-            guard let handle = try? FileHandle(forUpdating: datei) else { return false }   // Lesen des letzten Bytes braucht Lese- und Schreibrecht
+            guard let handle = try? FileHandle(forUpdating: datei) else { return .fehlgeschlagen }   // Lesen des letzten Bytes braucht Lese- und Schreibrecht
             defer { try? handle.close() }
             do {
                 // Endet die Datei nicht auf einem Zeilenumbruch (Abbruch mitten im Schreiben), zuerst einen setzen.
@@ -49,11 +54,15 @@ struct LokalerOpLog: Sendable {
                 }
                 try handle.seekToEnd()
                 try handle.write(contentsOf: zeile)
-            } catch { return false }
+            } catch { return .fehlgeschlagen }
         }
         ids.insert(op.id)
-        return true
+        return .angehaengt
     }
+
+    /// Wie `fuegeAn`, nur als Bool: true, wenn angehängt (doppelt und fehlgeschlagen sind beide false).
+    @discardableResult
+    mutating func haengeAn(_ op: Op) -> Bool { fuegeAn(op) == .angehaengt }
 
     private func repariere(ops: [Op], defekt: [Data]) {
         let sicherung = datei.appendingPathExtension("defekt")

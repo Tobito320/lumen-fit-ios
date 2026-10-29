@@ -1,17 +1,24 @@
 import SwiftUI
 
 /// Die eine mutige Karte des Heute-Tabs (Idee 11): schwarze Platte mit Streifen, drei Lumen-Bögen (Schritte, Gym der Woche, Schlaf), Lumi in der Mitte
-/// und darunter Lumis Satz (Idee 13). Die Bögen füllen sich beim ersten Öffnen; Reduce Motion zeigt sie sofort gefüllt.
+/// und darunter Lumis Satz (Idee 13). Die Bögen füllen sich beim ersten Öffnen; Reduce Motion und Stromsparmodus zeigen sie sofort gefüllt.
+/// Ab den großen Schriftstufen (Bedienungshilfen) ersetzt `LumenBalken` die Bögen, denn Bogen und Zahlen passen dann nicht mehr nebeneinander.
 struct Ringplatte: View {
     let stand: HeuteStand
     let stufe: Int
     @State private var gefuellt = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var schriftGroesse
 
     var body: some View {
         HeroKarte(platte: true) {
             VStack(alignment: .leading, spacing: Abstand.m) {
-                LumenBogen(werte: angezeigt, mitte: LumiView(stimmung: stand.stimmung, groesse: 60, stufe: stufe))
+                if BewegungsRegel.nutztBalken(schriftGroesse) {
+                    LumiView(stimmung: stand.stimmung, groesse: 48, stufe: stufe)
+                    LumenBalken(werte: angezeigt)
+                } else {
+                    LumenBogen(werte: angezeigt, mitte: LumiView(stimmung: stand.stimmung, groesse: 60, stufe: stufe))
+                }
                 Text(stand.morgensatz)
                     .font(.title3.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)

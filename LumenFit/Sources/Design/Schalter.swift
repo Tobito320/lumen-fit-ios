@@ -6,7 +6,7 @@ import SwiftUI
 struct LumenSchalterStil: ToggleStyle {
     @Environment(\.palette) private var palette
     @Environment(\.isEnabled) private var aktiv
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         Button { configuration.isOn.toggle() } label: {

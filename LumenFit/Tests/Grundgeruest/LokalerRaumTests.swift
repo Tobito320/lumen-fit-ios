@@ -65,4 +65,34 @@ final class LokalerRaumTests: XCTestCase {
         await raum.leer()
         XCTAssertEqual(raum.ops(arten: ["probe.eins"]).count, 1)
     }
+
+    func testEineNichtGeschriebeneOpWirdGemeldetUndNichtVorgetaeuscht() throws {
+        let ordner = try tempOrdner()
+        try FileManager.default.createDirectory(at: ordner.appendingPathComponent("ops.jsonl"), withIntermediateDirectories: true)   // Schreiben geht nicht
+        let raum = LokalerRaum(ordner: ordner, profil: .testA, uhr: TestUhr().uhr)
+        var meldungen = 0
+        raum.beiSpeicherfehler = { meldungen += 1 }
+        raum.senden("probe.eins", Probe(wert: 1))
+        XCTAssertEqual(meldungen, 1)
+        XCTAssertTrue(raum.ops(arten: ["probe.eins"]).isEmpty, "was nicht gespeichert ist, steht auch nicht im Speicher")
+        XCTAssertTrue(FehlerTexte.speichernHilfe.contains("Speicher"))
+    }
+
+    func testEinSpeicherfehlerKommtAlsEreignisBeiDerOberflaecheAn() async throws {
+        let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
+        try u.profil.anlegen(name: "Beispiel", passwort: "abcd")
+        let daten = try XCTUnwrap(u.daten)
+        let ops = daten.ordner.appendingPathComponent("ops.jsonl")
+        try? FileManager.default.removeItem(at: ops)
+        try FileManager.default.createDirectory(at: ops, withIntermediateDirectories: true)
+        let strom = u.ereignisse.strom()
+        daten.raum.senden("probe.eins", Probe(wert: 1))
+        u.ereignisse.senden(.vordergrund)
+        var gemeldet = false
+        for await ereignis in strom {
+            if case .speichernFehlgeschlagen = ereignis { gemeldet = true }
+            if case .vordergrund = ereignis { break }
+        }
+        XCTAssertTrue(gemeldet)
+    }
 }

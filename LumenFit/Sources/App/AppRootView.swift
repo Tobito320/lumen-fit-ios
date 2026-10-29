@@ -4,19 +4,38 @@ import SwiftUI
 /// Setzt Thema, Erscheinung und Haptik aus den Einstellungen des aktiven Profils; Profil und Freunde öffnen als Blatt über den Tabs.
 struct AppRootView: View {
     @Environment(AppUmgebung.self) private var umgebung
+    @State private var speicherFehler = false
 
     var body: some View {
         let einstellungen = umgebung.daten?.einstellungen.werte ?? Einstellungen()
         inhalt
+            .overlay(alignment: .top) {
+                if speicherFehler {
+                    // Eine Eingabe ging nicht auf die Platte (Idee 10): sagen, was jetzt hilft. Tippen schließt, nach 8 Sekunden geht sie von selbst.
+                    FehlerKarte(titel: FehlerTexte.speichernTitel, hilfe: FehlerTexte.speichernHilfe, stimmung: .muede)
+                        .padding(.horizontal, Abstand.l)
+                        .padding(.top, Abstand.s)
+                        .onTapGesture { speicherFehler = false }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Schließt die Meldung")
+                }
+            }
+            .task(id: speicherFehler) {
+                guard speicherFehler else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { speicherFehler = false }
+            }
             .lumenTheme(einstellungen.thema, erscheinung: einstellungen.erscheinung)
             .toggleStyle(.lumenSchalter)
             .environment(\.haptikAn, einstellungen.haptik)
+            .bewegungsSchalter()
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))
             .task(id: umgebung.profil.aktiv?.id) { await auffrischen() }
             .task {
                 for await ereignis in umgebung.ereignisse.strom() {
                     if case .vordergrund = ereignis { await auffrischen() }
+                    if case .speichernFehlgeschlagen = ereignis { speicherFehler = true }
                 }
             }
     }

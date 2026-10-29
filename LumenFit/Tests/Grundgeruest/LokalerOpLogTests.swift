@@ -27,6 +27,21 @@ final class LokalerOpLogTests: XCTestCase {
         XCTAssertEqual(ops[0].zeit.timeIntervalSince1970, t0.timeIntervalSince1970, accuracy: 0.001)
     }
 
+    func testFuegeAnMeldetAngehaengtDoppeltUndFehlgeschlagen() throws {
+        let ordner = try tempOrdner()
+        var log = LokalerOpLog(datei: ordner.appendingPathComponent("ops.jsonl"))
+        XCTAssertEqual(log.fuegeAn(op("a", wert: 1)), .angehaengt)
+        XCTAssertEqual(log.fuegeAn(op("a", wert: 2)), .doppelt, "doppelt ist kein Fehler")
+
+        // Eine Datei, in die nichts geschrieben werden kann: der Pfad ist ein Ordner.
+        let blockiert = ordner.appendingPathComponent("blockiert.jsonl", isDirectory: true)
+        try FileManager.default.createDirectory(at: blockiert, withIntermediateDirectories: true)
+        var kaputt = LokalerOpLog(datei: blockiert)
+        XCTAssertEqual(kaputt.fuegeAn(op("b", wert: 1)), .fehlgeschlagen)
+        XCTAssertFalse(kaputt.haengeAn(op("b", wert: 1)))
+        XCTAssertEqual(kaputt.fuegeAn(op("b", wert: 1)), .fehlgeschlagen, "die Id gilt nicht als geschrieben: ein neuer Versuch ist möglich")
+    }
+
     func testDoppelteIdWirdNichtGeschrieben() throws {
         let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
         var log = LokalerOpLog(datei: datei)

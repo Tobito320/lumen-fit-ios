@@ -106,7 +106,7 @@ struct ProfilPasswortBlatt: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
     @State private var passwort = ""
     @State private var neu = ""
     @State private var versuche: CGFloat = 0

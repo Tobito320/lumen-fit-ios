@@ -37,7 +37,7 @@ final class MeilensteinWaechter {
                 try? await Task.sleep(for: .seconds(10))
                 self?.pruefeAlles()
             }
-        case .meilensteinErreicht, .trainingGestartet, .einstellungenGeaendert, .partnerAktualisiert, .profilGeloescht:
+        case .meilensteinErreicht, .trainingGestartet, .einstellungenGeaendert, .partnerAktualisiert, .profilGeloescht, .speichernFehlgeschlagen:
             break
         }
     }

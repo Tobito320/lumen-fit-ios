@@ -22,6 +22,7 @@ final class DatenSatz {
         self.ordner = ordner
         try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
         let raum = LokalerRaum(ordner: ordner, profil: profil, uhr: uhr)
+        raum.beiSpeicherfehler = { ereignisse.senden(.speichernFehlgeschlagen) }
         let einstellungen = EinstellungenStore(ordner: ordner, ereignisse: ereignisse)
         let ziele = ZieleStore(ordner: ordner)
         let habits = HabitStore(raum: raum, ziele: ziele, ereignisse: ereignisse, uhr: uhr)

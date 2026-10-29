@@ -10,7 +10,7 @@ struct SchlafSaeulen: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var schriftGroesse
     @State private var gewachsen = false
 

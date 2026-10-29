@@ -60,17 +60,23 @@ struct LeerZustand: View {
     }
 }
 
-/// Fehler, die helfen: was schiefging und was jetzt hilft. Symbol und Text, Warnfarbe nur hier.
+/// Texte der Fehler, die jede Seite betreffen können. Eigene Enum, damit Tests die Worte prüfen.
+enum FehlerTexte {
+    static let speichernTitel = "Konnte nicht speichern"
+    static let speichernHilfe = "Ist auf dem iPhone der Speicher voll? Gib etwas Platz frei und versuch es nochmal. Die letzte Eingabe ist nicht gespeichert."
+}
+
+/// Fehler, die helfen: was schiefging und was jetzt hilft. Lumi ist dabei (Idee 10), der Text sagt, was jetzt hilft.
 struct FehlerKarte: View {
     let titel: String
     let hilfe: String
+    /// Lumi ist dabei (kein Warndreieck): `denkt` bei Fehlern, die nicht an der Person liegen.
+    var stimmung: LumiStimmung = .denkt
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var schema
 
     var body: some View {
         HStack(alignment: .top, spacing: Abstand.m) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(LumenFarben.farbe(schema == .dark ? 0xFFB340 : 0x8F4B00))
+            LumiView(stimmung: stimmung, groesse: 40)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Abstand.xs) {
                 Text(titel).font(.headline).foregroundStyle(palette.text)
@@ -115,7 +121,7 @@ struct RollZahl: View {
     let wert: Double
     let format: FloatingPointFormatStyle<Double>
     @State private var angezeigt: Double?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
 
     var body: some View {
         let aktuell = angezeigt ?? 0
@@ -142,14 +148,18 @@ struct ToastInhalt: Equatable, Sendable {
 private struct ToastModifier: ViewModifier {
     @Binding var inhalt: ToastInhalt?
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
+    @Environment(\.accessibilityReduceMotion) private var reduziert
+    @Environment(\.stromsparmodus) private var stromsparmodus
 
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .top) {
                 if let toast = inhalt {
                     HStack(spacing: Abstand.m) {
+                        // Freude (Rekord, Medaille): Lumi hüpft zweimal, im Stromsparmodus einmal, bei "Bewegung reduzieren" gar nicht.
                         LumiView(stimmung: toast.stimmung, groesse: 36)
+                            .modifier(LumiHuepfer(anzahl: toast.stimmung == .stolz ? BewegungsRegel.huepfer(reduziert: reduziert, stromsparmodus: stromsparmodus) : 0))
                         VStack(alignment: .leading, spacing: 0) {
                             Text(toast.titel).font(.headline)
                             if let zeile = toast.zeile { Text(zeile).font(.subheadline).foregroundStyle(palette.text2) }

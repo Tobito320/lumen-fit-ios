@@ -5,7 +5,7 @@ import SwiftUI
 struct OnboardingView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
     @State private var fluss = ProfilOnboardingFluss()
     @State private var arbeitet = false
     @FocusState private var fokus: Feld?

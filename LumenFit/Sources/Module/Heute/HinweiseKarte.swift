@@ -4,7 +4,7 @@ import SwiftUI
 struct HinweiseKarte: View {
     let hinweise: [TagesHinweis]
     let wische: (String) -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
 
     var body: some View {
         VStack(spacing: Abstand.s) {
@@ -22,7 +22,7 @@ private struct HeuteHinweisReihe: View {
     let weg: () -> Void
     @State private var versatz: CGFloat = 0
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
 
     private nonisolated static let schwelle: CGFloat = 80
 

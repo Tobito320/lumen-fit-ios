@@ -43,7 +43,7 @@ final class HeuteModell {
             case .habitGeaendert, .gewichtGespeichert, .trainingBeendet, .trainingGestartet, .mahlzeitGespeichert, .einstellungenGeaendert,
                  .profilGewechselt, .profilGeloescht, .partnerAktualisiert, .meilensteinErreicht:
                 berechne()
-            case .satzFertig: break
+            case .satzFertig, .speichernFehlgeschlagen: break
             }
         }
     }

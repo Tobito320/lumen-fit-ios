@@ -12,6 +12,8 @@ final class LokalerRaum {
     @ObservationIgnored private var alle: [Op]
     @ObservationIgnored private var beobachter: [(arten: Set<String>, f: (Op) -> Void)] = []
     @ObservationIgnored private let uhr: Uhr
+    /// Wird gerufen, wenn eine Op nicht geschrieben werden konnte (Speicher voll, Dateirechte). Das `DatenSatz` macht daraus ein Ereignis.
+    @ObservationIgnored var beiSpeicherfehler: (@MainActor () -> Void)?
 
     /// `ordner` ist der Profilordner; der Log liegt als `ops.jsonl` darin.
     init(ordner: URL, profil: ProfilID, uhr: @escaping Uhr = { Date() }) {
@@ -29,7 +31,13 @@ final class LokalerRaum {
 
     /// Nimmt eine fertige Op auf (zum Beispiel aus einer Datensicherung); doppelte `id` werden übersprungen.
     func einreihen(_ op: Op) {
-        guard log.haengeAn(op) else { return }
+        switch log.fuegeAn(op) {
+        case .doppelt: return
+        case .fehlgeschlagen:
+            beiSpeicherfehler?()
+            return
+        case .angehaengt: break
+        }
         alle.append(op)
         for b in beobachter where b.arten.contains(op.art) { b.f(op) }
     }

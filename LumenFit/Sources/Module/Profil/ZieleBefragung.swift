@@ -76,7 +76,7 @@ struct ZieleBefragungView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var dismiss
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
     @State private var schritt = 0
     @State private var ziele: Set<String> = []
     @State private var tage: Int?

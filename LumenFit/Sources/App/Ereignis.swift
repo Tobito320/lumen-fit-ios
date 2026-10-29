@@ -12,6 +12,7 @@ enum Ereignis: Sendable {
     case habitGeaendert(tag: String)
     case meilensteinErreicht(id: String)
     case partnerAktualisiert
+    case speichernFehlgeschlagen      // eine Eingabe (Satz, Mahlzeit, Gewicht) konnte nicht geschrieben werden: die Oberfläche sagt es (Idee 10)
     case healthAktualisiert
     case vordergrund                  // scenePhase wird .active (auch Rückkehr aus dem Hintergrund)
 }

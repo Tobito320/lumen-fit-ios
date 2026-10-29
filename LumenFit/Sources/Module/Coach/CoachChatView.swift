@@ -7,7 +7,7 @@ struct CoachChatView: View {
 
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
     @State private var blatt: CoachBlatt?
     @FocusState private var fokus: Bool
 

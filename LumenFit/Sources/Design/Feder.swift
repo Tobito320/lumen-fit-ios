@@ -25,7 +25,7 @@ extension ButtonStyle where Self == FederKnopfStil {
 
 private struct FederKnopfInhalt: View {
     let konfiguration: ButtonStyleConfiguration
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.bewegungAus) private var reduceMotion
 
     var body: some View {
         konfiguration.label

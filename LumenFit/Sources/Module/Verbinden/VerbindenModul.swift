@@ -145,7 +145,7 @@ final class VerbindenDienste {
             await abruf()
             await umgebung.gesundheit.aktualisiere()
             bruecke.schreibe()
-        case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .healthAktualisiert:
+        case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .healthAktualisiert, .speichernFehlgeschlagen:
             break
         }
     }
