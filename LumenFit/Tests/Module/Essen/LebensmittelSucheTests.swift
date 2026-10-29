@@ -57,8 +57,9 @@ final class LebensmittelSucheTests: XCTestCase {
     func testOnlineSuchenHaengtTrefferHintenAn() async throws {
         let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
         let s = try suche(lader)
-        s.eingabe("Haferflocken", vorne: [])
+        s.eingabe("Hafer", vorne: [])
         let vorher = s.stand.sichtbar.map(\.id)
+        XCTAssertFalse(vorher.isEmpty)
         XCTAssertEqual(lader.aufrufe, 0)
         await s.onlineSuchen()
         XCTAssertEqual(lader.aufrufe, 1)

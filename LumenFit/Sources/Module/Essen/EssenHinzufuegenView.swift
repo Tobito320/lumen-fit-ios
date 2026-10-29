@@ -80,7 +80,12 @@ struct EssenHinzufuegenView: View {
                     pfad = [.eigenes(barcode: nil)]
                 }
             }
-            .task { suche.eingabe(text, vorne: vorne) }
+            .task {
+                // Der BLS-Index lädt im Hintergrund (höchstens etwa drei Sekunden warten), danach läuft die erste Suche.
+                LebensmittelIndex.shared.laden()
+                for _ in 0..<20 where !LebensmittelIndex.shared.bereit { try? await Task.sleep(for: .milliseconds(150)) }
+                suche.eingabe(text, vorne: vorne)
+            }
         }
     }
 
