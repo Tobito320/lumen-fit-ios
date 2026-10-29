@@ -49,14 +49,17 @@ struct Profil: Codable, Hashable, Identifiable, Sendable {
     var name: String
     var erstellt: Date
     var passwort: PasswortSpur
+    /// Wann der Name zuletzt geändert wurde (für die Sperre "alle 7 Tage"); nil, solange er nie geändert wurde.
+    var nameGeaendert: Date?
 
-    enum CodingKeys: String, CodingKey { case id, name, erstellt, passwort }
+    enum CodingKeys: String, CodingKey { case id, name, erstellt, passwort, nameGeaendert }
 
-    init(id: ProfilID, name: String, erstellt: Date, passwort: PasswortSpur) {
+    init(id: ProfilID, name: String, erstellt: Date, passwort: PasswortSpur, nameGeaendert: Date? = nil) {
         self.id = id
         self.name = name
         self.erstellt = erstellt
         self.passwort = passwort
+        self.nameGeaendert = nameGeaendert
     }
 
     init(from decoder: Decoder) throws {
@@ -65,5 +68,6 @@ struct Profil: Codable, Hashable, Identifiable, Sendable {
         name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? "Profil"
         erstellt = (try? c.decodeIfPresent(Date.self, forKey: .erstellt)) ?? Date(timeIntervalSince1970: 0)
         passwort = (try? c.decodeIfPresent(PasswortSpur.self, forKey: .passwort)) ?? PasswortSpur(salz: Data(), hash: Data(), runden: 1)
+        nameGeaendert = try? c.decodeIfPresent(Date.self, forKey: .nameGeaendert)
     }
 }

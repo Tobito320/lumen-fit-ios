@@ -4,9 +4,8 @@ import XCTest
 /// Import aus Lovea: alles mit erfundenen Daten und einem `SkriptLader`; es gibt keine echte Verbindung.
 @MainActor
 final class ProfilLoveaImportTests: XCTestCase {
-    private let person = ProfilLoveaPerson(kennung: "person-a", anzeige: "Person A")
-    private let zugang = ProfilLoveaZugang(server: URL(string: "https://lovea.example.invalid/basis/")!, schluessel: "geheim-test-schluessel",
-                                           personen: [ProfilLoveaPerson(kennung: "person-a", anzeige: "Person A")])
+    private let zugang = ProfilLoveaZugang(server: URL(string: "https://lovea.example.invalid/basis/")!,
+                                           kopfzeilen: ["X-App-Key": "app-test-schluessel", "X-Konto": "konto-test", "X-Geheimnis": "geheim-test"])
     private let start = TestUhr().lesen
 
     // MARK: - Hilfen
@@ -38,17 +37,17 @@ final class ProfilLoveaImportTests: XCTestCase {
 
     // MARK: - Freigabe
 
-    func testFreigabeIstVorerstNurImDemo() {
-        XCTAssertFalse(LoveaFreigabe.erlaubt(konto: TestDaten.profilID, demo: false))
-        XCTAssertFalse(LoveaFreigabe.erlaubt(konto: nil, demo: false))
-        XCTAssertTrue(LoveaFreigabe.erlaubt(konto: TestDaten.profilID, demo: true))
+    func testFreigabeNurWennDerServerSieGibt() {
+        XCTAssertFalse(LoveaFreigabe.erlaubt(freigegeben: false, demo: false), "ohne Antwort des Servers gesperrt")
+        XCTAssertTrue(LoveaFreigabe.erlaubt(freigegeben: true, demo: false))
+        XCTAssertTrue(LoveaFreigabe.erlaubt(freigegeben: false, demo: true), "nur die Debug-Demo darf es erzwingen")
     }
 
     func testOhneFreigabeKeinePostenKeinNetz() async throws {
         let (_, daten) = try leeresProfil()
         let l = lader([try seite([])])
         do {
-            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: l, demo: false, bestaetigt: true)
+            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: l, freigegeben: false, bestaetigt: true)
             XCTFail("sollte nicht freigegeben sein")
         } catch let f as ProfilLoveaFehler {
             XCTAssertEqual(f, .nichtErlaubt)
@@ -56,41 +55,32 @@ final class ProfilLoveaImportTests: XCTestCase {
         XCTAssertEqual(l.aufrufe, 0)
     }
 
-    // MARK: - Zugang
-
-    func testZugangAusPrivatenDaten() throws {
-        let json = #"{"version":1,"personen":[],"lovea":{"server":"https://lovea.example.invalid","schluessel":"s","personen":[{"kennung":"k1","anzeige":"A1"},{"kennung":"k2","anzeige":"A2"}]}}"#
-        let z = try XCTUnwrap(ProfilLoveaZugang.lies(Data(json.utf8)))
-        XCTAssertEqual(z.personen.map(\.anzeige), ["A1", "A2"])
-        XCTAssertFalse("\(z)".contains("lovea.example"), "die Beschreibung nennt weder Server noch Schlüssel")
-        XCTAssertNil(ProfilLoveaZugang.lies(Data(#"{"version":1,"personen":[]}"#.utf8)), "ohne Block kein Zugang")
-        XCTAssertNil(ProfilLoveaZugang.lies(Data(#"{"lovea":{"server":"https://x.example.invalid","schluessel":"","personen":[{"kennung":"k","anzeige":"a"}]}}"#.utf8)))
-    }
-
     // MARK: - Holen
 
     func testAnfrageTraegtPfadFilterUndKopfzeilen() async throws {
         let l = lader([try seite([])])
-        _ = try await ProfilLoveaImport.hole(zugang: zugang, kennung: "person-a", lader: l)
+        _ = try await ProfilLoveaImport.hole(zugang: zugang, lader: l)
         let a = try XCTUnwrap(l.anfragen.first)
         let url = try XCTUnwrap(a.url)
         XCTAssertEqual(a.httpMethod, "GET", "nur lesen")
         XCTAssertEqual(url.path, "/basis/agent/ops")
         let q = Dictionary(uniqueKeysWithValues: (URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []).map { ($0.name, $0.value ?? "") })
-        XCTAssertEqual(q["von"], "person-a")
+        XCTAssertNil(q["von"], "die Person setzt der Server aus dem Konto")
         XCTAssertEqual(q["seit"], "0")
         XCTAssertEqual(q["limit"], "200")
         XCTAssertEqual(q["aufsteigend"], "1")
         XCTAssertEqual(q["voll"], "1", "ohne voll=1 kürzt der Server große Rümpfe")
-        XCTAssertEqual(a.value(forHTTPHeaderField: "X-Lovea-Key"), "geheim-test-schluessel")
-        XCTAssertEqual(a.value(forHTTPHeaderField: "X-Lovea-Person"), "person-a")
+        XCTAssertEqual(a.value(forHTTPHeaderField: "X-App-Key"), "app-test-schluessel")
+        XCTAssertEqual(a.value(forHTTPHeaderField: "X-Konto"), "konto-test")
+        XCTAssertEqual(a.value(forHTTPHeaderField: "X-Geheimnis"), "geheim-test")
+        XCTAssertNil(a.value(forHTTPHeaderField: "X-Lovea-Key"), "der Lovea-Schlüssel bleibt am Server")
     }
 
     func testSeitenFolgenDerHoechstenSeqUndBleibenInReihenfolge() async throws {
         let erste = try seite([eintrag("habit.setzen", ["art": "wasser"], seq: 5), eintrag("habit.setzen", ["art": "gym"], seq: 3)], mehr: true)
         let zweite = try seite([eintrag("habit.setzen", ["art": "koffein"], seq: 9)])
         let l = lader([erste, zweite])
-        let abzug = try await ProfilLoveaImport.hole(zugang: zugang, kennung: "person-a", lader: l)
+        let abzug = try await ProfilLoveaImport.hole(zugang: zugang, lader: l)
         XCTAssertEqual(abzug.ops.map(\.seq), [3, 5, 9])
         XCTAssertEqual(l.aufrufe, 2)
         let zweiteUrl = try XCTUnwrap(l.anfragen.last?.url?.absoluteString)
@@ -101,7 +91,7 @@ final class ProfilLoveaImportTests: XCTestCase {
         let haengt = try seite([], mehr: true)
         let l = lader([haengt])
         do {
-            _ = try await ProfilLoveaImport.hole(zugang: zugang, kennung: "person-a", lader: l)
+            _ = try await ProfilLoveaImport.hole(zugang: zugang, lader: l)
             XCTFail("sollte abbrechen")
         } catch let f as ProfilLoveaFehler {
             XCTAssertEqual(f, .antwortKaputt)
@@ -112,7 +102,7 @@ final class ProfilLoveaImportTests: XCTestCase {
     func testUnlesbareEintraegeWerdenGezaehltNichtVerworfen() async throws {
         let kaputt: [String: Any] = ["seq": 2, "art": "habit.setzen"]   // ohne id und zeit
         let l = lader([try seite([eintrag("habit.setzen", ["art": "gym"], seq: 1), kaputt])])
-        let abzug = try await ProfilLoveaImport.hole(zugang: zugang, kennung: "person-a", lader: l)
+        let abzug = try await ProfilLoveaImport.hole(zugang: zugang, lader: l)
         XCTAssertEqual(abzug.ops.count, 1)
         XCTAssertEqual(abzug.unlesbar, 1)
     }
@@ -126,12 +116,12 @@ final class ProfilLoveaImportTests: XCTestCase {
         ]
         for (l, erwartet) in faelle {
             do {
-                _ = try await ProfilLoveaImport.hole(zugang: zugang, kennung: "person-a", lader: l)
+                _ = try await ProfilLoveaImport.hole(zugang: zugang, lader: l)
                 XCTFail("sollte scheitern")
             } catch let f as ProfilLoveaFehler {
                 XCTAssertEqual(f, erwartet)
                 let text = f.titel + f.hilfe
-                XCTAssertFalse(text.contains("geheim-test-schluessel") || text.contains("example.invalid"))
+                XCTAssertFalse(text.contains("geheim-test") || text.contains("example.invalid"))
             }
         }
         XCTAssertTrue(ProfilLoveaFehler.netz.wiederholbar)
@@ -243,13 +233,13 @@ final class ProfilLoveaImportTests: XCTestCase {
         let (_, daten) = try ProfilTestWelt.gefuellt(ordner: tempOrdner())
         let l = lader([try seite([])])
         do {
-            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: l, demo: true, bestaetigt: false)
+            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: l, freigegeben: true, bestaetigt: false)
             XCTFail("sollte nachfragen")
         } catch let f as ProfilLoveaFehler {
             XCTAssertEqual(f, .profilNichtLeer)
         }
         XCTAssertEqual(l.aufrufe, 0, "vor der Bestätigung wird nichts geholt")
-        let e = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: l, demo: true, bestaetigt: true)
+        let e = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: l, freigegeben: true, bestaetigt: true)
         XCTAssertEqual(e.neu, 0)
     }
 
@@ -267,14 +257,14 @@ final class ProfilLoveaImportTests: XCTestCase {
         let (_, daten) = try leeresProfil()
         let kaputt = SkriptLader.fehler(.timedOut)
         do {
-            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: kaputt, demo: true, bestaetigt: false)
+            _ = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: kaputt, freigegeben: true, bestaetigt: false)
             XCTFail("sollte scheitern")
         } catch let f as ProfilLoveaFehler {
             XCTAssertEqual(f, .netz)
         }
         XCTAssertFalse(ProfilSicherungLogik.hatDaten(daten), "nichts geschrieben, das Profil ist weiter leer")
         let gut = lader([try seite([eintrag("habit.setzen", ["art": "gym", "datum": "2026-09-23", "wert": 1], seq: 1)])])
-        let e = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: gut, demo: true, bestaetigt: false)
+        let e = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: gut, freigegeben: true, bestaetigt: false)
         XCTAssertEqual(e.neu, 1)
     }
 }

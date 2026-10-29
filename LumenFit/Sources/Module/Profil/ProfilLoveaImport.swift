@@ -1,52 +1,28 @@
 import Foundation
 
-/// Einziger Schalter für Lovea-Verbindung und Import (Ahmeds Vorgabe 29.10.: nur für die zwei freigegebenen Konten, niemand anders).
-/// Vorerst ist nur Demo erlaubt; der Server mit Freigabe je Konto ersetzt diese eine Funktion.
+/// Einziger Schalter für Lovea-Verbindung und Import (Vorgabe 29.10.: nur für die zwei freigegebenen Konten, niemand anders).
+/// Frei ist nur, was der Server mit `GET /lovea/freigabe` ausdrücklich freigibt (`KontoDienst`); alles andere, auch ein Netzfehler beim ersten Start, ist gesperrt.
 enum LoveaFreigabe {
-    static func erlaubt(konto: ProfilID?, demo: Bool) -> Bool { demo }
+    static func erlaubt(freigegeben: Bool, demo: Bool) -> Bool { freigegeben || demo }
 
-    /// Start mit `-lumenFitDemo`.
-    static var demoAktiv: Bool { ProcessInfo.processInfo.arguments.contains("-lumenFitDemo") }
+    /// Start mit `-lumenFitDemo` (nur Debug; im Release-Bau immer false).
+    static var demoAktiv: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-lumenFitDemo")
+        #else
+        return false
+        #endif
+    }
 }
 
-struct ProfilLoveaPerson: Equatable, Identifiable, Sendable {
-    /// Wert des Headers `X-Lovea-Person` (steht nur in der privaten Datei, nie im Code).
-    var kennung: String
-    var anzeige: String
-    var id: String { kennung }
-}
-
-/// Server, Schlüssel und Personen aus dem Block `lovea` der `PrivateDaten.json` (gitignored, Secret `PRIVATE_DATEN_JSON`):
-/// `{"lovea": {"server": "https://…", "schluessel": "…", "personen": [{"kennung": "…", "anzeige": "…"}]}}`.
-// shortcut: der Schlüssel liegt im Bundle jeder Installation, nur `LoveaFreigabe` sperrt; der Server soll ihn später je Konto ausgeben.
+/// Wohin der Import fragt: der Proxy des Lumen-Servers (`<Server>/lovea`, SPEC 18.2). Den Lovea-Schlüssel kennt nur der Server; Person und
+/// Filter setzt er aus dem Konto. Die Kopfzeilen sind die des Kontos (`KontoDienst.kopfzeilen`).
 struct ProfilLoveaZugang: Sendable, CustomStringConvertible {
     var server: URL
-    var schluessel: String
-    var personen: [ProfilLoveaPerson]
+    var kopfzeilen: [String: String]
 
-    /// Nie Server oder Schlüssel in Logs oder Fehlertexte.
-    var description: String { "ProfilLoveaZugang(\(personen.count) Personen)" }
-
-    static func lade(bundle: Bundle = .main) -> ProfilLoveaZugang? {
-        guard let url = bundle.url(forResource: "PrivateDaten", withExtension: "json"), let daten = try? Data(contentsOf: url) else { return nil }
-        return lies(daten)
-    }
-
-    static func lies(_ daten: Data) -> ProfilLoveaZugang? {
-        struct Datei: Decodable {
-            struct Block: Decodable {
-                struct P: Decodable { var kennung: String; var anzeige: String }
-                var server: String
-                var schluessel: String
-                var personen: [P]
-            }
-            var lovea: Block?
-        }
-        guard let block = (try? JSONDecoder().decode(Datei.self, from: daten))?.lovea, let server = URL(string: block.server),
-              !block.schluessel.isEmpty, !block.personen.isEmpty else { return nil }
-        return ProfilLoveaZugang(server: server, schluessel: block.schluessel,
-                                 personen: block.personen.map { ProfilLoveaPerson(kennung: $0.kennung, anzeige: $0.anzeige) })
-    }
+    /// Nie Server oder Kopfzeilen in Logs oder Fehlertexte.
+    var description: String { "ProfilLoveaZugang" }
 }
 
 /// Fehler des Imports. Die Texte sind fest: nie die Netz-Fehlermeldung durchreichen (sie enthält die Adresse).
@@ -140,12 +116,12 @@ enum ProfilLoveaImport {
 
     // MARK: - Holen (nur lesen)
 
-    static func anfrage(zugang: ProfilLoveaZugang, kennung: String, seit: Int) -> URLRequest? {
+    static func anfrage(zugang: ProfilLoveaZugang, seit: Int) -> URLRequest? {
         guard var teile = URLComponents(url: zugang.server, resolvingAgainstBaseURL: false) else { return nil }
         let pfad = teile.path.hasSuffix("/") ? String(teile.path.dropLast()) : teile.path
         teile.path = pfad + "/agent/ops"
         teile.queryItems = [
-            URLQueryItem(name: "von", value: kennung), URLQueryItem(name: "seit", value: String(seit)),
+            URLQueryItem(name: "seit", value: String(seit)),
             URLQueryItem(name: "limit", value: String(seitenGroesse)), URLQueryItem(name: "aufsteigend", value: "1"),
             // Ohne `voll=1` kürzt der Server große Rümpfe (Pläne, Essen) zu einer Vorschau.
             URLQueryItem(name: "voll", value: "1"),
@@ -154,8 +130,7 @@ enum ProfilLoveaImport {
         var anfrage = URLRequest(url: url)
         anfrage.httpMethod = "GET"
         anfrage.timeoutInterval = 30
-        anfrage.setValue(zugang.schluessel, forHTTPHeaderField: "X-Lovea-Key")
-        anfrage.setValue(kennung, forHTTPHeaderField: "X-Lovea-Person")
+        for (name, wert) in zugang.kopfzeilen { anfrage.setValue(wert, forHTTPHeaderField: name) }
         return anfrage
     }
 
@@ -172,13 +147,13 @@ enum ProfilLoveaImport {
     }
 
     /// Lädt alle Ops einer Person, Seite für Seite. Erst wenn alles da ist, wird geschrieben (Aufrufer): bei einem Netzfehler bleibt das Profil unberührt.
-    static func hole(zugang: ProfilLoveaZugang, kennung: String, lader: any HTTPLader,
+    static func hole(zugang: ProfilLoveaZugang, lader: any HTTPLader,
                      fortschritt: @MainActor (Int) -> Void = { _ in }) async throws -> ProfilLoveaAbzug {
         var abzug = ProfilLoveaAbzug()
         var seit = 0
         let enc = JSONEncoder()
         while true {
-            guard let anfrage = anfrage(zugang: zugang, kennung: kennung, seit: seit) else { throw ProfilLoveaFehler.antwortKaputt }
+            guard let anfrage = anfrage(zugang: zugang, seit: seit) else { throw ProfilLoveaFehler.antwortKaputt }
             let antwort: (Data, HTTPURLResponse)
             do { antwort = try await lader.lade(anfrage) } catch { throw ProfilLoveaFehler.netz }
             switch antwort.1.statusCode {
@@ -265,11 +240,11 @@ enum ProfilLoveaImport {
 
     /// Ganzer Ablauf: Freigabe, Leer-Prüfung, holen, planen, einspielen. Das Profil bleibt bei jedem Fehler vor dem Einspielen unberührt.
     @MainActor
-    static func fuehreAus(zugang: ProfilLoveaZugang, person: ProfilLoveaPerson, in daten: DatenSatz, lader: any HTTPLader, demo: Bool,
+    static func fuehreAus(zugang: ProfilLoveaZugang, in daten: DatenSatz, lader: any HTTPLader, freigegeben: Bool,
                           bestaetigt: Bool, fortschritt: @MainActor (String) -> Void = { _ in }) async throws -> ProfilLoveaErgebnis {
-        guard LoveaFreigabe.erlaubt(konto: daten.profil, demo: demo) else { throw ProfilLoveaFehler.nichtErlaubt }
+        guard freigegeben else { throw ProfilLoveaFehler.nichtErlaubt }
         if ProfilSicherungLogik.hatDaten(daten), !bestaetigt { throw ProfilLoveaFehler.profilNichtLeer }
-        let abzug = try await hole(zugang: zugang, kennung: person.kennung, lader: lader) { n in fortschritt("\(n) Einträge geladen") }
+        let abzug = try await hole(zugang: zugang, lader: lader) { n in fortschritt("\(n) Einträge geladen") }
         let plan = plane(abzug, fuer: daten.profil)
         return try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt("\(fertig) von \(gesamt) gespeichert") }
     }

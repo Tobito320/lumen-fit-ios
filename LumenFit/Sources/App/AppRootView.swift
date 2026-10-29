@@ -69,7 +69,17 @@ struct AppRootView: View {
     private func auffrischen() async {
         guard umgebung.profil.hatProfil else { return }
         umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())
+        Task { await kontoAbgleichen() }   // Netz darf Health nicht aufhalten
         await umgebung.gesundheit.aktualisiere()
+    }
+
+    /// Meldet das Gerät beim Server an, holt Einstellungen und Lovea-Freigabe. Sagt der Server (nicht nur der gemerkte Stand) "nicht freigegeben",
+    /// geht ein alter Schalter "Mit Lovea verbinden" einmal aus: die Brücke liest ihn direkt.
+    private func kontoAbgleichen() async {
+        await umgebung.konto.aktualisiere(profilName: umgebung.profil.aktiv?.name)
+        guard umgebung.konto.freigabeAktuell, !umgebung.konto.loveaErlaubt,
+              umgebung.daten?.einstellungen.werte.loveaVerbunden == true else { return }
+        umgebung.daten?.einstellungen.aendere { $0.loveaVerbunden = false }
     }
 }
 

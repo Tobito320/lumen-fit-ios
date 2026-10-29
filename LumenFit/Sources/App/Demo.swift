@@ -10,6 +10,7 @@ extension AppUmgebung {
                                    mitteiler: StilleMitteilung(), leser: DemoHealthLeser(), healthSchreiber: KeinHealthSchreiber(),
                                    bruecke: KeinePartnerBruecke(), uhr: { Date() }, passwortRunden: 1_000)
         _ = try? umgebung.profil.anlegen(name: "Beispiel", passwort: "demo")
+        umgebung.sperreWeitereProfile()
         let argumente = StartArgumente.lies()
         if let daten = umgebung.daten {
             if let thema = argumente.thema { daten.einstellungen.aendere { $0.thema = thema } }

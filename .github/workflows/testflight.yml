@@ -56,7 +56,8 @@ jobs:
           fi
           # Auf das kürzen, was die App liest (Name und Öffnungszeiten, StudioVorgaben): Adressen und Koordinaten liegen sonst in jeder IPA,
           # also auch auf den Geräten der Kollegen.
-          jq '{version, personen: [.personen[] | {id, name, orte: [(.orte // [])[] | {name, art, oeffnung}]}]}' \
+          # Der Block `konto` (Server und App-Schlüssel, SPEC 18) bleibt, ganz und nur er; ohne ihn gibt es keine Einstellungen vom Server.
+          jq '{version, personen: [.personen[] | {id, name, orte: [(.orte // [])[] | {name, art, oeffnung}]}]} + (if .konto then {konto: {server: .konto.server, appKey: .konto.appKey}} else {} end)' \
             LumenFit/Resources/PrivateDaten.json > "$RUNNER_TEMP/privat-gekuerzt.json"
           mv "$RUNNER_TEMP/privat-gekuerzt.json" LumenFit/Resources/PrivateDaten.json
           if jq -e '[.personen[].orte[] | keys[]] | any(. == "adresse" or . == "breite" or . == "laenge")' LumenFit/Resources/PrivateDaten.json >/dev/null; then

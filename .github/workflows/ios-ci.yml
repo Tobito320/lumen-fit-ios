@@ -157,6 +157,13 @@ jobs:
               xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTab heute -lumenFitTheme "$theme" -lumenFitFixtures "$FIX"
               sleep 6
               xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-theme-${theme}.png"
+              # Profil-Seite je Theme: oben und unten (die Seite ist länger als der Bildschirm)
+              xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitRoute "lumenfit://profil?bereich=einstellungen" -lumenFitTheme "$theme" -lumenFitFixtures "$FIX"
+              sleep 6
+              xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-profil-${theme}-oben.png"
+              xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitRoute "lumenfit://profil?bereich=einstellungen" -lumenFitTheme "$theme" -lumenFitFixtures "$FIX" -lumenFitScroll unten
+              sleep 6
+              xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-profil-${theme}-unten.png"
             done
             # Lumi in allen Stimmungen (Debug-Ansicht)
             xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitLumi YES

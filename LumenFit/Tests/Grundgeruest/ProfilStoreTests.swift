@@ -71,9 +71,9 @@ final class ProfilStoreTests: XCTestCase {
     func testUmbenennenUndPasswortAendern() throws {
         let (store, _, bund) = neuerStore()
         let profil = try store.anlegen(name: "Alt", passwort: "abcd")
-        store.benenne(um: "  Neu ")
+        XCTAssertEqual(store.aendereName("  Neu ", sperreTage: 7), .geaendert)
         XCTAssertEqual(store.aktiv?.name, "Neu")
-        store.benenne(um: "   ")
+        XCTAssertEqual(store.aendereName("   ", sperreTage: 0), .ungueltig(.leer))
         XCTAssertEqual(store.aktiv?.name, "Neu", "leerer Name ändert nichts")
 
         XCTAssertFalse(store.aenderePasswort(alt: "falsch", neu: "wxyz"))

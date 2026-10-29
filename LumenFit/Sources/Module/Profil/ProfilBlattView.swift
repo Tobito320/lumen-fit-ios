@@ -1,61 +1,26 @@
 import SwiftUI
 
-/// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab: Name und Passwort ändern, Profil wechseln und anlegen, die Seiten
-/// Aussehen, Ziele, Health, Datensicherung, Export, Datenschutz und Quellen, und "Alles löschen". Passwort gefragt wird nur bei Handlungen, nie beim Start.
+/// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Oben der Kopf und eine Zeile "Konto" (Name, Passwort, Profile), darunter
+/// klare Gruppen: Aussehen und Gefühl, Ziele und Gesundheit, Fortschritt, Verbindungen, Deine Daten, Über Lumen Fit; ganz unten "Alles löschen".
+/// Lovea erscheint nur, wenn der Server das Konto freigibt (`KontoDienst.loveaErlaubt`), sonst nirgends, auch nicht ausgegraut.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @State private var blatt: Blatt?
-    @State private var nameAendern = false
-    @State private var neuerName = ""
-    @State private var profilWahl = false
-    @State private var toast: ToastInhalt?
-
-    private enum Blatt: Identifiable {
-        case passwortAendern, anlegen, loeschen
-        case wechseln(Profil)
-
-        var id: String {
-            switch self {
-            case .passwortAendern: "passwort"
-            case .anlegen: "anlegen"
-            case .loeschen: "loeschen"
-            case .wechseln(let p): "wechseln-\(p.id.rawValue)"
-            }
-        }
-    }
+    @State private var loeschen = false
 
     var body: some View {
         let aktiv = umgebung.profil.aktiv
-        let andere = umgebung.profil.profile.filter { $0.id != aktiv?.id }
+        let lovea = umgebung.konto.loveaErlaubt
         ScrollView {
             VStack(spacing: Abstand.xl) {
                 kopf(aktiv)
 
-                gruppe("Profil") {
-                    Button { neuerName = aktiv?.name ?? ""; nameAendern = true } label: {
-                        ProfilZeile(symbol: "person.fill", titel: "Name ändern", wert: aktiv?.name)
-                    }
-                    Haarlinie()
-                    Button { blatt = .passwortAendern } label: { ProfilZeile(symbol: "key.fill", titel: "Passwort ändern") }
-                    if !andere.isEmpty {
-                        Haarlinie()
-                        Button { profilWahl = true } label: { ProfilZeile(symbol: "person.2.fill", titel: "Profil wechseln", wert: "\(andere.count + 1) Profile") }
-                    }
-                    Haarlinie()
-                    Button { blatt = .anlegen } label: { ProfilZeile(symbol: "person.badge.plus", titel: "Neues Profil anlegen") }
+                gruppe(nil) {
+                    link(symbol: "person.crop.circle.fill", titel: "Konto", wert: aktiv?.name) { KontoView() }
                 }
 
-                gruppe("Lumen Fit") {
+                gruppe("Aussehen und Gefühl") {
                     link(symbol: "paintpalette.fill", titel: "Aussehen", wert: umgebung.daten?.einstellungen.werte.thema.anzeigeName) { AussehenView() }
-                    Haarlinie()
-                    link(symbol: "target", titel: "Ziele und Körper") { ZieleView() }
-                    Haarlinie()
-                    link(symbol: "heart.text.square.fill", titel: "Health-Zugriff") { ProfilHealthZugriffView() }
-                    Haarlinie()
-                    link(symbol: "link", titel: "Verbindungen") { VerbindungenView() }
-                    Haarlinie()
-                    link(symbol: "star.fill", titel: "Meilensteine") { MeilensteineView() }
                     Haarlinie()
                     Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
                                          set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
@@ -67,59 +32,60 @@ struct ProfilBlattView: View {
                     .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
                 }
 
+                gruppe("Ziele und Gesundheit") {
+                    link(symbol: "target", titel: "Ziele und Körper") { ZieleView() }
+                    Haarlinie()
+                    link(symbol: "heart.text.square.fill", titel: "Health-Zugriff") { ProfilHealthZugriffView() }
+                }
+
+                gruppe("Fortschritt") {
+                    link(symbol: "star.fill", titel: "Meilensteine") { MeilensteineView() }
+                }
+
+                gruppe("Verbindungen") {
+                    link(symbol: "link", titel: lovea ? "Freunde, Band und Lovea" : "Freunde und Band") { VerbindungenView() }
+                }
+
                 gruppe("Deine Daten") {
                     link(symbol: "externaldrive.fill", titel: "Datensicherung", zeile: sicherungZeile) { DatensicherungView() }
                     Haarlinie()
                     link(symbol: "tablecells", titel: "Als Tabelle teilen") { ProfilExportView() }
-                    Haarlinie()
+                    if lovea {
+                        Haarlinie()
+                        link(symbol: "arrow.down.circle", titel: "Aus Lovea übernehmen") { ProfilLoveaImportSeite() }
+                    }
+                }
+
+                gruppe("Über Lumen Fit") {
                     link(symbol: "hand.raised.fill", titel: "Datenschutz") { ProfilDatenschutzView() }
                     Haarlinie()
                     link(symbol: "doc.text.fill", titel: "Quellen und Lizenzen") { QuellenView() }
                 }
 
+                Text("Lumen Fit \(version)").font(.footnote).foregroundStyle(palette.text2)
+
                 gruppe(nil) {
-                    Button(role: .destructive) { blatt = .loeschen } label: {
+                    Button(role: .destructive) { loeschen = true } label: {
                         ProfilZeile(symbol: "trash.fill", titel: "Alles löschen", zeile: "Profil und alle Daten auf diesem iPhone", pfeil: false)
                     }
                 }
-
-                Text("Lumen Fit \(version)").font(.footnote).foregroundStyle(palette.text2)
             }
             .padding(Abstand.l)
         }
+        .defaultScrollAnchor(startAnker)
         .navigationTitle("Profil")
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
-        .alert("Name ändern", isPresented: $nameAendern) {
-            TextField("Dein Name", text: $neuerName)
-            Button("Speichern") { umgebung.profil.benenne(um: neuerName) }
-            Button("Abbrechen", role: .cancel) {}
-        }
-        .confirmationDialog("Profil wechseln", isPresented: $profilWahl, titleVisibility: .visible) {
-            ForEach(andere) { p in Button(p.name) { blatt = .wechseln(p) } }
-            Button("Abbrechen", role: .cancel) {}
-        }
-        .sheet(item: $blatt) { art in
-            switch art {
-            case .passwortAendern:
-                ProfilPasswortBlatt(titel: "Passwort ändern", erklaerung: "Gib dein aktuelles und dein neues Passwort ein.", knopf: "Passwort ändern",
-                                    neuTitel: "Neues Passwort") { alt, neu in
-                    let ok = await umgebung.profil.aenderePasswortImHintergrund(alt: alt, neu: neu)
-                    if ok { toast = ToastInhalt(titel: "Passwort geändert", zeile: nil, stimmung: .stolz) }
-                    return ok
-                }
-            case .wechseln(let ziel):
-                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln", erklaerung: "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
-                                    zuruecksetzen: ziel) { passwort, _ in
-                    await umgebung.profil.wechsleImHintergrund(zu: ziel.id, passwort: passwort)
-                }
-            case .anlegen:
-                ProfilAnlegenBlatt()
-            case .loeschen:
-                ProfilLoeschenBlatt()
-            }
-        }
-        .lumenToast($toast)
+        .sheet(isPresented: $loeschen) { ProfilLoeschenBlatt() }
+    }
+
+    /// Oben; nur das Debug-Bild der CI startet unten (Start-Argument `-lumenFitScroll unten`), damit die untere Hälfte im Bild zu sehen ist.
+    private var startAnker: UnitPoint {
+        #if DEBUG
+        return StartArgumente.lies().scrollUnten ? .bottom : .top
+        #else
+        return .top
+        #endif
     }
 
     // MARK: - Teile
@@ -172,8 +138,12 @@ struct ProfilAnlegenBlatt: View {
                     .font(.body).foregroundStyle(palette.text2)
                 TextField("Name", text: $name)
                     .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
                     .padding(Abstand.m).frame(minHeight: Abstand.tippflaeche)
                     .background(palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
+                if let hinweis = ProfilOnboardingFluss.nameHinweis(name) {
+                    Text(hinweis).font(.footnote).foregroundStyle(palette.text2)
+                }
                 SecureField("Passwort (mindestens \(Passwort.mindestLaenge) Zeichen)", text: $passwort)
                     .textContentType(.newPassword)
                     .padding(Abstand.m).frame(minHeight: Abstand.tippflaeche)
@@ -205,6 +175,10 @@ struct ProfilAnlegenBlatt: View {
                 dismiss()
             } catch ProfilFehler.nameLeer {
                 fehler = "Wie soll das Profil heißen?"
+            } catch ProfilFehler.nameUngueltig(let grund) {
+                fehler = NamenRegel.text(grund)
+            } catch ProfilFehler.nichtErlaubt {
+                fehler = "Weitere Profile sind auf diesem iPhone nicht möglich."
             } catch ProfilFehler.passwortZuKurz {
                 fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
             } catch {

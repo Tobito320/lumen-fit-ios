@@ -3,6 +3,10 @@ import Observation
 
 enum ProfilFehler: Error, Equatable, Sendable {
     case nameLeer
+    /// Der Name verletzt die Namensregel (`NamenRegel`), außer "leer" (das ist `nameLeer`).
+    case nameUngueltig(NamenRegel.Fehler)
+    /// Ein weiteres Profil ist gesperrt (Einstellung des Servers `profilAnlegenErlaubt`).
+    case nichtErlaubt
     case passwortZuKurz
     case speichernFehlgeschlagen
     /// Der Eintrag im Schlüsselbund ließ sich nicht lesen oder deuten: nichts wird überschrieben, bis die Person es ansieht (`ProfilLadeProblem`).
@@ -12,6 +16,16 @@ enum ProfilFehler: Error, Equatable, Sendable {
 /// Warum die Profile beim Start nicht geladen wurden. `lesefehler`: Security meldete einen Fehler (gesperrt, Entitlement), der Eintrag ist ungewiss,
 /// nur "Erneut versuchen" hilft. `kaputt`: der Eintrag ist da, aber kein Profil darin ist lesbar; die Person kann ihn verwerfen (eine Kopie bleibt).
 enum ProfilLadeProblem: Equatable, Sendable { case lesefehler, kaputt }
+
+/// Ergebnis von `aendereName`.
+enum NamenAenderung: Equatable, Sendable {
+    case geaendert
+    case unveraendert
+    case ungueltig(NamenRegel.Fehler)
+    /// Gesperrt bis zu diesem Tag (0 Uhr).
+    case gesperrt(bis: Date)
+    case nichtGespeichert
+}
 
 /// Die Profile dieses Geräts und das aktive. Ablage im Schlüsselbund (`konto.profile` als JSON, `konto.aktiv` als UUID-Text),
 /// nie das Passwort, nur seine Spur. Es gibt keinen Anmeldebildschirm: ist ein Profil aktiv, startet die App direkt.
@@ -38,6 +52,9 @@ final class ProfilStore {
     @ObservationIgnored private var rohKaputt: Data?
     /// Beim Laden wurden einzelne Einträge übersprungen: die Kopie hält den vollen Rohstand und wird nicht überschrieben.
     @ObservationIgnored private var kopieGesperrt = false
+    /// Darf neben einem vorhandenen Profil ein weiteres entstehen? Die App setzt es aus der Server-Einstellung (`AppUmgebung.sperreWeitereProfile`);
+    /// das erste Profil geht immer. Standard erlaubt (Tests, Vorschau).
+    @ObservationIgnored var weitereProfileErlaubt: @MainActor () -> Bool = { true }
 
     /// `runden` ist nur für Tests kleiner als der Standard (600.000 brauchen je Aufruf spürbar Zeit).
     init(schluesselbund: any Schluesselbund, ereignisse: EreignisKanal, runden: Int = Passwort.standardRunden, uhr: @escaping Uhr = { Date() }) {
@@ -97,8 +114,13 @@ final class ProfilStore {
     }
 
     private func bereinigt(name: String, passwort: String) throws -> String {
-        let sauber = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !sauber.isEmpty else { throw ProfilFehler.nameLeer }
+        guard profile.isEmpty || weitereProfileErlaubt() else { throw ProfilFehler.nichtErlaubt }
+        let sauber: String
+        switch NamenRegel.pruefe(name) {
+        case .success(let n): sauber = n
+        case .failure(.leer): throw ProfilFehler.nameLeer
+        case .failure(let f): throw ProfilFehler.nameUngueltig(f)
+        }
         guard passwort.count >= Passwort.mindestLaenge else { throw ProfilFehler.passwortZuKurz }
         return sauber
     }
@@ -135,13 +157,23 @@ final class ProfilStore {
         profile.first { $0.id == id }.map { Passwort.stimmt(passwort, mit: $0.passwort) } ?? false
     }
 
-    /// Benennt das aktive Profil um (leerer Name ändert nichts).
-    func benenne(um name: String) {
-        let sauber = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !sauber.isEmpty, let aktuell = aktiv, let i = profile.firstIndex(where: { $0.id == aktuell.id }) else { return }
+    /// Benennt das aktive Profil um: nach der Namensregel und frühestens `sperreTage` Tage nach der letzten Änderung. Derselbe Name ändert nichts
+    /// und startet die Sperre nicht.
+    @discardableResult
+    func aendereName(_ roh: String, sperreTage: Int) -> NamenAenderung {
+        guard let aktuell = aktiv, let i = profile.firstIndex(where: { $0.id == aktuell.id }) else { return .nichtGespeichert }
+        let sauber: String
+        switch NamenRegel.pruefe(roh) {
+        case .success(let n): sauber = n
+        case .failure(let f): return .ungueltig(f)
+        }
+        if sauber == aktuell.name { return .unveraendert }
+        let jetzt = uhr()
+        if let frei = NamenRegel.freiAb(letzteAenderung: aktuell.nameGeaendert, tage: sperreTage, jetzt: jetzt) { return .gesperrt(bis: frei) }
         var neu = profile
         neu[i].name = sauber
-        _ = try? speichere(neu, aktiv: aktuell.id)
+        neu[i].nameGeaendert = jetzt
+        return (try? speichere(neu, aktiv: aktuell.id)) != nil ? .geaendert : .nichtGespeichert
     }
 
     /// Ändert das Passwort des aktiven Profils; nur mit richtigem alten Passwort und neuem von mindestens 4 Zeichen.

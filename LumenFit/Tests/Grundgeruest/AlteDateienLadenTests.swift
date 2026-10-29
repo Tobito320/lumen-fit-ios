@@ -110,6 +110,15 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertTrue(store.pruefe(passwort: "abcd", fuer: profil.id))
     }
 
+    func testProfilOhneNameGeaendertDarfSofortUmbenanntWerden() throws {
+        let (store, bund) = try storeMit(json: Self.ersterStand)
+        XCTAssertNil(try XCTUnwrap(store.profile.first).nameGeaendert, "der erste Stand kennt das Feld nicht")
+        XCTAssertEqual(store.aendereName("Zwei", sperreTage: 7), .geaendert)
+        let neu = ProfilStore(schluesselbund: bund, ereignisse: EreignisKanal(), runden: 1_000)
+        XCTAssertNotNil(neu.aktiv?.nameGeaendert, "das Datum übersteht den Neustart")
+        XCTAssertEqual(neu.aendereName("Drei", sperreTage: 7).isGesperrt, true, "und die Sperre auch")
+    }
+
     func testProfilMitFehlendenFeldernBleibtLesbarUndStimmtNie() throws {
         let ohneNameUndDatum = #"[{"id":"11111111-2222-3333-4444-555555555555","passwort":{"salz":"AQIDBAUGBwgJCgsMDQ4PEA==","hash":"3n0ScAtNMoU/rPrXCLQlLu3qN/Ybs35X6LSHpuiSiAI=","runden":1000}}]"#
         var (store, _) = try storeMit(json: ohneNameUndDatum)
@@ -146,4 +155,8 @@ final class AlteDateienLadenTests: XCTestCase {
         let neu = op(#"{"session":"s1","notiz":"Schulter zwickt","zukunft":{"a":[1,2]}}"#).daten(GymD.self)
         XCTAssertEqual(neu?.notiz, "Schulter zwickt")
     }
+}
+
+private extension NamenAenderung {
+    var isGesperrt: Bool { if case .gesperrt = self { true } else { false } }
 }

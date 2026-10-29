@@ -17,6 +17,8 @@ final class AppUmgebung {
     let mitteiler: any Mitteiler
     let healthSchreiber: any HealthSchreiber
     let bruecke: any PartnerAustausch
+    /// Konto beim Lumen-Server: Einstellungen ohne Build und Lovea-Freigabe (SPEC 18). Ohne Zugang kein Netz, nur Standardwerte.
+    let konto: KontoDienst
     @ObservationIgnored let healthLeser: any HealthLeser
     var coachMotor: any CoachMotor = RueckfallCoachMotor()              // setzt das Modul coach in start()
     var liveAnzeige: any LiveAnzeige = KeineLiveAnzeige()               // setzt das Modul widgets
@@ -38,7 +40,8 @@ final class AppUmgebung {
     }
 
     init(ordner: URL, schluesselbund: any Schluesselbund, http: any HTTPLader, mitteiler: any Mitteiler, leser: any HealthLeser,
-         healthSchreiber: any HealthSchreiber, bruecke: any PartnerAustausch, uhr: @escaping Uhr, passwortRunden: Int = Passwort.standardRunden) {
+         healthSchreiber: any HealthSchreiber, bruecke: any PartnerAustausch, uhr: @escaping Uhr, passwortRunden: Int = Passwort.standardRunden,
+         kontoZugang: KontoZugang? = nil) {
         let kanal = EreignisKanal()
         self.ordner = ordner
         self.uhr = uhr
@@ -49,6 +52,7 @@ final class AppUmgebung {
         self.healthSchreiber = healthSchreiber
         self.bruecke = bruecke
         self.healthLeser = leser
+        self.konto = KontoDienst(zugang: kontoZugang, schluesselbund: schluesselbund, http: http, ordner: ordner, uhr: uhr)
         self.router = Router()
         let profile = ProfilStore(schluesselbund: schluesselbund, ereignisse: kanal, runden: passwortRunden, uhr: uhr)
         self.profil = profile
@@ -65,6 +69,13 @@ final class AppUmgebung {
     }
 
     func profilOrdner(_ id: ProfilID) -> URL { Self.profilOrdner(ordner, id) }
+
+    /// Ein weiteres Profil neben dem ersten nur, wenn der Server es erlaubt (Standard und offline: nein). Die echte App und die Demo rufen das;
+    /// die Vorschau der Tests bleibt offen, damit sie Profile frei anlegen kann.
+    func sperreWeitereProfile() {
+        let dienst = konto
+        profil.weitereProfileErlaubt = { dienst.config.profilAnlegenErlaubt }
+    }
 
     /// Liest die Profile erneut ("Erneut versuchen" nach einem Lesefehler) und prüft, ob es eine Neuinstallation ist.
     func ladeProfileNeu() {
@@ -130,9 +141,11 @@ final class AppUmgebung {
 
     /// Die echte App: Schlüsselbund (mit Rückfall im unsignierten Simulator), HealthKit, App-Gruppe, Lovea-Brücke.
     static func live() -> AppUmgebung {
-        AppUmgebung(ordner: AppGruppe.ordner(), schluesselbund: RueckfallSchluesselbund(), http: URLSessionLader(), mitteiler: SystemMitteiler(),
-                    leser: HKHealthLeser(), healthSchreiber: HKHealthSchreiber(), bruecke: LoveaBruecke(ordner: AppGruppe.loveaOrdner()),
-                    uhr: { Date() })
+        let umgebung = AppUmgebung(ordner: AppGruppe.ordner(), schluesselbund: RueckfallSchluesselbund(), http: URLSessionLader(), mitteiler: SystemMitteiler(),
+                                   leser: HKHealthLeser(), healthSchreiber: HKHealthSchreiber(), bruecke: LoveaBruecke(ordner: AppGruppe.loveaOrdner()),
+                                   uhr: { Date() }, kontoZugang: KontoZugang.lade())
+        umgebung.sperreWeitereProfile()
+        return umgebung
     }
 }
 

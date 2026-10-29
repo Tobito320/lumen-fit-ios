@@ -8,5 +8,6 @@
         { "name": "Studio", "art": "gym", "adresse": "Musterstraße 1, 12345 Musterstadt", "breite": 50.0001, "laenge": 8.0001 }
       ]
     }
-  ]
+  ],
+  "konto": { "server": "https://lumen-fit.example.invalid", "appKey": "beispiel-schluessel-nicht-echt" }
 }

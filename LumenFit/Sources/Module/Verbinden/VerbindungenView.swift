@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Die Seite "Verbindungen" (Profil): Lovea verbinden (Idee 81), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83),
+/// Die Seite "Verbindungen" (Profil): Lovea verbinden (Idee 81, nur wenn der Server das Konto freigibt; sonst gar nicht sichtbar), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83),
 /// das Band (85) und die Freunde (89). Nicht verbunden zeigt sie nur die Schalter, nie etwas vom Partner und keine Fehlermeldung.
 struct VerbindungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -29,14 +29,17 @@ private struct VerbindungenInhalt: View {
     private var einstellungen: EinstellungenStore { daten.einstellungen }
     private var verbindung: VerbindungStore { daten.verbindung }
     private var loveaAn: Bool { einstellungen.werte.loveaVerbunden }
+    private var loveaErlaubt: Bool { umgebung.konto.loveaErlaubt }
 
     var body: some View {
         Form {
-            loveaAbschnitt
-            if loveaAn {
-                freigabenAbschnitt
-                vorschauAbschnitt
-                mitteilungenAbschnitt
+            if loveaErlaubt {
+                loveaAbschnitt
+                if loveaAn {
+                    freigabenAbschnitt
+                    vorschauAbschnitt
+                    mitteilungenAbschnitt
+                }
             }
             bandAbschnitt
             freundeAbschnitt
@@ -128,7 +131,7 @@ private struct VerbindungenInhalt: View {
     // MARK: Band
 
     private var bandAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Band", fuss: "Standard aus. Solange Lovea das Band selbst hält, lass es aus: nur eine App kann das Band halten. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth.") {
+        VerbindenAbschnitt(titel: "Band", fuss: bandFuss) {
             Toggle("Band in Lumen Fit nutzen", isOn: Binding(
                 get: { einstellungen.werte.bandAktiv },
                 set: { neu in einstellungen.aendere { $0.bandAktiv = neu } }))
@@ -136,6 +139,12 @@ private struct VerbindungenInhalt: View {
                 NavigationLink { BandSeite() } label: { LabeledContent("Band", value: bandKurz) }
             }
         }
+    }
+
+    /// Ohne Freigabe steht hier kein Wort von Lovea.
+    private var bandFuss: String {
+        let basis = "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth."
+        return loveaErlaubt ? "Standard aus. Solange Lovea das Band selbst hält, lass es aus: nur eine App kann das Band halten. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
     }
 
     private var bandKurz: String {

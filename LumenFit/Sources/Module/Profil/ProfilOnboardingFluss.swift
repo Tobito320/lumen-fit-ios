@@ -23,7 +23,7 @@ final class ProfilOnboardingFluss {
     var stand: String { "Schritt \(karte.rawValue + 1) von \(anzahl)" }
     var istLetzte: Bool { karte == .health }
 
-    var nameGueltig: Bool { !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var nameGueltig: Bool { if case .success = NamenRegel.pruefe(name) { true } else { false } }
     var passwortGueltig: Bool { passwort.count >= Passwort.mindestLaenge }
 
     var kannWeiter: Bool {
@@ -49,6 +49,14 @@ final class ProfilOnboardingFluss {
     func healthFragen(leser: any HealthLeser) async {
         _ = await leser.zugriff(fuer: Set(HealthTyp.allCases))
         healthAngefragt = true
+    }
+
+    /// Hinweis zum Namensfeld (nil, solange nichts getippt ist oder alles passt); gleiche Regel wie beim Ändern.
+    var nameHinweis: String? { Self.nameHinweis(name) }
+
+    static func nameHinweis(_ name: String) -> String? {
+        guard !name.isEmpty, case .failure(let f) = NamenRegel.pruefe(name) else { return nil }
+        return NamenRegel.text(f)
     }
 
     /// Hinweis zum Passwortfeld (leer, solange alles passt).
@@ -77,6 +85,11 @@ final class ProfilOnboardingFluss {
             case .nameLeer:
                 fehler = "Wie soll Lumi dich nennen?"
                 karte = .profil
+            case .nameUngueltig(let f):
+                fehler = NamenRegel.text(f)
+                karte = .profil
+            case .nichtErlaubt:
+                fehler = "Weitere Profile sind auf diesem iPhone nicht möglich."
             case .passwortZuKurz:
                 fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
                 karte = .profil

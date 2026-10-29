@@ -47,7 +47,7 @@ final class ProfilLoeschenTests: XCTestCase {
         XCTAssertFalse(u.profil.wechsle(zu: erstes, passwort: "abcd"), "das alte Passwort gilt nicht mehr")
         XCTAssertTrue(u.profil.wechsle(zu: erstes, passwort: "neuespw"))
         XCTAssertEqual(u.profil.aktiv?.name, "Eins")
-        u.profil.benenne(um: "Eins neu")
+        u.profil.aendereName("Eins neu", sperreTage: 7)
         XCTAssertEqual(u.profil.aktiv?.name, "Eins neu")
     }
 }

@@ -1,6 +1,18 @@
 import SwiftUI
 
-/// "Aus Lovea übernehmen": einmaliger Import der Health-Daten einer Person (nur wenn `LoveaFreigabe` es erlaubt). Steht in der Datensicherung.
+/// Die Seite "Aus Lovea übernehmen" (Profil, Deine Daten): nur erreichbar, wenn der Server das Konto für Lovea freigibt.
+struct ProfilLoveaImportSeite: View {
+    var body: some View {
+        ScrollView {
+            ProfilLoveaImportKarte().padding(Abstand.l)
+        }
+        .navigationTitle("Aus Lovea übernehmen")
+        .navigationBarTitleDisplayMode(.inline)
+        .lumenHintergrund()
+    }
+}
+
+/// Einmaliger Import der Health-Daten aus Lovea (nur wenn der Server das Konto freigibt; ohne Freigabe zeichnet die Karte nichts).
 struct ProfilLoveaImportKarte: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -8,13 +20,10 @@ struct ProfilLoveaImportKarte: View {
     @State private var stand = ""
     @State private var fehler: ProfilLoveaFehler?
     @State private var ergebnis: ProfilLoveaErgebnis?
-    @State private var wahl: ProfilLoveaPerson?
     @State private var bestaetigen = false
 
-    private var zugang: ProfilLoveaZugang? { ProfilLoveaZugang.lade() }
-
     var body: some View {
-        if let zugang, let daten = umgebung.daten, LoveaFreigabe.erlaubt(konto: daten.profil, demo: LoveaFreigabe.demoAktiv) {
+        if let zugang = umgebung.konto.loveaZugang(), let daten = umgebung.daten {
             inhalt(zugang: zugang, daten: daten)
         }
     }
@@ -32,13 +41,11 @@ struct ProfilLoveaImportKarte: View {
                     if laeuft {
                         ProgressView(stand.isEmpty ? "Lade" : stand)
                     } else {
-                        ForEach(zugang.personen) { person in
-                            Button { starte(person, daten: daten) } label: {
-                                Label("Ich bin \(person.anzeige)", systemImage: "arrow.down.circle")
-                                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                            }
-                            .buttonStyle(.bordered)
+                        Button { starte(zugang: zugang, daten: daten) } label: {
+                            Label("Aus Lovea übernehmen", systemImage: "arrow.down.circle")
+                                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                         }
+                        .buttonStyle(.bordered)
                     }
                     if let ergebnis { ergebnisZeilen(ergebnis) }
                 }
@@ -46,8 +53,8 @@ struct ProfilLoveaImportKarte: View {
             }
         }
         .confirmationDialog("Lovea-Daten übernehmen?", isPresented: $bestaetigen, titleVisibility: .visible) {
-            Button("Übernehmen") { if let wahl { los(wahl, daten: daten, bestaetigt: true) } }
-            Button("Abbrechen", role: .cancel) { wahl = nil }
+            Button("Übernehmen") { los(zugang: zugang, daten: daten, bestaetigt: true) }
+            Button("Abbrechen", role: .cancel) {}
         } message: {
             Text("Dein Profil hat schon Einträge. Neues wird dazugelegt, Gleiches übersprungen, deine Einstellungen bleiben.")
         }
@@ -73,19 +80,18 @@ struct ProfilLoveaImportKarte: View {
         return Text("\(titel): \(text)").font(.footnote).foregroundStyle(palette.text2)
     }
 
-    private func starte(_ person: ProfilLoveaPerson, daten: DatenSatz) {
-        wahl = person
-        if ProfilSicherungLogik.hatDaten(daten) { bestaetigen = true } else { los(person, daten: daten, bestaetigt: false) }
+    private func starte(zugang: ProfilLoveaZugang, daten: DatenSatz) {
+        if ProfilSicherungLogik.hatDaten(daten) { bestaetigen = true } else { los(zugang: zugang, daten: daten, bestaetigt: false) }
     }
 
-    private func los(_ person: ProfilLoveaPerson, daten: DatenSatz, bestaetigt: Bool) {
-        guard let zugang, !laeuft else { return }
+    private func los(zugang: ProfilLoveaZugang, daten: DatenSatz, bestaetigt: Bool) {
+        guard !laeuft else { return }
         laeuft = true; fehler = nil; ergebnis = nil; stand = ""
         Task { @MainActor in
             defer { laeuft = false }
             do {
-                ergebnis = try await ProfilLoveaImport.fuehreAus(zugang: zugang, person: person, in: daten, lader: umgebung.http,
-                                                                  demo: LoveaFreigabe.demoAktiv, bestaetigt: bestaetigt) { stand = $0 }
+                ergebnis = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: umgebung.http,
+                                                                  freigegeben: umgebung.konto.loveaErlaubt, bestaetigt: bestaetigt) { stand = $0 }
             } catch let f as ProfilLoveaFehler {
                 fehler = f
             } catch {

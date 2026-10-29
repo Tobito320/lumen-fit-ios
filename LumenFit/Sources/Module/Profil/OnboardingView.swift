@@ -105,7 +105,7 @@ struct OnboardingView: View {
 
     private func profil(name: Binding<String>, passwort: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: Abstand.l) {
-            karteTitel("Wie soll ich dich nennen?", "Name und Passwort bleiben auf deinem iPhone.")
+            karteTitel("Wie soll ich dich nennen?", "Dein Passwort und deine Daten bleiben auf deinem iPhone. Nur dein Name geht an den Lumen-Server, damit Einstellungen ohne Update änderbar sind.")
             VStack(spacing: Abstand.m) {
                 TextField("Dein Name", text: name)
                     .textContentType(.givenName)
@@ -114,6 +114,9 @@ struct OnboardingView: View {
                     .focused($fokus, equals: .name)
                     .onSubmit { fokus = .passwort }
                     .eingabeFeld(palette)
+                if let hinweis = fluss.nameHinweis {
+                    Text(hinweis).font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
+                }
                 SecureField("Passwort (mindestens \(Passwort.mindestLaenge) Zeichen)", text: passwort)
                     .textContentType(.newPassword)
                     .submitLabel(.done)
