@@ -8,7 +8,8 @@ enum ProfilModul {
     /// Das Blatt öffnet gleich und höchstens noch einmal beim ersten Vordergrund-Ereignis (falls das erste Mal zu früh war), dann nie wieder von selbst
     /// (keine Erinnerung). Solange die Karte nicht beantwortet ist, steht sie in der Datensicherung. Idempotent.
     @MainActor static func start(_ umgebung: AppUmgebung) {
-        guard gestartet.insert(ObjectIdentifier(umgebung)).inserted, umgebung.neuinstallationErkannt else { return }
+        // Erst die Bedingung, dann merken: nur eine wirklich gestartete Umgebung wird vermerkt (sie lebt durch die Task weiter, ihre Adresse bleibt belegt).
+        guard umgebung.neuinstallationErkannt, gestartet.insert(ObjectIdentifier(umgebung)).inserted else { return }
         oeffneWillkommenZurueck(umgebung)
         let strom = umgebung.ereignisse.strom()
         Task { @MainActor in
