@@ -61,5 +61,11 @@ TESTS
 - `OpenFoodFactsQuelleTests`, `LebensmittelSucheTests`, `MakroDonutDatenTests`, `WochenanalyseTests`, `ZielKarteTests`
 - Portierte Lovea-Tests laut Tabelle
 
+VOM GRUNDGERÜST NICHT PORTIERT (Stand Grundgerüst; Quelle bleibt Lovea, du holst es mit)
+- `FoodRating`/`FoodSchild` (Lovea/Sources/Health/Ernaehrung/ErnaehrungRating.swift) samt den vier testRating...-Tests aus ErnaehrungTests
+- Lovea/Tests/EssenModelleTests komplett (`MahlzeitArt.vorschlag`, `EssenMahlzeit`, `EssenAnalyse`, `KiClient` und weitere Typen der Essen-Ansichten)
+- Im Grundgerüst vorhanden: `Lebensmittel`, `Naehrwerte`, `Mikro`, `HaushaltsMasse`, `ErnaehrungLogik` samt Open-Food-Facts-Auswertung (`offProdukt`, `offSuche`), `LebensmittelBasis`, `LebensmittelIndex`, `FastenLogik`
+
+
 ABSCHLUSSBERICHT
 Kurz: geänderte Dateien, welche Idee wie umgesetzt ist, was nur Compiler oder Gerät beweist (ungeprüft), Wünsche ans Grundgerüst (du änderst es nie), Annahmen für SPEC Abschnitt 15.

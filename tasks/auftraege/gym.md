@@ -68,5 +68,13 @@ TESTS
 - Portierte Lovea-Tests laut Tabelle
 - Katalog-Test gegen `lovea-uebungen-auszug.json`
 
+VOM GRUNDGERÜST NICHT PORTIERT (Stand Grundgerüst; Quelle bleibt Lovea, du holst es mit)
+- Lovea/Tests/TrainingTests: testNotAtGymOnlyWithSavedGymAndFreshFix (Orte, `TrainingLogik.nichtImGym`), testRecordsPerExerciseAndNewRecordDetection (RekordLogik), testWorkoutRowsPreviousExtrasAndNext und testPlanQuestionOnlyOnStructureAndCalculators (WorkoutLogik)
+- Lovea/Tests/GymLueckenTests: alle Tests zu WorkoutLogik (testSkippedExerciseIsNotActiveAndDranMovesOn, testSkippedCardioDranMovesOn, testPlanQuestionKeepsPlanSetsOfSkippedExercise, testFreeTrainingBecomesFlexibleDayKeepingExerciseIds, testManualTickInFinishedSessionHasNoTimes, testDayCanOnlyBeSwitchedBeforeAnySetIsTicked, testSwitchingDayTakesOutOnlyRunsOfTheOldDay); im Grundgerüst liegen nur testRecentExercises... und testEarliestStart...
+- Lovea/Tests/WochenAbweichungTests: testPlantagInVerlegterWoche (`SplitFrei.plantag`) und testGymStartStandZeigtVerlegtUndTestwoche (`GymStartStand.bauen`)
+- `GymStartLogik.umfang(_:)` fehlt (braucht `ZeitSchaetzung`); der Assert "2 Übungen · etwa 30 min" aus SplitsTests ist nachzurüsten
+- `Op` hat kein `seq`: wo Lovea-Tests `seq:` setzen, gewinnt die zuletzt eingetroffene Op (siehe die angepassten Tests in `LumenFit/Tests/Grundgeruest/Port/`)
+
+
 ABSCHLUSSBERICHT
 Kurz: geänderte Dateien, welche Idee wie umgesetzt ist, was nur Compiler oder Gerät beweist (ungeprüft), Wünsche ans Grundgerüst (du änderst es nie), Annahmen für SPEC Abschnitt 15.

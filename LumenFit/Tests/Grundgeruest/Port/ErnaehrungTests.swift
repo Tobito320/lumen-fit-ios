@@ -221,7 +221,7 @@ final class ErnaehrungTests: XCTestCase {
             f.anwenden(try op("essen.setzen", e, sekunde: Double(i)))
         }
         XCTAssertEqual(f.zuletzt(.testA).count, 1)
-        XCTAssertEqual(f.lebensmittel(barcode: "8710624358174", .testB)?.name, "Skyr")
+        XCTAssertEqual(f.lebensmittel(barcode: "8710624358174", .testA)?.name, "Skyr")
         XCTAssertEqual(f.letzteMenge(.testA, skyr.id)?.einheit, .portion)
     }
     // MARK: - Portionen, Wasser, Körperwerte

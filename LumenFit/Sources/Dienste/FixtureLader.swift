@@ -1,14 +1,14 @@
 import Foundation
 
 /// `HTTPLader` aus Dateien (Vorschau, Demo und Tests mit `-lumenFitFixtures`): die Antwort steht in einer Datei, die so heißt wie der Pfad der Anfrage
-/// (`/api/v2/product/123.json` -> `api_v2_product_123.json`), irgendwo unter dem Fixture-Ordner. Ohne Datei: 404. Ohne Ordner nie Netz, immer 404.
+/// (`/api/v2/product/123.json` -> `api_v2_product_123.json`; ohne Endung zählt auch `api_v2_product_123.json`), irgendwo unter dem Fixture-Ordner. Ohne Datei: 404. Ohne Ordner nie Netz, immer 404.
 struct FixtureLader: HTTPLader {
     let ordner: URL?
 
     func lade(_ anfrage: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let url = anfrage.url ?? URL(fileURLWithPath: "/")
         let name = url.path.split(separator: "/").joined(separator: "_")
-        if let datei = finde(name), let daten = try? Data(contentsOf: datei) { return (daten, try antwort(url, 200)) }
+        if let datei = finde(name) ?? finde(name + ".json"), let daten = try? Data(contentsOf: datei) { return (daten, try antwort(url, 200)) }
         return (Data(), try antwort(url, 404))
     }
 

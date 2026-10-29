@@ -163,13 +163,14 @@ final class HabitLogikTests: XCTestCase {
         XCTAssertEqual(faltung.werte["h-1"]?[.testA]?["2026-09-20"]?.wert, 1)
     }
 
+    /// Die Reihenfolge des Anlegens ist die des Eintreffens (kein `seq`): "h-b" kam zuerst, die spätere Änderung von "h-a" ändert nichts daran.
     func testSichtbarSortiertGymWasserDannNachAnlage() {
         let faltung = gefaltet([
             op("habit.anlegen", eigene("h-b", name: "Zweite")),
             op("habit.anlegen", eigene("h-a", name: "Erste")),
             op("habit.aendern", eigene("h-a", name: "Erste neu")),
         ])
-        XCTAssertEqual(faltung.sichtbar(fuer: .testA).map(\.id), ["gym", "wasser", "h-a", "h-b"])
+        XCTAssertEqual(faltung.sichtbar(fuer: .testA).map(\.id), ["gym", "wasser", "h-b", "h-a"])
     }
 
     // MARK: - JSON

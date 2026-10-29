@@ -38,7 +38,7 @@ struct LokalerOpLog: Sendable {
         if !FileManager.default.fileExists(atPath: datei.path) {
             guard (try? zeile.write(to: datei, options: .atomic)) != nil else { return false }
         } else {
-            guard let handle = try? FileHandle(forWritingTo: datei) else { return false }
+            guard let handle = try? FileHandle(forUpdating: datei) else { return false }   // Lesen des letzten Bytes braucht Lese- und Schreibrecht
             defer { try? handle.close() }
             do {
                 // Endet die Datei nicht auf einem Zeilenumbruch (Abbruch mitten im Schreiben), zuerst einen setzen.

@@ -20,7 +20,7 @@ DU NUTZT AUS DEM GRUNDGERÜST (Namen stehen in SPEC 5.9)
 
 AUS LOVEA PORTIEREN (unter Lovea/Sources/Health/, wenn nicht anders angegeben; Modus K kopieren, A anpassen, N neu, - nicht)
 - Koerper/ErholungsLogik.swift [A] Tests: ErholungsKarteTests
-- Koerper/Messungen.swift (MessArt, MessPunkt, MessLogik; Views N) [A] Tests: GewichtLogikTests, soweit nicht im Grundgerüst
+- Koerper/Messungen.swift (MessArt; MessPunkt, MessLogik, GewichtLogik, GewichtMittel liegen schon im Grundgerüst, Views N) [A] Tests: GewichtLogikTests, soweit nicht im Grundgerüst
 - Koerper/KoerperKarte.swift, KoerperBlatt.swift, KoerperView.swift, MuskelKarte.swift, MuskelSeite.swift [N (Silhouette neu aus SwiftUI-Formen; `muskelkarte.json` NICHT verwenden, AGPL)]
 - Verlauf/KonsistenzLogik.swift, KonsistenzKategorien.swift [A] Tests: KonsistenzLogikTests, KonsistenzKategorienTests
 - Verlauf/VerlaufWocheLogik.swift [A] Tests: VerlaufOhneSaetzeTests, VerlaufRuhigTests
@@ -60,6 +60,11 @@ AKZEPTANZ
 TESTS
 - `KraftKurveTests`, `SaetzeProMuskelTests`, `NaechstesTrainingTests`, `MeilensteinPruefungTests`, `LumiPfadTests` (Pfad und nächstes Ziel aus `LumiStufe.schwellen`; `LumiStufeTests` gehört dem Grundgerüst), `RueckblickTests`
 - Portierte Lovea-Tests laut Tabelle
+
+VOM GRUNDGERÜST NICHT PORTIERT (Stand Grundgerüst; Quelle bleibt Lovea, du holst es mit)
+- Lovea/Tests/WochenAbweichungTests: testWochenleisteZeigtVerlegtenTagAmNeuenTag (`KoerperWoche`, `KoerperLogik.Art`)
+- `MessPunkt`, `MessLogik`, `GewichtLogik`, `GewichtMittel` liegen schon in `Gemeinsam/Modelle/HealthLogik.swift` (nicht doppelt anlegen); die Tests dazu (HealthLogikTests) laufen im Grundgerüst
+
 
 ABSCHLUSSBERICHT
 Kurz: geänderte Dateien, welche Idee wie umgesetzt ist, was nur Compiler oder Gerät beweist (ungeprüft), Wünsche ans Grundgerüst (du änderst es nie), Annahmen für SPEC Abschnitt 15.

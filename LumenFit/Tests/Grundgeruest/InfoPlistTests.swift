@@ -37,7 +37,10 @@ final class InfoPlistTests: XCTestCase {
 
     func testIPadBrauchtAlleVierAusrichtungenSonstLehntDerUploadAb() {
         // Fehler 90474: iPad-Ausrichtungen müssen vollständig sein, obwohl die App nur iPhone ist.
-        let ipad = info["UISupportedInterfaceOrientations~ipad"] as? [String] ?? []
+        // `Bundle.infoDictionary` blendet die Schlüssel für das andere Gerät aus, deshalb die Datei selbst lesen.
+        let url = Bundle(for: BundleAnker.self).url(forResource: "Info", withExtension: "plist")
+        let roh = url.flatMap { NSDictionary(contentsOf: $0) as? [String: Any] } ?? [:]
+        let ipad = roh["UISupportedInterfaceOrientations~ipad"] as? [String] ?? []
         XCTAssertEqual(Set(ipad).count, 4, "\(ipad)")
     }
 
