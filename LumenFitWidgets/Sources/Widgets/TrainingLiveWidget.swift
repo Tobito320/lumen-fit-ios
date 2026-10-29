@@ -36,7 +36,7 @@ struct TrainingLiveWidget: Widget {
                 Text(stand.start, style: .timer)
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: 52, alignment: .trailing)
+                    .frame(maxWidth: 56, alignment: .trailing)   // wie Lovea; breiter wird die Insel nicht
             } minimal: {
                 LumiView(stimmung: .bereit, groesse: 22)
             }
@@ -69,7 +69,7 @@ private struct SatzFertigKnopf: View {
     }
 }
 
-/// Die Pause als Zähler, solange sie läuft; danach nichts (die nächste Aktualisierung kommt mit dem nächsten Satz).
+/// Die Pause als Zähler, solange sie läuft. Nach ihrem Ende bleibt der Zähler bei 0:00 stehen, bis die App den nächsten Satz meldet (kein Neuzeichnen ohne Aktualisierung).
 private struct PausenZeile: View {
     let stand: TrainingLiveStand
     let farben: WidgetFarben

@@ -23,7 +23,10 @@ struct SnapshotAnbieter: TimelineProvider {
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<SnapshotEintrag>) -> Void) {
         let eintrag = Self.aktuell()
-        completion(Timeline(entries: [eintrag], policy: .after(WidgetAnzeige.naechsteMitternacht(eintrag.date))))
+        // Zweiter Eintrag zur Mitternacht: das System zeichnet ihn selbst, "heute" und "morgen" stimmen auch, wenn das Neuladen sich verspätet.
+        let mitternacht = WidgetAnzeige.naechsteMitternacht(eintrag.date)
+        let danach = SnapshotEintrag(date: mitternacht, snapshot: eintrag.snapshot)
+        completion(Timeline(entries: [eintrag, danach], policy: .after(mitternacht)))
     }
 
     private static func aktuell() -> SnapshotEintrag {
