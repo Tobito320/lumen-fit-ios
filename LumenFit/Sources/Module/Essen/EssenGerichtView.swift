@@ -84,7 +84,7 @@ struct EssenGerichtView: View {
             .controlSize(.large)
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.s)
-            .background(.bar)
+            .lumenLeiste()
         }
         .confirmationDialog("Gericht löschen?", isPresented: $loeschenFragen, titleVisibility: .visible) {
             Button("Löschen", role: .destructive) {

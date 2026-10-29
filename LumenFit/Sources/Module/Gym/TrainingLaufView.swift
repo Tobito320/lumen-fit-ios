@@ -109,7 +109,7 @@ struct TrainingLaufView: View {
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.s)
-        .background(.bar)
+        .lumenLeiste()
     }
 }
 

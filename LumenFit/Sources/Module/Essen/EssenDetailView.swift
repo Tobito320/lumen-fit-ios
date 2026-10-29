@@ -280,7 +280,7 @@ struct EssenDetailView: View {
         .disabled(zahl <= 0)
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.s)
-        .background(.bar)
+        .lumenLeiste()
     }
 
     // MARK: - Aktionen

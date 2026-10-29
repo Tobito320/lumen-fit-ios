@@ -178,7 +178,7 @@ struct CoachChatView: View {
         }
         .padding(.top, Abstand.s)
         .padding(.bottom, Abstand.s)
-        .background(.bar)
+        .lumenLeiste()
     }
 
     private var kannSenden: Bool {
