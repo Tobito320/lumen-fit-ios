@@ -13,6 +13,7 @@ struct BandSeite: View {
     var body: some View {
         Form {
             statusAbschnitt
+            if let modell = dienst?.modell { BandMessungen(modell: modell) }
             if let punkte = dienst?.modell?.akkuVerlauf.punkte, punkte.count >= 2 {
                 Section { BandAkkuVerlauf(punkte: punkte).listRowInsets(EdgeInsets()) }
                     .listRowBackground(Color.clear)
@@ -98,5 +99,53 @@ struct BandAkkuBeschreibung: AXChartDescriptorRepresentable {
         let reihe = AXDataSeriesDescriptor(name: "Akku", isContinuous: true,
                                            dataPoints: zip(stunden, punkte).map { AXDataPoint(x: $0, y: Double($1.prozent)) })
         return AXChartDescriptor(title: "Akku des Bands", summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
+    }
+}
+
+/// Was das Band misst (Idee 85): Schritte zählen, Puls (letzter Wert, Messung auf Knopfdruck) und der Modus (Sparen oder Viele Daten). Der Puls speist die Regel
+/// "Gym: Ziel-Puls erreicht"; Schritte und Schlaf vom Band gehen als Ops in den Raum, `GesundheitsStand` nimmt je Tag den höheren Wert von Health und Band.
+struct BandMessungen: View {
+    let modell: TrackerModell
+    @AppStorage(TrackerModell.schritteSchluessel) private var schritteZaehlen = true
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        VerbindenAbschnitt(titel: "Messungen", fuss: "Schritte: es zählt je Tag der höhere Wert von Band und Apple Health, nie die Summe. Bereits gemeldete Tage bleiben, wenn du das hier ausschaltest. Sparen misst seltener und schont den Akku.") {
+            Toggle(isOn: $schritteZaehlen) { Label("Schritte vom Band zählen", systemImage: "figure.walk") }
+            if let heute = modell.heute {
+                LabeledContent("Schritte heute (Band)", value: heute.schritte.formatted())
+            }
+            LabeledContent("Letzter Puls", value: pulsText)
+            Button("Puls jetzt messen") { modell.pulsMessen() }
+                .frame(minHeight: Abstand.tippflaeche)
+                .disabled(modell.zustand != .verbunden || messtGerade)
+            Picker("Modus", selection: Binding(get: { modell.modus }, set: { neu in if let neu { modell.modusWaehlen(neu) } })) {
+                ForEach(TrackerModus.allCases) { Text($0.name).tag(Optional($0)) }
+            }
+            .pickerStyle(.segmented)
+            Text(modusZeile).font(.footnote).foregroundStyle(palette.text2)
+        }
+    }
+
+    private var messtGerade: Bool {
+        if case .misst = modell.pulsMessung { true } else { false }
+    }
+
+    private var pulsText: String {
+        switch modell.pulsMessung {
+        case .misst: return "Misst, bis zu 45 Sekunden"
+        case .fehler(let text): return text
+        case .fertig(let wert, _): return "\(wert) Schläge/Min."
+        case .aus: break
+        }
+        guard let puls = modell.letzterPuls else { return "Noch keiner" }
+        return "\(puls.wert) Schläge/Min."
+    }
+
+    private var modusZeile: String {
+        let status = TrackerModus.status(modus: modell.modus, offen: modell.modusOffen, verbunden: modell.zustand == .verbunden,
+                                         gelesen: modell.pulsEinstellung != nil, abweichungen: modell.modusAbweichungen)
+        guard let akku = modell.modus?.akkuSatz else { return status }
+        return status + " " + akku
     }
 }
