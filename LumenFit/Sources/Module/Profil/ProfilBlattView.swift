@@ -189,7 +189,8 @@ struct ProfilAnlegenBlatt: View {
             .lumenHintergrund()
             .navigationTitle("Neues Profil")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() }.disabled(rechnet) } }
+            .interactiveDismissDisabled(rechnet)
         }
         .presentationDetents([.medium])
     }

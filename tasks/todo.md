@@ -42,7 +42,7 @@ Checkliste nach `tasks/plan.md`. "Blockiert von" sind die Kanten (Matt Pocock to
 
 ## Phase 2: Module (alle neun parallel, Blockiert von: Checkpoint A)
 
-> Abgehakt heißt: eingebaut, auf `main`, CI grün und `grep "Kommt bald"` leer (Belege: Zusammenführung I1, Lauf 40933545902 vom 29.10.2026 mit 1896 Tests und 0 Warnungen; Nacharbeit vom selben Tag im Lauf des Abschlussberichts). Am Gerät ist noch nichts geprüft: das ist die Testliste in `tasks/plan.md`. Ideen 83, 84 und 86 sind auf Lumen-Fit-Seite fertig; die Lovea-Seite wartet auf `tasks/auftraege/lovea-runde.md`.
+> Abgehakt heißt: eingebaut, auf `main`, CI grün und `grep "Kommt bald"` leer (Belege: Zusammenführung I1, Lauf 40933545902 vom 29.10.2026 mit 1896 Tests und 0 Warnungen; die Nacharbeit vom selben Tag ist im Stand des Abschlussberichts grün gelaufen). Am Gerät ist noch nichts geprüft: das ist die Testliste in `tasks/plan.md`. Ideen 83, 84 und 86 sind auf Lumen-Fit-Seite fertig; die Lovea-Seite wartet auf `tasks/auftraege/lovea-runde.md`.
 
 ### Modul heute: Heute-Tab: Ringplatte, Bereit-Score, Plan, Energie, Gewohnheiten, Gewicht, Schritte, Hinweise
 Ideen 11 bis 20. Zweig `modul/heute`. Auftrag: `tasks/auftraege/heute.md`. Ordner: `LumenFit/Sources/Module/Heute/`, `LumenFit/Tests/Module/Heute/`, `LumenFit/Tests/Fixtures/Heute/`.

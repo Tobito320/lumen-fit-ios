@@ -156,7 +156,8 @@ struct ProfilPasswortBlatt: View {
             .lumenHintergrund()
             .navigationTitle(titel)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() }.disabled(rechnet) } }
+            .interactiveDismissDisabled(rechnet) // die Prüfung läuft unabhängig vom Blatt: während sie rechnet, lässt sich nichts mehr abbrechen
             .onAppear { fokus = true }
             .haptik(.fehler, bei: versuche)
             .sheet(isPresented: $zeigeZuruecksetzen) {
