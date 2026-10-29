@@ -143,7 +143,10 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     /// Beendet das Training: Sätze, Rekorde, Energie und Puls (nur mit Sensor) gehen an `auschecken`; Health bekommt es nur mit dem Schalter.
-    func beende(notiz: String? = nil) {
+    func beende() { beende(notiz: nil) }
+
+    /// Wie `beende()`, mit einer Notiz zum ganzen Training (leer wird nicht gespeichert).
+    func beende(notiz: String?) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }

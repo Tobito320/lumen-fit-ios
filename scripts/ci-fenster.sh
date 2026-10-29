@@ -15,8 +15,15 @@ echo "Privat-Check: $(printf '%s\n' "$privat_aus" | head -n 1)"
 NAMEN_STRENG=1 bash scripts/namen-gate.sh || { echo "Namens-Gate nicht sauber, Abbruch (Repo bleibt privat)"; exit 3; }
 
 zurueck() {
-  gh repo edit "$REPO" --visibility private --accept-visibility-change-consequences >/dev/null 2>&1
-  echo "Sichtbarkeit jetzt: $(gh repo view "$REPO" --json visibility -q .visibility 2>/dev/null)"
+  # Nach dem Lauf antwortet GitHub manchmal mit einem Fehler (wie beim Push): wiederholen, bis "PRIVATE" bestätigt ist.
+  local sicht=""
+  for _ in 1 2 3 4 5 6; do
+    gh repo edit "$REPO" --visibility private --accept-visibility-change-consequences >/dev/null 2>&1
+    sicht=$(gh repo view "$REPO" --json visibility -q .visibility 2>/dev/null)
+    [ "$sicht" = "PRIVATE" ] && break
+    sleep 10
+  done
+  echo "Sichtbarkeit jetzt: $sicht"
 }
 trap zurueck EXIT
 
