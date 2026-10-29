@@ -6,7 +6,7 @@ final class WochenStreifenTests: XCTestCase {
     private let heute = "2026-09-23"
 
     private func woche(heute: String? = nil, schritte: [String: Int] = [:], schlaf: [String: Int] = [:], gym: Set<String> = [],
-                       schritteZiel: Int = 10_000, schlafZiel: Int = 480) -> [WochenTag] {
+                       schritteZiel: Int = 10_000, schlafZiel: Int = 480) -> [HeuteWochenTag] {
         WochenStreifenLogik.woche(heute: heute ?? self.heute, schritte: schritte, schlafMinuten: schlaf, gymTage: gym, schritteZiel: schritteZiel, schlafZiel: schlafZiel)
     }
 

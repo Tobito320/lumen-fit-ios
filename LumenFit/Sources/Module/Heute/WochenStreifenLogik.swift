@@ -1,7 +1,7 @@
 import Foundation
 
 /// Ein Tag des Wochenstreifens (Idee 20): Montag bis Sonntag, je Tag drei kleine Bögen mit denselben Bereichen wie die Ringplatte.
-struct WochenTag: Equatable, Sendable, Identifiable {
+struct HeuteWochenTag: Equatable, Sendable, Identifiable {
     var tag: String
     var kuerzel: String
     var istHeute: Bool
@@ -27,14 +27,14 @@ struct WochenTag: Equatable, Sendable, Identifiable {
 enum WochenStreifenLogik {
     /// Die sieben Tage der Woche von `heute`. Schritte und Schlaf gegen ihr Ziel (bei Überschuss 1), Gym als 1 an einem Tag mit Einheit oder Haken.
     static func woche(heute: String, schritte: [String: Int], schlafMinuten: [String: Int], gymTage: Set<String>,
-                      schritteZiel: Int, schlafZiel: Int) -> [WochenTag] {
+                      schritteZiel: Int, schlafZiel: Int) -> [HeuteWochenTag] {
         HabitLogik.wochenTage(heute: heute).enumerated().map { index, tag in
             let zukunft = tag > heute
             func anteil(_ ist: Int?, _ ziel: Int) -> Double {
                 guard !zukunft, let ist, ziel > 0 else { return 0 }
                 return min(1, max(0, Double(ist) / Double(ziel)))
             }
-            return WochenTag(tag: tag, kuerzel: HabitLogik.wochentagKuerzel[index], istHeute: tag == heute, zukunft: zukunft,
+            return HeuteWochenTag(tag: tag, kuerzel: HabitLogik.wochentagKuerzel[index], istHeute: tag == heute, zukunft: zukunft,
                              schritte: anteil(schritte[tag], schritteZiel), gym: !zukunft && gymTage.contains(tag) ? 1 : 0,
                              schlaf: anteil(schlafMinuten[tag], schlafZiel))
         }
@@ -56,7 +56,7 @@ enum WochenStreifenLogik {
     }
 
     /// "Montag: Schritte 80 %, Gym ja, Schlaf 95 %" für VoiceOver.
-    static func beschreibung(_ t: WochenTag) -> String {
+    static func beschreibung(_ t: HeuteWochenTag) -> String {
         if t.zukunft { return "\(Datum.anzeige(t.tag)): noch nicht dran" }
         let prozent = { (x: Double) in "\(Int((x * 100).rounded())) %" }
         return "\(Datum.anzeige(t.tag)): Schritte \(prozent(t.schritte)), Gym \(t.gym > 0 ? "ja" : "nein"), Schlaf \(prozent(t.schlaf))"

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Montag bis Sonntag mit kleinen Bögen je Tag (Idee 20): außen Schritte, Mitte Gym, innen Schlaf. Ein Tipp öffnet den Tag.
 struct WochenStreifen: View {
-    let woche: [WochenTag]
+    let woche: [HeuteWochenTag]
     let oeffne: (String) -> Void
     @Environment(\.palette) private var palette
 

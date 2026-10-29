@@ -23,7 +23,7 @@ struct HeuteStand {
     var gewicht: HeuteGewicht
     var schritte: HeuteSchritte
     var hinweise: [TagesHinweis]
-    var woche: [WochenTag]
+    var woche: [HeuteWochenTag]
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {
