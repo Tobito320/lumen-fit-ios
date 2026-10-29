@@ -48,7 +48,7 @@ jobs:
 
   test-iphone:
     runs-on: macos-26
-    # Tests rund 17 Minuten, danach Screenshots (bis 15) und der Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit.
+    # Tests rund 17 Minuten, danach Screenshots (bis 24) und der Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit.
     timeout-minutes: 55
     steps:
       - uses: actions/checkout@v5
@@ -125,7 +125,7 @@ jobs:
       - name: Screenshots aufnehmen
         if: ${{ !cancelled() }}
         continue-on-error: true
-        timeout-minutes: 15
+        timeout-minutes: 24
         run: |
           set -u
           mkdir -p screenshots

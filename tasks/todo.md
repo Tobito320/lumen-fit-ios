@@ -202,7 +202,7 @@ Ideen 91 bis 100. Zweig `modul/widgets`. Auftrag: `tasks/auftraege/widgets.md`. 
 
 ## Phase 3: Integration und Auslieferung (Blockiert von: alle Module)
 
-- [ ] **I1 Zusammenführen**. Reihenfolge profil, schlaf, essen, heute, gym, fortschritt, coach, verbinden, widgets auf `main`; vor dem Fenster nach jedem Merge `bash scripts/typnamen-doppelt.sh`, am Ende `bash scripts/check-schnell.sh --alle`; ein öffentliches CI-Fenster für alle (`scripts/ci-fenster.sh`); Kompilierfehler gehen an das Modul zurück.
+- [x] **I1 Zusammenführen** (29.10.2026: alle neun Zweige auf `main`, Namenskollisionen `WochenTag` und `SatzZeile` aufgelöst, CI grün mit 1896 Tests und 0 Warnungen, Screenshots unter `docs/screenshots/`). Reihenfolge profil, schlaf, essen, heute, gym, fortschritt, coach, verbinden, widgets auf `main`; vor dem Fenster nach jedem Merge `bash scripts/typnamen-doppelt.sh`, am Ende `bash scripts/check-schnell.sh --alle`; ein öffentliches CI-Fenster für alle (`scripts/ci-fenster.sh`); Kompilierfehler gehen an das Modul zurück.
 - [ ] **I2 Qualitäts- und Barrierefreiheits-Durchgang**. `agent-skills:code-review-and-quality`, `code-simplification`, Checkliste aus `tasks/plan.md`; `grep "Kommt bald"` leer. Blockiert von: I1.
 - [ ] **I3a PrivateDaten.json und Secret**. Nur wenn das Modul gym Vorgaben nutzt: Datei lokal aus Ahmeds privater Notiz bauen (nie ins Git), `signing/privat-secret.sh`; sonst Streichungen nach `konfiguration.md` 7.3. Blockiert von: G1.
 - [ ] **I3 Signierung und Secrets**. `konfiguration.md` Abschnitt 6: Bundle IDs per Skript, Portal-Handarbeit (einmal Apple-Login durch Ahmed als Fernfunk-Aufgabe, danach klickt der Agent), Profile, Secrets, Icon, Tester. Blockiert von: G1 (parallel zu den Modulen möglich).
