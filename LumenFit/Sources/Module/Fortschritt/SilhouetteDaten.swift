@@ -166,3 +166,40 @@ enum SilhouetteStufe: CaseIterable, Sendable {
         }
     }
 }
+
+/// Eine Zeile der Liste neben der Körperkarte: jede Gruppe mit Prozent und Wort, nie nur Farbe. Ohne erfasstes Training steht 100 Prozent und "Kein Training".
+struct SilhouetteZeile: Identifiable, Equatable, Sendable {
+    let gruppe: MuskelGruppe
+    /// So erholt wie der müdeste Teil der Gruppe (`KoerperLogik.gruppenErholung`); ohne Training 100.
+    let prozent: Int
+    let stufe: SilhouetteStufe
+    /// Der müdeste Teil, wenn er unter 90 Prozent liegt: "Latissimus 66 Prozent".
+    let teilText: String?
+    /// "Di 13.10. · Latzug eng": das Training, auf das die Erholung rechnet.
+    let letztes: String?
+
+    var id: MuskelGruppe { gruppe }
+
+    /// Für VoiceOver: "Rücken, 66 Prozent, fast erholt. Latissimus 66 Prozent".
+    var sprechtext: String {
+        let kopf = "\(gruppe.name), \(prozent) Prozent, \(stufe == .leer ? "kein Training erfasst" : stufe.wort.lowercased())"
+        return teilText.map { "\(kopf). \($0)" } ?? kopf
+    }
+
+    /// Müde zuerst (die müdesten oben), dann fast erholt, erholt, kein Training; innerhalb einer Stufe nach `reihenfolge`.
+    static func zeilen(_ daten: KoerperDaten, reihenfolge: [MuskelGruppe]) -> [SilhouetteZeile] {
+        let rang: [SilhouetteStufe: Int] = [.muede: 0, .fast: 1, .erholt: 2, .leer: 3]
+        let alle = reihenfolge.map { g -> SilhouetteZeile in
+            let stand = daten.stand(g, teil: nil)
+            let stufe = stand == nil ? SilhouetteStufe.leer : SilhouetteStufe(daten.stufe(g))
+            let unter = stand.flatMap { $0.prozent < 90 ? "\(KoerperLogik.teilName($0.teil)) \($0.prozent) Prozent" : nil }
+            return SilhouetteZeile(gruppe: g, prozent: daten.prozent(g), stufe: stufe, teilText: unter, letztes: stand?.letztes?.text)
+        }
+        return alle.enumerated().sorted { a, b in
+            let ra = rang[a.element.stufe] ?? 3, rb = rang[b.element.stufe] ?? 3
+            if ra != rb { return ra < rb }
+            if ra == 0 || ra == 1, a.element.prozent != b.element.prozent { return a.element.prozent < b.element.prozent }
+            return a.offset < b.offset
+        }.map(\.element)
+    }
+}
