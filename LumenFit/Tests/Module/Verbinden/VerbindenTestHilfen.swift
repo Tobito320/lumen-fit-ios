@@ -55,6 +55,7 @@ final class FakeZentrale: BandSuche {
 
 /// Ein Funk, der nichts funkt, aber mitzählt und die gesendeten Pakete merkt.
 final class FakeBandFunk: BandFunk, @unchecked Sendable {
+    // @unchecked Sendable: jeder Zugriff auf die Felder läuft über `schloss`.
     private let schloss = NSLock()
     private var _aufrufe: [String] = []
     private var _gesendet: [Data] = []
@@ -68,6 +69,7 @@ final class FakeBandFunk: BandFunk, @unchecked Sendable {
 
 /// Die Fabrik, die `TrackerModell` für den Funk bekommt: zählt, wie oft ein Funk (also ein `CBCentralManager`) entsteht, und reicht Ereignisse hinein.
 final class FakeFunkFabrik: @unchecked Sendable {
+    // @unchecked Sendable: jeder Zugriff auf die veränderlichen Felder läuft über `schloss`.
     private let schloss = NSLock()
     private var _anzahl = 0
     private var _melden: (@Sendable (TrackerEreignis) -> Void)?
