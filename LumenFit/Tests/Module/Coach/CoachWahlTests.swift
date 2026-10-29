@@ -64,7 +64,7 @@ final class CoachWahlTests: XCTestCase {
 
     func testRegelverstossDesModellsFaelltAufDieRegelnZurueck() async throws {
         let verstoesse = [
-            "Sie haben gut geschlafen.",
+            "Haben Sie gut geschlafen?",
             "Als KI kann ich dir sagen, dass du gut geschlafen hast.",
             "Du hast vermutlich eine Entzündung und schläfst deshalb schlecht.",
             "Du solltest früher ins Bett gehen.",

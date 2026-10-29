@@ -143,13 +143,13 @@ jobs:
             xcrun simctl ui "$IPHONE_ID" appearance "$modus"
             for tab in $TABS; do
               xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTab "$tab" -lumenFitFixtures "$FIX"
-              sleep 5
+              sleep 8
               xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-${tab}.png"
             done
             # Themes auf der Heute-Seite (Muster und Akzente je Theme)
             for theme in $THEMES; do
               xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTab heute -lumenFitTheme "$theme" -lumenFitFixtures "$FIX"
-              sleep 5
+              sleep 6
               xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-theme-${theme}.png"
             done
             # Lumi in allen Stimmungen (Debug-Ansicht)

@@ -16,7 +16,7 @@ struct EssenFastenKarte: View {
                 Button { essen.fastenFensterStarten() } label: {
                     Label("Fasten starten", systemImage: "timer").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.lumenHauptknopf)
                 .accessibilityHint("Startet das \(plan.name)-Fenster jetzt")
             }
             verlauf

@@ -108,7 +108,7 @@ struct RechnerBlatt: View {
             } label: {
                 Label("Als Aufwärmsätze einfügen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.lumenHauptknopf)
             Text("Aufwärmsätze zählen nicht für Volumen und Rekorde.").font(.footnote).foregroundStyle(palette.text2)
         }
     }

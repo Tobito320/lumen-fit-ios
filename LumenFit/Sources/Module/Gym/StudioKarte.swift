@@ -36,7 +36,7 @@ struct StudioKarte: View {
                 }
                 Haarlinie()
                 GymZeile(titel: "Einchecken", untertitel: "Startet dein Training und zählt den Besuch") {
-                    Button("Einchecken", action: einchecken).buttonStyle(.borderedProminent).controlSize(.large)
+                    Button("Einchecken", action: einchecken).buttonStyle(.lumenHauptknopf).controlSize(.large)
                 }
             }
         }

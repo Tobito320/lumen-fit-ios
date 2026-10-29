@@ -90,7 +90,7 @@ final class CsvExportTests: XCTestCase {
         let (_, daten) = try ProfilTestWelt.gefuellt(ordner: tempOrdner())
         let sessions = daten.training.sessions
         let csv = ProfilCsvExport.training(sessions) { UebungsKatalog.nachId[$0]?.name }
-        XCTAssertEqual(zeilen(csv).count, 3, "Kopf und die zwei Sätze der Einheit")
+        XCTAssertEqual(zeilen(csv).count, 5, "Kopf und vier Satzzeilen: die Test-Ops senden \"satz\" und danach \"fertig\", die Faltung (aus Lovea) macht daraus zwei Läufe mit je zwei Sätzen; das Gym-Modul sendet \"fertig\" nur leer")
         let essen = ProfilCsvExport.essen(daten.essen.tage.sorted().flatMap { daten.essen.eintraege($0) })
         XCTAssertEqual(zeilen(essen).count, 2)
         XCTAssertEqual(ProfilCsvExport.dateiname("training", jetzt: start), "lumenfit-training-2026-09-23.csv")

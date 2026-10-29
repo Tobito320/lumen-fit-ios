@@ -117,7 +117,7 @@ struct ScanView: View {
             Button { Task { await suchen(code) } } label: {
                 Text("Suchen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.lumenHauptknopf)
             .disabled(!BarcodeLogik.istBarcodeEingabe(BarcodeLogik.normal(code)) || zustand == .sucht)
         }
         .toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Fertig") { EssenTastatur.schliessen() } } }

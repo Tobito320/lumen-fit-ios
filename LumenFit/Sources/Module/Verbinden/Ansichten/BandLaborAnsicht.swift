@@ -96,11 +96,11 @@ struct BandLaborAnsicht: View {
                             .frame(maxWidth: .infinity)
                     }
                     Button("Vorbei") { beenden() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.lumenHauptknopf)
                         .frame(minHeight: 44)
                 } else {
                     Button("Spüre ich es") { spuerenStarten() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.lumenHauptknopf)
                         .frame(minHeight: 44)
                 }
             }

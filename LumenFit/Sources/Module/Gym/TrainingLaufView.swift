@@ -93,18 +93,18 @@ struct TrainingLaufView: View {
                     } label: {
                         Text("Cardio eintragen").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.lumenHauptknopf)
                 } else {
                     Button { sitzung.satzFertig() } label: {
                         Text("Satz fertig").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.lumenHauptknopf)
                 }
             } else {
                 Button { beenden = true } label: {
                     Text("Training beenden").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.lumenHauptknopf)
             }
         }
         .padding(.horizontal, Abstand.l)

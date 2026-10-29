@@ -92,7 +92,7 @@ final class LebensmittelSucheTests: XCTestCase {
 
     func testOnlineOffline() async throws {
         let s = try suche(SkriptLader.fehler(.notConnectedToInternet))
-        s.eingabe("Haferflocken", vorne: [])
+        s.eingabe("Hafer", vorne: [])   // der Auszug kennt "Hafer ganzes Korn", nicht "Hafer Flocken"
         await s.onlineSuchen()
         XCTAssertEqual(s.online, .offline)
         XCTAssertFalse(s.stand.sichtbar.isEmpty, "die BLS-Treffer bleiben stehen")

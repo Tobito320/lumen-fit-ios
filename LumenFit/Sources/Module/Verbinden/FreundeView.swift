@@ -238,7 +238,7 @@ private struct FreundeInhalt: View {
                 }
                 HStack(spacing: Abstand.m) {
                     Button("Übernehmen") { uebernehme(karte) }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.lumenHauptknopf)
                     Button("Verwerfen") { gelesen = nil }
                         .buttonStyle(.bordered)
                 }

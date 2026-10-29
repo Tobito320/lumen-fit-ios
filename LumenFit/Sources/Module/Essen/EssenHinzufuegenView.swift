@@ -160,7 +160,7 @@ struct EssenHinzufuegenView: View {
             Label("Barcode \(text) nachschlagen", systemImage: "barcode.viewfinder")
                 .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.lumenHauptknopf)
     }
 
     private func barcodeSuchen(_ code: String) async {

@@ -49,7 +49,7 @@ struct LeerZustand: View {
                 .multilineTextAlignment(.center)
             if let handlung, let aktion {
                 Button(handlung) { aktion() }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.lumenHauptknopf)
                     .frame(minHeight: Abstand.tippflaeche)
             }
         }

@@ -23,7 +23,7 @@ struct TrainingBeendenView: View {
                     } label: {
                         Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.lumenHauptknopf)
                     Button { schliessen() } label: { Text("Weiter trainieren").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                     Button(role: .destructive) { verwerfen = true } label: { Text("Training verwerfen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                 }

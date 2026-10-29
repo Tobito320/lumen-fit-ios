@@ -10,6 +10,8 @@ struct AppRootView: View {
         inhalt
             .lumenTheme(einstellungen.thema, erscheinung: einstellungen.erscheinung)
             .environment(\.haptikAn, einstellungen.haptik)
+            // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
+            .environment(\.locale, Locale(identifier: "de_DE"))
             .task(id: umgebung.profil.aktiv?.id) { await auffrischen() }
             .task {
                 for await ereignis in umgebung.ereignisse.strom() {

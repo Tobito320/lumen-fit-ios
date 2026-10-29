@@ -104,7 +104,7 @@ struct EssenZielKarte: View {
             } label: {
                 Text("Übernehmen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.lumenHauptknopf)
             .accessibilityHint("Speichert \(kcal) Kilokalorien und \(protein) Gramm Protein als deine Ziele")
         }
     }

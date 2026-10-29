@@ -80,7 +80,7 @@ struct EssenGerichtView: View {
             } label: {
                 Text("Gericht eintragen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.lumenHauptknopf)
             .controlSize(.large)
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.s)

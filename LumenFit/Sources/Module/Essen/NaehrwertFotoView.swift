@@ -34,7 +34,7 @@ struct NaehrwertFotoView: View {
                         Button { kameraOffen = true } label: {
                             Label("Foto aufnehmen", systemImage: "camera.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.lumenHauptknopf)
                     }
                     PhotosPicker(selection: $wahl, matching: .images) {
                         Label("Aus Fotos wählen", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)

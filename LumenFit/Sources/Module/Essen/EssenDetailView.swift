@@ -275,7 +275,7 @@ struct EssenDetailView: View {
         Button { speichern() } label: {
             Text(bearbeiten == nil ? "Eintragen" : "Speichern").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.lumenHauptknopf)
         .controlSize(.large)
         .disabled(zahl <= 0)
         .padding(.horizontal, Abstand.l)

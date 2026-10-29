@@ -114,7 +114,7 @@ struct UebungsKarte: View {
             if u.cardioFertig {
                 Button("Zurück") { sitzung.cardioZurueck(index) }.buttonStyle(.bordered).controlSize(.large)
             } else {
-                Button("Eintragen") { blatt = .cardio }.buttonStyle(.borderedProminent).controlSize(.large)
+                Button("Eintragen") { blatt = .cardio }.buttonStyle(.lumenHauptknopf).controlSize(.large)
             }
         }
     }
