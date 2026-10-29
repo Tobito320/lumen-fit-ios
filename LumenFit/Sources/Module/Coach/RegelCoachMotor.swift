@@ -47,9 +47,18 @@ struct RegelCoachMotor: CoachMotor {
 
 /// Die Antworten des Regelcoachs, rein gerechnet.
 enum CoachRegelAntwort {
-    private static let verstaendnis = "Heute darf es ruhig langsam gehen."
+    static let verstaendnis = "Heute darf es ruhig langsam gehen."
 
+    /// Antwort auf die Frage; Daumen im Verlauf formen Länge und Ton (`CoachLernen`).
     static func bauen(_ anfrage: CoachAnfrage, eingabe e: CoachEingabe?) -> CoachAntwort {
+        var antwort = grundantwort(anfrage, eingabe: e)
+        let stil = CoachLernen.stil(anfrage.verlauf)
+        if stil.kuerzer { antwort.text = CoachLernen.kuerzen(antwort.text, behalte: CoachPersona.schwererTag(anfrage.kontext) ? verstaendnis : nil) }
+        if stil.nuechtern { antwort.text = CoachLernen.nuechtern(antwort.text) }
+        return antwort
+    }
+
+    private static func grundantwort(_ anfrage: CoachAnfrage, eingabe e: CoachEingabe?) -> CoachAntwort {
         let k = anfrage.kontext
         let schwer = CoachPersona.schwererTag(k)
         switch CoachAbsicht.erkenne(anfrage.frage) {
