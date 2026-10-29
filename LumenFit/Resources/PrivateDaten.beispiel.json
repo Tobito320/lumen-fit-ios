@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "personen": [
+    {
+      "id": "beispiel",
+      "name": "Beispiel Person",
+      "orte": [
+        { "name": "Studio", "art": "gym", "adresse": "Musterstraße 1, 12345 Musterstadt", "breite": 50.0001, "laenge": 8.0001 }
+      ]
+    }
+  ]
+}

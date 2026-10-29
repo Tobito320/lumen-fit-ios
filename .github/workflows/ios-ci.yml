@@ -1,0 +1,200 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Nur lesen: im öffentlichen Fenster bekommt der Lauf kein Schreibrecht auf das Repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patterns:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verbotene Muster
+        run: |
+          fail=0
+          if git ls-files --error-unmatch LumenFit/Resources/PrivateDaten.json >/dev/null 2>&1; then
+            echo "::error::PrivateDaten.json (Privatwerte) darf nicht im Git stehen"; fail=1
+          fi
+          if git ls-files | grep -E '\.(p12|mobileprovision|p8|key|pem|cer|csr)$'; then
+            echo "::error::Signierdatei im Git"; fail=1
+          fi
+          if grep -q '^[[:space:]]*packages:' project.yml || git ls-files | grep -q 'Package.resolved'; then
+            echo "::error::Swift-Pakete sind nicht erlaubt (0 Abhängigkeiten)"; fail=1
+          fi
+          while IFS= read -r datei; do
+            if grep -o '<key>[^<]*</key>' "$datei" | grep -v -e 'com.apple.security.application-groups' -e 'com.apple.developer.healthkit'; then
+              echo "::error::$datei: nur application-groups und die drei HealthKit-Schlüssel erlaubt (ein Schlüssel mehr als im Profil bricht das Archiv)"; fail=1
+            fi
+          done < <(git ls-files '*.entitlements')
+          if git grep -n -E 'try!|fatalError\(' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam; then
+            echo "::error::try! und fatalError sind im Produktionscode nicht erlaubt (CONSTRAINTS.md)"; fail=1
+          fi
+          if git grep -n -E 'AlarmKit|UNCalendarNotificationTrigger' -- LumenFit/Sources LumenFitWidgets/Sources Gemeinsam; then
+            echo "::error::Wecker und Erinnerungen gehören nicht in Lumen Fit (nur Health)"; fail=1
+          fi
+          bash scripts/typnamen-doppelt.sh || fail=1
+          exit "$fail"
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+
+  test-iphone:
+    runs-on: macos-26
+    # Tests rund 17 Minuten, danach Screenshots (bis 15) und der Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit.
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      # Frischer Checkout setzt alle Dateizeiten auf jetzt: der DerivedData-Cache wäre nutzlos.
+      # Zeit = letzter Commit der Datei, dann baut Xcode nur geänderte Dateien neu.
+      - name: Dateizeiten auf letzten Commit setzen
+        run: |
+          git -c core.quotepath=false log --format='#%ct' --name-only |
+            awk '/^#/{t=substr($0,2);next} NF&&!s[$0]++{print t"\t"$0}' |
+            while IFS=$'\t' read -r t f; do
+              if [ -f "$f" ]; then touch -t "$(date -r "$t" +%Y%m%d%H%M.%S)" "$f"; fi
+            done
+          true
+      - name: Symbolliste sammeln
+        run: bash scripts/symbole-sammeln.sh
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        timeout-minutes: 6
+        run: |
+          # Im Hintergrund starten: hängt xcodegen, zeigt `sample`, wo (statt 35 Minuten stumm zu warten).
+          xcodegen generate &
+          pid=$!
+          for _ in $(seq 1 30); do kill -0 "$pid" 2>/dev/null || break; sleep 3; done
+          if kill -0 "$pid" 2>/dev/null; then
+            echo "::error::xcodegen hängt nach 90 Sekunden"
+            sample "$pid" 3 -file "$RUNNER_TEMP/xcodegen-sample.txt" >/dev/null 2>&1 || true
+            head -c 6000 "$RUNNER_TEMP/xcodegen-sample.txt" || true
+            kill "$pid" || true
+            exit 1
+          fi
+          wait "$pid"
+      - name: Xcode-Version
+        run: echo "XCV=$(xcodebuild -version | tr -d '\n ')" >> "$GITHUB_ENV"
+      - uses: actions/cache/restore@v4
+        id: cache
+        with:
+          path: derived
+          key: dd-mtime-iphone-${{ env.XCV }}-${{ hashFiles('project.yml') }}-${{ github.sha }}
+          restore-keys: |
+            dd-mtime-iphone-${{ env.XCV }}-
+      - name: Test on iPhone
+        run: |
+          set -euo pipefail
+          IPHONE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          test -n "$IPHONE_ID"
+          defaults write com.apple.dt.Xcode IDEBuildingContinueBuildingAfterErrors -bool YES
+          # Nur den Modul-Cache behalten: alte Objektdateien aus dem Cache verlinkten nach geänderten Initialisierern
+          # veraltete Symbole (Undefined symbols), und ohne alte Produkte findet der Screenshot-Schritt nach rotem Bau keine App.
+          rm -rf derived/Build
+          xcodebuild test \
+            -project LumenFit.xcodeproj \
+            -scheme LumenFit \
+            -derivedDataPath derived \
+            -destination "platform=iOS Simulator,id=$IPHONE_ID" \
+            CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=NO 2>&1 | tee iphone.log
+          # grep ohne Treffer endet mit 1: ohne `|| true` ließe pipefail den Schritt bei 0 Warnungen rot werden
+          COUNT=$({ grep "warning:" iphone.log || true; } | sort -u | wc -l | tr -d ' ')
+          echo "### Compiler-Warnungen: $COUNT" >> "$GITHUB_STEP_SUMMARY"
+          grep "warning:" iphone.log | sort -u | head -50 | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY" || true
+      # Auch nach roten Tests speichern: sonst wird der Cache bei jedem roten Lauf verworfen.
+      - name: Cache speichern
+        if: ${{ !cancelled() && steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: derived
+          key: dd-mtime-iphone-${{ env.XCV }}-${{ hashFiles('project.yml') }}-${{ github.sha }}
+      # Aussehen ohne Mac prüfen: jede Tab-Seite, Lumi in allen Stimmungen und alle fünf Themes, hell und dunkel, mit Demo-Daten
+      # (Start-Argument, nur Debug; HealthKit und Kamera fragen im Simulator nie). Darf den Lauf nie röten.
+      # Vertrag mit der App (SPEC): -lumenFitDemo YES, -lumenFitTab <tab>, -lumenFitTheme <theme>, -lumenFitLumi YES (Debug-Ansicht
+      # aller Stimmungen), -lumenFitRoute <lumenfit://-Link>, -lumenFitFixtures <Ordner>. Ohne Argumente startet das Onboarding.
+      - name: Screenshots aufnehmen
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          set -u
+          mkdir -p screenshots
+          TABS="heute gym essen schlaf coach"
+          THEMES="monochrom graphit stahl glut wald"
+          IPHONE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
+          APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
+          test -n "$IPHONE_ID" && test -n "$APP"
+          xcrun simctl boot "$IPHONE_ID" || true
+          xcrun simctl bootstatus "$IPHONE_ID" -b
+          xcrun simctl install "$IPHONE_ID" "$APP"
+          xcrun simctl privacy "$IPHONE_ID" grant motion com.onlyus.lumen-fit || true
+          FIX="$PWD/LumenFit/Tests/Fixtures"
+          for modus in light dark; do
+            xcrun simctl ui "$IPHONE_ID" appearance "$modus"
+            for tab in $TABS; do
+              xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTab "$tab" -lumenFitFixtures "$FIX"
+              sleep 5
+              xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-${tab}.png"
+            done
+            # Themes auf der Heute-Seite (Muster und Akzente je Theme)
+            for theme in $THEMES; do
+              xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTab heute -lumenFitTheme "$theme" -lumenFitFixtures "$FIX"
+              sleep 5
+              xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-theme-${theme}.png"
+            done
+            # Lumi in allen Stimmungen (Debug-Ansicht)
+            xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitLumi YES
+            sleep 4
+            xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-lumi.png"
+            # Erster Start ohne Demo: Profil anlegen (frisches Gerät)
+            xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit
+            sleep 6
+            xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-onboarding.png"
+            # Tiefere Seiten über lumenfit://-Links (Pfade legt die App fest; Vorschlag, bei Abweichung hier nachziehen)
+            for aufnahme in \
+              "gym-training|lumenfit://gym?bereich=training" \
+              "gym-fortschritt|lumenfit://gym?bereich=fortschritt" \
+              "essen-scan|lumenfit://essen?bereich=scan" \
+              "schlaf-verlauf|lumenfit://schlaf?bereich=verlauf" \
+              "meilensteine|lumenfit://profil?bereich=meilensteine" \
+              "einstellungen|lumenfit://profil?bereich=einstellungen"; do
+              name="${aufnahme%%|*}"
+              link="${aufnahme#*|}"
+              xcrun simctl launch --terminate-running-process "$IPHONE_ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitRoute "$link" -lumenFitFixtures "$FIX"
+              sleep 7
+              xcrun simctl io "$IPHONE_ID" screenshot "screenshots/${modus}-${name}.png"
+            done
+          done
+          ls -l screenshots
+      - name: Screenshots hochladen
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: screenshots
+          if-no-files-found: ignore
+          retention-days: 7
+      # Zuletzt, damit ein Fehler hier die Screenshots nicht verhindert. Baut App und Widgets mit -O und ohne die DEBUG-Zweige
+      # (Demo, Lumi-Probe), ohne Signatur: so wird die Release-Konfiguration schon vor dem ersten TestFlight-Lauf kompiliert.
+      - name: Release-Bau ohne Signatur
+        if: ${{ !cancelled() }}
+        timeout-minutes: 20
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project LumenFit.xcodeproj \
+            -scheme LumenFit \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/release" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" SWIFT_TREAT_WARNINGS_AS_ERRORS=NO
