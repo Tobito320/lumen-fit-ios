@@ -78,6 +78,17 @@ enum ZielKarteLogik {
                              erklaerung: erklaerung(art: art, grundumsatz: grundumsatz, faktor: faktor, bedarf: bedarf, aenderung: aenderung, kg: kg, ergebnis: ergebnis))
     }
 
+    /// Eigene Werte über dem Vorschlag: Kalorien und Protein sind frei, Fett aus dem Makroprofil, Kohlenhydrate füllen den Rest.
+    static func angepasst(_ z: ErnaehrungsZiele, kcal: Int, protein: Int, kg: Double) -> ErnaehrungsZiele {
+        var neu = z
+        neu.kcal = kcal
+        neu.protein = protein
+        let m = ErnaehrungLogik.makros(kcal: kcal, kg: kg, profil: z.makroProfil)
+        neu.fett = m.fett
+        neu.kohlenhydrate = Int((max(0, Double(kcal) - Double(protein) * 4 - Double(m.fett) * 9) / 4).rounded())
+        return neu
+    }
+
     private static func erklaerung(art: Zielart, grundumsatz: Double, faktor: Double, bedarf: Double, aenderung: Int, kg: Double, ergebnis: ErnaehrungsZiele) -> String {
         var text = "Dein Grundumsatz ist rund \(tausend(Int(grundumsatz.rounded()))) kcal (Mifflin-St Jeor). Mal Aktivität \(faktor.formatted(.number.precision(.fractionLength(0...3)).locale(Locale(identifier: "de_DE")))) ergibt einen Bedarf von \(tausend(Int(bedarf.rounded()))) kcal."
         switch art {

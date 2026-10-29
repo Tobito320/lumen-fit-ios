@@ -100,4 +100,18 @@ final class ZielKarteTests: XCTestCase {
         XCTAssertTrue(v.erklaerung.contains("550"), v.erklaerung)
         XCTAssertTrue(v.erklaerung.contains("1,55"), v.erklaerung)
     }
+
+    /// "Alles überschreibbar": eigene Kalorien und eigenes Protein gelten, der Rest füllt sich passend auf.
+    func testEigeneWerteUeberschreibenDenVorschlag() throws {
+        let vorschlag = try XCTUnwrap(ZielKarteLogik.vorschlag(koerper: mann(), art: .halten, kg: 80, aktuell: aktiv(), heute: heute).ziele)
+        let gleich = ZielKarteLogik.angepasst(vorschlag, kcal: vorschlag.kcal, protein: vorschlag.protein, kg: 80)
+        XCTAssertEqual(gleich.kohlenhydrate, vorschlag.kohlenhydrate)
+        XCTAssertEqual(gleich.fett, vorschlag.fett)
+        let eigen = ZielKarteLogik.angepasst(vorschlag, kcal: 3000, protein: 200, kg: 80)
+        XCTAssertEqual(eigen.kcal, 3000)
+        XCTAssertEqual(eigen.protein, 200)
+        XCTAssertEqual(eigen.fett, 100)            // 30 % von 3000 kcal / 9
+        XCTAssertEqual(eigen.kohlenhydrate, 325)   // (3000 - 800 - 900) / 4
+        XCTAssertEqual(eigen.fastenStunden, vorschlag.fastenStunden)
+    }
 }
