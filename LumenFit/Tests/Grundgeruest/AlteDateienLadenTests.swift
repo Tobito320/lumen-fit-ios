@@ -24,7 +24,7 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(store.werte.gewichtsEinheit, .kg)
     }
 
-    func testEinstellungenUeberlebenNeustartUndMeldenAenderungen() throws {
+    func testEinstellungenUeberlebenNeustartUndMeldenAenderungen() async throws {
         let ordner = try tempOrdner()
         let kanal = EreignisKanal()
         let strom = kanal.strom()

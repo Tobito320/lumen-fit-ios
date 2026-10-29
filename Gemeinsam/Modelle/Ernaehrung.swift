@@ -506,14 +506,10 @@ struct ErnaehrungFaltung: Sendable {
             .max { $0.datum < $1.datum }
     }
 
-    /// Offline-Treffer für einen Barcode: eigene Lebensmittel zuerst, dann alles schon Gegessene.
+    /// Offline-Treffer für einen Barcode: eigene Lebensmittel zuerst, dann alles schon Gegessene (nur vom eigenen Profil).
     func lebensmittel(barcode: String, _ p: ProfilID) -> Lebensmittel? {
         if let eigenes = eigeneLebensmittel.first(where: { $0.barcode == barcode }) { return eigenes }
-        for person in [p, p.partner] {
-            if let s = (essen[person] ?? [:]).values.first(where: { $0.wert.lebensmittel.barcode == barcode }) {
-                return s.wert.lebensmittel
-            }
-        }
+        if let s = (essen[p] ?? [:]).values.first(where: { $0.wert.lebensmittel.barcode == barcode }) { return s.wert.lebensmittel }
         return nil
     }
 }

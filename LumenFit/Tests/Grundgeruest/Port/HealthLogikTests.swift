@@ -105,12 +105,12 @@ final class HealthLogikTests: XCTestCase {
     func testSchlafZusammenfassenMergtUeberlappendeIntervalle() {
         // iPhone und Watch schreiben leicht versetzt dieselbe Nacht.
         let iphone = HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 0))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 0))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 0))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 0))!
         )
         let watch = HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 30))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 10))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 30))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 10))!
         )
         let ergebnis = HealthLogik.schlafZusammenfassen([iphone, watch])
         XCTAssertEqual(ergebnis?.minuten, 7 * 60 + 10, "das Overlap darf nicht doppelt gezählt werden")
@@ -119,12 +119,12 @@ final class HealthLogikTests: XCTestCase {
 
     func testSchlafZusammenfassenHaeltGetrennteNickerchenGetrennt() {
         let nacht = HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 0))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 0))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 23, minute: 0))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 6, minute: 0))!
         )
         let mittagsschlaf = HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 13, minute: 0))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 13, minute: 30))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 13, minute: 0))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: 23, hour: 13, minute: 30))!
         )
         let ergebnis = HealthLogik.schlafZusammenfassen([nacht, mittagsschlaf])
         XCTAssertEqual(ergebnis?.minuten, 7 * 60 + 30, "nicht zusammenhängende Intervalle werden trotzdem summiert")
@@ -135,8 +135,8 @@ final class HealthLogikTests: XCTestCase {
     /// die echte verstrichene Zeit liefern (Date-Subtraktion), nicht die naive Wanduhr-Differenz.
     func testSchlafZusammenfassenUeberlebtDieZeitumstellung() {
         let intervall = HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 0, minute: 30))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 8, minute: 0))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 0, minute: 30))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 10, day: 25, hour: 8, minute: 0))!
         )
         let ergebnis = HealthLogik.schlafZusammenfassen([intervall])
         XCTAssertEqual(ergebnis?.minuten, 8 * 60 + 30, "eine Stunde mehr als die 7:30 Wanduhr-Differenz, wegen der Zeitumstellung")
@@ -147,8 +147,8 @@ final class HealthLogikTests: XCTestCase {
 
     private func intervall(_ tagVon: Int, _ stundeVon: Int, _ tagBis: Int, _ stundeBis: Int) -> HealthLogik.SchlafIntervall {
         HealthLogik.SchlafIntervall(
-            von: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: tagVon, hour: stundeVon))!,
-            bis: Calendar.berlin.date(from: DateComponents(year: 2026, month: 9, day: tagBis, hour: stundeBis))!
+            von: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: tagVon, hour: stundeVon))!,
+            bis: Datum.kalender.date(from: DateComponents(year: 2026, month: 9, day: tagBis, hour: stundeBis))!
         )
     }
 

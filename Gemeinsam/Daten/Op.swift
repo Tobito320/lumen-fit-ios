@@ -30,9 +30,9 @@ struct Op: Codable, Identifiable, Sendable {
 
     // ponytail: one shared coder pair instead of one per op (audit #5), same reasoning as the ISO
     // formatters below. Never mutated after creation; encode/decode on an unmutated coder is
-    // thread-safe, `nonisolated(unsafe)` only covers a missing Sendable mark.
-    private nonisolated(unsafe) static let encoder = JSONEncoder()
-    private nonisolated(unsafe) static let decoder = JSONDecoder()
+    // thread-safe.
+    private static let encoder = JSONEncoder()
+    private static let decoder = JSONDecoder()
 
     private enum CodingKeys: String, CodingKey { case id, art, von, zeit, d }
 
