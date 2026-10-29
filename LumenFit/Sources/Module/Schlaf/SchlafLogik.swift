@@ -1,4 +1,4 @@
-// Quelle: Lovea Health/SchlafSignale.swift (istWochenende, gewohnheit), Lovea Health/SchlafAutomatik.swift (mindestNacht)
+// Quelle: Lovea Health/SchlafSignale.swift (istWochenende, gewohnheit), Lovea Health/SchlafAutomatik.swift (mindestNacht, istExtraTag, ziel)
 import Foundation
 
 /// Reine Auswertungen rund um bekannte Nächte. Aus Lovea kommt nur die gelernte Gewohnheit; Punktesystem, Signale, Wecker und

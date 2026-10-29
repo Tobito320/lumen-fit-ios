@@ -48,6 +48,13 @@ enum SchlafFormat {
         return "\(dauer(betrag)) \(minuten > 0 ? mehr : weniger)"
     }
 
+    /// "18.09." aus "2026-09-18".
+    static func kurzesDatum(_ tag: String) -> String {
+        let teile = tag.split(separator: "-")
+        guard teile.count == 3, let monat = Int(teile[1]), let tagZahl = Int(teile[2]) else { return tag }
+        return "\(zweistellig(tagZahl)).\(zweistellig(monat))."
+    }
+
     /// Kurzer Wochentag "Mo" bis "So" für die Balken.
     static func wochentagKurz(_ tag: String) -> String {
         ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][max(1, min(7, Datum.wochentag(tag))) - 1]

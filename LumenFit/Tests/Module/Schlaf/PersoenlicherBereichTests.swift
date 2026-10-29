@@ -27,14 +27,42 @@ final class PersoenlicherBereichTests: XCTestCase {
         XCTAssertNotNil(PersoenlicherBereich.berechne(werte: hrv(aktuell: 61, basis: 14), art: .hrv, heute: heute))
     }
 
-    func testAktuellerWertDarfHoechstensSiebenTageAltSein() {
+    func testAktuellerWertIstDerNeuesteImFensterVon60Tagen() throws {
+        // 20 Werte vom 01.08. bis 20.08.: der neueste ist 34 Tage alt und zählt trotzdem (VO2max und SpO2 kommen oft nur alle paar Tage).
         let alt = SchlafTestBau.vitale(.hrv, ab: "2026-08-01", (0..<20).map { Double($0 % 2 == 0 ? 50 : 60) })
-        XCTAssertNil(PersoenlicherBereich.berechne(werte: alt, art: .hrv, heute: heute), "letzter Wert vom 19.08.")
-        XCTAssertNil(PersoenlicherBereich.aktuellerWert(alt, art: .hrv, heute: heute))
-        let frisch = alt + [VitalMesswert(art: .hrv, tag: "2026-09-17", wert: 58)]
-        XCTAssertEqual(PersoenlicherBereich.aktuellerWert(frisch, art: .hrv, heute: heute)?.wert, 58)
-        let zuAlt = alt + [VitalMesswert(art: .hrv, tag: "2026-09-16", wert: 58)]
-        XCTAssertNil(PersoenlicherBereich.aktuellerWert(zuAlt, art: .hrv, heute: heute), "acht Tage her")
+        XCTAssertEqual(PersoenlicherBereich.aktuellerWert(alt, art: .hrv, heute: heute)?.tag, "2026-08-20")
+        let b = try XCTUnwrap(PersoenlicherBereich.berechne(werte: alt, art: .hrv, heute: heute))
+        XCTAssertEqual(b.anzahl, 19, "der aktuelle Wert zählt nicht zum Bereich")
+        XCTAssertFalse(b.istFrisch(heute: heute))
+        let zuAlt = SchlafTestBau.vitale(.hrv, ab: "2026-07-01", Array(repeating: 55, count: 20))   // 01.07. bis 20.07.: älter als 60 Tage
+        XCTAssertNil(PersoenlicherBereich.aktuellerWert(zuAlt, art: .hrv, heute: heute))
+        XCTAssertNil(PersoenlicherBereich.berechne(werte: zuAlt, art: .hrv, heute: heute))
+    }
+
+    func testFrischIstHeuteOderGestern() throws {
+        let heuteWert = try XCTUnwrap(PersoenlicherBereich.berechne(werte: hrv(aktuell: 61.6), art: .hrv, heute: heute))
+        XCTAssertTrue(heuteWert.istFrisch(heute: heute))
+        XCTAssertTrue(heuteWert.istFrisch(heute: "2026-09-24"), "gestern")
+        XCTAssertFalse(heuteWert.istFrisch(heute: "2026-09-25"), "vorgestern")
+    }
+
+    func testAlterWertBekommtEinDatumImChipUndStuetztKeinenErholungssatz() {
+        // Der neueste Wert ist vom 18.09. (fünf Tage alt): der Chip nennt das Datum, der Erholungs-Satz ignoriert ihn.
+        let werte = SchlafTestBau.vitale(.hrv, ab: "2026-09-05", (0..<14).map { $0 % 2 == 0 ? 50.0 : 60.0 } + [61.6])   // 05.09. bis 19.09.
+        let s = SchlafVitalStand.bauen(art: .hrv, werte: werte, heute: heute)
+        XCTAssertEqual(s.aktuell?.tag, "2026-09-19")
+        XCTAssertEqual(s.datumHinweis, "vom 19.09.")
+        XCTAssertEqual(s.untertitel, "12 % über deinem Schnitt · vom 19.09.")
+        XCTAssertNotNil(s.bereich)
+        XCTAssertNil(s.frischerBereich)
+        let frisch = SchlafVitalStand.bauen(art: .hrv, werte: hrv(aktuell: 61.6), heute: heute)
+        XCTAssertNil(frisch.datumHinweis)
+        XCTAssertNotNil(frisch.frischerBereich)
+    }
+
+    func testKurzesDatum() {
+        XCTAssertEqual(SchlafFormat.kurzesDatum("2026-09-05"), "05.09.")
+        XCTAssertEqual(SchlafFormat.kurzesDatum("kaputt"), "kaputt")
     }
 
     func testNurDieLetzten60TageUndNurDieRichtigeArt() throws {

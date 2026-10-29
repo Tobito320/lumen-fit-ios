@@ -2,6 +2,10 @@ import XCTest
 @testable import LumenFit
 
 /// Aus Lovea `SchlafSignaleTests` (nur die reinen Fälle `gewohnheit`) plus Wochenende und Zeitumstellung.
+/// Nicht mitgenommen, mit Grund (Lovea-Datei, Test): `SchlafLogikTests` aus Lovea testet nur die Anwesenheit der Figur (`SchlafLogik.zustand`), nicht den Schlaf;
+/// `testSchuldRechnetUeberschussGegenUndNieUnterNull` ist durch `SchlafSchuldTests` ersetzt (Lumen Fit rechnet nur fehlende Minuten, SPEC 10);
+/// `testKoffeinVergleichBrauchtGenugNaechteUndUnterschied`: `HabitStore` liefert keine Uhrzeiten je Koffein-Eintrag, ohne sie gibt es keine Quelle;
+/// `testGuterMorgenNurAmMorgenUndNurMitGruss` und `testBettErinnerungPlanMitNachMitternachtUndWochenende`: Chat-Signal und Erinnerung entfallen (Umfang-Gate).
 final class SchlafLogikTests: XCTestCase {
     private func nacht(_ tag: Int, vonStunde: Int = 23, vonMinute: Int = 0) -> SchlafLogik.BekannteNacht {
         let tagText = String(format: "2026-09-%02d", tag)

@@ -42,6 +42,14 @@ final class SchlafUebersichtTests: XCTestCase {
         XCTAssertEqual(u.lumi(jetzt: SchlafTestBau.zeit(heute, 14)), .bereit)
     }
 
+    func testAlteHrvWirdNichtZurErholungsaussage() {
+        // Die HRV ist fünf Tage alt: Chip und Karte zeigen sie mit Datum, "du bist bereit" steht nicht darauf.
+        let werte = SchlafTestBau.vitale(.hrv, ab: "2026-09-05", (0..<14).map { $0 % 2 == 0 ? 50.0 : 60.0 } + [61.6])
+        let u = SchlafUebersicht.bauen(health: [:], band: [], vitale: [.hrv: werte], zielMinuten: 480, heute: heute)
+        XCTAssertEqual(u.hrv.datumHinweis, "vom 19.09.")
+        XCTAssertEqual(u.erholung.stufe, .offen)
+    }
+
     func testAeltereNachtTraegtDatumUndZaehltNichtFuerDieErholung() {
         let n = health([420, 440, 450], ab: "2026-09-17")   // letzte Nacht am 19.09., heute 23.09.
         let u = SchlafUebersicht.bauen(health: n, band: [], vitale: [:], zielMinuten: 480, heute: heute)

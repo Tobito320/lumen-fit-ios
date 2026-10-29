@@ -65,13 +65,13 @@ enum SchlafVitalInfo {
 }
 
 /// Idee 54, HRV im eigenen Bereich: der Bereich ist dein Mittelwert der letzten 60 Tage plus minus eine Streuung, nicht eine fremde Norm.
-/// Der aktuelle Wert (höchstens 7 Tage alt) zählt nicht zum Bereich, sonst misst er sich an sich selbst.
+/// Der aktuelle Wert (der neueste der 60 Tage) zählt nicht zum Bereich, sonst misst er sich an sich selbst; sein Alter steht im Text, wenn er nicht von heute oder gestern ist.
 /// Unter 14 Werten gibt es keinen Bereich ("zu wenig Daten"); es wird nichts erfunden.
 struct PersoenlicherBereich: Equatable, Sendable {
     static let tage = 60
     static let mindestWerte = 14
-    /// So alt darf der aktuelle Wert höchstens sein.
-    static let aktuellTage = 7
+    /// Ein Wert von heute oder gestern gilt als frisch (nur auf frische Werte stützt sich der Erholungs-Satz).
+    static let frischTage = 1
 
     enum Lage: Equatable, Sendable {
         case niedrig, normal, hoch
@@ -107,9 +107,9 @@ struct PersoenlicherBereich: Equatable, Sendable {
     let aktuell: Double
     let aktuellTag: String
 
-    /// Der neueste Wert der Art, höchstens 7 Tage alt (heute eingeschlossen).
+    /// Der neueste Wert der Art im 60-Tage-Fenster (heute eingeschlossen). Viele Nutzer haben VO2max oder SpO2 nur alle paar Tage.
     static func aktuellerWert(_ werte: [VitalMesswert], art: VitalArt, heute: String) -> VitalMesswert? {
-        let ab = Datum.addTage(heute, -(aktuellTage - 1))
+        let ab = Datum.addTage(heute, -(tage - 1))
         return werte.filter { $0.art == art && $0.wert.isFinite && $0.tag >= ab && $0.tag <= heute }.max { $0.tag < $1.tag }
     }
 
@@ -120,6 +120,9 @@ struct PersoenlicherBereich: Equatable, Sendable {
         for w in werte where w.art == art && w.wert.isFinite && w.tag >= ab && w.tag <= heute { jeTag[w.tag] = w.wert }
         return jeTag
     }
+
+    /// Von heute oder gestern.
+    func istFrisch(heute: String) -> Bool { aktuellTag >= Datum.addTage(heute, -Self.frischTage) }
 
     /// `nil` ohne aktuellen Wert oder unter 14 Werten im Bereich.
     static func berechne(werte: [VitalMesswert], art: VitalArt, heute: String) -> PersoenlicherBereich? {
@@ -192,6 +195,7 @@ struct SchlafVitalStand: Equatable, Sendable, Identifiable {
     let bereich: PersoenlicherBereich?
     /// Werte der Art im 60-Tage-Fenster (ohne den aktuellen).
     let vorhanden: Int
+    let heute: String
 
     var id: VitalArt { art }
 
@@ -201,14 +205,24 @@ struct SchlafVitalStand: Equatable, Sendable, Identifiable {
     static func bauen(art: VitalArt, werte: [VitalMesswert], heute: String) -> SchlafVitalStand {
         let jetzt = PersoenlicherBereich.aktuellerWert(werte, art: art, heute: heute)
         let basis = PersoenlicherBereich.werteImFenster(werte, art: art, heute: heute).filter { $0.key != jetzt?.tag }.count
-        return SchlafVitalStand(art: art, aktuell: jetzt, bereich: PersoenlicherBereich.berechne(werte: werte, art: art, heute: heute), vorhanden: basis)
+        return SchlafVitalStand(art: art, aktuell: jetzt, bereich: PersoenlicherBereich.berechne(werte: werte, art: art, heute: heute), vorhanden: basis, heute: heute)
     }
+
+    /// "vom 18.09.", wenn der aktuelle Wert nicht von heute oder gestern ist; sonst `nil`.
+    var datumHinweis: String? {
+        guard let aktuell, aktuell.tag < Datum.addTage(heute, -PersoenlicherBereich.frischTage) else { return nil }
+        return "vom \(SchlafFormat.kurzesDatum(aktuell.tag))"
+    }
+
+    /// Der Bereich, wenn er auf einem Wert von heute oder gestern steht (für den Erholungs-Satz).
+    var frischerBereich: PersoenlicherBereich? { bereich.flatMap { $0.istFrisch(heute: heute) ? $0 : nil } }
 
     /// Text unter dem Wert: der Trend gegen den Schnitt, oder was fehlt.
     var untertitel: String {
         guard aktuell != nil else { return "Keine Daten" }
-        if let bereich { return bereich.schnittText }
-        return "Zu wenig Daten für deinen Schnitt (\(vorhanden) von \(PersoenlicherBereich.mindestWerte))"
+        let hinweis = datumHinweis.map { " · \($0)" } ?? ""
+        if let bereich { return bereich.schnittText + hinweis }
+        return "Zu wenig Daten für deinen Schnitt (\(vorhanden) von \(PersoenlicherBereich.mindestWerte))" + hinweis
     }
 
     /// Ein Satz für VoiceOver mit Name, Wert und Trend.

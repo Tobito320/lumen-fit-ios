@@ -3,7 +3,8 @@ import SwiftUI
 /// Das Muster je Schlafphase: Tief ist voll, Kern senkrecht gestreift, REM schräg gestreift, Wach gepunktet, "Schlaf" (nur Dauer) flach hell.
 /// Jede Phase hat Muster und Beschriftung, nie nur Farbe.
 enum SchlafPhasenZeichner {
-    nonisolated static func fuelle(_ phase: SchlafPhase, rect: CGRect, linie: Color, grund: Color, in kontext: inout GraphicsContext) {
+    /// `voll`: "Schlaf" ohne Phasen in voller Farbe (der Zeitbalken der Nächte nur mit iPhone braucht mindestens 3:1 zum Grund).
+    nonisolated static func fuelle(_ phase: SchlafPhase, rect: CGRect, linie: Color, grund: Color, voll: Bool = false, in kontext: inout GraphicsContext) {
         guard rect.width > 0, rect.height > 0 else { return }
         let flaeche = Path(rect)
         switch phase {
@@ -23,7 +24,7 @@ enum SchlafPhasenZeichner {
                 ebene.fill(MusterZeichner.punkte(rect.size, raster: 5, radius: 1.1), with: .color(linie))
             }
         case .unbestimmt:
-            kontext.fill(flaeche, with: .color(linie.opacity(0.45)))
+            kontext.fill(flaeche, with: .color(voll ? linie : linie.opacity(0.45)))
         }
     }
 
@@ -104,6 +105,7 @@ struct PhasenBalken: View {
         let von = nacht.von
         let spanne = max(nacht.bis.timeIntervalSince(nacht.von), 1)
         let abschnitte = nacht.abschnitte
+        let voll = !hatPhasen
         VStack(alignment: .leading, spacing: Abstand.s) {
             Canvas { kontext, groesse in
                 // Lücken zwischen Abschnitten sind Wachzeit und bleiben leer (Grund).
@@ -111,12 +113,12 @@ struct PhasenBalken: View {
                     let x0 = groesse.width * a.von.timeIntervalSince(von) / spanne
                     let x1 = groesse.width * a.bis.timeIntervalSince(von) / spanne
                     let rect = CGRect(x: x0, y: 0, width: max(x1 - x0 - 1, 1), height: groesse.height)
-                    SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: linie, grund: grund, in: &kontext)
+                    SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: linie, grund: grund, voll: voll, in: &kontext)
                 }
             }
             .frame(height: 32)
             .clipShape(.rect(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).stroke(linie.opacity(0.6), lineWidth: 1))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(linie, lineWidth: 1))
             .accessibilityHidden(true)
             HStack {
                 Text(Datum.uhrzeit(nacht.von))

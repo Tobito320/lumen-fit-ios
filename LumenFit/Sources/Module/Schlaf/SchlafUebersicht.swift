@@ -83,7 +83,7 @@ struct SchlafUebersicht: Sendable {
         let reine = gewaehlt.map(\.nacht)
         let hrv = SchlafVitalStand.bauen(art: .hrv, werte: vitale[.hrv] ?? [], heute: heute)
         let chips = SchlafVitalStand.chipArten.map { SchlafVitalStand.bauen(art: $0, werte: vitale[$0] ?? [], heute: heute) }
-        let ruhepuls = chips.first { $0.art == .ruhepuls }?.bereich
+        let ruhepuls = chips.first { $0.art == .ruhepuls }?.frischerBereich
         // Eine Nacht von vor drei Tagen sagt nichts über die Erholung heute.
         let frisch = reine.last.flatMap { $0.tag >= Datum.addTage(heute, -1) ? $0.schlafMinuten : nil }
         return SchlafUebersicht(
@@ -92,7 +92,7 @@ struct SchlafUebersicht: Sendable {
             regelmaessigkeit: Regelmaessigkeit.berechne(naechte: reine, heute: heute),
             woche: WochenVergleich.berechne(naechte: reine, heute: heute),
             hrv: hrv, chips: chips,
-            erholung: ErholungsKlartext.bewerte(hrv: hrv.bereich, ruhepuls: ruhepuls, letzteNachtMinuten: frisch, ziel: zielMinuten),
+            erholung: ErholungsKlartext.bewerte(hrv: hrv.frischerBereich, ruhepuls: ruhepuls, letzteNachtMinuten: frisch, ziel: zielMinuten),
             vergleich: SchlafVergleich.verlauf(health: health, band: band, heute: heute),
             werktag: zeiten(reine, wochenende: false), wochenende: zeiten(reine, wochenende: true))
     }

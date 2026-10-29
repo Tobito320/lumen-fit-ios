@@ -75,7 +75,7 @@ struct SchlafBereichKarte: View {
 
     private var aussage: String {
         guard let aktuell = hrv.aktuell else { return "HRV: Keine Daten" }
-        let wert = SchlafVitalInfo.text(.hrv, aktuell.wert)
+        let wert = SchlafVitalInfo.text(.hrv, aktuell.wert) + (hrv.datumHinweis.map { " \($0)" } ?? "")
         guard let bereich = hrv.bereich else { return "HRV \(wert)" }
         return "HRV \(wert), \(bereich.lage.name)"
     }
