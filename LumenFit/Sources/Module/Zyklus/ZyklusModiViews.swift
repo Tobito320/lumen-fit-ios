@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// Tag von heute ändern, wie in den drei Modi: umschalten, speichern.
-private func heutigerTag(_ store: ZyklusStore, _ aendere: (inout ZyklusTag) -> Void) {
+@MainActor private func heutigerTag(_ store: ZyklusStore, _ aendere: (inout ZyklusTag) -> Void) {
     var tag = store.tage[store.heute] ?? ZyklusTag(id: store.heute)
     aendere(&tag)
     store.setze(tag)

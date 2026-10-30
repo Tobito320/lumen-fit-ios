@@ -45,9 +45,9 @@ struct BandMessungenAbschnitt: View {
 
     /// Ein Schalter, solange das Band den Wert gemeldet hat; sonst Platzhalter (liest) oder "nicht gelesen".
     @ViewBuilder
-    private func zeile(_ titel: String, _ symbol: String, wert: Bool?, setzen: @escaping (Bool) -> Void) -> some View {
+    private func zeile(_ titel: String, _ symbol: String, wert: Bool?, setzen: @escaping @MainActor (Bool) -> Void) -> some View {
         if let wert {
-            Toggle(isOn: Binding(get: { wert }, set: setzen)) { Label(titel, systemImage: symbol) }
+            Toggle(isOn: Binding(get: { wert }, set: { neu in MainActor.assumeIsolated { setzen(neu) } })) { Label(titel, systemImage: symbol) }
         } else {
             LabeledContent {
                 Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: "wird gelesen")

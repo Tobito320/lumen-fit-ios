@@ -22,7 +22,7 @@ struct FortschrittQuelle {
     var erreichteIds: Set<String> { Set(medaillen.map(\.id)) }
     var stufe: Int { LumiStufe.stufe(erreicht: medaillen.count) }
     /// Die Satzziele aus der Befragung (`ziel.prio.*`, `ziel.saetze.*`); leer, solange sie nicht gemacht ist.
-    var zielWerte: [String: Int] { daten?.raum.map { ZieleLogik.werte(in: $0) } ?? [:] }
+    var zielWerte: [String: Int] { daten.map { ZieleLogik.werte(in: $0.raum) } ?? [:] }
     var zieleGesetzt: Bool { ZieleLogik.befragt(zielWerte) }
     var koerper: KoerperDaten {
         let werte = zielWerte

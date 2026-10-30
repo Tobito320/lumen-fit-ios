@@ -30,7 +30,9 @@ enum SchlafLeistung {
     static func kernzeile(_ punkte: [SchlafPunkt]) -> String {
         let kurz = punkte.filter { $0.stunden < 6 }.map(\.leistung), gut = punkte.filter { $0.stunden >= 7 }.map(\.leistung)
         guard kurz.count >= 2, gut.count >= 2 else { return "\(punkte.count) Einheiten mit Schlafdaten" }
-        let unterschied = Int(((gut.reduce(0, +) / Double(gut.count)) - (kurz.reduce(0, +) / Double(kurz.count))).rounded())
+        let mittelGut: Double = gut.reduce(0, +) / Double(gut.count)
+        let mittelKurz: Double = kurz.reduce(0, +) / Double(kurz.count)
+        let unterschied = Int((mittelGut - mittelKurz).rounded())
         if abs(unterschied) < 2 { return "Kein Unterschied zwischen kurzen und langen Nächten" }
         return unterschied > 0 ? "Nach langen Nächten im Schnitt \(unterschied) Prozentpunkte mehr Leistung" : "Nach kurzen Nächten im Schnitt \(-unterschied) Prozentpunkte mehr Leistung"
     }

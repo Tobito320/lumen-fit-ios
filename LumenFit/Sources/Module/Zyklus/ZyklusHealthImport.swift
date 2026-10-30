@@ -16,7 +16,7 @@ enum ZyklusHealthImport {
     }
 
     /// `.unspecified` heißt Blutung ohne Stärke, wir nehmen mittel. `.none` ist keine Blutung.
-    static func blutung(von fluss: HKCategoryValueMenstrualFlow) -> ZyklusBlutung? {
+    static func blutung(von fluss: HKCategoryValueVaginalBleeding) -> ZyklusBlutung? {
         switch fluss {
         case .light: .leicht
         case .medium: .mittel
@@ -27,7 +27,7 @@ enum ZyklusHealthImport {
     }
 
     static func blutung(vonRohwert wert: Int) -> ZyklusBlutung? {
-        HKCategoryValueMenstrualFlow(rawValue: wert).flatMap(blutung(von:))
+        HKCategoryValueVaginalBleeding(rawValue: wert).flatMap(blutung(von:))
     }
 
     // MARK: Zusammenführen (ohne Health-Zugriff)
