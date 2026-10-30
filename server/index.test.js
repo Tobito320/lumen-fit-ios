@@ -315,3 +315,75 @@ test("Partner: Annika sieht nur die Zusammenfassung von Ahmed (und umgekehrt), n
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { gesperrt: true } });
   assert.equal((await ruf(env, "GET", "/partner", { headers: app2() })).json.partner, null);
 });
+
+const ansichten = () => ({
+  plan: { name: "Push Pull", ruhetage: [7, 7, 9], tage: [{ name: "Push", wochentage: [1, 4, 4, 0, 8], uebungen: [{ name: "Bankdrücken", saetze: 3, kg: 80, geheim: "x" }] }, { name: "Leer", wochentage: [], uebungen: [] }] },
+  verlauf: {
+    imGym: true, imGymSeit: new Date().toISOString(), imGymName: "Push", woche: 2, serieWochen: 3, gesamt: 40,
+    trainings: [{ tag: heute(), name: "Push", minuten: 61, saetze: 18, uebungen: 5, kcal: 320, saetzeRoh: [{ kg: 80 }] }, { tag: "kaputt", saetze: 1 }],
+  },
+  tagebuch: [{ tag: heute(), kcal: 1800, protein: 120, kohlenhydrate: 200, fett: 60, foto: "daten:bild", mahlzeiten: [{ mahlzeit: "mittag", name: "Reis", kcal: 400, bild: "x" }, { mahlzeit: "nachtisch", name: "Eis", kcal: 100 }] }],
+  tagebuchZiele: { kcal: 2200, protein: 130, kohlenhydrate: 250, fett: 70 },
+  koerper: { gewicht: [{ tag: heute(), zehntel: 784 }, { tag: heute(), zehntel: -5 }], taille: [], unbekannt: [{ tag: heute(), zehntel: 5 }] },
+});
+
+test("Partner: Plan, Verlauf, Tagebuch und Körper gibt es nur mit ihrer eigenen Freigabe, Standard aus", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await registrieren(env, ID2, GEHEIM2, "Zweites Gerät");
+  await freigeben(env, ID, "ahmed");
+  await freigeben(env, ID2, "annika");
+  const datei = (freigaben) => ({
+    version: 1, geschrieben: new Date().toISOString(), profilName: "Ahmed", freigaben,
+    heute: { tag: heute(), schritte: 10, ...ansichten() }, ereignisse: [],
+  });
+  const lies = async (freigaben) => {
+    assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei(freigaben) })).status, 200);
+    return (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner;
+  };
+  assert.deepEqual((await lies(["schritte", "unbekannt"])).heute, { tag: heute(), schritte: 10 }, "ohne die neuen Arten kommt nichts davon an");
+  assert.deepEqual((await lies([])).freigaben, []);
+  const plan = (await lies(["plan"])).heute;
+  assert.deepEqual(Object.keys(plan).sort(), ["plan", "tag"], "nur der Plan");
+  assert.deepEqual(plan.plan, { name: "Push Pull", ruhetage: [7], tage: [
+    { name: "Push", wochentage: [1, 4], uebungen: [{ name: "Bankdrücken", saetze: 3 }] }, { name: "Leer", wochentage: [], uebungen: [] }] }, "Fremdfelder und falsche Wochentage fallen weg");
+  const verlauf = (await lies(["verlauf"])).heute.verlauf;
+  assert.equal(verlauf.imGym, true);
+  assert.equal(verlauf.imGymName, "Push");
+  assert.deepEqual(verlauf.trainings, [{ tag: heute(), saetze: 18, uebungen: 5, name: "Push", minuten: 61, kcal: 320 }], "kaputter Tag fällt weg, keine Rohsätze");
+  assert.deepEqual([verlauf.woche, verlauf.serieWochen, verlauf.gesamt], [2, 3, 40]);
+  const tagebuch = (await lies(["tagebuch"])).heute;
+  assert.deepEqual(tagebuch.tagebuchZiele, { kcal: 2200, protein: 130, kohlenhydrate: 250, fett: 70 });
+  assert.deepEqual(tagebuch.tagebuch[0].mahlzeiten, [{ mahlzeit: "mittag", name: "Reis", kcal: 400 }, { mahlzeit: "snack", name: "Eis", kcal: 100 }]);
+  assert.ok(!JSON.stringify(tagebuch).includes("daten:bild") && !JSON.stringify(tagebuch).includes('"bild"'), "keine Fotos");
+  assert.deepEqual((await lies(["koerper"])).heute.koerper, { gewicht: [{ tag: heute(), zehntel: 784 }] });
+  const alle = (await lies(["plan", "verlauf", "tagebuch", "koerper"])).heute;
+  assert.deepEqual(Object.keys(alle).sort(), ["koerper", "plan", "tag", "tagebuch", "tagebuchZiele", "verlauf"]);
+});
+
+test("Partner: zu große Zusammenfassung wird abgewiesen, Grenzen je Liste halten", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await freigeben(env, ID, "ahmed");
+  const zu = { version: 1, geschrieben: new Date().toISOString(), profilName: "A", freigaben: [], heute: { tag: heute() }, ereignisse: [], fuell: "x".repeat(300000) };
+  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: zu })).status, 413);
+  const viel = {
+    version: 1, geschrieben: new Date().toISOString(), profilName: "A", freigaben: ["plan", "tagebuch", "koerper", "verlauf"], ereignisse: [],
+    heute: {
+      tag: heute(),
+      plan: { tage: Array.from({ length: 30 }, () => ({ name: "T", wochentage: [1], uebungen: Array.from({ length: 50 }, () => ({ name: "U", saetze: 3 })) })) },
+      tagebuch: Array.from({ length: 20 }, () => ({ tag: heute(), kcal: 1, protein: 1, kohlenhydrate: 1, fett: 1, mahlzeiten: Array.from({ length: 100 }, () => ({ mahlzeit: "snack", name: "x", kcal: 1 })) })),
+      koerper: { gewicht: Array.from({ length: 500 }, () => ({ tag: heute(), zehntel: 700 })) },
+      verlauf: { trainings: Array.from({ length: 50 }, () => ({ tag: heute(), saetze: 1, uebungen: 1 })) },
+    },
+  };
+  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: viel })).status, 200);
+  const gespeichert = JSON.parse(env.DB.roh.prepare("SELECT daten FROM partner_stand").get().daten);
+  assert.equal(gespeichert.heute.plan.tage.length, 14);
+  assert.equal(gespeichert.heute.plan.tage[0].uebungen.length, 20);
+  assert.equal(gespeichert.heute.tagebuch.length, 7);
+  assert.equal(gespeichert.heute.tagebuch[0].mahlzeiten.length, 30);
+  assert.equal(gespeichert.heute.koerper.gewicht.length, 90);
+  assert.equal(gespeichert.heute.verlauf.trainings.length, 10);
+  assert.ok(JSON.stringify(gespeichert).length < 100000, "bleibt weit unter der Zeilengrenze");
+});

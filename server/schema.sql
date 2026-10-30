@@ -38,3 +38,10 @@ CREATE TABLE IF NOT EXISTS partner_stand (
   aktualisiert TEXT NOT NULL,
   daten TEXT NOT NULL
 );
+-- KI-Foto-Mahlzeit: Fotos je Konto und Tag (nur der Zähler fürs Tageslimit, nie Bild oder Antwort).
+CREATE TABLE IF NOT EXISTS ki_nutzung (
+  konto TEXT NOT NULL,
+  tag TEXT NOT NULL,           -- YYYY-MM-DD (Berlin)
+  n INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (konto, tag)
+);

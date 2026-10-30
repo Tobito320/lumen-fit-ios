@@ -107,6 +107,7 @@ struct EssenTabView: View {
             VStack(spacing: Abstand.xl) {
                 EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
                 VStack(spacing: Abstand.xl) {
+                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
                     ForEach(essen.anpassung.sichtbar, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
                         LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
