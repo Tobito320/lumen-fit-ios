@@ -259,6 +259,13 @@ final class KontoDienst {
         if case .da(let k) = liesKennung(), k.registriert { await meldeImportAnServer(k) }
     }
 
+    /// Meldet den Beleg eines Import-Laufs (nur Zahlen) oder einen Fehler. Gibt den Status des Servers zurück; nil, wenn nicht gesendet werden konnte
+    /// (Netzfehler, Gerät beim Server nicht angemeldet). Ein Wiederholen gibt es nicht: der nächste Lauf meldet neu.
+    func meldeImportBeleg<T: Encodable & Sendable>(_ beleg: T) async -> Int? {
+        guard case .da(let k) = liesKennung(), k.registriert, let koerper = try? JSONEncoder().encode(beleg) else { return nil }
+        return await sendeMitKonto("/lovea/import-beleg", methode: "POST", body: koerper, kennung: k)?.status
+    }
+
     private func meldeImportAnServer(_ kennung: KontoKennung) async {
         guard let r = await sendeMitKonto("/lovea/import-erledigt", methode: "POST", kennung: kennung) else { return }
         // 200: gemerkt. 403: der Server gibt das Konto nicht (mehr) frei, dann gibt es nichts zu melden.

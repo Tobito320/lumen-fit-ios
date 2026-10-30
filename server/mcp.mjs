@@ -41,6 +41,11 @@ export const WERKZEUGE = [
     inputSchema: { type: "object", properties: { umgebung } },
   },
   {
+    name: "lumenfit_import_beleg",
+    description: "Import-Beleg je Konto mit Lovea-Person: wann der Import fertig war, der letzte Beleg der App (je Op-Art: geholt, übernommen, roh, ausgeschlossen, unbekannt, geplant, im lokalen Speicher wiedergefunden; nur Zahlen) und der letzte Fehler (Art, Zeit, bis wohin geladen). Vergleich mit Lovea: scripts/import-vergleich.mjs.",
+    inputSchema: { type: "object", properties: { umgebung } },
+  },
+  {
     name: "lumenfit_config_setzen",
     description: "Globale Schalter ändern (gelten für alle Konten, ein Konto-Schalter gewinnt). Merge-Patch, null entfernt. Start: profilAnlegenErlaubt (false), nameAendernTage (7). loveaVerbinden gibt es nicht global.",
     inputSchema: { type: "object", properties: { umgebung, einstellungen: { type: "object" } }, required: ["einstellungen"] },
@@ -66,6 +71,7 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
   let pfad, methode = "GET", body;
   if (name === "lumenfit_konten") pfad = "/admin/konten";
   else if (name === "lumenfit_nutzung") pfad = "/admin/nutzung";
+  else if (name === "lumenfit_import_beleg") pfad = "/admin/import-beleg";
   else if (name === "lumenfit_config_setzen") [pfad, methode, body] = ["/admin/config", "PATCH", a.einstellungen];
   else {
     if (typeof a.id !== "string" || !a.id) throw new Error("id fehlt");

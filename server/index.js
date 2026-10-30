@@ -123,7 +123,13 @@ async function loveaFreigabe(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
   if (!freigegeben(konto)) return json({ erlaubt: false });
+  await spur(env, konto.id, "lovea_freigabe_gesehen", new Date().toISOString());
   return json({ erlaubt: true, person: konto.lovea_person, importErledigt: !!(await merker(env, konto.id, "lovea_import")) });
+}
+
+// Spur des Servers selbst (unabhängig davon, ob die App je einen Beleg schickt): wann die App Freigabe und Ops zuletzt geholt hat. Ein Fehler hier stört den Weg nicht.
+async function spur(env, konto, schluessel, wert) {
+  try { await env.DB.prepare("INSERT OR REPLACE INTO konto_merker (konto, schluessel, wert) VALUES (?, ?, ?)").bind(konto, schluessel, wert).run(); } catch {}
 }
 
 const merker = (env, konto, schluessel) => env.DB.prepare("SELECT wert FROM konto_merker WHERE konto = ? AND schluessel = ?").bind(konto, schluessel).first();
@@ -134,6 +140,59 @@ async function importErledigt(request, env) {
   if (antwort) return antwort;
   if (!PERSONEN.includes(konto.lovea_person)) return nein(403, "nicht freigegeben");
   await env.DB.prepare("INSERT OR IGNORE INTO konto_merker (konto, schluessel, wert) VALUES (?, 'lovea_import', ?)").bind(konto.id, new Date().toISOString()).run();
+  return json({ ok: true });
+}
+
+// Import-Beleg der App nach jedem Lauf: nur Zahlen je Op-Art, nie Inhalte oder Gesundheitswerte. Gespeichert wird je Konto der letzte Beleg und der letzte Fehler.
+const MAX_BELEG_BYTES = 40000;
+const BELEG_ART = /^[a-z][A-Za-z0-9_.]{0,59}$/;
+const BELEG_FEHLER = ["nicht_erlaubt", "profil_nicht_leer", "netz", "abgelehnt", "server", "antwort_kaputt", "speichern", "unvollstaendig", "keine_daten", "kein_zugang"];
+const BELEG_ZAHLEN = ["geholt", "uebernommen", "roh", "ausgeschlossen", "unbekannt", "geplant", "wiedergefunden", "uebersprungen", "zeitKaputt"];
+const zahl = (x) => Number.isInteger(x) && x >= 0 && x <= 1e7;
+
+// Gibt die gesäuberte Form zurück (nur bekannte Felder) oder null bei ungültiger Eingabe.
+function belegPruefen(b) {
+  if (!istObjekt(b) || !zeitOk(b.zeit)) return null;
+  if (b.typ === "fehler") {
+    if (!BELEG_FEHLER.includes(b.fehler) || !zahl(b.geladen ?? 0) || !zahl(b.bisSeq ?? 0)) return null;
+    return { typ: "fehler", zeit: b.zeit, fehler: b.fehler, geladen: b.geladen ?? 0, bisSeq: b.bisSeq ?? 0 };
+  }
+  if (b.typ !== "beleg" || typeof b.vollstaendig !== "boolean" || !istObjekt(b.arten) || Object.keys(b.arten).length > 150) return null;
+  const kopf = {};
+  for (const k of ["seqMax", "unlesbar", "neu", "schonDa", "uebersprungen"]) {
+    if (!zahl(b[k])) return null;
+    kopf[k] = b[k];
+  }
+  const arten = {};
+  for (const [name, a] of Object.entries(b.arten)) {
+    if (!BELEG_ART.test(name) || !istObjekt(a)) return null;
+    const z = {};
+    for (const k of BELEG_ZAHLEN) {
+      if (!zahl(a[k] ?? 0)) return null;
+      z[k] = a[k] ?? 0;
+    }
+    if (a.grund !== undefined) {
+      if (typeof a.grund !== "string" || a.grund.length > 80) return null;
+      z.grund = a.grund;
+    }
+    arten[name] = z;
+  }
+  return { typ: "beleg", zeit: b.zeit, vollstaendig: b.vollstaendig, ...kopf, arten };
+}
+
+async function importBeleg(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
+  const text = await request.text();
+  if (text.length > MAX_BELEG_BYTES) return nein(413, "zu groß");
+  let roh;
+  try { roh = JSON.parse(text); } catch { return nein(400, "ungültig"); }
+  const b = belegPruefen(roh);
+  if (!b) return nein(400, "ungültig");
+  const schluessel = b.typ === "beleg" ? "lovea_import_beleg" : "lovea_import_fehler";
+  if (b.typ === "fehler") b.anzahl = Math.min(9999, (lesen((await merker(env, konto.id, schluessel))?.wert).anzahl ?? 0) + 1);
+  await env.DB.prepare("INSERT OR REPLACE INTO konto_merker (konto, schluessel, wert) VALUES (?, ?, ?)").bind(konto.id, schluessel, JSON.stringify(b)).run();
   return json({ ok: true });
 }
 
@@ -364,6 +423,9 @@ async function loveaOps(request, url, env, holen) {
     return nein(502, "lovea");
   }
   if (!r.ok) return nein(502, "lovea");
+  const seit = Number(url.searchParams.get("seit")) || 0;
+  const alt = seit > 0 ? lesen((await merker(env, konto.id, "lovea_ops_abruf"))?.wert) : {};
+  await spur(env, konto.id, "lovea_ops_abruf", JSON.stringify({ zeit: new Date().toISOString(), seit, seiten: (seit > 0 ? alt.seiten ?? 0 : 0) + 1 }));
   return new Response(r.body, { status: 200, headers: { "content-type": "application/json" } });
 }
 
@@ -387,6 +449,21 @@ async function verwalten(request, url, env) {
       konten: konten.map((k) => ({
         ...auswerten(k, zeilen.filter((z) => z.konto === k.id)),
         lovea_import_erledigt: importe.find((i) => i.konto === k.id)?.wert ?? null,
+      })),
+    });
+  }
+  if (url.pathname === "/admin/import-beleg" && m === "GET") {
+    const { results: konten } = await env.DB.prepare("SELECT * FROM konten WHERE lovea_person IS NOT NULL ORDER BY gesehen DESC").all();
+    const { results: ms } = await env.DB.prepare("SELECT konto, schluessel, wert FROM konto_merker WHERE schluessel IN ('lovea_import', 'lovea_import_beleg', 'lovea_import_fehler', 'lovea_freigabe_gesehen', 'lovea_ops_abruf')").all();
+    const hol = (k, s) => ms.find((x) => x.konto === k && x.schluessel === s)?.wert;
+    return json({
+      konten: konten.map((k) => ({
+        id: k.id, name: k.name, lovea_person: k.lovea_person, version: k.version, zuletzt_gesehen: k.gesehen,
+        lovea_import_erledigt: hol(k.id, "lovea_import") ?? null,
+        freigabe_zuletzt_geholt: hol(k.id, "lovea_freigabe_gesehen") ?? null,
+        ops_abruf: hol(k.id, "lovea_ops_abruf") ? lesen(hol(k.id, "lovea_ops_abruf")) : null,
+        beleg: hol(k.id, "lovea_import_beleg") ? lesen(hol(k.id, "lovea_import_beleg")) : null,
+        fehler: hol(k.id, "lovea_import_fehler") ? lesen(hol(k.id, "lovea_import_fehler")) : null,
       })),
     });
   }
@@ -442,6 +519,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/lovea/freigabe" && m === "GET") return loveaFreigabe(request, env);
   if (url.pathname === "/lovea/agent/ops" && m === "GET") return loveaOps(request, url, env, holen);
   if (url.pathname === "/lovea/import-erledigt" && m === "POST") return importErledigt(request, env);
+  if (url.pathname === "/lovea/import-beleg" && m === "POST") return importBeleg(request, env);
   if (url.pathname === "/nutzung" && m === "POST") return nutzungMelden(request, env);
   if (url.pathname === "/partner" && m === "PUT") return partnerLegen(request, env);
   if (url.pathname === "/partner" && m === "GET") return partnerLesen(request, env);

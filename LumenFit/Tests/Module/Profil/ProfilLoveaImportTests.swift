@@ -268,4 +268,89 @@ final class ProfilLoveaImportTests: XCTestCase {
         let e = try await ProfilLoveaImport.fuehreAus(zugang: zugang, in: daten, lader: gut, freigegeben: true, bestaetigt: false)
         XCTAssertEqual(e.neu, 1)
     }
+
+    // MARK: - Beleg
+
+    func testBelegZaehltJedeArtUndFindetAllesWiederUndIstVollstaendig() async throws {
+        let (_, daten) = try leeresProfil()
+        var abzug = try gymUndEssenAbzug()
+        abzug.hoechsteSeq = 99
+        let plan = ProfilLoveaImport.plane(abzug, fuer: daten.profil)
+        let e = try await ProfilLoveaImport.spieleEin(plan, in: daten)
+        let beleg = ProfilLoveaBeleg.baue(e, zeit: start)
+        XCTAssertTrue(beleg.vollstaendig)
+        XCTAssertEqual(beleg.arten["nachricht.neu"]?.geholt, 1)
+        XCTAssertEqual(beleg.arten["nachricht.neu"]?.ausgeschlossen, 1)
+        XCTAssertEqual(beleg.arten["nachricht.neu"]?.grund, "Chat")
+        XCTAssertEqual(beleg.arten.values.map(\.geplant).reduce(0, +), 6)
+        XCTAssertEqual(beleg.arten.values.map(\.wiedergefunden).reduce(0, +), 6, "echtes Zurücklesen aus dem Speicher")
+        XCTAssertEqual(beleg.seqMax, 99)
+        // Zweiter Lauf: alles schon da, trotzdem wiedergefunden.
+        let zweiter = try await ProfilLoveaImport.spieleEin(plan, in: daten)
+        XCTAssertEqual(ProfilLoveaBeleg.baue(zweiter, zeit: start).arten.values.map(\.wiedergefunden).reduce(0, +), 6)
+        XCTAssertEqual(zweiter.neu, 0)
+    }
+
+    func testBelegIstUnvollstaendigBeiUnbekanntemFehlenderZeitOderFehlendemZuruecklesen() {
+        let leer = Data("{}".utf8)
+        let abzug = ProfilLoveaAbzug(ops: [
+            ProfilLoveaOp(seq: 1, id: "a", art: "habit.setzen", zeit: "2026-09-23T10:00:00Z", d: leer),
+            ProfilLoveaOp(seq: 2, id: "b", art: "neu.unbekannt", zeit: "2026-09-23T10:00:03Z", d: leer),
+        ], hoechsteSeq: 2)
+        let plan = ProfilLoveaImport.plane(abzug, fuer: TestDaten.profilID)
+        var e = ProfilLoveaErgebnis(neu: 1, schonDa: 0, uebersprungen: 0, trainings: 0, essenstage: 0, abdeckung: plan.abdeckung,
+                                    geplant: ["habit.setzen": 1], wiedergefunden: ["habit.setzen": 1])
+        XCTAssertFalse(ProfilLoveaBeleg.baue(e, zeit: start).vollstaendig, "eine unbekannte Art")
+        e.abdeckung.unbekannt = [:]
+        e.abdeckung.geholt["neu.unbekannt"] = nil
+        XCTAssertTrue(ProfilLoveaBeleg.baue(e, zeit: start).vollstaendig)
+        e.wiedergefunden = ["habit.setzen": 0]
+        XCTAssertFalse(ProfilLoveaBeleg.baue(e, zeit: start).vollstaendig, "weniger im Speicher als geplant")
+        e.wiedergefunden = ["habit.setzen": 1]
+        e.abdeckung.unlesbar = 1
+        XCTAssertFalse(ProfilLoveaBeleg.baue(e, zeit: start).vollstaendig, "unlesbarer Eintrag")
+    }
+
+    func testBelegNenntNurFesteWorteUndZahlen() throws {
+        let leer = Data("{}".utf8)
+        let abzug = ProfilLoveaAbzug(ops: [ProfilLoveaOp(seq: 1, id: "a", art: "Seltsame Art!", zeit: "2026-09-23T10:00:00Z", d: leer)], hoechsteSeq: 1)
+        let plan = ProfilLoveaImport.plane(abzug, fuer: TestDaten.profilID)
+        let e = ProfilLoveaErgebnis(neu: 0, schonDa: 0, uebersprungen: 0, trainings: 0, essenstage: 0, abdeckung: plan.abdeckung)
+        let beleg = ProfilLoveaBeleg.baue(e, zeit: start)
+        XCTAssertEqual(Array(beleg.arten.keys), ["andere.art"], "ein Name, den der Server nicht annimmt, läuft im Sammelpunkt zusammen")
+        let json = String(decoding: try JSONEncoder().encode(beleg), as: UTF8.self)
+        XCTAssertFalse(json.contains("Seltsame"))
+        XCTAssertEqual(ProfilLoveaFehler.netz.belegName, "netz")
+        XCTAssertEqual(ProfilLoveaFehler.server(500).belegName, "server")
+    }
+
+    func testHoleMerktWieWeitGeladenWurdeAuchBeimFehler() async throws {
+        let stand = ProfilLoveaLadeStand()
+        let erste = try seite([eintrag("habit.setzen", [:], seq: 7)], mehr: true)
+        let l = SkriptLader([.init(status: 200, daten: erste, fehler: nil), .init(status: 0, daten: Data(), fehler: .notConnectedToInternet)])
+        do {
+            _ = try await ProfilLoveaImport.hole(zugang: zugang, lader: l, stand: stand)
+            XCTFail("sollte scheitern")
+        } catch let f as ProfilLoveaFehler {
+            XCTAssertEqual(f, .netz)
+        }
+        XCTAssertEqual(stand.geladen, 1)
+        XCTAssertEqual(stand.bisSeq, 7)
+    }
+
+    func testLetzteGewinntBeiEinstellungenJeSchluessel() async throws {
+        let (_, daten) = try leeresProfil()
+        daten.raum.einreihen(TestDaten.op("einstellung.setzen", ["schluessel": "ziel.prio.brust", "wert": "1"], von: daten.profil, zeit: start + 1000, id: "lokal"))
+        let alt = Data(#"{"schluessel":"ziel.schritte","wert":9000}"#.utf8)
+        let abzug = ProfilLoveaAbzug(ops: [ProfilLoveaOp(seq: 1, id: "lovea-ziel", art: "einstellung.setzen", zeit: "2026-09-23T10:00:00Z", d: alt)], hoechsteSeq: 1)
+        let e = try await ProfilLoveaImport.spieleEin(ProfilLoveaImport.plane(abzug, fuer: daten.profil), in: daten)
+        XCTAssertEqual(e.neu, 1, "ein anderes Ziel wird nicht von einem neueren überdeckt")
+        XCTAssertEqual(e.wiedergefunden["einstellung.setzen"], 1)
+    }
+
+    func testTabelleEssensVorraeteUndKonsistenzGehenNichtVerloren() {
+        let leer = Data("{}".utf8)
+        for art in ["einkauf.liste", "kuehl.setzen", "kuehl.weg"] { XCTAssertEqual(ProfilLoveaArten.behandlung(art: art, d: leer), .rohBehalten, art) }
+        XCTAssertEqual(ProfilLoveaArten.behandlung(art: "einstellung.setzen", d: Data(#"{"schluessel":"konsistenz.kategorien","wert":"x"}"#.utf8)), .uebernehmen)
+    }
 }
