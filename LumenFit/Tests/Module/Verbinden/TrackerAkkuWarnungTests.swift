@@ -66,3 +66,21 @@ final class TrackerLadenTests: XCTestCase {
         XCTAssertEqual(urteil(prozent: 100, vorher: nil, abgelegt: true), .nein)
     }
 }
+
+/// Die Mitteilung "Band-Akku niedrig": Standard aus, Text mit dem Stand.
+final class BandAkkuWarnungTests: XCTestCase {
+    func testStandardIstAusUndSchluesselLiegtUnterFitBand() {
+        let d = UserDefaults(suiteName: "BandAkkuWarnungTests")!
+        d.removePersistentDomain(forName: "BandAkkuWarnungTests")
+        XCTAssertFalse(BandAkkuWarnung.an(d))
+        d.set(true, forKey: BandAkkuWarnung.schluessel)
+        XCTAssertTrue(BandAkkuWarnung.an(d))
+        XCTAssertTrue(BandAkkuWarnung.schluessel.hasPrefix(BandReste.vorsilbe), "BandReste löscht den Schalter mit dem letzten Profil")
+    }
+
+    func testTextNenntDenStand() {
+        let inhalt = BandAkkuWarnung.text(prozent: 14)
+        XCTAssertEqual(inhalt.titel, "Band-Akku niedrig")
+        XCTAssertTrue(inhalt.text.contains("14 %"))
+    }
+}

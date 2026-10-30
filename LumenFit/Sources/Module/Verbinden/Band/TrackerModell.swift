@@ -104,6 +104,8 @@ final class TrackerModell {
     @ObservationIgnored private let uhr: Uhr
     /// Am Ende jeder Runde (frische Zahlen vom Band): Ziel-Puls im Training. Setzt `BandDienstImpl`.
     @ObservationIgnored var beiRundenende: (@MainActor () -> Void)?
+    /// Der Akku ist unter die Grenze gefallen (einmal je Entladung, `TrackerAkkuWarnung`): der Dienst schickt die Mitteilung, wenn der Nutzer sie will.
+    @ObservationIgnored var beiAkkuWarnung: (@MainActor (Int) -> Void)?
     private var funk: (any BandFunk)?
     /// Der Nutzer hat "Trennen" getippt: dann nicht von selbst wieder verbinden, auch nicht nach einem Neustart.
     private var pausiert = false
@@ -594,11 +596,13 @@ final class TrackerModell {
     }
 
     /// Merkt, ob der Akku niedrig ist (`akkuNiedrig`): einmal je Entladung, erst nach dem Laden oder Erholen wieder. Eine Warnung ist ein Status in der
-    /// App, keine Mitteilung (SPEC 5.6). Keine eigene Abfrage: es zählt nur, was die Abfragen ohnehin lesen.
+    /// App; die Mitteilung kommt nur mit dem Schalter "Warnen bei niedrigem Akku" (`BandAkkuWarnung`). Keine eigene Abfrage: es zählt nur, was die Abfragen ohnehin lesen.
     private func akkuPruefen(_ wert: TrackerProtokoll.Akku) {
         let gewarnt = defaults.bool(forKey: Self.akkuGewarntSchluessel)
         switch TrackerAkkuWarnung.schritt(prozent: wert.prozent, laedt: wert.laedt, gewarnt: gewarnt) {
-        case .warnen: defaults.set(true, forKey: Self.akkuGewarntSchluessel)
+        case .warnen:
+            defaults.set(true, forKey: Self.akkuGewarntSchluessel)
+            beiAkkuWarnung?(wert.prozent)
         case .vergessen: defaults.set(false, forKey: Self.akkuGewarntSchluessel)
         case .nichts: break
         }

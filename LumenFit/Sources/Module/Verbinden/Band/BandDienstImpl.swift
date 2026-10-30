@@ -42,6 +42,10 @@ final class BandDienstImpl: BandDienst {
     @ObservationIgnored private var letzterStatus: BandStatusDatei?
     /// Nach jeder fertigen Runde (das Band ist verbunden und hat geantwortet): wartende Wünsche von Lovea ausführen. Setzt `VerbindenDienste`.
     @ObservationIgnored var beiVerbunden: (@MainActor () -> Void)?
+    /// Das Pausen-Ende im Training (das Gym ruft es über `vibriere(.pauseEnde)`, auch ohne Band): hier hängt die Ansage über Kopfhörer (`KopfhoererDienst`). Setzt `VerbindenDienste`.
+    @ObservationIgnored var beiPauseEnde: (@MainActor () -> Void)?
+    /// Der Akku des Bands ist niedrig (`TrackerAkkuWarnung`): zeigt die Mitteilung, wenn der Schalter an ist. Setzt `VerbindenDienste`.
+    @ObservationIgnored var beiAkkuWarnung: (@MainActor (Int) -> Void)?
 
     init(aktiv: @escaping @MainActor () -> Bool, bruecke: any PartnerAustausch, defaults: UserDefaults = .standard, uhr: @escaping Uhr = { Date() },
          sende: @escaping (String) -> Void = DarwinKanal.sende, training: @escaping @MainActor () -> Bool = { false },
@@ -74,9 +78,13 @@ final class BandDienstImpl: BandDienst {
                                  BandPuls.umfeld(jetzt, defaults: d, bandAmArm: m?.armZustand.bandAmArm, akku: m?.akku?.prozent, akkuGelesen: m?.akkuGelesen)
                              }, defaults: d)
         puls = geber
+        m.beiAkkuWarnung = { [weak self] prozent in
+            guard let self, BandAkkuWarnung.an(self.defaults) else { return }
+            self.beiAkkuWarnung?(prozent)
+        }
         m.beiRundenende = { [weak self, weak m] in
             guard let self, let m else { return }
-            self.puls?.rundeEnde(training: self.training(), puls: m.letzterPuls?.wert, zeit: m.letzterPuls?.zeit)
+            self.puls?.rundeEnde(training: self.training(), puls: m.letzterPuls?.wert, zeit: m.letzterPuls?.zeit, heute: m.heute, stand: m.bandTage.stand)
             self.statusSchreiben()
             self.beiVerbunden?()
         }
@@ -111,6 +119,7 @@ final class BandDienstImpl: BandDienst {
 
     /// Vibriert nur mit Schalter und verbundenem Band, nach den Regeln der Quelle (Schalter, Ruhezeit, Mindestpause). Das Pausen-Ende kommt vom Gym.
     func vibriere(_ muster: BandMuster) async {
+        if muster == .pauseEnde { beiPauseEnde?() }
         guard aktiv() else { return }
         _ = puls?.muster(muster, jetzt: uhr())
     }

@@ -15,6 +15,10 @@ enum BandEinstellung {
     static let zielPuls = "fit.band.gymPuls.ziel"
     static let standardZielPuls = 150
     static let zielPulse = [120, 130, 140, 150, 160, 170, 180]
+    static let sitzVon = "fit.band.sitzen.von"
+    static let sitzBis = "fit.band.sitzen.bis"
+    static let standardSitzVon = 9 * 60
+    static let standardSitzBis = 20 * 60
 
     static func fensterListe(_ d: UserDefaults = .standard) -> [BandRegeln.Zeitfenster] {
         d.data(forKey: fenster).flatMap { try? JSONDecoder().decode([BandRegeln.Zeitfenster].self, from: $0) } ?? []
@@ -104,14 +108,30 @@ final class BandPuls {
         return ausloesen(quelle, staerke: BandMusterRegel.staerke(muster, pauseEnde: eingestellt), jetzt: jetzt)
     }
 
-    // MARK: Ziel-Puls
+    // MARK: Ziel-Puls und Sitzen
 
-    /// Ende einer Tracker-Runde (`TrackerModell.abschliessen`): hier kommen frische Zahlen vom Band. Ziel-Puls im Training.
-    /// Läuft nur, wenn iOS die App für Band-Daten weckt: ein Takt ist nicht garantiert.
-    func rundeEnde(training: Bool, puls: Int?, zeit: Date?, jetzt: Date = Date()) {
+    /// Ende einer Tracker-Runde (`TrackerModell.abschliessen`): hier kommen frische Zahlen vom Band. Ziel-Puls im Training, Sitz-Erinnerung.
+    /// Läuft nur, wenn iOS die App für Band-Daten weckt: ein Takt ist nicht garantiert. `heute` und `stand`: Schritte von heute und Ende der letzten vollen Abfrage.
+    func rundeEnde(training: Bool, puls: Int?, zeit: Date?, heute: BandTag? = nil, stand: Date? = nil, jetzt: Date = Date()) {
         let ziel = defaults.object(forKey: BandEinstellung.zielPuls) as? Int ?? BandEinstellung.standardZielPuls
-        guard BandRegeln.zielPulsErreicht(training: training, puls: puls, zeit: zeit, jetzt: jetzt, ziel: ziel) else { return }
-        ausloesen(.gymPuls, jetzt: jetzt)
+        if BandRegeln.zielPulsErreicht(training: training, puls: puls, zeit: zeit, jetzt: jetzt, ziel: ziel) { ausloesen(.gymPuls, jetzt: jetzt) }
+        sitzen(heute: heute, stand: stand, jetzt: jetzt)
+    }
+
+    /// Sitz-Erinnerung: nur mit Schalter, nur mit Schritten von heute und Daten, die nicht älter als 20 Minuten sind. Die Pause der Quelle ist hier die Zeit ohne Schritte.
+    private func sitzen(heute: BandTag?, stand: Date?, jetzt: Date) {
+        let quelle = BandQuelle.sitzen
+        let regel = quelle.regel(defaults)
+        guard regel.an, let heute else { return }
+        let tagAnfang = Datum.datum(Datum.text(jetzt))
+        let fenster = BandRegeln.Zeitfenster(von: defaults.object(forKey: BandEinstellung.sitzVon) as? Int ?? BandEinstellung.standardSitzVon,
+                                             bis: defaults.object(forKey: BandEinstellung.sitzBis) as? Int ?? BandEinstellung.standardSitzBis)
+        let frisch = stand.map { jetzt.timeIntervalSince($0) < 20 * 60 } ?? false
+        guard BandRegeln.sitzFaellig(letzteBewegung: BandRegeln.bewegungsEnde(letzteMinute: heute.letzteMinute, tagAnfang: tagAnfang),
+                                     fensterAnfang: tagAnfang.addingTimeInterval(TimeInterval(fenster.von * 60)),
+                                     letzterPuls: quelle.letzte(defaults), jetzt: jetzt, schwelleMinuten: regel.pauseMinuten,
+                                     fenster: fenster, minute: BandRegeln.minuteAmTag(jetzt), schrittdatenFrisch: frisch) else { return }
+        ausloesen(quelle, jetzt: jetzt)
     }
 
     // MARK: Umfeld

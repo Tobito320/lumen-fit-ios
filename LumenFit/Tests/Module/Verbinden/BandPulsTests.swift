@@ -77,6 +77,33 @@ final class BandPulsTests: XCTestCase {
         XCTAssertEqual(befehle, 1)
     }
 
+    private func tag(slot: Int) -> BandTag {
+        var tag = BandTag()
+        tag.aufnehmen(TrackerProtokoll.SchrittSlot(tag: Datum.text(jetzt), slot: slot, index: 0, anzahl: 1, kcal: 1, schritte: 50, meter: 30))
+        return tag
+    }
+
+    func testSitzenIstStandardAusUndVibriertDannNachDerSchwelle() async {
+        let g = geber()
+        let seit10Uhr = tag(slot: 40) // Bewegung 10:00 bis 10:15, jetzt 12:34
+        g.rundeEnde(training: false, puls: nil, zeit: nil, heute: seit10Uhr, stand: jetzt.addingTimeInterval(-300), jetzt: jetzt)
+        XCTAssertEqual(befehle, 0, "ohne Schalter nichts")
+        defaults.set(true, forKey: BandQuelle.sitzen.anSchluessel)
+        g.rundeEnde(training: false, puls: nil, zeit: nil, heute: seit10Uhr, stand: jetzt.addingTimeInterval(-300), jetzt: jetzt)
+        await Task.yield()
+        XCTAssertEqual(befehle, 1)
+        XCTAssertEqual(BandQuelle.sitzen.letzte(defaults), jetzt)
+    }
+
+    func testSitzenBrauchtFrischeDatenUndBewegungVorDerSchwelle() async {
+        defaults.set(true, forKey: BandQuelle.sitzen.anSchluessel)
+        let g = geber()
+        g.rundeEnde(training: false, puls: nil, zeit: nil, heute: tag(slot: 40), stand: jetzt.addingTimeInterval(-3600), jetzt: jetzt)
+        g.rundeEnde(training: false, puls: nil, zeit: nil, heute: tag(slot: 49), stand: jetzt.addingTimeInterval(-300), jetzt: jetzt) // 12:15 bis 12:30
+        await Task.yield()
+        XCTAssertEqual(befehle, 0, "Daten zu alt, dann vor Kurzem bewegt")
+    }
+
     func testUmfeldNimmtDenAkkuNurWennFrisch() {
         let frisch = BandPuls.umfeld(jetzt, defaults: defaults, bandAmArm: true, akku: 10, akkuGelesen: jetzt.addingTimeInterval(-3600))
         XCTAssertEqual(frisch.akku, 10)

@@ -3,10 +3,10 @@ import Foundation
 
 /// Woher ein Puls am Armband kommen kann. Der Tracker kennt nur den einen Finden-Befehl (`TrackerProtokoll.findenAnfrage`): ein Puls von
 /// fester Stärke und Länge (rund 5 bis 10 s). Was sich je Quelle einstellen lässt, ist darum nur: an/aus, Zahl der Pulse (1 bis 3) und
-/// die Mindestpause bis zum nächsten Mal. Quellen aus Lovea, die es hier nicht gibt: Chat, Anruf, Termine, Sitz-Erinnerung
-/// (Lumen Fit hat keine Erinnerungen und keinen Wecker).
+/// die Mindestpause bis zum nächsten Mal. Quellen aus Lovea, die es hier nicht gibt: Chat, Anruf, Termine (Chat und Anruf des Partners kommen als
+/// Wunsch von Lovea, Termine gehören zu Lumen Alarm).
 enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
-    case partner, wunsch, gymPause, gymPuls
+    case partner, wunsch, gymPause, gymPuls, sitzen
 
     var id: String { rawValue }
 
@@ -16,6 +16,7 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
         case .wunsch: "Vibrationswünsche von Lovea"
         case .gymPause: "Gym: Pause vorbei"
         case .gymPuls: "Gym: Ziel-Puls erreicht"
+        case .sitzen: "Sitz-Erinnerung"
         }
     }
 
@@ -25,6 +26,7 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
         case .wunsch: "bell.badge.fill"
         case .gymPause: "timer"
         case .gymPuls: "heart.fill"
+        case .sitzen: "figure.stand"
         }
     }
 
@@ -34,7 +36,7 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
     var standardAn: Bool {
         switch self {
         case .wunsch, .gymPause: true
-        case .partner, .gymPuls: false
+        case .partner, .gymPuls, .sitzen: false
         }
     }
 
@@ -46,18 +48,20 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
         case .partner: BandNachrichtRegel.standardPause
         case .wunsch, .gymPause: 0
         case .gymPuls: 10
+        case .sitzen: 60
         }
     }
 
     var pausen: [Int] {
         switch self {
         case .gymPuls: [5, 10, 15, 30]
+        case .sitzen: [30, 45, 60, 90, 120]
         case .partner: BandNachrichtRegel.pausen
         default: [0, 1, 2, 5, 10, 15, 30]
         }
     }
 
-    var pauseName: String { "Mindestpause" }
+    var pauseName: String { self == .sitzen ? "Nach Minuten ohne Schritte" : "Mindestpause" }
 
     private func schluessel(_ teil: String) -> String { "fit.band.\(rawValue).\(teil)" }
     var anSchluessel: String { schluessel("an") }
@@ -145,6 +149,26 @@ enum BandRegeln {
         guard regel.an else { return .aus }
         if let grund = umfeldGrund(quelle, minute: minute, umfeld: umfeld) { return grund }
         return pauseVorbei(letzte: letzte, jetzt: jetzt, minuten: regel.pauseMinuten) ? nil : .pause
+    }
+
+    // MARK: Sitzen
+
+    /// Ein Puls fürs Aufstehen: Schrittdaten sind frisch, es ist im Tageszeitfenster, und seit der letzten Bewegung (oder dem
+    /// Fensterbeginn heute, wenn die später war) sind `schwelleMinuten` vergangen. Danach höchstens alle `schwelleMinuten` wieder.
+    static func sitzFaellig(letzteBewegung: Date?, fensterAnfang: Date, letzterPuls: Date?, jetzt: Date, schwelleMinuten: Int,
+                            fenster: Zeitfenster, minute: Int, schrittdatenFrisch: Bool) -> Bool {
+        guard schrittdatenFrisch, fenster.enthaelt(minute) else { return false }
+        let bezug = max(letzteBewegung ?? fensterAnfang, fensterAnfang)
+        let schwelle = TimeInterval(schwelleMinuten * 60)
+        guard jetzt.timeIntervalSince(bezug) >= schwelle else { return false }
+        guard let letzterPuls else { return true }
+        let seitdem = jetzt.timeIntervalSince(letzterPuls)
+        return seitdem < 0 || seitdem >= schwelle
+    }
+
+    /// Ende der letzten Viertelstunde mit Schritten (`BandTag.letzteMinute` ist ihr Anfang).
+    static func bewegungsEnde(letzteMinute: Int?, tagAnfang: Date) -> Date? {
+        letzteMinute.map { tagAnfang.addingTimeInterval(TimeInterval(($0 + 15) * 60)) }
     }
 
     // MARK: Gym

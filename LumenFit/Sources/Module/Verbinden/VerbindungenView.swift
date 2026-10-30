@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Die Seite "Verbindungen" (Profil): Lovea verbinden (Idee 81, nur wenn der Server das Konto freigibt; sonst gar nicht sichtbar), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83),
-/// das Band (85) und die Freunde (89). Nicht verbunden zeigt sie nur die Schalter, nie etwas vom Partner und keine Fehlermeldung.
+/// und die Freunde (89). Das Band wohnt seit 30.10. unter Profil > Geräte (`GeraeteView`). Nicht verbunden zeigt sie nur die Schalter, nie etwas vom Partner und keine Fehlermeldung.
 struct VerbindungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
 
@@ -41,7 +41,6 @@ private struct VerbindungenInhalt: View {
                     mitteilungenAbschnitt
                 }
             }
-            bandAbschnitt
             freundeAbschnitt
         }
         .verbindenFormular()
@@ -126,31 +125,6 @@ private struct VerbindungenInhalt: View {
                     set: { neu in einstellungen.aendere { $0.mitteilungen[PartnerEreignisRegeln.schluessel(art)] = neu } }))
             }
         }
-    }
-
-    // MARK: Band
-
-    private var bandAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Band", fuss: bandFuss) {
-            Toggle("Band in Lumen Fit nutzen", isOn: Binding(
-                get: { einstellungen.werte.bandAktiv },
-                set: { neu in einstellungen.aendere { $0.bandAktiv = neu } }))
-            if einstellungen.werte.bandAktiv {
-                NavigationLink { BandSeite() } label: { LabeledContent("Band", value: bandKurz) }
-            }
-        }
-    }
-
-    /// Ohne Freigabe steht hier kein Wort von Lovea.
-    private var bandFuss: String {
-        let basis = "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth."
-        return loveaErlaubt ? "Standard aus. Solange Lovea das Band selbst hält, lass es aus: nur eine App kann das Band halten. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
-    }
-
-    private var bandKurz: String {
-        guard let modell = (umgebung.band as? BandDienstImpl)?.modell else { return "Nicht verbunden" }
-        guard let akku = modell.akku else { return modell.statusText }
-        return "\(modell.statusText), \(akku.prozent) %"
     }
 
     // MARK: Freunde

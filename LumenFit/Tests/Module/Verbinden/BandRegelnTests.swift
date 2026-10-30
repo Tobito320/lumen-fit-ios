@@ -2,7 +2,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Regeln für alle Pulse am Armband: Gate, Ruhefenster über Mitternacht, Akku-Wächter, Mindestpause, Ziel-Puls, Muster der Wünsche. Sitzen, Erinnerungen und Mitteilungs-Quellen entfallen mit Lovea.
+/// Regeln für alle Pulse am Armband: Gate, Ruhefenster über Mitternacht, Akku-Wächter, Mindestpause, Ziel-Puls, Muster der Wünsche. Erinnerungen und Mitteilungs-Quellen entfallen mit Lovea (Termine: Lumen Alarm, Chat und Anruf: Wünsche von Lovea).
 final class BandRegelnTests: XCTestCase {
     private let jetzt = Date(timeIntervalSince1970: 1_800_000_000)
     private func vor(_ min: Double) -> Date { jetzt.addingTimeInterval(-min * 60) }
@@ -154,6 +154,48 @@ final class BandRegelnTests: XCTestCase {
     func testPausenEndeGehoertZurGymPauseAlleAnderenZumWunsch() {
         XCTAssertEqual(BandMusterRegel.quelle(.pauseEnde), .gymPause)
         for m in [BandMuster.kurz, .lang, .doppelt, .ruf] { XCTAssertEqual(BandMusterRegel.quelle(m), .wunsch) }
+    }
+
+    // MARK: Sitzen
+
+    private func sitz(bewegung: Double?, puls: Double? = nil, schwelle: Int = 60, minute: Int = 12 * 60, frisch: Bool = true, anfangVor: Double = 180) -> Bool {
+        BandRegeln.sitzFaellig(letzteBewegung: bewegung.map(vor), fensterAnfang: vor(anfangVor), letzterPuls: puls.map(vor), jetzt: jetzt,
+                               schwelleMinuten: schwelle, fenster: BandRegeln.Zeitfenster(von: 9 * 60, bis: 20 * 60), minute: minute,
+                               schrittdatenFrisch: frisch)
+    }
+
+    func testSitzenNachSchwelleOhneSchritte() {
+        XCTAssertTrue(sitz(bewegung: 61))
+        XCTAssertFalse(sitz(bewegung: 59))
+    }
+
+    func testSitzenBrauchtFrischeSchrittdatenUndTageszeit() {
+        XCTAssertFalse(sitz(bewegung: 90, frisch: false))
+        XCTAssertFalse(sitz(bewegung: 90, minute: 21 * 60))
+        XCTAssertFalse(sitz(bewegung: 90, minute: 8 * 60))
+    }
+
+    func testSitzenZaehltAbFensterbeginnWennSpaeter() {
+        XCTAssertFalse(sitz(bewegung: 600, anfangVor: 30), "gestern bewegt, Fenster erst vor 30 Minuten offen")
+        XCTAssertTrue(sitz(bewegung: nil, anfangVor: 90), "heute noch keine Schritte: ab Fensterbeginn")
+    }
+
+    func testSitzenNachPulsErstWiederNachSchwelle() {
+        XCTAssertFalse(sitz(bewegung: 200, puls: 10))
+        XCTAssertTrue(sitz(bewegung: 200, puls: 61))
+    }
+
+    func testBewegungsEndeIstViertelstundenEnde() {
+        let tag = Date(timeIntervalSince1970: 1_799_971_200)
+        XCTAssertEqual(BandRegeln.bewegungsEnde(letzteMinute: 600, tagAnfang: tag), tag.addingTimeInterval(615 * 60))
+        XCTAssertNil(BandRegeln.bewegungsEnde(letzteMinute: nil, tagAnfang: tag))
+    }
+
+    func testSitzenStandardsUndPausenAuswahl() {
+        XCTAssertFalse(BandQuelle.sitzen.standardAn)
+        XCTAssertEqual(BandQuelle.sitzen.standardPause, 60)
+        XCTAssertEqual(BandQuelle.sitzen.pauseName, "Nach Minuten ohne Schritte")
+        XCTAssertEqual(BandQuelle.sitzen.anSchluessel, "fit.band.sitzen.an")
     }
 
     // MARK: Gym

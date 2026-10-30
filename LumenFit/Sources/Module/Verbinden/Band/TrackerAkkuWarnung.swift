@@ -17,8 +17,21 @@ enum TrackerAkkuWarnung {
         return prozent <= grenze && !gewarnt ? .warnen : .nichts
     }
 
-    /// Ist der Akku jetzt niedrig? Die Warnung ist ein Status in der App und im Band-Blatt, keine Mitteilung (SPEC 5.6).
+    /// Ist der Akku jetzt niedrig? Der Status steht immer in der App; die Mitteilung (`BandAkkuWarnung`) ist ein Schalter.
     static func niedrig(prozent: Int, laedt: Bool) -> Bool { !laedt && prozent <= grenze }
+}
+
+/// Die Mitteilung "Band-Akku niedrig" (Schalter auf der Band-Seite, standardmäßig aus; in Lovea `CoachKalenderMitteilung`).
+/// Sie kommt nur, wenn Lumen Fit den Akku ohnehin liest, und einmal je Entladung (`TrackerAkkuWarnung.schritt`). Lumen Fit fragt dafür nichts zusätzlich ab.
+enum BandAkkuWarnung {
+    nonisolated static let schluessel = "fit.band.akkuwarnung"
+    static let kennung = "fit.band.akku"
+
+    static func an(_ d: UserDefaults = .standard) -> Bool { d.bool(forKey: schluessel) }
+
+    static func text(prozent: Int) -> (titel: String, text: String) {
+        ("Band-Akku niedrig", "Das Band hat noch \(prozent) %. Lade es bald, sonst fehlen Schritte und Puls.")
+    }
 }
 
 /// Ob der Tracker lädt. Nach der Referenz (colmi_r02_client) steht das Ladebit in Byte 2 der Akku-Antwort; am echten

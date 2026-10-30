@@ -42,6 +42,10 @@ struct ProfilBlattView: View {
                     link(symbol: "star.fill", titel: "Meilensteine") { MeilensteineView() }
                 }
 
+                gruppe("Geräte") {
+                    link(symbol: "applewatch", titel: "Geräte", zeile: "Fitness-Tracker, AirPods, Apple Watch") { GeraeteView() }
+                }
+
                 gruppe("Verbindungen") {
                     link(symbol: "link", titel: lovea ? "Freunde, Band und Lovea" : "Freunde und Band") { VerbindungenView() }
                 }

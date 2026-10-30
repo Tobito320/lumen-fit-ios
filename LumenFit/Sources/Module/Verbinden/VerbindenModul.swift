@@ -45,6 +45,7 @@ final class VerbindenDienste {
     private let umgebung: AppUmgebung
     let bruecke: LoveaBrueckeDienst
     let band: BandDienstImpl
+    let kopfhoerer = KopfhoererDienst()
     private var regeln: [ProfilID: PartnerEreignisRegeln] = [:]
     private var wuensche: BandWunschSchlange?
     private var beobachter: [DarwinBeobachter] = []
@@ -68,6 +69,11 @@ final class VerbindenDienste {
                               })
         umgebung.band = band
         band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren() }
+        band.beiPauseEnde = { [weak self] in self?.kopfhoerer.pauseEnde() }
+        band.beiAkkuWarnung = { [weak umgebung] prozent in
+            let inhalt = BandAkkuWarnung.text(prozent: prozent)
+            Task { await umgebung?.mitteiler.zeige(id: BandAkkuWarnung.kennung, titel: inhalt.titel, text: inhalt.text, route: nil) }
+        }
         umgebung.beiAbruf { [weak self] in await self?.abruf() }
         let ereignisse = umgebung.ereignisse.strom()
         strom = Task { @MainActor [weak self] in
@@ -125,6 +131,7 @@ final class VerbindenDienste {
     private func behandle(_ ereignis: Ereignis) async {
         switch ereignis {
         case .trainingGestartet, .trainingBeendet, .satzFertig:
+            if case .satzFertig(_, true) = ereignis { kopfhoerer.rekord() }
             bruecke.ereignis(ereignis)
             bruecke.schreibe()
         case .mahlzeitGespeichert, .habitGeaendert:

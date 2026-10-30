@@ -12,6 +12,9 @@ struct BandRegelnBlatt: View {
             ForEach(BandQuelle.allCases) { BandQuelleAbschnitt(quelle: $0) }
             BandRuheAbschnitt()
             BandAkkuAbschnitt()
+            VerbindenAbschnitt(titel: "Handy-Anrufe und andere Apps", fuss: "Anrufe und Mitteilungen anderer Apps kann Lumen Fit nicht sehen (iOS erlaubt das nicht). Das Band bekommt sie selbst über die Bluetooth-Kopplung mit dem iPhone, falls sie dort für das Band erlaubt ist; Muster und Dauer bestimmt dann das Band.") {
+                EmptyView()
+            }
         }
         .verbindenFormular()
         .navigationTitle("Band-Vibration")
@@ -26,6 +29,8 @@ struct BandQuelleAbschnitt: View {
     @AppStorage private var staerke: String
     @AppStorage private var pause: Int
     @AppStorage(BandEinstellung.zielPuls) private var zielPuls = BandEinstellung.standardZielPuls
+    @AppStorage(BandEinstellung.sitzVon) private var sitzVon = BandEinstellung.standardSitzVon
+    @AppStorage(BandEinstellung.sitzBis) private var sitzBis = BandEinstellung.standardSitzBis
     @Environment(AppUmgebung.self) private var umgebung
 
     init(quelle: BandQuelle) {
@@ -49,6 +54,10 @@ struct BandQuelleAbschnitt: View {
         }
         Picker(quelle.pauseName, selection: $pause) {
             ForEach(quelle.pausen, id: \.self) { Text(pauseText($0)).tag($0) }
+        }
+        if quelle == .sitzen {
+            BandZeitZeile(titel: "Von", minute: $sitzVon)
+            BandZeitZeile(titel: "Bis", minute: $sitzBis)
         }
         if quelle == .gymPuls {
             Picker("Ziel-Puls", selection: $zielPuls) {
@@ -76,6 +85,8 @@ struct BandQuelleAbschnitt: View {
             VerbindenTexte.pauseFuss
         case .gymPuls:
             "Nur im laufenden Training und nur mit Puls vom Band. Der Puls kommt im Takt der Pulsmessung (alle paar Minuten), nicht sofort."
+        case .sitzen:
+            "Ein Puls, wenn das Band so lange keine Schritte gemeldet hat, nur im Zeitfenster. Prüft nur bei einer Abfrage des Bands, kein eigener Timer."
         }
     }
 }
