@@ -16,11 +16,13 @@ struct PartnerKarte: View {
     var body: some View {
         if let datei = PartnerAnzeige.zusammenfassung(stand) {
             let zeilen = PartnerAnzeige.zeilen(datei, bereich: bereich)
-            if !zeilen.isEmpty { karte(datei, zeilen) }
+            // Die Ansichten (Plan, Verlauf, Tagebuch, Körperwerte) hängen nur an der Karte auf Heute.
+            let einstiege = bereich == .heute ? PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()) : []
+            if !zeilen.isEmpty || !einstiege.isEmpty { karte(datei, zeilen, einstiege) }
         }
     }
 
-    private func karte(_ datei: ZusammenfassungDatei, _ zeilen: [PartnerAnzeige.Zeile]) -> some View {
+    private func karte(_ datei: ZusammenfassungDatei, _ zeilen: [PartnerAnzeige.Zeile], _ einstiege: [PartnerAnsichtLogik.Einstieg]) -> some View {
         let name = datei.profilName
         return ListenKarte {
             VStack(alignment: .leading, spacing: 0) {
@@ -52,6 +54,10 @@ struct PartnerKarte: View {
             if bereich == .heute, let z = datei.heute.zyklus {
                 Haarlinie()
                 ZyklusPartnerZeile(zusammenfassung: z)
+            }
+            if !einstiege.isEmpty {
+                Haarlinie()
+                PartnerEinstiegZeilen(einstiege: einstiege)
             }
         }
         .sheet(isPresented: $vergleichOffen) { SchritteVergleichSeite(partner: datei) }

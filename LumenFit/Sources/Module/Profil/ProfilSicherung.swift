@@ -170,7 +170,7 @@ enum ProfilSicherungLogik {
         // Kleine Dateien: nur setzen, wo das Profil noch beim Standard ist (Neuinstallation), nie Eigenes überschreiben.
         if daten.einstellungen.werte == Einstellungen() {
             var geraetefrei = sicherung.einstellungen
-            geraetefrei.bandAktiv = false; geraetefrei.loveaVerbunden = false; geraetefrei.healthSchreiben = false; geraetefrei.healthGefragt = false
+            geraetefrei.bandAktiv = false; geraetefrei.loveaVerbunden = false; geraetefrei.alarmWeckt = Einstellungen().alarmWeckt; geraetefrei.healthSchreiben = false; geraetefrei.healthGefragt = false
             daten.einstellungen.werte = geraetefrei
         }
         if daten.ziele.ziele == Ziele() { daten.ziele.setze(sicherung.ziele) }

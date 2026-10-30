@@ -12,6 +12,7 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(store.werte.erscheinung, .system)
         XCTAssertTrue(store.werte.haptik)
         XCTAssertFalse(store.werte.healthSchreiben)
+        XCTAssertTrue(store.werte.alarmWeckt, "neues Feld fehlt in der alten Datei: Standard an")
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("einstellungen.json.defekt").path))
     }
 

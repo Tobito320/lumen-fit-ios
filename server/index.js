@@ -1,6 +1,7 @@
 // Lumen-Fit-Server (Cloudflare Worker + D1): Konten, Einstellungen ohne Build, Lovea-Freigabe als Proxy.
 // App-Wege: X-App-Key + X-Konto + X-Geheimnis. Verwaltung (/admin/*): nur X-Admin-Key.
 // Reine fetch(request, env, holen)-Funktion ohne cloudflare:workers-Import -> unter Node testbar.
+import { kiFoto } from "./ki-foto.js";
 
 const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7 };
 const PERSONEN = ["ahmed", "annika"];
@@ -15,7 +16,11 @@ const TAG_FORM = /^\d{4}-\d{2}-\d{2}$/;
 const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
 const MAX_NAMEN = 60;
 const NUTZUNG_TAGE = 90;
-const FREIGABEN = ["schritte", "gym", "schlaf", "essen"];
+const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper"];
+// Partner-Daten: rohe Obergrenze, bevor etwas geparst wird. Gesäubert bleibt es weit darunter (Plan, Tagebuch, Messreihen sind einzeln begrenzt).
+const MAX_PARTNER_BYTES = 262144;
+const KOERPER_ARTEN = ["gewicht", "taille", "brust", "schulter", "bizeps", "oberschenkel", "koerperfett"];
+const MAHLZEITEN = ["fruehstueck", "mittag", "abend", "snack"];
 const EREIGNIS_ARTEN = ["gymStart", "gymEnde", "ziel", "rekord", "schlafGut"];
 // Namen, die die App meldet (Tabs, Seiten, Funktionen). "Nie genutzt" in der Auswertung = in dieser Liste, aber nie gemeldet.
 // Nur Namen, die die App wirklich senden kann: Tabs, die Seiten, die als eigene Route auf einem Tab liegen, und die zwei Blätter. Die Unterseiten im Profil
@@ -188,8 +193,108 @@ function auswerten(konto, zeilen, jetzt = Date.now()) {
 }
 
 // Zusammenfassung für den Partner: Form von SPEC 5.5 (zusammenfassung.json), nur freigegebene Felder, alles andere fliegt raus.
+const ganz = (x) => (Number.isInteger(x) && x >= 0 && x < 1e6 ? x : undefined);
+const kurz = (x, n) => (typeof x === "string" ? x.trim().slice(0, n) : "");
+const reihe = (x, n) => (Array.isArray(x) ? x.slice(0, n).filter(istObjekt) : []);
+const zeitOk = (x) => typeof x === "string" && Number.isFinite(Date.parse(x));
+
+// Freigabe plan: Name, Wochentage (1 = Mo ... 7 = So) und Übungsnamen. Kein Plan ohne Tage.
+function planSauber(p) {
+  if (!istObjekt(p)) return undefined;
+  const wochentage = (liste) => [...new Set((Array.isArray(liste) ? liste : []).filter((w) => Number.isInteger(w) && w >= 1 && w <= 7))].sort();
+  const tage = reihe(p.tage, 14).map((t) => ({
+    name: kurz(t.name, 40), wochentage: wochentage(t.wochentage),
+    uebungen: reihe(t.uebungen, 20).map((u) => ({ name: kurz(u.name, 40), saetze: ganz(u.saetze) ?? 0 })),
+  }));
+  if (!tage.length) return undefined;
+  const aus = { tage };
+  if (kurz(p.name, 40)) aus.name = kurz(p.name, 40);
+  const ruhe = wochentage(p.ruhetage);
+  if (ruhe.length) aus.ruhetage = ruhe;
+  return aus;
+}
+
+// Freigabe verlauf: "im Gym" und die letzten Trainings als Zusammenfassung, nie Sätze oder Gewichte.
+function verlaufSauber(v) {
+  if (!istObjekt(v)) return undefined;
+  const aus = {
+    trainings: reihe(v.trainings, 10).filter((t) => typeof t.tag === "string" && TAG_FORM.test(t.tag)).map((t) => {
+      const e = { tag: t.tag, saetze: ganz(t.saetze) ?? 0, uebungen: ganz(t.uebungen) ?? 0 };
+      if (kurz(t.name, 40)) e.name = kurz(t.name, 40);
+      for (const f of ["minuten", "kcal"]) if (ganz(t[f]) !== undefined) e[f] = t[f];
+      return e;
+    }),
+  };
+  if (v.imGym === true && zeitOk(v.imGymSeit)) {
+    aus.imGym = true;
+    aus.imGymSeit = v.imGymSeit;
+    if (kurz(v.imGymName, 40)) aus.imGymName = kurz(v.imGymName, 40);
+  }
+  for (const f of ["woche", "serieWochen", "gesamt"]) if (ganz(v[f]) !== undefined) aus[f] = v[f];
+  return aus;
+}
+
+// Freigabe tagebuch: Tageswerte, Makros und Namen der Einträge der letzten sieben Tage. Keine Fotos, keine Mengen.
+function tagebuchSauber(t) {
+  return (Array.isArray(t) ? t : []).slice(0, 7).filter((d) => istObjekt(d) && typeof d.tag === "string" && TAG_FORM.test(d.tag)).map((d) => ({
+    tag: d.tag, kcal: ganz(d.kcal) ?? 0, protein: ganz(d.protein) ?? 0, kohlenhydrate: ganz(d.kohlenhydrate) ?? 0, fett: ganz(d.fett) ?? 0,
+    mahlzeiten: reihe(d.mahlzeiten, 30).map((m) => ({ mahlzeit: MAHLZEITEN.includes(m.mahlzeit) ? m.mahlzeit : "snack", name: kurz(m.name, 60), kcal: ganz(m.kcal) ?? 0 })),
+  }));
+}
+
+function zieleSauber(z) {
+  if (!istObjekt(z)) return undefined;
+  const felder = ["kcal", "protein", "kohlenhydrate", "fett"];
+  return felder.every((f) => ganz(z[f]) !== undefined) ? Object.fromEntries(felder.map((f) => [f, z[f]])) : undefined;
+}
+
+// Freigabe koerper: Messreihen in Zehnteln (784 = 78,4 kg), je Art höchstens 90 Punkte.
+function koerperSauber(k) {
+  if (!istObjekt(k)) return undefined;
+  const aus = {};
+  for (const art of KOERPER_ARTEN) {
+    const punkte = reihe(k[art], 90).filter((p) => typeof p.tag === "string" && TAG_FORM.test(p.tag) && Number.isInteger(p.zehntel) && p.zehntel > 0 && p.zehntel < 10000)
+      .map((p) => ({ tag: p.tag, zehntel: p.zehntel }));
+    if (punkte.length) aus[art] = punkte;
+  }
+  return Object.keys(aus).length ? aus : undefined;
+}
+
+// Felder aus dem Health-Gleichstand (Wochenwerte, Ziele, Energie, Gewohnheiten, Zyklus): jedes nur mit seiner Freigabe, mit Grenzen. Zyklus hängt an keiner Freigabe,
+// sondern an der Erlaubnis in den Zyklus-Einstellungen (die App schreibt das Feld nur dann).
+const ENERGIE = ["hoch", "mittel", "niedrig"];
+const zahlenTage = (x, max) => {
+  if (!istObjekt(x)) return undefined;
+  const aus = Object.fromEntries(Object.entries(x).slice(0, 14).filter(([t, v]) => TAG_FORM.test(t) && ganz(v) !== undefined && v <= max));
+  return Object.keys(aus).length ? aus : undefined;
+};
+function erweiterungSauber(h, freigaben, heute) {
+  const setze = (feld, wert) => { if (wert !== undefined) heute[feld] = wert; };
+  if (freigaben.includes("schritte")) { setze("schritteZiel", ganz(h.schritteZiel)); setze("schritteWoche", zahlenTage(h.schritteWoche, 1e5)); }
+  if (freigaben.includes("gym")) {
+    setze("gymZiel", ganz(h.gymZiel));
+    const tage = Array.isArray(h.gymTage) ? h.gymTage.slice(0, 7).filter((t) => typeof t === "string" && TAG_FORM.test(t)) : [];
+    if (tage.length) heute.gymTage = tage;
+  }
+  if (freigaben.includes("schlaf")) {
+    setze("schlafZiel", ganz(h.schlafZiel));
+    setze("schlafWoche", zahlenTage(h.schlafWoche, 1500));
+    if (ENERGIE.includes(h.energieStufe)) heute.energieStufe = h.energieStufe;
+    if (freigaben.includes("gym") && ENERGIE.includes(h.energieGym)) heute.energieGym = h.energieGym;
+  }
+  if (Array.isArray(h.habitsFertig)) {
+    const erlaubt = [freigaben.includes("gym") ? "gym" : null, freigaben.includes("essen") ? "wasser" : null];
+    const fertig = [...new Set(h.habitsFertig.filter((k) => typeof k === "string" && erlaubt.includes(k)))];
+    if (fertig.length) heute.habitsFertig = fertig;
+  }
+  const z = h.zyklus;
+  if (istObjekt(z) && typeof z.phase === "string" && typeof z.wunsch === "string" && typeof z.satz === "string" && Array.isArray(z.tipps)) {
+    heute.zyklus = { phase: kurz(z.phase, 30), wunsch: kurz(z.wunsch, 200), satz: kurz(z.satz, 300), tipps: z.tipps.slice(0, 5).map((t) => kurz(t, 200)).filter(Boolean) };
+    if (Number.isInteger(z.tag) && z.tag > 0 && z.tag < 100) heute.zyklus.tag = z.tag;
+  }
+}
+
 function zusammenfassungSauber(b) {
-  const ganz = (x) => (Number.isInteger(x) && x >= 0 && x < 1e6 ? x : undefined);
   if (!istObjekt(b) || b.version !== 1 || typeof b.profilName !== "string" || !b.profilName.trim() || !istObjekt(b.heute)) return null;
   const geschrieben = Date.parse(b.geschrieben);
   if (!Number.isFinite(geschrieben) || typeof b.heute.tag !== "string" || !TAG_FORM.test(b.heute.tag)) return null;
@@ -200,6 +305,15 @@ function zusammenfassungSauber(b) {
   if (freigaben.includes("gym") && ganz(h.gymTageWoche) !== undefined) heute.gymTageWoche = h.gymTageWoche;
   if (freigaben.includes("schlaf") && ganz(h.schlafMinuten) !== undefined) heute.schlafMinuten = h.schlafMinuten;
   if (freigaben.includes("essen") && ganz(h.kcal) !== undefined) heute.kcal = h.kcal;
+  erweiterungSauber(h, freigaben, heute);
+  const neu = {
+    plan: freigaben.includes("plan") ? planSauber(h.plan) : undefined,
+    verlauf: freigaben.includes("verlauf") ? verlaufSauber(h.verlauf) : undefined,
+    tagebuch: freigaben.includes("tagebuch") ? tagebuchSauber(h.tagebuch) : undefined,
+    tagebuchZiele: freigaben.includes("tagebuch") ? zieleSauber(h.tagebuchZiele) : undefined,
+    koerper: freigaben.includes("koerper") ? koerperSauber(h.koerper) : undefined,
+  };
+  for (const [feld, wert] of Object.entries(neu)) if (wert !== undefined && !(Array.isArray(wert) && !wert.length)) heute[feld] = wert;
   const ereignisse = (Array.isArray(b.ereignisse) ? b.ereignisse : []).slice(0, 20).filter((e) => istObjekt(e)
     && typeof e.id === "string" && e.id.length <= 80 && EREIGNIS_ARTEN.includes(e.art) && Number.isFinite(Date.parse(e.zeit)) && typeof e.text === "string")
     .map((e) => ({ id: e.id, art: e.art, zeit: e.zeit, text: e.text.slice(0, 120) }));
@@ -213,7 +327,11 @@ async function partnerLegen(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
   if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
-  const sauber = zusammenfassungSauber(await koerper(request));
+  const roh = await request.text();
+  if (roh.length > MAX_PARTNER_BYTES) return nein(413, "zu groß");
+  let eingang = null;
+  try { eingang = JSON.parse(roh); } catch { /* bleibt null -> 400 */ }
+  const sauber = zusammenfassungSauber(eingang);
   if (!sauber) return nein(400, "ungültig");
   await env.DB.prepare("INSERT OR REPLACE INTO partner_stand (konto, aktualisiert, daten) VALUES (?, ?, ?)")
     .bind(konto.id, new Date().toISOString(), JSON.stringify(sauber)).run();
@@ -313,7 +431,8 @@ async function verwalten(request, url, env) {
   return nein(404, "not found");
 }
 
-export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? { fetch }).fetch(u, o)) {
+// kiHolen: Abruf zu OpenAI (Standard: globales fetch), getrennt von `holen`, das über die Dienstbindung zu Lovea geht.
+export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? { fetch }).fetch(u, o), kiHolen = undefined) {
   // Worker-zu-Worker über workers.dev ist im selben Konto gesperrt (1042): Lovea kommt über die Dienstbindung LOVEA.
   const url = new URL(request.url);
   const m = request.method;
@@ -326,6 +445,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/nutzung" && m === "POST") return nutzungMelden(request, env);
   if (url.pathname === "/partner" && m === "PUT") return partnerLegen(request, env);
   if (url.pathname === "/partner" && m === "GET") return partnerLesen(request, env);
+  if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }

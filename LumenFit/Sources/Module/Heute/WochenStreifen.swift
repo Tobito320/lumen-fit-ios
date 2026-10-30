@@ -54,7 +54,7 @@ struct HeuteTagView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     if let daten = umgebung.daten {
-                        zeilen(daten)
+                        HeuteTagZeilen(tag: tag, daten: daten)
                         StimmungTagKarte(tag: tag)
                     }
                 }
@@ -66,6 +66,16 @@ struct HeuteTagView: View {
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
         }
     }
+}
+
+/// Schritte, Gym, Schlaf, Wasser und Gewicht eines Tages als Liste (Blatt der Woche und Tagwahl des Heute-Tabs). Ohne Wert steht "keine Daten".
+struct HeuteTagZeilen: View {
+    let tag: String
+    let daten: DatenSatz
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.palette) private var palette
+
+    var body: some View { zeilen(daten) }
 
     private func zeilen(_ daten: DatenSatz) -> some View {
         let werte = umgebung.gesundheit.tage[tag]

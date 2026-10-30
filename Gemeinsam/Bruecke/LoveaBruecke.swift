@@ -5,10 +5,15 @@ import Foundation
 /// Lesen verträgt fehlende und kaputte Dateien (= nicht verbunden) und eine unbekannte `version` (= `.unbekannteVersion`).
 struct LoveaBruecke: PartnerAustausch {
     let ordner: URL?
+    /// Unterordner des Vertrags: `LumenFit` bei Lovea, `LumenAlarm` bei der Brücke zu Lumen Alarm (dort gehört `band-wuensche.json` der anderen App).
+    let ordnerName: String
 
-    init(ordner: URL?) { self.ordner = ordner }
+    init(ordner: URL?, ordnerName: String = LoveaVertrag.ordnerName) {
+        self.ordner = ordner
+        self.ordnerName = ordnerName
+    }
 
-    private var vertragsOrdner: URL? { ordner?.appendingPathComponent(LoveaVertrag.ordnerName, isDirectory: true) }
+    private var vertragsOrdner: URL? { ordner?.appendingPathComponent(ordnerName, isDirectory: true) }
 
     // MARK: - Partner lesen
 
@@ -102,9 +107,11 @@ struct LoveaBruecke: PartnerAustausch {
     }
 
     /// Entfernt den ganzen Ordner `<Lovea-Gruppe>/LumenFit/` (Zusammenfassung, Status, erledigte Wünsche; Loveas eigene Dateien daneben bleiben).
+    /// Bei der Brücke zu Lumen Alarm nur die zwei eigenen Dateien: die Wünsche dort gehören Lumen Alarm.
     func loescheEigeneDateien() {
         guard let ordner = vertragsOrdner else { return }
-        try? FileManager.default.removeItem(at: ordner)
+        if ordnerName == LoveaVertrag.ordnerName { try? FileManager.default.removeItem(at: ordner); return }
+        for datei in [LoveaVertrag.erledigtDatei, LoveaVertrag.statusDatei] { try? FileManager.default.removeItem(at: ordner.appendingPathComponent(datei)) }
     }
 
     private func schreibe<T: Encodable>(_ wert: T, _ dateiName: String) {

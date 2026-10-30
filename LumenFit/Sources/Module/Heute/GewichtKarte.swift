@@ -5,12 +5,14 @@ import SwiftUI
 struct GewichtKarte: View {
     let gewicht: HeuteGewicht
     let wiege: () -> Void
+    /// false bei einem vergangenen Tag der Tagwahl: nur ansehen, der Knopf fehlt.
+    var eintragbar = true
     @Environment(\.palette) private var palette
 
     var body: some View {
         ListenKarte {
             VStack(alignment: .leading, spacing: Abstand.m) {
-                HeuteKartenKopf(symbol: "scalemass.fill", titel: "Gewicht", zusatz: gewicht.heuteEingetragen ? "heute eingetragen" : nil)
+                HeuteKartenKopf(symbol: "scalemass.fill", titel: "Gewicht", zusatz: gewicht.heuteEingetragen ? (eintragbar ? "heute eingetragen" : "an diesem Tag eingetragen") : nil)
                 if let kg = gewicht.aktuellKg {
                     HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                         RollZahl(wert: kg, format: HeuteFormat.kilo())
@@ -24,11 +26,13 @@ struct GewichtKarte: View {
                 } else {
                     Text("Noch kein Gewicht. Trag es einmal ein, dann siehst du hier den Verlauf.").font(.subheadline).foregroundStyle(palette.text2)
                 }
-                Button(action: wiege) {
-                    Text(gewicht.heuteEingetragen ? "Gewicht ändern" : "Gewicht eintragen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                if eintragbar {
+                    Button(action: wiege) {
+                        Text(gewicht.heuteEingetragen ? "Gewicht ändern" : "Gewicht eintragen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(palette.text)
                 }
-                .buttonStyle(.bordered)
-                .tint(palette.text)
             }
             .padding(Abstand.l)
         }

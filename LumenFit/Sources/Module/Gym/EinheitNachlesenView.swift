@@ -168,7 +168,7 @@ struct EinheitNachlesenView: View {
 
     /// Eine Übung nachtragen: Kraft mit ihren Plan-Sätzen (ohne Haken), Cardio gleich als gemacht.
     private func hinzufuegen(_ k: Uebung, _ s: GymSession, training: TrainingStore) {
-        let p = PlanUebung.neu(k)
+        let p = GymEigeneLogik.planUebung(k)
         if p.istCardio { training.fertig(s.id, p, saetze: []) } else { training.saetzeSenden(s.id, p, p.saetze) }
         hinzugefuegt += 1
     }
@@ -202,7 +202,7 @@ struct EinheitSaetzeBlatt: View {
 
     var body: some View {
         let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
-        let schritt = LetztesMal.kgSchritt(geraet: uebung.planUebung.katalog?.geraet)
+        let schritt = LetztesMal.kgSchritt(geraet: GymSitzung.von(umgebung).katalog(uebung.planUebung)?.geraet)
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.m) {

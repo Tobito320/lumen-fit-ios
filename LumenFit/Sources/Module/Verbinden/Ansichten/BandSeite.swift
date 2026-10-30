@@ -17,6 +17,7 @@ struct BandSeite: View {
     var body: some View {
         Form {
             schalterAbschnitt
+            weckerAbschnitt
             if an {
                 if let modell = dienst?.modell {
                     BandInhalt(modell: modell, dienst: dienst)
@@ -38,6 +39,16 @@ struct BandSeite: View {
             Toggle("Band in Lumen Fit nutzen", isOn: Binding(
                 get: { an },
                 set: { neu in einstellungen?.aendere { $0.bandAktiv = neu } }))
+                .frame(minHeight: Abstand.tippflaeche)
+        }
+    }
+
+    /// Lumen Alarm legt Weck-Wünsche ab, Lumen Fit vibriert das Band dazu. Der Ton von Lumen Alarm klingelt immer, auch ohne Band.
+    private var weckerAbschnitt: some View {
+        VerbindenAbschnitt(fuss: "Standard an. Wirkt nur mit dem Band-Schalter oben und nur, wenn Lumen Alarm das Band mitwecken lässt. Der Ton klingelt immer.") {
+            Toggle("Lumen Alarm darf das Band wecken", isOn: Binding(
+                get: { einstellungen?.werte.alarmWeckt ?? true },
+                set: { neu in einstellungen?.aendere { $0.alarmWeckt = neu } }))
                 .frame(minHeight: Abstand.tippflaeche)
         }
     }

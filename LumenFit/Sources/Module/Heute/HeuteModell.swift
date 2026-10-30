@@ -6,6 +6,8 @@ import Observation
 @MainActor @Observable
 final class HeuteModell {
     private(set) var stand: HeuteStand?
+    /// Der gewählte vergangene Tag; nil = heute (folgt der Uhr, auch über Mitternacht).
+    private(set) var gewaehlterTag: String?
 
     @ObservationIgnored private let umgebung: AppUmgebung
     @ObservationIgnored private var kontext: Kontext?
@@ -48,6 +50,18 @@ final class HeuteModell {
         }
     }
 
+    // MARK: - Tag wählen
+
+    /// Zeigt `tag` (Zukunft und mehr als ein Jahr zurück werden gekappt). Heute setzt auf "folgt der Uhr" zurück.
+    func waehleTag(_ tag: String) {
+        let heute = Datum.text(umgebung.uhr())
+        let neu = HeuteTagWahl.begrenze(tag, heute: heute)
+        gewaehlterTag = neu == heute ? nil : neu
+        berechne()
+    }
+
+    func zuHeute() { waehleTag(Datum.text(umgebung.uhr())) }
+
     // MARK: - Handeln
 
     /// Haken per Tipp (nicht zählende Gewohnheit) oder ein Schritt weiter bei einer Zähl-Gewohnheit (Wasser).
@@ -75,7 +89,7 @@ final class HeuteModell {
 
     /// Das Gefühl (1 bis 5) zur Zahl von heute, mit den Rohwerten, damit sich später vergleichen lässt.
     func speichereGefuehl(_ gefuehl: Int) {
-        guard let daten = umgebung.daten, let k = kontext, let s = stand else { return }
+        guard let daten = umgebung.daten, let k = kontext, let s = stand, s.istHeute else { return }
         let jetzt = umgebung.uhr()
         let eingabe = TagesformQuellen.eingabe(daten: daten, gesundheit: umgebung.gesundheit, tag: s.tag, jetzt: jetzt)
         let eintrag = TagesformEintrag(tag: s.tag, gefuehl: TagesformGefuehl.stufe(gefuehl), akku: s.energie.ergebnis.akku,
@@ -132,9 +146,14 @@ final class HeuteModell {
         }
         let k = kontextFuer(daten)
         let jetzt = umgebung.uhr()
-        let heute = Datum.text(jetzt)
+        let echtHeute = Datum.text(jetzt)
+        // Ein gewählter Tag ersetzt "heute" überall; ein Tag, der inzwischen heute oder Zukunft ist, fällt auf heute zurück.
+        let heute = gewaehlterTag.map { HeuteTagWahl.begrenze($0, heute: echtHeute) } ?? echtHeute
+        let istHeute = heute == echtHeute
         let gestern = Datum.addTage(heute, -1)
-        let stunde = Datum.kalender.component(.hour, from: jetzt)
+        // Ein vergangener Tag ist zu Ende: Stunde 23, so rechnen Hinweise, Verlauf und Sätze mit dem ganzen Tag.
+        let stunde = istHeute ? Datum.kalender.component(.hour, from: jetzt) : 23
+        let tagesEnde = istHeute ? jetzt : Datum.datum(heute).addingTimeInterval(23 * 3600 + 59 * 60)
         let gesundheit = umgebung.gesundheit
         let tage = gesundheit.tage
         let ziele = daten.ziele.ziele
@@ -198,14 +217,14 @@ final class HeuteModell {
         // Energie-Bank
         let wasserHeute = daten.habits.wert(Habit.wasser.id, heute)
         let wasserZiel = daten.habits.habitZiel(Habit.wasser.id) ?? 8
-        let eingabe = TagesformQuellen.eingabe(daten: daten, gesundheit: gesundheit, tag: heute, jetzt: jetzt)
+        let eingabe = TagesformQuellen.eingabe(daten: daten, gesundheit: gesundheit, tag: heute, jetzt: tagesEnde)
         let rechnung = TagesformRechnung.rechnen(eingabe)
         let schritteGestern: Int? = tage[gestern].flatMap { $0.schritte > 0 ? $0.schritte : nil }
         let energiePlan = EnergieEingabe(naechte: Array(eingabe.schlaf.prefix(3)), wasser: wasserHeute, wasserZiel: wasserZiel, stunde: stunde,
                                          schritteGestern: schritteGestern, trainingstag: plan.art == .training, ruhetag: plan.art == .ruhetag,
                                          planLeer: daten.training.plan.tage.isEmpty, gymInFolge: folge, heuteSchonGym: trainiert)
         let energie = HeuteEnergie(ergebnis: rechnung, klartext: TagesformKlartext.inhalt(eingabe, rechnung, plan: energiePlan),
-                                   verlauf: energieVerlauf(daten: daten, tag: heute, stunde: stunde, jetzt: jetzt),
+                                   verlauf: energieVerlauf(daten: daten, tag: heute, stunde: stunde, jetzt: tagesEnde),
                                    gefuehl: k.gefuehl.eintrag(heute)?.gefuehl, vergleich: TagesformGefuehl.vergleich(k.gefuehl.eintraege, bis: heute))
 
         // Gewohnheiten
@@ -220,7 +239,8 @@ final class HeuteModell {
         }
 
         // Gewicht
-        let gw = HeuteQuellen.gewichtWerte(health: gesundheit.gewichte, manuell: daten.habits.werte(Habit.gewicht.id))
+        // Ein vergangener Tag zeigt das Gewicht, das damals galt, nicht das von heute.
+        let gw = HeuteQuellen.gewichtWerte(health: gesundheit.gewichte, manuell: daten.habits.werte(Habit.gewicht.id)).filter { $0.key <= heute }
         let ab = Datum.addTage(heute, -89)
         let startFeld = GewichtLogik.startFeld(gw, tag: heute)
         let gewicht = HeuteGewicht(aktuellKg: GewichtLogik.berechnet(gw).map { Double($0) / 10 },
@@ -248,16 +268,26 @@ final class HeuteModell {
         let hinweise = TagesHinweisLogik.zeige(TagesHinweisLogik.regeln(regelEingabe),
                                                weggewischt: k.hinweise.ids)
 
+        let tagesWerte = tage[heute]
+        let habitGesetzt = habits.contains { $0.wert > 0 }
+        let gesundheitTag = tagesWerte.map { $0.schritte > 0 || $0.distanzMeter > 0 || $0.etagen > 0 } ?? false
+        let hatGewicht: Bool = gw[heute] != nil
+        let hatStimmung: Bool = stimmungsWert != nil
+        let hatNacht: Bool = nacht != nil
+        let hatTagesdaten: Bool = istHeute || hatNacht || trainiert || hatStimmung || hatGewicht || habitGesetzt || gesundheitTag
+        let stimmungAnzeige: LumiStimmung = istHeute ? satz.stimmung : (voll ? .stolz : .denkt)
+        let satzAnzeige = istHeute ? satz.satz : (voll ? "An diesem Tag waren alle drei Bögen voll." : "So sah dieser Tag aus.")
+
         stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
                            healthGeprueft: gesundheit.letzteAktualisierung != nil || gesundheit.zugriff == .nichtVerfuegbar, boegen: boegen, boegenSatz: boegenSatz,
-                           boegenVoll: voll, stimmung: satz.stimmung, morgensatz: satz.satz, stimmungsWert: stimmungsWert, score: score, plan: plan,
+                           boegenVoll: voll, stimmung: stimmungAnzeige, morgensatz: satzAnzeige, stimmungsWert: stimmungsWert, score: score, plan: plan,
                            energie: energie, habits: habits, gewicht: gewicht,
                            schritte: HeuteSchritte(schritte: schritteHeute, ziel: ziele.schritte, distanzKm: (tage[heute]?.distanzMeter ?? 0) / 1000,
                                                    etagen: tage[heute]?.etagen ?? 0),
                            hinweise: hinweise,
                            woche: WochenStreifenLogik.woche(heute: heute, schritte: tage.mapValues { $0.schritte }, schlafMinuten: schlafWoche,
                                                             gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten),
-                           einsichten: einsichten)
+                           einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten)
     }
 
     private func anteil(_ ist: Int, _ ziel: Int) -> Double { ziel > 0 ? min(1, max(0, Double(ist) / Double(ziel))) : 0 }

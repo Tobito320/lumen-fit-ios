@@ -39,7 +39,7 @@ struct PlanTagBlatt: View {
                 UebungsSucheView(titel: "Übung hinzufügen", auswahl: { k in
                     guard let t = tag else { return }
                     var neu = t
-                    neu.uebungen.append(PlanUebung.neu(k))
+                    neu.uebungen.append(GymEigeneLogik.planUebung(k))
                     sichern(neu)
                 }, mehrfach: true)
             }
@@ -100,6 +100,7 @@ struct PlanTagBlatt: View {
             }
             Section("Übungen · \(ZeitSchaetzung.umfang(tag))") {
                 if tag.uebungen.isEmpty { Text("Noch keine Übungen.").foregroundStyle(palette.text2) }
+                GymTippZeile(art: .planZeile, kontext: GymTippKontext(planUebungen: tag.uebungen.count))
                 ForEach(tag.uebungen) { u in
                     UebungsPlanZeile(tag: tag, uebungId: u.id, sichern: sichern)
                         .swipeActions(edge: .leading) {
@@ -146,6 +147,7 @@ private struct UebungsPlanZeile: View {
     /// Die Zeile hängt an der Übung, nicht an der Stelle: nach Löschen oder Verschieben bleibt die Notiz bei ihrer Übung.
     let uebungId: String
     let sichern: (TrainingsTag) -> Void
+    @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var offen = false
     @State private var notiz = ""
@@ -178,7 +180,7 @@ private struct UebungsPlanZeile: View {
             Stepper("Satz \(i + 1): \(satz.wdh) Wdh.", value: Binding(get: { satz.wdh }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, wdh: v) } }), in: 1...100)
             Stepper("Gewicht \(satz.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
                     value: Binding(get: { satz.kg ?? 0 }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, kg: .some(v)) } }),
-                    in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
+                    in: 0...500, step: LetztesMal.kgSchritt(geraet: GymSitzung.von(umgebung).katalog(u)?.geraet))
             Toggle("Bis zum Versagen", isOn: Binding(get: { satz.failure }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, versagen: v) } }))
         }
         .font(.subheadline)
@@ -193,7 +195,7 @@ private struct UebungsPlanZeile: View {
                 Stepper("Sätze \(u.saetze.count)", value: Binding(get: { u.saetze.count }, set: { v in aendere(index) { SplitFrei.saetzeAnzahl($0, v) } }), in: 1...SplitFrei.maxSaetze)
                 Stepper("Wiederholungen \(u.saetze.first?.wdh ?? 10)", value: Binding(get: { u.saetze.first?.wdh ?? 10 }, set: { v in aendere(index) { SplitFrei.alleWdh($0, v) } }), in: 1...100)
                 Stepper("Gewicht \(u.saetze.first?.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
-                        value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere(index) { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
+                        value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere(index) { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: GymSitzung.von(umgebung).katalog(u)?.geraet))
                 DisclosureGroup("Satz für Satz") {
                     ForEach(u.saetze.indices, id: \.self) { i in satzZeile(index, u, i) }
                 }

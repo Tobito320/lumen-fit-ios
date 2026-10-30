@@ -59,10 +59,10 @@ final class BandPuls {
     /// Schickt die Pulse der Regel, ohne weitere Prüfung; merkt sich den Zeitpunkt für die Mindestpause. Eine laufende Folge geht vor.
     /// Liefert die Aufgabe, die endet, wenn die Folge durch ist (für Tests).
     @discardableResult
-    func ausgeben(_ quelle: BandQuelle, _ staerke: BandNachrichtRegel.Staerke, _ jetzt: Date) -> Task<Void, Never>? {
+    func ausgeben(_ quelle: BandQuelle, _ staerke: BandNachrichtRegel.Staerke, _ jetzt: Date, merken: Bool = true) -> Task<Void, Never>? {
         guard !laeuft else { return nil }
         laeuft = true
-        defaults.set(jetzt.timeIntervalSince1970, forKey: quelle.letzteSchluessel)
+        if merken { defaults.set(jetzt.timeIntervalSince1970, forKey: quelle.letzteSchluessel) }
         let zeiten = BandNachrichtRegel.zeiten(staerke)
         if zeiten.count > 1, hintergrund == .invalid {
             hintergrund = UIApplication.shared.beginBackgroundTask(withName: "LumenFit-Band-Puls") { [weak self] in
@@ -106,6 +106,17 @@ final class BandPuls {
         let quelle = BandMusterRegel.quelle(muster)
         let eingestellt = BandQuelle.gymPause.regel(defaults).staerke
         return ausloesen(quelle, staerke: BandMusterRegel.staerke(muster, pauseEnde: eingestellt), jetzt: jetzt)
+    }
+
+    /// Ein Weck-Wunsch von Lumen Alarm: ohne Schalter der Quelle, Ruhezeit, Akku-Wächter und Mindestpause (ein Wecker soll auch nachts und dicht hintereinander
+    /// summen) und ohne die Pause der Quelle zu stempeln. Nur das Band muss verbunden sein. `lang` ist genau ein Puls und läuft auch, während eine Folge läuft
+    /// (die Wellen von Lumen Alarm liegen im 2-Sekunden-Takt); die anderen Muster geben ihre Pulse als Folge. `false`: Band nicht verbunden, später noch einmal.
+    @discardableResult
+    func wecker(_ muster: BandMuster, jetzt: Date = Date()) -> Bool {
+        guard verbunden() else { return false }
+        if muster == .lang { finden(); return true }
+        ausgeben(.wunsch, BandMusterRegel.staerke(muster, pauseEnde: .normal), jetzt, merken: false)
+        return true
     }
 
     // MARK: Ziel-Puls und Sitzen

@@ -26,6 +26,10 @@ struct HeuteStand {
     var woche: [HeuteWochenTag]
     /// "Das fällt mir auf": alle Einsichten aus dem Training, auch die noch gesperrten.
     var einsichten: [HeuteHinweis] = []
+    /// false = ein vergangener Tag (Tagwahl): nur lesen, Stunde fest 23, kein Plan, keine Hinweise, keine Energie von jetzt.
+    var istHeute = true
+    /// Gibt es an diesem Tag irgendeinen Wert (Health, Schlaf, Haken, Gewicht, Training)? Sonst zeigt der Tab "Keine Daten für diesen Tag".
+    var hatTagesdaten = true
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {

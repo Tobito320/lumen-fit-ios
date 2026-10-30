@@ -231,6 +231,7 @@ struct EssenHinzufuegenView: View {
             kachel("Etikett", symbol: "camera.fill") { fotoOffen = true }
             kachel("Von Hand", symbol: "square.and.pencil") { pfad = [.eigenes(barcode: nil)] }
             kachel("Schnell", symbol: "bolt.fill") { schnellOffen = true }
+            EssenKiFotoKnopf(mahlzeit: mahlzeit, tag: tag, vonHand: { pfad = [.eigenes(barcode: nil)] }) { vermerken(name: $0) }
         }
     }
 
