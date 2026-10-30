@@ -116,6 +116,7 @@ private struct LoveaKartenScroll: ViewModifier {
 
     func body(content: Content) -> some View {
         if thema == .lovea {
+            let ohneSkala = ohneSkala
             content.scrollTransition(.interactive) { karte, phase in
                 let rand = abs(phase.value)
                 return karte.opacity(1 - 0.5 * rand).scaleEffect(ohneSkala ? 1 : 1 - 0.04 * rand)
