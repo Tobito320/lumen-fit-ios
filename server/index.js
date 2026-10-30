@@ -260,6 +260,40 @@ function koerperSauber(k) {
   return Object.keys(aus).length ? aus : undefined;
 }
 
+// Felder aus dem Health-Gleichstand (Wochenwerte, Ziele, Energie, Gewohnheiten, Zyklus): jedes nur mit seiner Freigabe, mit Grenzen. Zyklus hängt an keiner Freigabe,
+// sondern an der Erlaubnis in den Zyklus-Einstellungen (die App schreibt das Feld nur dann).
+const ENERGIE = ["hoch", "mittel", "niedrig"];
+const zahlenTage = (x, max) => {
+  if (!istObjekt(x)) return undefined;
+  const aus = Object.fromEntries(Object.entries(x).slice(0, 14).filter(([t, v]) => TAG_FORM.test(t) && ganz(v) !== undefined && v <= max));
+  return Object.keys(aus).length ? aus : undefined;
+};
+function erweiterungSauber(h, freigaben, heute) {
+  const setze = (feld, wert) => { if (wert !== undefined) heute[feld] = wert; };
+  if (freigaben.includes("schritte")) { setze("schritteZiel", ganz(h.schritteZiel)); setze("schritteWoche", zahlenTage(h.schritteWoche, 1e5)); }
+  if (freigaben.includes("gym")) {
+    setze("gymZiel", ganz(h.gymZiel));
+    const tage = Array.isArray(h.gymTage) ? h.gymTage.slice(0, 7).filter((t) => typeof t === "string" && TAG_FORM.test(t)) : [];
+    if (tage.length) heute.gymTage = tage;
+  }
+  if (freigaben.includes("schlaf")) {
+    setze("schlafZiel", ganz(h.schlafZiel));
+    setze("schlafWoche", zahlenTage(h.schlafWoche, 1500));
+    if (ENERGIE.includes(h.energieStufe)) heute.energieStufe = h.energieStufe;
+    if (freigaben.includes("gym") && ENERGIE.includes(h.energieGym)) heute.energieGym = h.energieGym;
+  }
+  if (Array.isArray(h.habitsFertig)) {
+    const erlaubt = [freigaben.includes("gym") ? "gym" : null, freigaben.includes("essen") ? "wasser" : null];
+    const fertig = [...new Set(h.habitsFertig.filter((k) => typeof k === "string" && erlaubt.includes(k)))];
+    if (fertig.length) heute.habitsFertig = fertig;
+  }
+  const z = h.zyklus;
+  if (istObjekt(z) && typeof z.phase === "string" && typeof z.wunsch === "string" && typeof z.satz === "string" && Array.isArray(z.tipps)) {
+    heute.zyklus = { phase: kurz(z.phase, 30), wunsch: kurz(z.wunsch, 200), satz: kurz(z.satz, 300), tipps: z.tipps.slice(0, 5).map((t) => kurz(t, 200)).filter(Boolean) };
+    if (Number.isInteger(z.tag) && z.tag > 0 && z.tag < 100) heute.zyklus.tag = z.tag;
+  }
+}
+
 function zusammenfassungSauber(b) {
   if (!istObjekt(b) || b.version !== 1 || typeof b.profilName !== "string" || !b.profilName.trim() || !istObjekt(b.heute)) return null;
   const geschrieben = Date.parse(b.geschrieben);
@@ -271,6 +305,7 @@ function zusammenfassungSauber(b) {
   if (freigaben.includes("gym") && ganz(h.gymTageWoche) !== undefined) heute.gymTageWoche = h.gymTageWoche;
   if (freigaben.includes("schlaf") && ganz(h.schlafMinuten) !== undefined) heute.schlafMinuten = h.schlafMinuten;
   if (freigaben.includes("essen") && ganz(h.kcal) !== undefined) heute.kcal = h.kcal;
+  erweiterungSauber(h, freigaben, heute);
   const neu = {
     plan: freigaben.includes("plan") ? planSauber(h.plan) : undefined,
     verlauf: freigaben.includes("verlauf") ? verlaufSauber(h.verlauf) : undefined,

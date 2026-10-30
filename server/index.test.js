@@ -387,3 +387,31 @@ test("Partner: zu große Zusammenfassung wird abgewiesen, Grenzen je Liste halte
   assert.equal(gespeichert.heute.verlauf.trainings.length, 10);
   assert.ok(JSON.stringify(gespeichert).length < 100000, "bleibt weit unter der Zeilengrenze");
 });
+
+test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur mit ihrer Freigabe an", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await registrieren(env, ID2, GEHEIM2, "Zweites Gerät");
+  await freigeben(env, ID, "ahmed");
+  await freigeben(env, ID2, "annika");
+  const tag = heute();
+  const wert = {
+    tag, schritteZiel: 9000, schritteWoche: { [tag]: 8000, kaputt: 5 }, gymTage: [tag, "x"], gymZiel: 4, schlafZiel: 480, schlafWoche: { [tag]: 450 },
+    energieStufe: "hoch", energieGym: "mittel", habitsFertig: ["gym", "wasser", "fremd"],
+    zyklus: { phase: "folikular", tag: 3, wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"] },
+  };
+  const lies = async (freigaben) => {
+    const body = { version: 1, geschrieben: new Date().toISOString(), profilName: "Ahmed", freigaben, heute: wert, ereignisse: [] };
+    assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body })).status, 200);
+    return (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner.heute;
+  };
+  const ohne = await lies([]);
+  assert.deepEqual(Object.keys(ohne).sort(), ["tag", "zyklus"], "ohne Freigabe nur der Tag und der (separat erlaubte) Zyklus");
+  const schritte = await lies(["schritte"]);
+  assert.deepEqual([schritte.schritteZiel, schritte.schritteWoche], [9000, { [tag]: 8000 }]);
+  const gym = await lies(["gym"]);
+  assert.deepEqual([gym.gymTage, gym.gymZiel, gym.habitsFertig, gym.energieGym], [[tag], 4, ["gym"], undefined]);
+  const alle = await lies(["schlaf", "gym", "essen"]);
+  assert.deepEqual([alle.schlafZiel, alle.schlafWoche, alle.energieStufe, alle.energieGym, alle.habitsFertig], [480, { [tag]: 450 }, "hoch", "mittel", ["gym", "wasser"]]);
+  assert.deepEqual(alle.zyklus, { phase: "folikular", wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"], tag: 3 });
+});
