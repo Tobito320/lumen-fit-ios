@@ -35,6 +35,7 @@ private struct VerbindungenInhalt: View {
         Form {
             if loveaErlaubt {
                 partnerAbschnitt
+                ansichtenAbschnitt
                 if loveaAn {
                     freigabenAbschnitt
                     vorschauAbschnitt
@@ -63,6 +64,19 @@ private struct VerbindungenInhalt: View {
     private var partnerStatus: String {
         if case .verbunden = verbindung.partner { return "Du teilst nur, was du unten freigibst." }
         return "Sobald dein Partner Lumen Fit nutzt und teilt, erscheint er hier. Du teilst nur, was du unten freigibst."
+    }
+
+    /// Die Ansichten, die der Partner freigegeben hat (Plan, Training, Tagebuch, Körperwerte). Ohne Freigabe des Partners fehlt der ganze Abschnitt.
+    @ViewBuilder
+    private var ansichtenAbschnitt: some View {
+        if let datei = PartnerAnsichtLogik.datei(PartnerAnsichtLogik.aktuellerStand(umgebung)) {
+            let einstiege = PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr())
+            if !einstiege.isEmpty {
+                VerbindenAbschnitt(titel: "Das teilt \(datei.profilName)", fuss: "Nur lesen. Dein Partner entscheidet, was hier steht.") {
+                    PartnerEinstiegZeilen(einstiege: einstiege, imFormular: true)
+                }
+            }
+        }
     }
 
     // MARK: Freigaben und Vorschau

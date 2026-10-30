@@ -14,7 +14,8 @@ enum VerbindenModul {
         guard let fixtures = StartArgumente.lies().fixtures,
               FileManager.default.fileExists(atPath: fixtures.appendingPathComponent("Verbinden/verbunden.json").path),
               let daten = umgebung.daten,
-              let partner = try? Data(contentsOf: fixtures.appendingPathComponent("Verbinden/partner-beispiel.json")),
+              let partner = (try? Data(contentsOf: fixtures.appendingPathComponent("Verbinden/partner-ansichten.json")))
+                  ?? (try? Data(contentsOf: fixtures.appendingPathComponent("Verbinden/partner-beispiel.json"))),
               let datei = try? LoveaVertrag.decoder().decode(ZusammenfassungDatei.self, from: partner) else { return }
         daten.einstellungen.aendere { $0.loveaVerbunden = true }
         daten.verbindung.freigaben = [.schritte, .gym, .schlaf]

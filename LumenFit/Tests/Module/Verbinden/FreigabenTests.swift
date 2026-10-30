@@ -90,6 +90,7 @@ final class FreigabenTests: XCTestCase {
 
     func testNamenDerFreigaben() {
         for art in FreigabeArt.allCases { XCTAssertFalse(FreigabenVorschau.name(art).isEmpty); XCTAssertFalse(FreigabenVorschau.erklaerung(art).isEmpty) }
-        XCTAssertEqual(Set(FreigabeArt.allCases.map(FreigabenVorschau.name)).count, 4)
+        XCTAssertEqual(Set(FreigabeArt.allCases.map(FreigabenVorschau.name)).count, FreigabeArt.allCases.count, "jede Art hat ihren eigenen Namen")
+        XCTAssertEqual(Set(FreigabeArt.allCases.map(FreigabenVorschau.symbol)).count, FreigabeArt.allCases.count, "und ihr eigenes Symbol")
     }
 }

@@ -25,6 +25,12 @@ enum ZusammenfassungBauer {
         var habitsFertig: Set<String> = []
         /// Zyklus-Hinweise für den Partner; schon von der Quelle nur gesetzt, wenn die Person es erlaubt hat.
         var zyklus: ZyklusZusammenfassung? = nil
+        // Ansichten des Partners (Plan, Verlauf, Tagebuch, Körper): nil oder leer heißt "nichts zu sagen". Jedes Feld hat genau seine Freigabe.
+        var plan: PartnerPlan? = nil
+        var verlauf: PartnerVerlauf? = nil
+        var tagebuch: [PartnerTagebuchTag] = []
+        var tagebuchZiele: PartnerMakros? = nil
+        var koerper: [String: [PartnerMesspunkt]] = [:]
     }
 
     /// So lange bleiben eigene Ereignisse in der Datei; ältere sind erledigt.
@@ -60,6 +66,18 @@ enum ZusammenfassungBauer {
         if e.freigaben.contains(.gym), e.habitsFertig.contains("gym") { fertig.insert("gym") }
         if e.freigaben.contains(.essen), e.habitsFertig.contains("wasser") { fertig.insert("wasser") }
         heute.habitsFertig = fertig.isEmpty ? nil : fertig.sorted()
+        ansichten(&heute, e)
+    }
+
+    /// Plan, Verlauf, Tagebuch und Körperwerte: je nur mit der eigenen Freigabe (Standard aus), leere Listen werden zu "nicht da".
+    private static func ansichten(_ heute: inout TagesZusammenfassung, _ e: Eingabe) {
+        if e.freigaben.contains(.plan) { heute.plan = e.plan }
+        if e.freigaben.contains(.verlauf) { heute.verlauf = e.verlauf }
+        if e.freigaben.contains(.tagebuch) {
+            heute.tagebuch = e.tagebuch.isEmpty ? nil : e.tagebuch
+            heute.tagebuchZiele = e.tagebuch.isEmpty ? nil : e.tagebuchZiele
+        }
+        if e.freigaben.contains(.koerper) { heute.koerper = e.koerper.isEmpty ? nil : e.koerper }
     }
 
     static func baue(_ e: Eingabe) -> ZusammenfassungDatei {

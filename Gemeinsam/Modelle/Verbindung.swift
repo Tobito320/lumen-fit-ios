@@ -1,6 +1,8 @@
 import Foundation
 
-enum FreigabeArt: String, Codable, CaseIterable, Sendable { case schritte, gym, schlaf, essen }
+/// Was der Nutzer seinem Partner zeigt. Jede Art ist einzeln und standardmäßig aus. `plan`, `verlauf`, `tagebuch` und `koerper` gehören zu den Ansichten des Partners
+/// (Trainingsplan, Statuszeile und Verlauf, Tagebuch, Körperwerte); `schritte`, `gym`, `schlaf` und `essen` zu den Zeilen der Partner-Karte.
+enum FreigabeArt: String, Codable, CaseIterable, Sendable { case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper }
 enum PartnerBereich: Sendable { case heute, schlaf }
 enum PartnerEreignisArt: String, Codable, Sendable { case gymStart, gymEnde, ziel, rekord, schlafGut }
 enum BandMuster: String, Codable, Sendable { case kurz, lang, doppelt, ruf, pauseEnde }
@@ -29,11 +31,92 @@ struct TagesZusammenfassung: Codable, Equatable, Sendable {
     var habitsFertig: [String]?
     /// Phase und Tag des Zyklus in kurzen Hinweisen. Nur wenn die Person es in den Zyklus-Einstellungen erlaubt (kein Teil von `FreigabeArt`).
     var zyklus: ZyklusZusammenfassung?
+    /// Trainingsplan: Name, Wochentage, Übungsnamen (Freigabe plan).
+    var plan: PartnerPlan?
+    /// Statuszeile "im Gym" und die letzten Trainings als Zusammenfassung, ohne Sätze und Gewichte (Freigabe verlauf).
+    var verlauf: PartnerVerlauf?
+    /// Tagebuch der letzten sieben Tage: Tageswerte, Makros, Namen der Einträge, keine Fotos (Freigabe tagebuch) und die Tagesziele dazu (ebenfalls tagebuch).
+    var tagebuch: [PartnerTagebuchTag]?
+    var tagebuchZiele: PartnerMakros?
+    /// Messreihen je `MessArt.rawValue` in Zehnteln, Gewicht eingeschlossen (Freigabe koerper).
+    var koerper: [String: [PartnerMesspunkt]]?
 
     init(tag: String, schritte: Int? = nil, gymTageWoche: Int? = nil, schlafMinuten: Int? = nil, kcal: Int? = nil) {
         self.tag = tag; self.schritte = schritte; self.gymTageWoche = gymTageWoche
         self.schlafMinuten = schlafMinuten; self.kcal = kcal
     }
+}
+
+/// Ein Tag des Plans: Name, Wochentage (1 = Montag bis 7 = Sonntag) und die Übungen.
+struct PartnerPlanTag: Codable, Equatable, Hashable, Sendable {
+    var name: String
+    var wochentage: [Int]
+    var uebungen: [PartnerPlanUebung]
+}
+
+struct PartnerPlanUebung: Codable, Equatable, Hashable, Sendable {
+    var name: String
+    var saetze: Int
+}
+
+struct PartnerPlan: Codable, Equatable, Sendable {
+    var name: String?
+    var tage: [PartnerPlanTag]
+    var ruhetage: [Int]?
+}
+
+/// Eine Einheit als Zusammenfassung: Tag, Name des Plantags, Dauer, Zahl der Sätze und Übungen.
+struct PartnerTrainingKurz: Codable, Equatable, Hashable, Sendable {
+    var tag: String
+    var name: String?
+    var minuten: Int?
+    var saetze: Int
+    var uebungen: Int
+    var kcal: Int?
+}
+
+struct PartnerVerlauf: Codable, Equatable, Sendable {
+    /// Läuft gerade ein Training? Dann seit wann und welcher Tag des Plans.
+    var imGym: Bool?
+    var imGymSeit: Date?
+    var imGymName: String?
+    /// Neueste zuerst, höchstens zehn.
+    var trainings: [PartnerTrainingKurz]
+    var woche: Int?
+    var serieWochen: Int?
+    var gesamt: Int?
+}
+
+/// Kalorien und Makros in ganzen Zahlen (für einen Tag oder als Tagesziel).
+struct PartnerMakros: Codable, Equatable, Hashable, Sendable {
+    var kcal: Int
+    var protein: Int
+    var kohlenhydrate: Int
+    var fett: Int
+}
+
+/// Ein Eintrag im Tagebuch: nur Name und Kalorien, `mahlzeit` ist `Mahlzeit.rawValue`.
+struct PartnerMahlzeitKurz: Codable, Equatable, Hashable, Sendable {
+    var mahlzeit: String
+    var name: String
+    var kcal: Int
+}
+
+struct PartnerTagebuchTag: Codable, Equatable, Hashable, Sendable {
+    var tag: String
+    var kcal: Int
+    var protein: Int
+    var kohlenhydrate: Int
+    var fett: Int
+    var mahlzeiten: [PartnerMahlzeitKurz]
+
+    var summe: PartnerMakros { PartnerMakros(kcal: kcal, protein: protein, kohlenhydrate: kohlenhydrate, fett: fett) }
+}
+
+/// Ein Messwert in Zehnteln (784 = 78,4 kg), `tag` ist `yyyy-MM-dd`.
+struct PartnerMesspunkt: Codable, Equatable, Hashable, Sendable {
+    var tag: String
+    var zehntel: Int
 }
 
 struct PartnerEreignis: Codable, Hashable, Identifiable, Sendable {
@@ -51,6 +134,29 @@ struct ZusammenfassungDatei: Codable, Equatable, Sendable {
     var freigaben: [FreigabeArt]
     var heute: TagesZusammenfassung
     var ereignisse: [PartnerEreignis]
+
+    enum CodingKeys: String, CodingKey { case version, geschrieben, profilName, freigaben, heute, ereignisse }
+}
+
+/// Eine Freigabe-Art, die diese Version nicht kennt (eine neuere App hat sie geschrieben), liest sich als `nil` und fällt weg, statt die ganze Datei zu kippen.
+private struct FreigabeArtLesen: Decodable {
+    let art: FreigabeArt?
+
+    init(from decoder: Decoder) throws {
+        art = FreigabeArt(rawValue: try decoder.singleValueContainer().decode(String.self))
+    }
+}
+
+extension ZusammenfassungDatei {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decode(Int.self, forKey: .version)
+        geschrieben = try c.decode(Date.self, forKey: .geschrieben)
+        profilName = try c.decode(String.self, forKey: .profilName)
+        freigaben = try c.decode([FreigabeArtLesen].self, forKey: .freigaben).compactMap(\.art)
+        heute = try c.decode(TagesZusammenfassung.self, forKey: .heute)
+        ereignisse = try c.decode([PartnerEreignis].self, forKey: .ereignisse)
+    }
 }
 
 struct BandWunsch: Codable, Hashable, Identifiable, Sendable {

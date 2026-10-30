@@ -58,7 +58,7 @@ struct FortschrittSegmentView: View {
         ListenKarte {
             zeile("Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
             Haarlinie()
-            zeile("Messungen", detail: "Gewicht, Umfänge, Körperfett", symbol: "ruler") { MessungenView() }
+            zeile("Messungen", detail: "Gewicht, Umfänge, Körperfett", symbol: "ruler") { PartnerKoerperWeiche { MessungenView() } }
             Haarlinie()
             zeile("Rückblick", detail: "Woche und Monat teilen", symbol: "calendar") { RueckblickView() }
             Haarlinie()

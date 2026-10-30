@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "geschrieben": "2026-10-29T08:00:00Z",
+  "profilName": "Beispiel Partner",
+  "freigaben": ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper"],
+  "heute": {
+    "tag": "2026-10-29",
+    "schritte": 6200,
+    "gymTageWoche": 2,
+    "schlafMinuten": 455,
+    "kcal": 1450,
+    "plan": {
+      "name": "Push Pull Beine",
+      "ruhetage": [3, 6, 7],
+      "tage": [
+        { "name": "Push", "wochentage": [1, 4], "uebungen": [ { "name": "Bankdrücken", "saetze": 4 }, { "name": "Schulterdrücken", "saetze": 3 }, { "name": "Trizepsdrücken", "saetze": 3 } ] },
+        { "name": "Pull", "wochentage": [2, 5], "uebungen": [ { "name": "Klimmzüge", "saetze": 4 }, { "name": "Rudern", "saetze": 3 } ] }
+      ]
+    },
+    "verlauf": {
+      "imGym": true,
+      "imGymSeit": "2026-10-29T07:15:00Z",
+      "imGymName": "Push",
+      "woche": 2,
+      "serieWochen": 5,
+      "gesamt": 41,
+      "trainings": [
+        { "tag": "2026-10-28", "name": "Pull", "minuten": 58, "saetze": 14, "uebungen": 5, "kcal": 310 },
+        { "tag": "2026-10-26", "name": "Push", "minuten": 64, "saetze": 16, "uebungen": 5, "kcal": 340 },
+        { "tag": "2026-10-23", "name": "Pull", "minuten": 52, "saetze": 13, "uebungen": 4 }
+      ]
+    },
+    "tagebuch": [
+      { "tag": "2026-10-29", "kcal": 1450, "protein": 98, "kohlenhydrate": 160, "fett": 48,
+        "mahlzeiten": [ { "mahlzeit": "fruehstueck", "name": "Haferflocken", "kcal": 380 }, { "mahlzeit": "mittag", "name": "Reis mit Hähnchen", "kcal": 720 }, { "mahlzeit": "snack", "name": "Joghurt", "kcal": 350 } ] },
+      { "tag": "2026-10-28", "kcal": 2050, "protein": 120, "kohlenhydrate": 230, "fett": 70,
+        "mahlzeiten": [ { "mahlzeit": "mittag", "name": "Nudeln", "kcal": 900 }, { "mahlzeit": "abend", "name": "Salat mit Thunfisch", "kcal": 1150 } ] }
+    ],
+    "tagebuchZiele": { "kcal": 2100, "protein": 120, "kohlenhydrate": 230, "fett": 70 },
+    "koerper": {
+      "gewicht": [ { "tag": "2026-10-01", "zehntel": 642 }, { "tag": "2026-10-15", "zehntel": 638 }, { "tag": "2026-10-28", "zehntel": 635 } ],
+      "taille": [ { "tag": "2026-10-01", "zehntel": 702 }, { "tag": "2026-10-28", "zehntel": 695 } ]
+    }
+  },
+  "ereignisse": []
+}

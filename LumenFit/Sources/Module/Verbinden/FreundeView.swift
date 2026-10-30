@@ -53,6 +53,7 @@ private struct FreundeInhalt: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 if let gelesen { gelesenKarte(gelesen) }
+                PartnerAnsichtenKarte()
                 eigeneKarte(karte)
                 ranglisteKarte(karte)
                 importKarte
