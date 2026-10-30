@@ -18,12 +18,12 @@ const NUTZUNG_TAGE = 90;
 const FREIGABEN = ["schritte", "gym", "schlaf", "essen"];
 const EREIGNIS_ARTEN = ["gymStart", "gymEnde", "ziel", "rekord", "schlafGut"];
 // Namen, die die App meldet (Tabs, Seiten, Funktionen). "Nie genutzt" in der Auswertung = in dieser Liste, aber nie gemeldet.
+// Nur Namen, die die App wirklich senden kann: Tabs, die Seiten, die als eigene Route auf einem Tab liegen, und die zwei Blätter. Die Unterseiten im Profil
+// (Aussehen, Ziele ...) sind Links innerhalb des Blatts und werden nicht einzeln gemessen: das Profil zählt als "blatt.profil".
 export const BEKANNTE_BEREICHE = [
   "tab.heute", "tab.gym", "tab.essen", "tab.schlaf", "tab.coach", "blatt.profil", "blatt.freund",
-  "seite.gym.training", "seite.gym.plaene", "seite.gym.fortschritt", "seite.essen.heute", "seite.essen.scan", "seite.essen.favoriten",
-  "seite.schlaf.letzteNacht", "seite.schlaf.verlauf", "seite.schlaf.werte", "seite.verlauf", "seite.gewichtEintragen", "seite.uebung",
-  "seite.profil.uebersicht", "seite.profil.einstellungen", "seite.profil.aussehen", "seite.profil.ziele", "seite.profil.verbindungen",
-  "seite.profil.datensicherung", "seite.profil.quellen", "seite.profil.meilensteine", "seite.profil.lumi",
+  "seite.gym.plaene", "seite.gym.fortschritt", "seite.essen.scan", "seite.essen.favoriten", "seite.schlaf.verlauf", "seite.schlaf.werte",
+  "seite.verlauf", "seite.gewichtEintragen", "seite.uebung",
 ];
 export const BEKANNTE_FUNKTIONEN = ["training", "satz", "mahlzeit", "gewicht", "habit", "meilenstein"];
 

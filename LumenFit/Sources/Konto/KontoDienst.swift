@@ -233,7 +233,8 @@ final class KontoDienst {
             struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool? }
             if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten) {
                 stand.loveaErlaubt = a.erlaubt == true   // nur ein klares true gibt frei
-                if a.importErledigt == true { stand.loveaImportErledigt = true }   // der Server vergisst das nicht (Neuinstallation)
+                // Der Server vergisst das nicht (Neuinstallation); ein ausdrückliches false (Merker zurückgesetzt) gilt, solange keine eigene Meldung aussteht.
+                if let erledigt = a.importErledigt, !stand.importMeldungOffen { stand.loveaImportErledigt = erledigt }
                 freigabeAktuell = true
                 sichere()
             }
