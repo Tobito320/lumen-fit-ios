@@ -3,10 +3,10 @@ import SwiftUI
 
 // Tagesformen (nur im Theme "Lovea"): Kacheln von "Dein Tag", jede mit eigener Form, die sich von unten füllt. Wasser mit Wellen, Koffein mit Dampf.
 // Pfade 1:1 aus Lovea (Koordinatenraum 64 × 64). Wellen und Dampf laufen nur, solange die Kachel zu sehen ist, die App aktiv ist und Bewegung erlaubt
-// ist ("Bewegung reduzieren" und Stromsparmodus: `bewegungAus`); sonst steht die Füllung ruhig. Ausgelassen: Schritte, Gewohnheiten, Stimmung, Training, Waage.
+// ist ("Bewegung reduzieren" und Stromsparmodus: `bewegungAus`); sonst steht die Füllung ruhig. Alle zehn Formen aus Lovea.
 
 enum TagesForm: String, CaseIterable, Sendable {
-    case wasser, schlaf, koffein, protein, creatin
+    case schritte, wasser, schlaf, habits, stimmung, koffein, protein, gewicht, training, creatin
 }
 
 private func tf(_ hex: UInt32, _ alpha: Double = 1) -> Color {
@@ -16,10 +16,15 @@ private func tf(_ hex: UInt32, _ alpha: Double = 1) -> Color {
 extension TagesForm {
     var farbe: Color {
         switch self {
+        case .schritte: tf(0xE5E5EA)
         case .wasser: tf(0x5AC8FA)
         case .schlaf: tf(0x8E91FF)
+        case .habits: tf(0x3DDBB0)
+        case .stimmung: tf(0xFFB340)
         case .koffein: tf(0xD9A066)
         case .protein: tf(0xE5534B)
+        case .gewicht: tf(0xAEAEB2)
+        case .training: tf(0x30D158)
         case .creatin: tf(0xBF8CFF)
         }
     }
@@ -27,22 +32,36 @@ extension TagesForm {
     /// Senkrechtes Maß der Form: unten = leer, oben = voll.
     fileprivate var bereich: ClosedRange<Double> {
         switch self {
+        case .schritte: 16.5...45
         case .wasser: 10...60
         case .schlaf: 12...52
+        case .habits: 7...60
+        case .stimmung: 7...59
         case .koffein: 22...58
         case .protein: 9...55
+        case .gewicht: 10...58
+        case .training: 18...46
         case .creatin: 8...56
         }
     }
 
     fileprivate var pfad: String {
         switch self {
+        case .schritte:
+            "M8 20C8 18 9.5 16.5 11.5 16.5H20C22 16.5 23.4 17.8 23.8 19.6L25 25C26 29 29.5 31 34 31.6L50 33.5C55.5 34.2 59.5 38.5 59.5 44V45H6V23C6 21.5 6.8 20.4 8 20ZM4 45H61C61.6 45 62 45.4 62 46V48.5C62 51 60 53 57.5 53H8C5.8 53 4 51.2 4 49Z"
         case .wasser: "M15 10H49L44.5 55C44.2 57.9 41.9 60 39 60H25C22.1 60 19.8 57.9 19.5 55Z"
         case .schlaf:
             "M6 14C6 12.9 6.9 12 8 12H10C11.1 12 12 12.9 12 14V32H55C57.8 32 60 34.2 60 37V50C60 51.1 59.1 52 58 52H56C54.9 52 54 51.1 54 50V46.5H12V50C12 51.1 11.1 52 10 52H8C6.9 52 6 51.1 6 50ZM14.5 30.5C14.5 26.5 16.5 24.5 20 24.5H25.5C28 24.5 30 26.5 30 29V32H14.5Z"
+        case .habits:
+            "M16 12H23C23 9.2 25.2 7 28 7H36C38.8 7 41 9.2 41 12H48C50.2 12 52 13.8 52 16V56C52 58.2 50.2 60 48 60H16C13.8 60 12 58.2 12 56V16C12 13.8 13.8 12 16 12Z"
+        case .stimmung:
+            "M32 7C46.36 7 58 18.64 58 33C58 47.36 46.36 59 32 59C17.64 59 6 47.36 6 33C6 18.64 17.64 7 32 7Z"
         case .koffein: "M10 22H46V46C46 52.6 40.6 58 34 58H22C15.4 58 10 52.6 10 46Z"
         case .protein:
             "M13 21C18 11 33 7 46 11C56 14 60.5 23.5 57.5 34C54.5 44.5 46 52.5 34 54.5C22 56.5 9.5 50.5 7.5 40C6.3 33 8.8 26.5 13 21Z"
+        case .gewicht: "M15 10H49C53.4 10 57 13.6 57 18V50C57 54.4 53.4 58 49 58H15C10.6 58 7 54.4 7 50V18C7 13.6 10.6 10 15 10Z"
+        case .training:
+            "M3 26H8V20C8 18.9 8.9 18 10 18H14C15.1 18 16 18.9 16 20V44C16 45.1 15.1 46 14 46H10C8.9 46 8 45.1 8 44V38H3ZM16 29H48V35H16ZM48 20C48 18.9 48.9 18 50 18H54C55.1 18 56 18.9 56 20V26H61V38H56V44C56 45.1 55.1 46 54 46H50C48.9 46 48 45.1 48 44Z"
         case .creatin: "M24 8H40C44.4 8 48 11.6 48 16V48C48 52.4 44.4 56 40 56H24C19.6 56 16 52.4 16 48V16C16 11.6 19.6 8 24 8Z"
         }
     }
@@ -155,6 +174,7 @@ private struct TagesFormenTakt<Inhalt: View>: View {
 struct TagesFormView: View {
     let form: TagesForm
     let fuellung: Double
+    var stimmung: Int?
     @Environment(\.bewegungAus) private var ruhig
 
     var body: some View {
@@ -175,6 +195,8 @@ struct TagesFormView: View {
     @ViewBuilder private var schicht: some View {
         let b = form.bereich
         let ziel = b.upperBound - q * (b.upperBound - b.lowerBound)
+        // Die Waage füllt sich nicht (wie in Lovea).
+        if form != .gewicht {
         Group {
             if form == .wasser || form == .koffein {
                 // Bei 0 % sitzt der Wellenkamm unter dem Rand, sonst blitzt ein Streifen auf.
@@ -186,6 +208,7 @@ struct TagesFormView: View {
             }
         }
         .animation(ruhig ? nil : .spring(duration: 0.9, bounce: 0), value: fuellung)
+        }
     }
 
     private func welle(_ ziel: Double, _ phase: Double) -> some View {
@@ -203,6 +226,11 @@ struct TagesFormView: View {
 
     @ViewBuilder private var details: some View {
         switch form {
+        case .schritte: schritte
+        case .habits: habits
+        case .stimmung: gesicht
+        case .gewicht: waage
+        case .training: EmptyView()
         case .wasser: strich("M21.5 15.5L24.5 50", .white, 2.2, 0.35)
         case .schlaf:
             ZStack {
@@ -228,6 +256,54 @@ struct TagesFormView: View {
     private func zeichen(_ text: String, _ groesse: Double, x: Double, y: Double) -> some View {
         Text(text).font(.system(size: groesse, weight: .bold)).foregroundStyle(tf(0xAEAEB2))
             .position(x: x + groesse * 0.25, y: y - groesse * 0.35)
+    }
+
+    private var schritte: some View {
+        let fuss = "M4 45H61C61.6 45 62 45.4 62 46V48.5C62 51 60 53 57.5 53H8C5.8 53 4 51.2 4 49Z"
+        let manschette = "M5.5 22.5H9.5V36H5.5"
+        return ZStack {
+            TagesPfad(d: fuss).fill(.white).overlay(TagesPfad(d: fuss).stroke(tf(0xAEAEB2), lineWidth: 1.6))
+            strich("M5 49.2H61.5", tf(0xD1D1D6), 1.2)
+            strich("M47 34C52.5 35.2 56.5 38.6 58.2 44", tf(0xAEAEB2), 1.4)
+            TagesPfad(d: "M17 42C25 41.5 33 39 41 34.5C35 40 27 43.6 18.5 44Z").fill(tf(0xAEAEB2))
+            strich("M26 24.5l4-2.6M29.2 28l4-2.6M33 30.6l4-2.6", tf(0x8E8E93), 1.8)
+            strich("M11.5 16.5C14.5 20 20 20.4 23.3 18.8", tf(0xAEAEB2), 1.4)
+            TagesPfad(d: manschette).fill(tf(0xE5E5EA)).overlay(TagesPfad(d: manschette).stroke(tf(0xAEAEB2), lineWidth: 1.2))
+            ForEach([(50.0, 37.0), (53, 38.2), (56, 39.8), (51.5, 40.5), (54.5, 41.8)], id: \.0) { punkt($0.0, $0.1, 0.9, tf(0xAEAEB2)) }
+        }
+    }
+
+    /// Fünf Zeilen, so viele Haken wie die Füllung in Fünfteln hergibt.
+    private var habits: some View {
+        let an = Int((q * 5).rounded())
+        return ZStack {
+            ForEach(0..<5, id: \.self) { i in
+                let y = 22 + Double(i) * 7.6
+                strich("M19 \(y)l2.2 2.2 4-4.4", i < an ? .white : form.farbe, 2, i < an ? 1 : 0.35)
+                strich("M30 \(y + 0.8)H45", form.farbe, 1.8, 0.8)
+            }
+        }
+    }
+
+    /// Stimmung 1 bis 3 (traurig, neutral, froh); Lovea-Werte 1 bis 5 des Morgen-Checks fallen auf drei Stufen zusammen.
+    private var gesicht: some View {
+        let k = [-7.0, 0, 10][min(max(stimmung ?? 2, 1), 3) - 1]
+        return ZStack {
+            punkt(23, 28, 3.2, tf(0x2A1F14))
+            punkt(41, 28, 3.2, tf(0x2A1F14))
+            strich("M21 \(41 - k / 3)Q32 \(41 + k) 43 \(41 - k / 3)", tf(0x2A1F14), 2.6)
+            punkt(18, 37, 3, tf(0xFF7AA8, 0.45))
+            punkt(46, 37, 3, tf(0xFF7AA8, 0.45))
+        }
+    }
+
+    private var waage: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 3).fill(.black.opacity(0.35))
+                .overlay(RoundedRectangle(cornerRadius: 3).stroke(form.farbe, lineWidth: 1.4))
+                .frame(width: 22, height: 11).position(x: 32, y: 22.5)
+            strich("M32 25V20.5", form.farbe, 1.8, 0.8)
+        }
     }
 
     private var tasse: some View {
@@ -270,6 +346,7 @@ struct TagesFormKachel: View {
     let wert: String
     let einheit: String
     let fuellung: Double
+    var stimmung: Int?
     var aktion: (() -> Void)?
 
     @State private var hopp = false
@@ -294,7 +371,7 @@ struct TagesFormKachel: View {
 
     private var inhalt: some View {
         VStack(spacing: 2) {
-            TagesFormView(form: form, fuellung: fuellung)
+            TagesFormView(form: form, fuellung: fuellung, stimmung: stimmung)
                 .scaleEffect(hopp && !ruhig ? 1.12 : 1)
                 .rotationEffect(.degrees(hopp && !ruhig ? -3 : 0))
                 .animation(ruhig ? nil : .spring(bounce: 0.35), value: hopp)
@@ -331,12 +408,30 @@ struct TagesFormenReihe: View {
         VStack(alignment: .leading, spacing: Abstand.m) {
             Text("Dein Tag").font(.headline).foregroundStyle(palette.text)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: 3), spacing: Abstand.s) {
-                if let schlaf = stand.boegen.first(where: { $0.id == .erholen }) {
-                    TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: schlaf.zahl, einheit: schlaf.zahl == "–" ? "" : "h", fuellung: schlaf.anteil)
+                if let b = stand.boegen.first(where: { $0.id == .bewegen }) {
+                    TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil)
                 }
-                ForEach(TagesForm.allCases.filter { $0 != .schlaf }, id: \.self) { form in
+                if let b = stand.boegen.first(where: { $0.id == .erholen }) {
+                    TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil)
+                }
+                if let b = stand.boegen.first(where: { $0.id == .trainieren }) {
+                    TagesFormKachel(form: .training, titel: "Training", wert: b.zahl, einheit: "", fuellung: b.anteil)
+                }
+                ForEach([TagesForm.wasser, .koffein, .protein, .creatin], id: \.self) { form in
                     if let zeile = stand.habits.first(where: { $0.habit.id == form.habitID }) { habitKachel(form, zeile) }
                 }
+                if !stand.habits.isEmpty {
+                    let erledigt = stand.habits.filter(\.erledigt).count
+                    TagesFormKachel(form: .habits, titel: "Gewohnheiten", wert: String(erledigt), einheit: "von \(stand.habits.count)",
+                                    fuellung: Double(erledigt) / Double(stand.habits.count))
+                }
+                if let stimmung = stand.stimmungsWert {
+                    // 1 bis 2 traurig, 3 neutral, 4 bis 5 froh.
+                    TagesFormKachel(form: .stimmung, titel: "Stimmung", wert: String(stimmung), einheit: "von 5", fuellung: Double(stimmung) / 5,
+                                    stimmung: stimmung <= 2 ? 1 : (stimmung == 3 ? 2 : 3))
+                }
+                TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
+                                einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -363,7 +458,7 @@ private extension TagesForm {
         case .koffein: Habit.koffein.id
         case .protein: Habit.protein.id
         case .creatin: Habit.creatin.id
-        case .schlaf: ""
+        case .schritte, .schlaf, .habits, .stimmung, .gewicht, .training: ""
         }
     }
 }
