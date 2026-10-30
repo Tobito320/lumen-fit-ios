@@ -92,10 +92,16 @@ final class LoveaBrueckeDienst {
         let heute = Datum.text(jetzt)
         let tag = quellen.gesundheit.tage[heute]
         let nacht = quellen.gesundheit.naechte[heute]
+        let zusatz = PartnerTageswerte.sammle(daten: daten, gesundheit: quellen.gesundheit, jetzt: jetzt)
+        let ziele = daten.ziele.ziele
         return ZusammenfassungBauer.Eingabe(
             name: quellen.profilName() ?? "Profil", jetzt: jetzt, freigaben: daten.verbindung.freigaben, schritte: tag?.schritte,
             gymTageWoche: Self.gymTageDerWoche(daten.training.sessions, heute: heute), schlafMinuten: nacht?.schlafMinuten,
-            kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse)
+            kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse,
+            schritteZiel: ziele.schritte, schritteWoche: zusatz.schritteWoche, gymTage: zusatz.gymTage, gymZiel: ziele.gymTageProWoche,
+            schlafWoche: zusatz.schlafWoche, schlafZiel: ziele.schlafMinuten, energieStufe: zusatz.energie?.stufe.rawValue,
+            energieGym: zusatz.energie?.gym, habitsFertig: zusatz.habitsFertig,
+            zyklus: daten.zyklus.partnerZusammenfassung())
     }
 
     /// Die Datei, wie sie jetzt geschrieben würde (Vorschau "das sieht dein Partner", Idee 84). Schreibt und merkt nichts.

@@ -41,7 +41,7 @@ enum HeuteHinweisLogik {
     // MARK: - Epley
 
     /// Best estimated one-rep max per exercise in one session. Own exercises and sets without kg are left out.
-    private static func bestwerte(_ s: GymSession) -> [String: Double] {
+    static func bestwerte(_ s: GymSession) -> [String: Double] {
         var werte: [String: Double] = [:]
         for lauf in s.laeufe where lauf.fertig && lauf.uebung != PlanUebung.eigen {
             for satz in lauf.saetze ?? [] {

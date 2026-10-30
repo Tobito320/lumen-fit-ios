@@ -11,6 +11,9 @@ struct SatzZeile: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
+    @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
+    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = true
+    @State private var rpeBlatt = false
 
     var body: some View {
         if sitzung.liste.indices.contains(uebung), sitzung.liste[uebung].saetze.indices.contains(satz) {
@@ -50,8 +53,12 @@ struct SatzZeile: View {
                     .accessibilityHint("Übernimmt Gewicht und Wiederholungen")
                 }
                 Spacer(minLength: 0)
-                if s.ok == true { rpeMenue(s) }
-                if let zeiten = WorkoutLogik.zeitenText(sek: s.sek, pause: s.pause, satzzeit: false) {
+                if let rekord = sitzung.rekordLabel["\(u.id)|\(satz)"], s.ok == true {
+                    Label(rekord, systemImage: "trophy.fill").font(.footnote.weight(.semibold)).foregroundStyle(palette.akzent)
+                        .accessibilityLabel("Rekord: \(rekord)")
+                }
+                if s.ok == true, rpeSpalte { rpeMenue(s) }
+                if let zeiten = WorkoutLogik.zeitenText(sek: s.sek, pause: s.pause, satzzeit: satzzeit) {
                     Text(zeiten).font(.footnote).foregroundStyle(palette.text2).monospacedDigit()
                 }
             }
@@ -62,7 +69,10 @@ struct SatzZeile: View {
         .overlay(alignment: .leading) {
             Rectangle().fill(gruen).frame(width: istDran ? 3 : 0)
         }
+        .modifier(SatzWischen(kopieren: { sitzung.satzKopieren(uebung, satz) }, loeschen: { sitzung.satzLoeschen(uebung, satz) }))
         .accessibilityElement(children: .contain)
+        .accessibilityAction(named: "Satz kopieren") { sitzung.satzKopieren(uebung, satz) }
+        .accessibilityAction(named: "Satz löschen") { sitzung.satzLoeschen(uebung, satz) }
     }
 
     // MARK: Teile
@@ -112,21 +122,40 @@ struct SatzZeile: View {
         .accessibilityHint(s.ok == true ? "Nimmt den Haken zurück" : "Startet die Pause")
     }
 
-    /// RPE aus der Skala nach RIR (Idee 22): Tipp wählt, "Ohne" nimmt ihn weg.
+    /// RPE aus der Skala nach RIR (Idee 22): Tipp öffnet das Blatt mit Farbpunkten und Erklärung.
     private func rpeMenue(_ s: PlanSatz) -> some View {
-        Menu {
-            ForEach(Anstrengung.allCases, id: \.self) { stufe in
-                Button("RPE \(TrainingLogik.kgText(stufe.rpe)): \(stufe.titel)") { sitzung.rpe(uebung, satz, stufe) }
+        Button { rpeBlatt = true } label: {
+            HStack(spacing: Abstand.xs) {
+                if let rpe = s.rpe { Circle().fill(AnstrengungFarbe.farbe(Anstrengung.stufe(rpe: rpe))).frame(width: 10, height: 10) }
+                Text(s.rpe.map { "RPE \(TrainingLogik.kgText($0))" } ?? "RPE")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(palette.text)
             }
-            Button("Ohne RPE") { sitzung.rpe(uebung, satz, nil) }
-        } label: {
-            Text(s.rpe.map { "RPE \(TrainingLogik.kgText($0))" } ?? "RPE")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(palette.text)
-                .padding(.horizontal, Abstand.m)
-                .frame(minHeight: Abstand.tippflaeche)
+            .padding(.horizontal, Abstand.m)
+            .frame(minHeight: Abstand.tippflaeche)
         }
+        .buttonStyle(.plain)
         .accessibilityLabel("Anstrengung")
         .accessibilityValue(s.rpe.map { Anstrengung.stufe(rpe: $0).titel } ?? "nicht gewählt")
+        .sheet(isPresented: $rpeBlatt) {
+            AnstrengungBlatt(aktuell: s.rpe) { sitzung.rpe(uebung, satz, $0) }
+        }
+    }
+}
+
+/// Wischen auf der Satzzeile: nach links löschen, nach rechts kopieren (die Zeilen liegen nicht in einer Liste, daher eigene Geste).
+/// Nur deutlich waagerechte Züge zählen, damit das Scrollen nicht stört. Beides lässt sich über "Rückgängig" zurücknehmen.
+struct SatzWischen: ViewModifier {
+    let kopieren: () -> Void
+    let loeschen: () -> Void
+
+    func body(content: Content) -> some View {
+        content.simultaneousGesture(
+            DragGesture(minimumDistance: 40).onEnded { wert in
+                let dx = wert.translation.width, dy = wert.translation.height
+                guard abs(dx) > 90, abs(dx) > 2.5 * abs(dy) else { return }
+                if dx < 0 { loeschen() } else { kopieren() }
+            }
+        )
     }
 }

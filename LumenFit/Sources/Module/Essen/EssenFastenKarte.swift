@@ -30,6 +30,14 @@ struct EssenFastenKarte: View {
         HStack {
             Text("Fasten \(plan.name)").font(.headline).foregroundStyle(palette.text)
             Spacer(minLength: Abstand.s)
+            NavigationLink { EssenFastenView() } label: {
+                Image(systemName: "chevron.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.text2)
+                    .frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
+                    .contentShape(.rect)
+            }
+            .accessibilityLabel("Fasten-Seite öffnen")
             if essen.fastenLaufend == nil {
                 Menu {
                     ForEach(FastenPlan.allCases.filter { !$0.istTagesplan }) { p in

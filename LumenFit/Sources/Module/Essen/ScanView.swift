@@ -53,6 +53,10 @@ struct ScanView: View {
     @State private var code = ""
     @State private var zustand: Zustand = .bereit
     @State private var kameraNummer = 0
+    /// Unbekannter Code, zu dem eine Namensquelle Vorschläge kennt ("Meintest du ...?"); heute leer, weil Lumen keine Namensquelle hat.
+    @State private var vorschlaege: (name: String, liste: [Lebensmittel], code: String)?
+    /// Was nach dem Vorschlags-Blatt geöffnet wird; erst beim Schließen, damit Blatt und Seite nicht gleichzeitig wechseln.
+    @State private var vorschlagsZiel: EssenZiel?
 
     private enum Zustand: Equatable {
         case bereit, sucht
@@ -86,7 +90,25 @@ struct ScanView: View {
                 EssenZielAnsicht(ziel: ziel, mahlzeit: mahlzeit, tag: tagText, fertig: fertig) { pfad = [$0] }
             }
             .task { await debugFixtureScan() }
+            .sheet(isPresented: Binding(get: { vorschlaege != nil }, set: { if !$0 { vorschlaege = nil } }), onDismiss: {
+                guard let ziel = vorschlagsZiel else { return }
+                vorschlagsZiel = nil
+                pfad = [ziel]
+            }) {
+                if let v = vorschlaege {
+                    EssenMehrtrefferBlatt(name: v.name, treffer: v.liste,
+                                          auswahl: { l in vorschlagWaehlen(l, code: v.code) },
+                                          keinesDavon: { vorschlagsZiel = .eigenes(barcode: v.code) })
+                }
+            }
         }
+    }
+
+    /// Der gewählte Vorschlag wird als eigenes Lebensmittel mit dem gescannten Code gespeichert, damit der nächste Scan es auch ohne Netz findet.
+    private func vorschlagWaehlen(_ l: Lebensmittel, code: String) {
+        let eigenes = EssenMehrtrefferLogik.alsEigenes(l, code: code)
+        umgebung.daten?.essen.eigenesSichern(eigenes)
+        vorschlagsZiel = .detail(eigenes)
     }
 
     private var kamera: some View {
@@ -158,6 +180,9 @@ struct ScanView: View {
         case .gefunden(let l):
             zustand = .bereit
             pfad = [.detail(l)]
+        case .vorschlaege(let n, let liste, let c):
+            zustand = .bereit
+            vorschlaege = (n, liste, c)
         case .unbekannt(let c):
             zustand = .bereit
             pfad = [.eigenes(barcode: c)]

@@ -14,6 +14,9 @@ extension WidgetSnapshot {
                 WidgetHabitKachel(id: "gym", name: "Gym", symbol: "dumbbell.fill", zaehlen: false, ziel: 1, heute: 0, serie: 4),
                 WidgetHabitKachel(id: "wasser", name: "Wasser", symbol: "drop.fill", zaehlen: true, ziel: 8, heute: 5, serie: 2),
                 WidgetHabitKachel(id: "dehnen", name: "Dehnen", symbol: "figure.mind.and.body", zaehlen: false, ziel: 1, heute: 1, serie: 6),
-            ])
+            ],
+            gymWoche: HabitLogik.wochenTage(heute: heute).enumerated().map { WidgetGymTag(tag: $1, erledigt: $0 == 0 || $0 == 2) },
+            partner: WidgetPartnerStand(name: "Partner", tag: heute, schritte: 10_450, schritteZiel: 10_000,
+                                        gymTage: Array(HabitLogik.wochenTage(heute: heute).prefix(2)), gymZiel: 3, schlafMinuten: 450, schlafZiel: 480))
     }
 }

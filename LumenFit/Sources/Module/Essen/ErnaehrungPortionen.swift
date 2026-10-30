@@ -66,6 +66,14 @@ enum MengenRad {
         return (ganz, bruch)
     }
 
+    /// Neue Menge, wenn jemand am Rad dreht: nil, solange das Rad schon zur Menge passt (so überschreibt ein getippter Wert wie 150,3
+    /// sich nicht, nur weil das Rad ihn auf ein Achtel rundet).
+    static func radZahl(ganz: Int, bruch: Int, aktuell: Double) -> Double? {
+        let jetzt = zerlegen(aktuell)
+        guard jetzt.ganz != ganz || jetzt.bruch != min(max(bruch, 0), brueche.count - 1) else { return nil }
+        return zahl(ganz: ganz, bruch: bruch)
+    }
+
     /// Bis 3 Nachkommastellen, deutsches Komma, ohne Nullen am Ende: 721,875 / 500 / 0,5.
     static func feldText(_ zahl: Double) -> String {
         var t = String(format: "%.3f", zahl)

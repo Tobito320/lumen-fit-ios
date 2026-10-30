@@ -55,9 +55,16 @@ struct LoveaBruecke: PartnerAustausch {
         let tag = Datum.text(jetzt)
         var freigaben: [FreigabeArt] = []
         var heute = TagesZusammenfassung(tag: tag)
-        if let s = stand.schritteHeute?[kennung] { freigaben.append(.schritte); heute.schritte = s }
-        if let woche = stand.gymLetzte7?[kennung] { freigaben.append(.gym); heute.gymTageWoche = woche.filter(\.erledigt).count }
-        if let m = stand.schlafMinutenHeute?[kennung] { freigaben.append(.schlaf); heute.schlafMinuten = m }
+        if let s = stand.schritteHeute?[kennung] { freigaben.append(.schritte); heute.schritte = s; heute.schritteZiel = stand.zielSchritte?[kennung] }
+        if let woche = stand.gymLetzte7?[kennung] {
+            freigaben.append(.gym)
+            heute.gymTageWoche = woche.filter(\.erledigt).count
+            let montag = Datum.montagDerWoche(tag)
+            let tage = woche.filter { $0.erledigt && $0.datum >= montag && $0.datum <= tag }.map(\.datum).sorted()
+            heute.gymTage = tage.isEmpty ? nil : tage
+            heute.gymZiel = stand.zielGymWoche?[kennung]
+        }
+        if let m = stand.schlafMinutenHeute?[kennung] { freigaben.append(.schlaf); heute.schlafMinuten = m; heute.schlafZiel = stand.zielSchlafMinuten?[kennung] }
         let name = kennung.prefix(1).uppercased() + kennung.dropFirst()
         var ereignisse: [PartnerEreignis] = []
         if stand.gymLetzte7?[kennung]?.contains(where: { $0.datum == tag && $0.erledigt }) == true {

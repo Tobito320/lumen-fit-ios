@@ -11,12 +11,19 @@ enum GymLive {
             guard let ende = p.ende, ende > jetzt else { return nil }
             return ende
         }
+        let fertig = liste.filter(\.fertig).count
         guard let dran else {
             // Alles abgehakt: die Anzeige bleibt bis zum Beenden stehen.
-            return TrainingLiveStand(uebung: "Alles geschafft", satz: 0, von: 0, pauseEnde: nil, start: session.start, planName: planName)
+            return TrainingLiveStand(uebung: "Alles geschafft", satz: 0, von: 0, pauseEnde: nil, start: session.start, planName: planName,
+                                     uebungenFertig: fertig, uebungenGesamt: liste.count)
         }
         let u = liste[dran.uebung]
+        let zeile = u.saetze.indices.contains(dran.satz) ? u.saetze[dran.satz] : nil
+        // Die Pause ist von selbst abgelaufen: ab ihrem Ende läuft die Satz-Uhr.
+        let satzSeit = pause.flatMap { p in p.ende.flatMap { $0 <= jetzt ? $0 : nil } }
         return TrainingLiveStand(uebung: u.planUebung.anzeigeName, satz: dran.satz + 1, von: max(1, u.saetze.count),
-                                 pauseEnde: pauseEnde, start: session.start, planName: planName)
+                                 pauseEnde: pauseEnde, start: session.start, planName: planName,
+                                 kg: u.planUebung.istCardio ? nil : zeile?.kg, wdh: u.planUebung.istCardio ? nil : zeile?.wdh,
+                                 satzSeit: satzSeit, uebungenFertig: fertig, uebungenGesamt: liste.count)
     }
 }

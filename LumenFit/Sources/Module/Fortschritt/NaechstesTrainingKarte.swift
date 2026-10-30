@@ -34,6 +34,7 @@ struct NaechstesTrainingKarte: View {
             }
         }
         .accessibilityElement(children: .contain)
+        .haptik(.auswahl, bei: minuten)
     }
 
     private var zeitWahl: some View {

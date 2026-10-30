@@ -9,7 +9,7 @@ struct CoachVerlaufView: View {
 
     var body: some View {
         let tage = modell.vergangeneTage
-        let treffer = CoachLokal.suche(modell.verlauf, begriff: suche)
+        let treffer = CoachLokal.suche(modell.sichtbarerVerlauf, begriff: suche)
         ScrollView {
             if !suche.trimmingCharacters(in: .whitespaces).isEmpty {
                 suchergebnis(treffer)
@@ -21,7 +21,7 @@ struct CoachVerlaufView: View {
                     ForEach(Array(tage.enumerated()), id: \.element.id) { index, tag in
                         if index > 0 { Haarlinie() }
                         NavigationLink {
-                            CoachTagLeser(tag: tag)
+                            CoachTagLeser(tag: tag, modell: modell)
                         } label: {
                             zeile(tag)
                         }
@@ -36,7 +36,7 @@ struct CoachVerlaufView: View {
         .searchable(text: $suche, prompt: "Im Verlauf suchen")
         .lumenHintergrund()
         .toolbar {
-            if !modell.verlauf.isEmpty {
+            if !modell.sichtbarerVerlauf.isEmpty {
                 ToolbarItem(placement: .topBarLeading) {
                     ShareLink(item: exportText) { Image(systemName: "square.and.arrow.up") }
                         .accessibilityLabel("Verlauf als Text teilen")
@@ -46,7 +46,7 @@ struct CoachVerlaufView: View {
     }
 
     private var exportText: String {
-        CoachLokal.export(modell.verlauf, ich: umgebung.profil.aktiv?.name ?? "Ich", coach: modell.einstellungen?.anzeigeName ?? CoachLokal.standardName) {
+        CoachLokal.export(modell.sichtbarerVerlauf, ich: umgebung.profil.aktiv?.name ?? "Ich", coach: modell.einstellungen?.anzeigeName ?? CoachLokal.standardName) {
             "\(CoachAnzeige.tag($0)), \(CoachAnzeige.uhrzeit($0))"
         }
     }
@@ -93,6 +93,7 @@ struct CoachVerlaufView: View {
 /// Ein vergangener Tag zum Nachlesen (nur lesen, ohne Chips).
 struct CoachTagLeser: View {
     let tag: CoachTage.Tag
+    let modell: CoachModell
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -100,7 +101,7 @@ struct CoachTagLeser: View {
             LazyVStack(alignment: .leading, spacing: Abstand.l) {
                 ForEach(tag.nachrichten) { nachricht in
                     switch nachricht.rolle {
-                    case .nutzer: CoachNutzerBlase(text: nachricht.text)
+                    case .nutzer: CoachNutzerBlase(modell: modell, nachricht: nachricht)
                     case .coach: CoachAntwortText(text: nachricht.text)
                     }
                 }

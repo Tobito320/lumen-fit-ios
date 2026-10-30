@@ -12,6 +12,19 @@ enum ZusammenfassungBauer {
         var schlafMinuten: Int?
         var kcal: Int?
         var ereignisse: [PartnerEreignis]
+        // Erweiterung (Gleichstand Health): leer oder nil heißt "nichts zu sagen", dann steht das Feld nicht in der Datei.
+        var schritteZiel: Int? = nil
+        var schritteWoche: [String: Int] = [:]
+        var gymTage: Set<String> = []
+        var gymZiel: Int? = nil
+        var schlafWoche: [String: Int] = [:]
+        var schlafZiel: Int? = nil
+        var energieStufe: String? = nil
+        var energieGym: String? = nil
+        /// Eingebaute Gewohnheiten, die heute erledigt sind (`gym`, `wasser`); der Bauer gibt nur frei, was die Freigabe erlaubt.
+        var habitsFertig: Set<String> = []
+        /// Zyklus-Hinweise für den Partner; schon von der Quelle nur gesetzt, wenn die Person es erlaubt hat.
+        var zyklus: ZyklusZusammenfassung? = nil
     }
 
     /// So lange bleiben eigene Ereignisse in der Datei; ältere sind erledigt.
@@ -27,12 +40,36 @@ enum ZusammenfassungBauer {
         }
     }
 
+    /// Die Wochenwerte, den Energie-Rat und die Gewohnheiten, je nur mit der Freigabe ihrer Art (Energie hängt am Schlaf, ihr Gym-Satz zusätzlich am Gym).
+    private static func erweitere(_ heute: inout TagesZusammenfassung, _ e: Eingabe) {
+        if e.freigaben.contains(.schritte) {
+            heute.schritteZiel = e.schritteZiel
+            heute.schritteWoche = e.schritteWoche.isEmpty ? nil : e.schritteWoche
+        }
+        if e.freigaben.contains(.gym) {
+            heute.gymTage = e.gymTage.isEmpty ? nil : e.gymTage.sorted()
+            heute.gymZiel = e.gymZiel
+        }
+        if e.freigaben.contains(.schlaf) {
+            heute.schlafWoche = e.schlafWoche.isEmpty ? nil : e.schlafWoche
+            heute.schlafZiel = e.schlafZiel
+            heute.energieStufe = e.energieStufe
+            if e.freigaben.contains(.gym) { heute.energieGym = e.energieStufe == nil ? nil : e.energieGym }
+        }
+        var fertig: Set<String> = []
+        if e.freigaben.contains(.gym), e.habitsFertig.contains("gym") { fertig.insert("gym") }
+        if e.freigaben.contains(.essen), e.habitsFertig.contains("wasser") { fertig.insert("wasser") }
+        heute.habitsFertig = fertig.isEmpty ? nil : fertig.sorted()
+    }
+
     static func baue(_ e: Eingabe) -> ZusammenfassungDatei {
         var heute = TagesZusammenfassung(tag: Datum.text(e.jetzt))
         if e.freigaben.contains(.schritte) { heute.schritte = e.schritte }
         if e.freigaben.contains(.gym) { heute.gymTageWoche = e.gymTageWoche }
         if e.freigaben.contains(.schlaf) { heute.schlafMinuten = e.schlafMinuten }
         if e.freigaben.contains(.essen) { heute.kcal = e.kcal }
+        erweitere(&heute, e)
+        heute.zyklus = e.zyklus
         let erlaubt = e.ereignisse
             .filter { e.freigaben.contains(freigabe(fuer: $0.art)) && e.jetzt.timeIntervalSince($0.zeit) <= ereignisFrist }
             .sorted { $0.zeit < $1.zeit }

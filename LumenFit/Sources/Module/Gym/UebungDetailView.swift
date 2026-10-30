@@ -13,6 +13,7 @@ struct UebungDetailView: View {
     @Environment(\.colorSchemeContrast) private var kontrast
     @State private var reiter = Reiter.uebersicht
     @State private var art = RekordArt.gewicht
+    @State private var hinzugefuegt = 0
 
     private enum Reiter: String, CaseIterable, Identifiable {
         case uebersicht = "Übersicht", historie = "Historie", sogehts = "So geht's"
@@ -30,6 +31,22 @@ struct UebungDetailView: View {
         .lumenHintergrund()
         .navigationTitle(UebungsKatalog.nachId[id]?.name ?? "Übung")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Nur mit laufendem Training: die Übung kommt ans Ende der Liste (wie "Übung hinzufügen" im Training).
+            if let u = UebungsKatalog.nachId[id], GymSitzung.von(umgebung).laufende != nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        GymSitzung.von(umgebung).uebungDazu(u)
+                        hinzugefuegt += 1
+                    } label: {
+                        Label(hinzugefuegt > 0 ? "Hinzugefügt" : "Zum Training", systemImage: hinzugefuegt > 0 ? "checkmark.circle.fill" : "plus.circle")
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    .accessibilityHint("Fügt die Übung dem laufenden Training hinzu")
+                }
+            }
+        }
+        .haptik(.auswahl, bei: hinzugefuegt)
     }
 
     private func inhalt(_ u: Uebung) -> some View {

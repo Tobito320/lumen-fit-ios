@@ -21,17 +21,23 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var serieWochen: Int?
     var essen: WidgetEssenStand?
     var habits: [WidgetHabitKachel]?
+    /// Die sieben Tage (Montag bis Sonntag) der Woche von `tag` mit Gym (Einheit oder Haken).
+    var gymWoche: [WidgetGymTag]?
+    /// Was der verbundene Partner freigibt (Gym-Duell, Schritte-Duell); nil ohne Verbindung.
+    var partner: WidgetPartnerStand?
 
     init(geschrieben: Date? = nil, profilName: String? = nil, profilKennung: String? = nil, tag: String? = nil, thema: ThemaID? = nil,
          erscheinung: Erscheinung? = nil, lumi: LumiStimmung? = nil, lumiStufe: Int? = nil, boegen: WidgetBoegenWerte? = nil,
-         plan: WidgetPlanTag? = nil, serieWochen: Int? = nil, essen: WidgetEssenStand? = nil, habits: [WidgetHabitKachel]? = nil) {
+         plan: WidgetPlanTag? = nil, serieWochen: Int? = nil, essen: WidgetEssenStand? = nil, habits: [WidgetHabitKachel]? = nil,
+         gymWoche: [WidgetGymTag]? = nil, partner: WidgetPartnerStand? = nil) {
         self.geschrieben = geschrieben; self.profilName = profilName; self.profilKennung = profilKennung; self.tag = tag
         self.thema = thema; self.erscheinung = erscheinung; self.lumi = lumi; self.lumiStufe = lumiStufe; self.boegen = boegen
         self.plan = plan; self.serieWochen = serieWochen; self.essen = essen; self.habits = habits
+        self.gymWoche = gymWoche; self.partner = partner
     }
 
     private enum CodingKeys: String, CodingKey {
-        case geschrieben, profilName, profilKennung, tag, thema, erscheinung, lumi, lumiStufe, boegen, plan, serieWochen, essen, habits
+        case geschrieben, profilName, profilKennung, tag, thema, erscheinung, lumi, lumiStufe, boegen, plan, serieWochen, essen, habits, gymWoche, partner
     }
 
     init(from decoder: Decoder) throws {
@@ -49,6 +55,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         serieWochen = try? c.decodeIfPresent(Int.self, forKey: .serieWochen)
         essen = try? c.decodeIfPresent(WidgetEssenStand.self, forKey: .essen)
         habits = try? c.decodeIfPresent([WidgetHabitKachel].self, forKey: .habits)
+        gymWoche = try? c.decodeIfPresent([WidgetGymTag].self, forKey: .gymWoche)
+        partner = try? c.decodeIfPresent(WidgetPartnerStand.self, forKey: .partner)
     }
 }
 
@@ -89,6 +97,36 @@ struct WidgetHabitKachel: Codable, Equatable, Sendable, Identifiable {
     var ziel: Int
     var heute: Int
     var serie: Int
+}
+
+/// Ein Tag der Gym-Woche (`tag` = `yyyy-MM-dd`).
+struct WidgetGymTag: Codable, Equatable, Sendable {
+    var tag: String
+    var erledigt: Bool
+}
+
+/// Was der Partner freigegeben hat, fürs Widget. Jedes Feld steht nur mit der Freigabe seiner Art (`aus`); `tag` ist der Tag der Partner-Datei,
+/// Schritte und Schlaf gelten nur, wenn er der heutige ist.
+struct WidgetPartnerStand: Codable, Equatable, Sendable {
+    var name: String
+    var tag: String
+    var schritte: Int?
+    var schritteZiel: Int?
+    /// Tage der laufenden Woche mit Gym; leer heißt "freigegeben, aber keiner", nil heißt "nicht geteilt".
+    var gymTage: [String]?
+    var gymZiel: Int?
+    var schlafMinuten: Int?
+    var schlafZiel: Int?
+
+    static func aus(_ d: ZusammenfassungDatei) -> WidgetPartnerStand {
+        let frei = Set(d.freigaben)
+        let h = d.heute
+        return WidgetPartnerStand(
+            name: d.profilName, tag: h.tag,
+            schritte: frei.contains(.schritte) ? h.schritte : nil, schritteZiel: frei.contains(.schritte) ? h.schritteZiel : nil,
+            gymTage: frei.contains(.gym) ? (h.gymTage ?? (h.gymTageWoche == 0 ? [] : nil)) : nil, gymZiel: frei.contains(.gym) ? h.gymZiel : nil,
+            schlafMinuten: frei.contains(.schlaf) ? h.schlafMinuten : nil, schlafZiel: frei.contains(.schlaf) ? h.schlafZiel : nil)
+    }
 }
 
 /// Lesen und Schreiben der Datei. Ohne Gruppenordner (Tests, unsignierter Simulator) gilt der Ordner, den der Aufrufer nennt: nie ein Absturz.

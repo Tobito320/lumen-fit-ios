@@ -95,6 +95,23 @@ enum GewichtText {
 /// The eight HabitLink tints. Colors live with the views (`HealthStil.swift`).
 enum HabitFarbe: String, CaseIterable, Sendable {
     case mint, amber, indigo, rose, himmel, limette, koralle, grau
+
+    /// Unbekannter Name aus einer neueren Version: grau statt Absturz.
+    static func von(_ roh: String) -> HabitFarbe { HabitFarbe(rawValue: roh) ?? .grau }
+
+    /// Name für VoiceOver.
+    var anzeigename: String {
+        switch self {
+        case .mint: "Mint"
+        case .amber: "Bernstein"
+        case .indigo: "Indigo"
+        case .rose: "Rosa"
+        case .himmel: "Himmelblau"
+        case .limette: "Limette"
+        case .koralle: "Koralle"
+        case .grau: "Grau"
+        }
+    }
 }
 
 /// The 40 SF Symbols the create sheet offers (Spec 3.3), all present since SF Symbols 4.

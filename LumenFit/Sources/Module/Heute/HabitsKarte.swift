@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Gewohnheiten (Idee 16): ein Haken per Tipp, Zähl-Gewohnheiten wie Wasser mit Plus und Minus, die Serie in Tagen oder Wochen.
-/// Die Verwaltung (ausblenden, anlegen, löschen) steht in einer Zeile unten.
+/// Gewohnheiten (Idee 16): ein Haken per Tipp, Zähl-Gewohnheiten wie Wasser mit Plus und Minus, dazu die sieben Quadrate der Woche und die Serie mit Flamme.
+/// Ein Tipp auf den Namen öffnet die Seite der Gewohnheit (Zoom). Die Verwaltung (ausblenden, anlegen, löschen) steht in einer Zeile unten.
 struct HabitsKarte: View {
     let habits: [HeuteHabitZeile]
+    let tag: String
     let tippe: (HeuteHabitZeile) -> Void
     let weniger: (HeuteHabitZeile) -> Void
+    let oeffne: (HeuteHabitZeile) -> Void
     let verwalte: () -> Void
+    var zoom: Namespace.ID?
     @Environment(\.palette) private var palette
 
     var body: some View {
@@ -14,7 +17,7 @@ struct HabitsKarte: View {
             HeuteKartenKopf(symbol: "checkmark.circle", titel: "Gewohnheiten").padding(Abstand.l)
             ForEach(habits) { zeile in
                 Haarlinie()
-                HeuteHabitReihe(zeile: zeile, tippe: { tippe(zeile) }, weniger: { weniger(zeile) })
+                HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom)
             }
             Haarlinie()
             Button(action: verwalte) {
@@ -34,50 +37,124 @@ struct HabitsKarte: View {
 
 private struct HeuteHabitReihe: View {
     let zeile: HeuteHabitZeile
+    let tag: String
     let tippe: () -> Void
     let weniger: () -> Void
-    @State private var zaehler = 0
+    let oeffne: () -> Void
+    var zoom: Namespace.ID?
+    @State private var mehr = 0
+    @State private var minus = 0
+    @State private var umgeschaltet = 0
+    @State private var erreicht = 0
     @Environment(\.palette) private var palette
+    @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
         HStack(spacing: Abstand.m) {
-            Image(systemName: zeile.habit.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(zeile.habit.name).font(.body).foregroundStyle(palette.text)
-                if let unter = unterzeile { Text(unter).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
+            Button(action: oeffne) {
+                HStack(spacing: Abstand.m) {
+                    Image(systemName: zeile.habit.symbol).foregroundStyle(zeile.habit.tint).frame(width: 24).accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(zeile.habit.name).font(.body).foregroundStyle(palette.text)
+                        if let unter = unterzeile { Text(unter).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
+                        HStack(spacing: 3) {
+                            woche
+                            Spacer(minLength: 2)
+                            flamme
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .contentShape(Rectangle())
             }
-            Spacer(minLength: Abstand.s)
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(zeile.habit.name), \(unterzeile ?? ""), heute \(zeile.erledigt ? "erledigt" : "offen")")
+            .accessibilityHint("Öffnet die Details")
+            .modifier(HabitZoomQuelle(id: zeile.habit.id, zoom: zoom))
+            PartnerHabitKopf(habitID: zeile.habit.id)
             steuerung
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.xs)
-        .frame(minHeight: 56)
-        .haptik(zeile.habit.zaehlen ? .mehr : .auswahl, bei: zaehler)
+        .frame(minHeight: 64)
+        .haptik(.mehr, bei: mehr)
+        .haptik(.weniger, bei: minus)
+        .haptik(.auswahl, bei: umgeschaltet)
+        .haptik(.erfolg, bei: erreicht)
         .accessibilityElement(children: .contain)
     }
 
     private var unterzeile: String? {
-        [zeile.zaehlerText, zeile.serieText].compactMap { $0 }.joined(separator: " · ").nilWennLeer
+        let teile = [zeile.zaehlerText, zeile.serieText].compactMap { $0 }
+        return teile.isEmpty ? nil : teile.joined(separator: " · ")
+    }
+
+    /// Sieben Quadrate Mo bis So; Zähl-Gewohnheiten füllen sich von unten.
+    private var woche: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<7, id: \.self) { i in
+                HabitQuadrat(farbe: zeile.habit.tint, anteil: i < zeile.woche.count ? zeile.woche[i] : 0, istHeute: i == zeile.heuteIndex, groesse: 13)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var flamme: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "flame.fill").font(.caption.weight(.bold))
+            Text("\(zeile.serie)")
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
+                .monospacedDigit()
+                .contentTransition(.numericText(value: Double(zeile.serie)))
+                .animation(bewegungAus ? nil : Feder.weich, value: zeile.serie)
+        }
+        .foregroundStyle(zeile.serie > 0 ? zeile.habit.tint : palette.text2)
+        .accessibilityHidden(true)
+    }
+
+    private func schritt(plus: Bool) {
+        if plus {
+            let ziel = HabitFeier.erreichtZiel(zeile.habit, wert: zeile.wert, ziel: zeile.ziel)
+            withAnimation(bewegungAus ? nil : Feder.schnell) { tippe() }
+            if ziel && HabitFeier.darfFeiern(habitId: zeile.habit.id, tag: tag) { erreicht += 1 } else if zeile.habit.zaehlen { mehr += 1 } else { umgeschaltet += 1 }
+        } else {
+            withAnimation(bewegungAus ? nil : Feder.schnell) { weniger() }
+            minus += 1
+        }
     }
 
     @ViewBuilder
     private var steuerung: some View {
         if zeile.habit.zaehlen {
             HStack(spacing: 0) {
-                Button { zaehler += 1; weniger() } label: { Image(systemName: "minus").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
+                Button { schritt(plus: false) } label: { Image(systemName: "minus").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                     .disabled(zeile.wert == 0)
                     .accessibilityLabel("\(zeile.habit.name) eins weniger")
-                Button { zaehler += 1; tippe() } label: { Image(systemName: "plus").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
-                    .accessibilityLabel("\(zeile.habit.name) eins mehr")
+                Button { schritt(plus: true) } label: {
+                    Image(systemName: zeile.erledigt ? "checkmark.seal.fill" : "plus")
+                        .symbolEffect(.bounce, value: bewegungAus ? 0 : mehr + erreicht)
+                        .contentTransition(.symbolEffect(.replace))
+                        .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
+                }
+                .accessibilityLabel("\(zeile.habit.name) eins mehr")
             }
-            .foregroundStyle(palette.text)
+            .buttonStyle(.federnd)
+            .foregroundStyle(zeile.erledigt ? zeile.habit.tint : palette.text)
             .accessibilityValue(zeile.zaehlerText ?? "")
         } else {
-            Button { zaehler += 1; tippe() } label: {
-                Image(systemName: zeile.erledigt ? "checkmark.circle.fill" : "circle")
-                    .font(.title2).foregroundStyle(zeile.erledigt ? palette.text : palette.text2)
-                    .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
+            Button { schritt(plus: true) } label: {
+                ZStack {
+                    Circle().strokeBorder(zeile.habit.tint.opacity(0.55), lineWidth: 2)
+                    Circle().fill(zeile.habit.tint).scaleEffect(zeile.erledigt ? 1 : 0.3).opacity(zeile.erledigt ? 1 : 0)
+                    Image(systemName: "checkmark").font(.system(size: 15, weight: .bold)).foregroundStyle(Color.aufHabitFarbe)
+                        .scaleEffect(zeile.erledigt ? 1 : 0.4).opacity(zeile.erledigt ? 1 : 0)
+                        .symbolEffect(.bounce, value: bewegungAus ? 0 : erreicht)
+                }
+                .frame(width: 30, height: 30)
+                .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
+                .contentShape(Circle())
             }
+            .buttonStyle(.federnd)
             .accessibilityLabel(zeile.habit.name)
             .accessibilityValue(zeile.erledigt ? "erledigt" : "offen")
             .accessibilityHint(zeile.erledigt ? "Nimmt den Haken weg" : "Hakt ab")
@@ -85,108 +162,12 @@ private struct HeuteHabitReihe: View {
     }
 }
 
-private extension String {
-    var nilWennLeer: String? { isEmpty ? nil : self }
-}
+/// Quelle des Zoom-Übergangs zur Seite der Gewohnheit (nur mit Namensraum).
+private struct HabitZoomQuelle: ViewModifier {
+    let id: String
+    let zoom: Namespace.ID?
 
-/// Alle Gewohnheiten im Blatt: ausblenden, löschen (außer den eingebauten) und eine neue anlegen.
-struct HabitVerwaltungView: View {
-    @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
-    @State private var neu = false
-
-    var body: some View {
-        NavigationStack {
-            List {
-                if let daten = umgebung.daten {
-                    ForEach(alle(daten)) { habit in
-                        Toggle(isOn: Binding(get: { !(daten.habits.habits[habit.id]?.ausgeblendet ?? false) },
-                                             set: { daten.habits.ausblenden(habit.id, !$0) })) {
-                            Label(habit.name, systemImage: habit.symbol)
-                        }
-                        .frame(minHeight: Abstand.tippflaeche)
-                        .swipeActions {
-                            if !habit.istEingebaut {
-                                Button("Löschen", role: .destructive) { daten.habits.loeschen(habit.id) }
-                            }
-                        }
-                    }
-                }
-                Button { neu = true } label: { Label("Neue Gewohnheit", systemImage: "plus") }
-                    .frame(minHeight: Abstand.tippflaeche)
-            }
-            .scrollContentBackground(.hidden)
-            .lumenHintergrund()
-            .navigationTitle("Gewohnheiten")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
-            .sheet(isPresented: $neu) { HabitFormularView() }
-        }
-    }
-
-    private func alle(_ daten: DatenSatz) -> [Habit] {
-        daten.habits.habits.values.filter { !Habit.nurHeute.contains($0.id) }.sorted { a, b in
-            let ia = Habit.eingebaut.firstIndex { $0.id == a.id } ?? Int.max
-            let ib = Habit.eingebaut.firstIndex { $0.id == b.id } ?? Int.max
-            return ia != ib ? ia < ib : a.name < b.name
-        }
-    }
-}
-
-/// Neue Gewohnheit: Name, Symbol, Haken oder Zähler, Häufigkeit.
-struct HabitFormularView: View {
-    @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var symbol = HabitSymbole.alle[0]
-    @State private var zaehlen = false
-    @State private var tagesziel = 3
-    @State private var proWoche = false
-    @State private var wochenziel = 3
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Name") { TextField("Zum Beispiel Dehnen", text: $name).frame(minHeight: Abstand.tippflaeche) }
-                Section("Symbol") {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: Abstand.tippflaeche), spacing: Abstand.s)], spacing: Abstand.s) {
-                        ForEach(HabitSymbole.alle, id: \.self) { s in
-                            Button { symbol = s } label: {
-                                Image(systemName: s).frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-                                    .foregroundStyle(symbol == s ? palette.aufAkzent : palette.text)
-                                    .background(symbol == s ? palette.akzent : Color.clear, in: .circle)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(s)
-                            .accessibilityAddTraits(symbol == s ? .isSelected : [])
-                        }
-                    }
-                }
-                Section("Wie oft") {
-                    Toggle("Mehrmals am Tag zählen", isOn: $zaehlen)
-                    if zaehlen { Stepper("Ziel: \(tagesziel) am Tag", value: $tagesziel, in: 1...20) }
-                    Toggle("Nur einige Tage pro Woche", isOn: $proWoche)
-                    if proWoche { Stepper("\(wochenziel) Tage pro Woche", value: $wochenziel, in: 1...7) }
-                }
-            }
-            .scrollContentBackground(.hidden)
-            .lumenHintergrund()
-            .navigationTitle("Neue Gewohnheit")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Sichern") { sichern() }.disabled(name.trimmingCharacters(in: .whitespaces).isEmpty) }
-            }
-        }
-    }
-
-    private func sichern() {
-        guard let daten = umgebung.daten else { return }
-        let habit = Habit(id: UUID().uuidString, name: name.trimmingCharacters(in: .whitespaces), symbol: symbol, farbe: HabitFarbe.grau.rawValue, zaehlen: zaehlen,
-                          tagesziel: zaehlen ? tagesziel : nil, haeufigkeit: proWoche ? .proWoche(wochenziel) : .taeglich, fuer: "ich")
-        daten.habits.anlegen(habit)
-        dismiss()
+    func body(content: Content) -> some View {
+        if let zoom { content.matchedTransitionSource(id: id, in: zoom) } else { content }
     }
 }

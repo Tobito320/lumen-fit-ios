@@ -17,6 +17,11 @@ final class InfoPlistTests: XCTestCase {
         }
     }
 
+    func testZyklusBrauchtFaceIDTextUndNenntDenZyklusBeiHealth() {
+        XCTAssertFalse((info["NSFaceIDUsageDescription"] as? String ?? "").isEmpty)
+        XCTAssertTrue((info["NSHealthShareUsageDescription"] as? String ?? "").contains("Menstruationsfluss"))
+    }
+
     func testLinkSchemaLumenfit() throws {
         let typen = try XCTUnwrap(info["CFBundleURLTypes"] as? [[String: Any]])
         let schemata = typen.flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] }

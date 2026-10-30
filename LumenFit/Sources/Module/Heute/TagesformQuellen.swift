@@ -31,8 +31,14 @@ enum TagesformQuellen {
         return e
     }
 
-    /// Eine Nacht je Aufwachtag: Health zuerst, sonst das Band (Op `fit.band.schlaf`). nil ohne Schlaf.
+    /// Eine Nacht je Aufwachtag: Von Hand (Op `fit.schlaf.hand`), sonst Health, sonst das Band (Op `fit.band.schlaf`). nil ohne Schlaf.
     static func nacht(_ tag: String, daten: DatenSatz, gesundheit: GesundheitsStand) -> HeuteNacht? {
+        // Eine Nacht von Hand gilt vor allem anderen.
+        var hand: SchlafNacht?
+        for op in daten.raum.ops(arten: [SchlafHandLogik.art]) {
+            if let d = op.daten(SchlafHandD.self), d.tag == tag { hand = SchlafHandLogik.nacht(d) }
+        }
+        if let h = hand { return HeuteNacht(tag: tag, minuten: h.schlafMinuten, einschlafen: h.von, quelle: .eingetragen) }
         if let n = gesundheit.naechte[tag], n.schlafMinuten > 0 {
             let quelle: TagesformSchlafQuelle = n.phasen.contains(where: { $0.gestuft }) ? .appleWatch : .iPhone
             return HeuteNacht(tag: tag, minuten: n.schlafMinuten, einschlafen: n.von, quelle: quelle)

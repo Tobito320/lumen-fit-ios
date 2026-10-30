@@ -9,6 +9,9 @@ struct SaetzeProMuskelKarte: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
+    @Environment(\.bewegungAus) private var reduceMotion
+    /// Die Balken fahren beim ersten Anzeigen von 0 auf ihren Wert (Reduce Motion und Stromsparmodus: sofort).
+    @State private var gefuellt = false
 
     var body: some View {
         DiagrammKarte(aussage: SaetzeProMuskel.aussage(zeilen), kernzeile: SaetzeProMuskel.kernzeile(zeilen)) {
@@ -27,7 +30,7 @@ struct SaetzeProMuskelKarte: View {
         let hoechste = max(zeilen.map { Double($0.ziel) }.max() ?? 1, zeilen.map(\.saetze).max() ?? 1)
         let nachName = Dictionary(zeilen.map { ($0.gruppe.name, $0) }, uniquingKeysWith: { erste, _ in erste })
         return Chart(zeilen) { z in
-            BarMark(x: .value("Sätze", z.saetze), y: .value("Gruppe", z.gruppe.name))
+            BarMark(x: .value("Sätze", gefuellt || reduceMotion ? z.saetze : 0), y: .value("Gruppe", z.gruppe.name))
                 .foregroundStyle(farbe.opacity(z.erreicht ? 1 : 0.6))
                 .cornerRadius(3)
             PointMark(x: .value("Ziel", Double(z.ziel)), y: .value("Gruppe", z.gruppe.name))
@@ -54,6 +57,8 @@ struct SaetzeProMuskelKarte: View {
             }
         }
         .frame(height: CGFloat(zeilen.count) * 30 + 8)
+        .animation(reduceMotion ? nil : Feder.weich, value: gefuellt)
+        .onAppear { gefuellt = true }
         .accessibilityChartDescriptor(FortschrittDeskriptor(
             titel: "Sätze je Muskel", zusammenfassung: SaetzeProMuskel.aussage(zeilen), xTitel: "Muskelgruppe", yTitel: "Sätze diese Woche", einheit: "Sätze",
             stetig: false, punkte: zeilen.map { .init(x: "\($0.gruppe.name), Ziel \($0.ziel)", y: $0.saetze) }))

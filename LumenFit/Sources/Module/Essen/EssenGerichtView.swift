@@ -11,6 +11,7 @@ struct EssenGerichtView: View {
     @Environment(\.palette) private var palette
     @State private var mahlzeit: Mahlzeit
     @State private var loeschenFragen = false
+    @State private var gesichert = 0
 
     init(vorlage: Rezept, mahlzeit: Mahlzeit, tag: String, fertig: @escaping @MainActor (Bool) -> Void) {
         self.vorlage = vorlage
@@ -75,13 +76,21 @@ struct EssenGerichtView: View {
         }
         .safeAreaInset(edge: .bottom) {
             Button {
+                guard gesichert == 0 else { return }
                 essen?.mahlzeitEintragen(vorlage, mahlzeit: mahlzeit, datum: tag)
-                fertig(true)
+                gesichert += 1
+                // Kurz warten, damit die Haptik noch auf der sichtbaren Seite ausgelöst wird, bevor das Blatt schließt.
+                Task {
+                    try? await Task.sleep(for: .milliseconds(200))
+                    fertig(true)
+                }
             } label: {
                 Text("Gericht eintragen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
             .buttonStyle(.lumenHauptknopf)
             .controlSize(.large)
+            .disabled(gesichert > 0)
+            .haptik(.erfolg, bei: gesichert)
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.s)
             .lumenLeiste()

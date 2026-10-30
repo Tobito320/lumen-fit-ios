@@ -20,6 +20,9 @@ final class LebensmittelSuche {
     @ObservationIgnored private let off: OpenFoodFactsQuelle
     @ObservationIgnored private let speicher: @MainActor (String) -> Lebensmittel?
     @ObservationIgnored private(set) var letzterTreffer: (code: String, lebensmittel: Lebensmittel)?
+    /// Ergebnis des Nachladens je Barcode (auch "nichts" und Fehler), damit jeder Code in einer Sitzung höchstens einmal bei Open Food Facts gefragt wird.
+    @ObservationIgnored private var nachgeladen: [String: Lebensmittel?] = [:]
+    @ObservationIgnored private var nachladenLaeuft: Set<String> = []
 
     private(set) var stand = SuchStand()
     private(set) var text = ""
@@ -111,6 +114,19 @@ final class LebensmittelSuche {
         let ergebnis = await BarcodeKette.suchen(code, quellen)
         if case .gefunden(let l) = ergebnis { letzterTreffer = (code, l) }
         return ergebnis
+    }
+
+    /// Einmal pro Barcode: das Produkt direkt bei Open Food Facts, für Zutaten und Siegel der Ampel (der Speicher kennt sie oft nicht).
+    /// Fehler, Limit und unbekannte Codes bleiben leise: nil. Schreibt nichts in den Speicher, kein Wiederholen.
+    func zutatenNachladen(_ roh: String) async -> Lebensmittel? {
+        let code = BarcodeLogik.normal(roh)
+        guard !code.isEmpty else { return nil }
+        if let bekannt = nachgeladen[code] { return bekannt }
+        guard nachladenLaeuft.insert(code).inserted else { return nil }
+        defer { nachladenLaeuft.remove(code) }
+        let antwort: Lebensmittel? = try? await off.produkt(code)
+        nachgeladen[code] = .some(antwort)
+        return antwort
     }
 
     /// Ein Treffer, der nicht aus dem Barcode kam (Auswahl in der Liste), wird ebenfalls gemerkt, wenn er einen Barcode hat.

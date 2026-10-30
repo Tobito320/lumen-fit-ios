@@ -10,7 +10,7 @@ final class GesundheitsStand {
 
     private(set) var zugriff: HealthZugriff = .unbekannt
     private var healthTage: [String: TagesWerte] = [:]
-    private(set) var naechte: [String: SchlafNacht] = [:]
+    private var healthNaechte: [String: SchlafNacht] = [:]
     private(set) var vitale: [VitalArt: [VitalMesswert]] = [:]
     private(set) var gewichte: [GewichtsMesswert] = []
     private(set) var letzteAktualisierung: Date?
@@ -18,17 +18,28 @@ final class GesundheitsStand {
     @ObservationIgnored private let leser: any HealthLeser
     @ObservationIgnored private let uhr: Uhr
     @ObservationIgnored private let band: @MainActor () -> [BandTagOp]
+    @ObservationIgnored private let importVerlauf: @MainActor () -> ImportVerlaufStand
     @ObservationIgnored private var erstGeholt = false
 
     /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
-    init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] }) {
+    /// `importVerlauf` liefert den Stand der importierten Lovea-Ops (Schritte, Schlaf); er füllt nur, was Health nicht hat (`ImportVerlaufLogik`).
+    init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] },
+         importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() }) {
         self.leser = leser
         self.uhr = uhr
         self.band = band
+        self.importVerlauf = importVerlauf
     }
 
     /// Tageswerte je Tag: Health, mit dem Band je Tag das Maximum bei Schritten und Distanz.
     var tage: [String: TagesWerte] {
+        ImportVerlaufLogik.tage(bandUndHealth, stand: importVerlauf())
+    }
+
+    /// Nächte je Aufwachtag: eigener Eintrag, Health, dann importierte Nächte nur an Tagen ohne Health.
+    var naechte: [String: SchlafNacht] { ImportVerlaufLogik.naechte(health: healthNaechte, stand: importVerlauf()) }
+
+    private var bandUndHealth: [String: TagesWerte] {
         var ergebnis = healthTage
         for b in band() {
             var t = ergebnis[b.tag] ?? TagesWerte(tag: b.tag)
@@ -59,7 +70,7 @@ final class GesundheitsStand {
         let vitalNeu: [VitalArt: [VitalMesswert]] = await [.ruhepuls: ruhepuls, .hrv: hrv, .sauerstoff: sauerstoff,
                                                           .atemfrequenz: atmung, .temperatur: temperatur, .vo2max: vo2]
         for t in tageNeu { healthTage[t.tag] = t }
-        for n in naechteNeu { naechte[n.tag] = n }
+        for n in naechteNeu { healthNaechte[n.tag] = n }
         gewichte = Self.zusammen(gewichte, gewichteNeu, von: von)
         for (art, liste) in vitalNeu { vitale[art] = Self.zusammenV(vitale[art] ?? [], liste, von: von) }
         erstGeholt = true

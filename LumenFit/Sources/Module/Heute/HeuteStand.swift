@@ -24,6 +24,8 @@ struct HeuteStand {
     var schritte: HeuteSchritte
     var hinweise: [TagesHinweis]
     var woche: [HeuteWochenTag]
+    /// "Das fällt mir auf": alle Einsichten aus dem Training, auch die noch gesperrten.
+    var einsichten: [HeuteHinweis] = []
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {
@@ -49,6 +51,10 @@ struct HeuteHabitZeile: Identifiable {
     var erledigt: Bool
     var anteil: Double
     var serie: Int
+    /// Anteile Mo bis So der laufenden Woche (0 bis 1, Zukunft 0); leer = unbekannt.
+    var woche: [Double] = []
+    /// Position von heute in `woche` (0 = Montag).
+    var heuteIndex = 0
     var id: String { habit.id }
 
     /// Zähl-Gewohnheiten: "5 von 8".

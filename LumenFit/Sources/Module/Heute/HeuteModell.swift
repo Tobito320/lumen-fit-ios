@@ -100,6 +100,14 @@ final class HeuteModell {
         return true
     }
 
+    /// Nimmt den eigenen Gewichts-Eintrag eines Tages weg (0 = kein Eintrag). Messungen aus Health bleiben.
+    func loescheGewicht(tag: String) {
+        guard let daten = umgebung.daten else { return }
+        daten.habits.setze(Habit.gewicht.id, datum: tag, wert: 0)
+        umgebung.ereignisse.senden(.gewichtGespeichert(tag: tag))
+        berechne()
+    }
+
     /// Fragt Health an (der erste Aufruf zeigt die Rechte-Abfrage). true, wenn danach Daten da sind.
     @discardableResult
     func healthErlauben() async -> Bool {
@@ -130,6 +138,7 @@ final class HeuteModell {
         let gesundheit = umgebung.gesundheit
         let tage = gesundheit.tage
         let ziele = daten.ziele.ziele
+        let schlafZiel = SchlafZielLogik.ziel(basis: ziele.schlafMinuten, extra: SchlafZielLogik.extra(ops: daten.raum.ops(arten: [SchlafZielLogik.art])), tag: heute)
         let sessions = daten.training.sessions
         let gymHaken = daten.habits.werte(Habit.gym.id)
         let gymTage = WochenStreifenLogik.gymTage(sessions: sessions, haken: gymHaken)
@@ -156,7 +165,7 @@ final class HeuteModell {
         let ruhe = HeuteQuellen.vital(gesundheit.vitale[.ruhepuls] ?? [], heute: heute)
         let hrv = HeuteQuellen.vital(gesundheit.vitale[.hrv] ?? [], heute: heute)
         let last = HeuteQuellen.tageslast(heute: heute, tage: tage, saetze: HeuteQuellen.saetzeProTag(sessions))
-        let score = BereitScore.rechnen(BereitScore.Eingabe(schlafMinuten: nacht?.minuten, schlafZiel: ziele.schlafMinuten, hrv: hrv.aktuell,
+        let score = BereitScore.rechnen(BereitScore.Eingabe(schlafMinuten: nacht?.minuten, schlafZiel: schlafZiel, hrv: hrv.aktuell,
                                                             hrvBasis: hrv.basis, ruhepuls: ruhe.aktuell, ruhepulsBasis: ruhe.basis, last: last))
 
         // Plan
@@ -172,13 +181,13 @@ final class HeuteModell {
             BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
                       beschriftung: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))"),
             BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: "\(gymWoche) von \(gymZiel)", beschriftung: "Gym-Tage der Woche"),
-            BogenWert(id: .erholen, anteil: anteil(schlafMin, ziele.schlafMinuten), zahl: nacht == nil ? "–" : BereitScore.stunden(schlafMin),
-                      beschriftung: "Schlaf von \(BereitScore.stunden(ziele.schlafMinuten))"),
+            BogenWert(id: .erholen, anteil: anteil(schlafMin, schlafZiel), zahl: nacht == nil ? "–" : BereitScore.stunden(schlafMin),
+                      beschriftung: "Schlaf von \(BereitScore.stunden(schlafZiel))"),
         ]
         let boegenSatz = [
             "Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))",
             "Gym: \(gymWoche) von \(gymZiel) Tagen",
-            nacht == nil ? "Schlaf: keine Daten" : "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(ziele.schlafMinuten))",
+            nacht == nil ? "Schlaf: keine Daten" : "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))",
         ].joined(separator: ". ") + "."
         let voll = boegen.allSatisfy { $0.anteil >= 1 }
 
@@ -203,9 +212,11 @@ final class HeuteModell {
         let habits: [HeuteHabitZeile] = daten.habits.sichtbar.map { h in
             let wert = daten.habits.wert(h.id, heute)
             let ziel = daten.habits.habitZiel(h.id)
+            let werte = daten.habits.werte(h.id)
             return HeuteHabitZeile(habit: h, wert: wert, ziel: ziel, erledigt: HabitLogik.erledigt(h, wert: wert, ziel: ziel),
                                    anteil: HabitLogik.anteil(h, wert: wert, ziel: ziel),
-                                   serie: HabitLogik.serie(h, werte: daten.habits.werte(h.id), ziel: ziel, heute: heute))
+                                   serie: HabitLogik.serie(h, werte: werte, ziel: ziel, heute: heute),
+                                   woche: HabitRaster.wochenAnteile(h, werte: werte, ziel: ziel, heute: heute), heuteIndex: Datum.wochentag(heute) - 1)
         }
 
         // Gewicht
@@ -234,7 +245,7 @@ final class HeuteModell {
         regelEingabe.gewichtTage = Array(gw.keys)
         let einsichten = HeuteHinweisLogik.alle(HeuteHinweisEingabe(sessions: sessions, schlafMinuten: schlafAlle, wasser: daten.habits.werte(Habit.wasser.id),
                                                                     gymTage: gymTage, stimmungTage: stimmungsTage.count, prio: MuskelGruppe.standardPrio, heute: heute))
-        let hinweise = TagesHinweisLogik.zeige(TagesHinweisLogik.regeln(regelEingabe) + TagesHinweisLogik.ausEinsichten(einsichten, heute: heute),
+        let hinweise = TagesHinweisLogik.zeige(TagesHinweisLogik.regeln(regelEingabe),
                                                weggewischt: k.hinweise.ids)
 
         stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
@@ -245,7 +256,8 @@ final class HeuteModell {
                                                    etagen: tage[heute]?.etagen ?? 0),
                            hinweise: hinweise,
                            woche: WochenStreifenLogik.woche(heute: heute, schritte: tage.mapValues { $0.schritte }, schlafMinuten: schlafWoche,
-                                                            gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten))
+                                                            gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten),
+                           einsichten: einsichten)
     }
 
     private func anteil(_ ist: Int, _ ziel: Int) -> Double { ziel > 0 ? min(1, max(0, Double(ist) / Double(ziel))) : 0 }

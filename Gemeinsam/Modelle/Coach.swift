@@ -47,6 +47,10 @@ struct CoachAnfrage: Sendable {
     var frage: String
     var verlauf: [CoachNachricht]
     var kontext: CoachKontext
+    /// Wunschton der Person ("locker", "knapp", "direkt", leer = Standard), eigenes Ziel in einem Satz und der Schalter "hält mich an den Plan".
+    var ton: String = ""
+    var ziel: String = ""
+    var disziplin = false
 }
 
 struct CoachAntwort: Sendable {

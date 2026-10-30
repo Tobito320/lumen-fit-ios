@@ -19,10 +19,12 @@ enum ProfilLoveaArten {
         "essen.setzen", "lebensmittel.setzen", "lebensmittel.favorit", "rezept.setzen", "fasten.setzen", "fasten.eintrag", "fasten.plan",
         "koerper.setzen", "food.anpassung",
         "habit.setzen", "habit.anlegen", "habit.aendern", "habit.ausblenden", "habit.loeschen",
+        "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen",
+        "zyklus.tag", "zyklus.einstellung",
     ]
 
-    /// Health-Arten ohne Leser in Lumen Fit (Schlaf und Schritte kommen dort aus Health und Band, nicht aus Ops). Roh behalten, im Bericht genannt.
-    static let rohBehalten: Set<String> = ["schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen", "zyklus.tag", "coach.nachricht"]
+    /// Health-Arten ohne Leser in Lumen Fit. Roh behalten, im Bericht genannt.
+    static let rohBehalten: Set<String> = ["coach.nachricht"]
 
     /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym) und Coach. Der Rest ist Lovea-Oberfläche.
     static let einstellungPraefixe = ["ziel.", "coach."]

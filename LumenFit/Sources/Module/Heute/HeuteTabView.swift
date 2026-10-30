@@ -9,6 +9,8 @@ struct HeuteTabView: View {
     @State private var modell: HeuteModell?
     @State private var blatt: HeuteBlatt?
     @State private var start = 0
+    @State private var habitSeite: String?
+    @Namespace private var zoom
 
     var body: some View {
         ScrollView {
@@ -23,6 +25,9 @@ struct HeuteTabView: View {
             if let stand = modell?.stand {
                 blattInhalt(blatt, stand)
             }
+        }
+        .navigationDestination(item: $habitSeite) { id in
+            HabitDetailView(habitId: id).navigationTransition(.zoom(sourceID: id, in: zoom))
         }
         .haptik(.start, bei: start)
         .task(id: umgebung.profil.aktiv?.id) {
@@ -44,9 +49,14 @@ struct HeuteTabView: View {
                 HeuteLeerKarte(modell: m)
             }
             if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
+            if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
             PlanKarte(plan: s.plan) { starte(s.plan) }
+            ZyklusHinweisAnsicht()
             if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
-            HabitsKarte(habits: s.habits, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, verwalte: { blatt = .habits })
+            SchreibKarte(modell: m)
+            CoachKachelView()
+            HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
+                        verwalte: { blatt = .habits }, zoom: zoom)
             GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
             if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
             WochenStreifen(woche: s.woche) { blatt = .tag($0) }

@@ -4,13 +4,11 @@ import SwiftUI
 enum EssenBlatt: Identifiable {
     case hinzufuegen(Mahlzeit, EssenHinzuBereich)
     case scan(Mahlzeit)
-    case eintrag(EssenEintrag)
 
     var id: String {
         switch self {
         case .hinzufuegen(let m, let b): "hinzu-\(m.rawValue)-\(b.rawValue)"
         case .scan(let m): "scan-\(m.rawValue)"
-        case .eintrag(let e): "eintrag-\(e.id)"
         }
     }
 }
@@ -28,6 +26,20 @@ struct EssenTabView: View {
     @State private var gerichtQuelle: Mahlzeit?
     @State private var gerichtName = ""
     @State private var gerichtAlert = false
+    @State private var vorwaerts = true
+    @State private var wechsel = 0
+    @State private var verbrannt: Int?
+    @State private var offeneMahlzeit: Mahlzeit?
+    @State private var uebersichtOffen = false
+    @State private var naehrwerteOffen = false
+    @State private var auswertungOffen = false
+    @State private var fastenOffen = false
+    @State private var zieleOffen = false
+    @State private var wochenOffen = false
+    @State private var kalenderOffen = false
+    @State private var anpassenOffen = false
+    @State private var koerperOffen = false
+    @Environment(\.bewegungAus) private var bewegungAus
 
     private var heute: String { Datum.text(umgebung.uhr()) }
     private var tag: String { gewaehlt ?? heute }
@@ -42,7 +54,22 @@ struct EssenTabView: View {
         }
         .navigationTitle("Essen")
         .lumenHintergrund()
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() } }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { mehrMenue }
+            ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() }
+        }
+        .navigationDestination(item: $offeneMahlzeit) { EssenMahlzeitSeite(mahlzeit: $0, tag: tag) }
+        .navigationDestination(isPresented: $uebersichtOffen) { EssenMahlzeitenUebersicht(tag: tag) }
+        .navigationDestination(isPresented: $naehrwerteOffen) { EssenTagesNaehrwerteView(tag: tag) }
+        .navigationDestination(isPresented: $auswertungOffen) { EssenAuswertungView() }
+        .navigationDestination(isPresented: $fastenOffen) { EssenFastenView() }
+        .navigationDestination(isPresented: $zieleOffen) { EssenZielDetailView() }
+        .navigationDestination(isPresented: $wochenOffen) { WochenanalyseView() }
+        .sheet(isPresented: $kalenderOffen) { EssenDatumBlatt(tag: tagBinding, heute: heute) }
+        .sheet(isPresented: $anpassenOffen) { EssenTagebuchAnpassenBlatt() }
+        .sheet(isPresented: $koerperOffen) { EssenKoerperwerteBlatt(tag: tag) }
+        .task(id: tag) { await verbranntLaden() }
+        .haptik(.auswahl, bei: wechsel)
         .lumenToast($toast)
         .task {
             LebensmittelIndex.shared.laden()
@@ -77,23 +104,25 @@ struct EssenTabView: View {
         let ziele = essen.ernaehrungsZiele(tag: tag)
         let woche = WochenanalyseLogik.berechne(bis: heute, eintraege: { essen.eintraege($0) }, ziele: { essen.ernaehrungsZiele(tag: $0) })
         return ScrollView {
-            VStack(spacing: Abstand.l) {
-                tagesWahl
-                kalorienKarte(summe, ziele)
-                if essen.eintraege(tag).isEmpty {
-                    LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
-                                handlung: "Etwas eintragen") { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
-                } else {
-                    donutKarte(summe)
+            VStack(spacing: Abstand.xl) {
+                EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
+                VStack(spacing: Abstand.xl) {
+                    ForEach(essen.anpassung.sichtbar, id: \.self) { abschnitt($0, daten, summe, ziele) }
+                    if essen.eintraege(tag).isEmpty {
+                        LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
+                                    handlung: "Etwas eintragen") { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
+                    } else {
+                        donutKarte(summe)
+                    }
+                    proteinKarte(woche)
+                    EssenFastenKarte(essen: essen)
+                    favoritenAbschnitt(essen)
+                    EssenZielKarte(daten: daten, jetzt: jetzt) {
+                        toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .stolz)
+                    }
                 }
-                proteinKarte(woche)
-                EssenFastenKarte(essen: essen)
-                favoritenAbschnitt(essen)
-                ForEach(Mahlzeit.allCases) { m in mahlzeitKarte(m, essen) }
-                EssenZielKarte(daten: daten, jetzt: jetzt) {
-                    toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .stolz)
-                }
-                analyseLink
+                .id(tag)
+                .transition(bewegungAus ? .opacity : .push(from: vorwaerts ? .trailing : .leading))
             }
             .padding(.horizontal, Abstand.l)
             .padding(.top, Abstand.s)
@@ -102,52 +131,111 @@ struct EssenTabView: View {
         .overlay(alignment: .bottomTrailing) { scanKnopf }
     }
 
-    private var tagesWahl: some View {
-        HStack {
-            Button { gewaehlt = Datum.addTage(tag, -1) } label: {
-                Image(systemName: "chevron.left").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-            }
-            .accessibilityLabel("Vorheriger Tag")
-            Spacer()
-            VStack(spacing: 0) {
-                Text(tag == heute ? "Heute" : Datum.anzeige(tag)).font(.headline).foregroundStyle(palette.text)
-                if tag != heute {
-                    Button("Zurück zu heute") { gewaehlt = nil }.font(.footnote).frame(minHeight: Abstand.tippflaeche)
+    @ViewBuilder
+    private func abschnitt(_ id: String, _ daten: DatenSatz, _ summe: Naehrwerte, _ ziele: ErnaehrungsZiele) -> some View {
+        let essen = daten.essen
+        switch id {
+        case "uebersicht":
+            VStack(alignment: .leading, spacing: Abstand.m) {
+                ueberschrift("Übersicht")
+                EssenUebersichtKarte(summe: summe, ziele: ziele, verbrannt: verbrannt) { naehrwerteOffen = true }
+                if !essen.ernaehrungsZiele.eingerichtet {
+                    Button { zieleOffen = true } label: {
+                        HStack(spacing: Abstand.s) {
+                            Text("Ziel \(ziele.kcal) kcal geschätzt.").foregroundStyle(palette.text2)
+                            Text("Anpassen").fontWeight(.semibold).foregroundStyle(palette.text)
+                        }
+                        .font(.footnote)
+                        .frame(minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-            Spacer()
-            Button { gewaehlt = Datum.addTage(tag, 1) } label: {
-                Image(systemName: "chevron.right").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
+        case "ernaehrung":
+            VStack(alignment: .leading, spacing: Abstand.m) {
+                abschnittKopf("Ernährung") { uebersichtOffen = true }
+                EssenMahlzeitenAbschnitt(essen: essen, tag: tag, zielKcal: ziele.kcal, bearbeitbar: true,
+                                         oeffnen: { offeneMahlzeit = $0 },
+                                         hinzufuegen: { blatt = .hinzufuegen($0, .suche) },
+                                         alsGericht: { gerichtName = ""; gerichtQuelle = $0; gerichtAlert = true })
             }
-            .disabled(tag >= heute)
-            .accessibilityLabel("Nächster Tag")
+        case "wasser":
+            VStack(alignment: .leading, spacing: Abstand.m) {
+                ueberschrift("Wasserzähler")
+                EssenWasserKarte(glaeser: daten.habits.wert(Habit.wasser.id, tag),
+                                 zielGlaeser: daten.habits.habitZiel(Habit.wasser.id) ?? 8,
+                                 ausLebensmittelnMl: Int(ErnaehrungLogik.wasserAusLebensmitteln(essen.eintraege(tag)).rounded()),
+                                 bearbeitbar: true) { daten.habits.setzeWasser(datum: tag, anzahl: $0) }
+            }
+        case "koerper":
+            VStack(alignment: .leading, spacing: Abstand.m) {
+                abschnittKopf("Körperwerte") { koerperOffen = true }
+                EssenKoerperKarte(tag: tag, gewicht: essen.gewicht(bis: tag),
+                                  werte: KoerperArt.allCases.compactMap { essen.koerperwert($0, bis: tag) },
+                                  aendern: { gewichtAendern($0, essen) })
+            }
+        default:
+            EmptyView()
         }
     }
 
-    // MARK: - Karten
+    private func ueberschrift(_ text: String) -> some View {
+        Text(text).font(.title2.weight(.heavy)).fontDesign(.rounded).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
+    }
 
-    private func kalorienKarte(_ summe: Naehrwerte, _ ziele: ErnaehrungsZiele) -> some View {
-        let rest = ziele.kcal - Int(summe.kcal.rounded())
-        return HeroKarte {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                Text("Gegessen").font(.subheadline.weight(.semibold))
-                HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
-                    RollZahl(wert: summe.kcal, format: .number.precision(.fractionLength(0)))
-                        .font(.largeTitle.weight(.bold)).fontDesign(.rounded)
-                    Text("von \(ziele.kcal) kcal").font(.subheadline)
-                }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(palette.aufAkzent.opacity(0.25))
-                        Capsule().fill(palette.aufAkzent).frame(width: geo.size.width * min(max(ziele.kcal > 0 ? summe.kcal / Double(ziele.kcal) : 0, 0), 1))
-                    }
-                }
-                .frame(height: 8)
-                .accessibilityHidden(true)
-                Text(rest >= 0 ? "Noch \(rest) kcal übrig" : "\(-rest) kcal über dem Ziel").font(.subheadline.weight(.semibold))
-            }
-            .accessibilityElement(children: .combine)
+    private func abschnittKopf(_ text: String, mehr: @escaping @MainActor () -> Void) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            ueberschrift(text)
+            Spacer()
+            Button("Mehr") { mehr() }
+                .font(.body.weight(.semibold))
+                .foregroundStyle(palette.text)
+                .frame(minHeight: Abstand.tippflaeche)
         }
+    }
+
+    private var mehrMenue: some View {
+        Menu {
+            Button("Ziele", systemImage: "target") { zieleOffen = true }
+            Button("Auswertung", systemImage: "chart.bar") { auswertungOffen = true }
+            Button("Nährwerte des Tages", systemImage: "list.bullet.rectangle") { naehrwerteOffen = true }
+            Button("Wochenanalyse", systemImage: "chart.bar.fill") { wochenOffen = true }
+            Button("Intervallfasten", systemImage: "timer") { fastenOffen = true }
+            Button("Tagebuch anpassen", systemImage: "slider.horizontal.3") { anpassenOffen = true }
+        } label: {
+            Image(systemName: "ellipsis").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
+        }
+        .accessibilityLabel("Mehr")
+    }
+
+    // MARK: - Tag, Gewicht, Health
+
+    private var tagBinding: Binding<String> {
+        Binding(get: { tag }, set: { neu in
+            vorwaerts = neu > tag
+            withAnimation(bewegungAus ? nil : Feder.weich) { gewaehlt = neu == heute ? nil : neu }
+        })
+    }
+
+    /// Eine Richtung wechseln: Push-Übergang in dieser Richtung, leises Auswahl-Signal. Morgen und später sind erlaubt (Planen).
+    private func wechseln(_ richtung: Int) {
+        vorwaerts = richtung > 0
+        let neu = Datum.addTage(tag, richtung)
+        withAnimation(bewegungAus ? nil : Feder.weich) { gewaehlt = neu == heute ? nil : neu }
+        wechsel += 1
+    }
+
+    /// ±0,1 kg vom Gewicht dieses Tages oder vom letzten davor. Nie eingetragen: Körperwerte-Blatt öffnen.
+    private func gewichtAendern(_ schritt: Int, _ essen: EssenStore) {
+        guard let letztes = essen.gewicht(bis: tag) else { koerperOffen = true; return }
+        essen.gewichtSetzen(zehntel: EssenTagebuchLogik.gewichtNach(zehntel: letztes.zehntel, schritt: schritt), datum: tag)
+    }
+
+    /// Aktive Kalorien des Tages aus Apple Health (nur Anzeige). Ohne Freigabe oder Daten bleibt es leer.
+    private func verbranntLaden() async {
+        let tagJetzt = tag
+        let werte = await umgebung.healthLeser.tagesWerte(von: tagJetzt, bis: tagJetzt)
+        verbrannt = werte.first { $0.tag == tagJetzt }.map { Int($0.aktiveKcal.rounded()) }
     }
 
     private func donutKarte(_ summe: Naehrwerte) -> some View {
@@ -196,53 +284,6 @@ struct EssenTabView: View {
         }
     }
 
-    private func mahlzeitKarte(_ m: Mahlzeit, _ essen: EssenStore) -> some View {
-        let eintraege = essen.eintraege(tag, m)
-        let kcal = Int(ErnaehrungLogik.summe(eintraege).kcal.rounded())
-        return ListenKarte {
-            HStack(spacing: Abstand.m) {
-                Image(systemName: m.symbol).foregroundStyle(palette.text2).accessibilityHidden(true)
-                Text(essen.mahlzeitName(m)).font(.headline).foregroundStyle(palette.text)
-                Spacer(minLength: Abstand.s)
-                Text("\(kcal) kcal").font(.subheadline).fontDesign(.rounded).monospacedDigit().foregroundStyle(palette.text2)
-                if !eintraege.isEmpty {
-                    Menu {
-                        Button("Als Gericht speichern", systemImage: "star") { gerichtName = ""; gerichtQuelle = m; gerichtAlert = true }
-                    } label: {
-                        Image(systemName: "ellipsis.circle").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-                    }
-                    .accessibilityLabel("Mehr zu \(essen.mahlzeitName(m))")
-                }
-                Button { blatt = .hinzufuegen(m, .suche) } label: {
-                    Image(systemName: "plus.circle.fill").font(.title3).frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-                }
-                .accessibilityLabel("\(essen.mahlzeitName(m)) hinzufügen")
-            }
-            .padding(.leading, Abstand.l)
-            .padding(.trailing, Abstand.xs)
-            ForEach(eintraege) { e in
-                Haarlinie()
-                EssenEintragZeile(eintrag: e) { blatt = .eintrag(e) }
-            }
-        }
-    }
-
-    private var analyseLink: some View {
-        NavigationLink {
-            WochenanalyseView()
-        } label: {
-            HStack {
-                Label("Wochenanalyse", systemImage: "chart.bar.fill").font(.headline).foregroundStyle(palette.text)
-                Spacer()
-                Image(systemName: "chevron.right").foregroundStyle(palette.text2).accessibilityHidden(true)
-            }
-            .padding(Abstand.l)
-            .frame(minHeight: Abstand.tippflaeche)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
     private var scanKnopf: some View {
         GlassEffectContainer(spacing: Abstand.m) {
             Button {
@@ -268,11 +309,6 @@ struct EssenTabView: View {
             EssenHinzufuegenView(mahlzeit: m, tag: tag, start: bereich, vorgewaehlt: vorgewaehlt) { blattSchliessen(gespeichert: $0) }
         case .scan(let m):
             ScanView(mahlzeit: m, tag: tag) { blattSchliessen(gespeichert: $0) }
-        case .eintrag(let e):
-            NavigationStack {
-                EssenDetailView(lebensmittel: e.lebensmittel, mahlzeit: e.mahlzeit, tag: e.datum, bearbeiten: e) { blattSchliessen(gespeichert: $0) }
-            }
-            .lumenHintergrund()
         }
     }
 

@@ -120,4 +120,64 @@ enum WidgetAnzeige {
         guard istVonHeute(snapshot, jetzt: jetzt), let b = snapshot?.boegen else { return (nil, nil, 0) }
         return (b.schlafMinuten.map { LockscreenLogik.schlafText(minuten: $0) + " h" }, b.hrv.map { "HRV \($0) ms" }, anteil(b.schlafMinuten, b.schlafZiel))
     }
+
+    // MARK: - Gym-Woche und Duell
+
+    /// Die sieben Tage der Woche von `jetzt` (Montag bis Sonntag). Gespeicherte Tage einer anderen Woche zählen nicht: nach dem Wochenwechsel startet sie leer.
+    static func gymWoche(_ snapshot: WidgetSnapshot?, jetzt: Date) -> [WidgetGymTag] {
+        let fertig = Set((snapshot?.gymWoche ?? []).filter(\.erledigt).map(\.tag))
+        return HabitLogik.wochenTage(heute: Datum.text(jetzt)).map { WidgetGymTag(tag: $0, erledigt: fertig.contains($0)) }
+    }
+
+    /// Tage mit Gym bis heute (spätere Tage der Woche zählen nicht).
+    static func gymZahl(_ tage: [WidgetGymTag], jetzt: Date) -> Int {
+        let heute = Datum.text(jetzt)
+        return tage.filter { $0.erledigt && $0.tag <= heute }.count
+    }
+
+    static func gymHeuteErledigt(_ snapshot: WidgetSnapshot?, jetzt: Date) -> Bool {
+        let heute = Datum.text(jetzt)
+        return gymWoche(snapshot, jetzt: jetzt).first { $0.tag == heute }?.erledigt ?? false
+    }
+
+    /// Das Gym-Ziel der Woche aus dem Snapshot (mindestens 1).
+    static func gymZiel(_ snapshot: WidgetSnapshot?) -> Int { max(snapshot?.boegen?.trainingZiel ?? 3, 1) }
+
+    /// Der Partner, wie das Widget ihn zeigt: nur wenn der Snapshot zu heute gehört. Seine Schritte und sein Schlaf gelten nur, wenn seine Datei von heute ist
+    /// (sonst fehlen sie, nie ein gestriger Wert als heutiger); seine Gym-Tage tragen ihr eigenes Datum.
+    static func partner(_ snapshot: WidgetSnapshot?, jetzt: Date) -> WidgetPartnerStand? {
+        guard istVonHeute(snapshot, jetzt: jetzt), var p = snapshot?.partner else { return nil }
+        if p.tag != Datum.text(jetzt) { p.schritte = nil; p.schlafMinuten = nil }
+        return p
+    }
+
+    /// Die Gym-Woche des Partners; nil, wenn er Gym nicht teilt.
+    static func partnerGymWoche(_ partner: WidgetPartnerStand, jetzt: Date) -> [WidgetGymTag]? {
+        guard let tage = partner.gymTage else { return nil }
+        let fertig = Set(tage)
+        return HabitLogik.wochenTage(heute: Datum.text(jetzt)).map { WidgetGymTag(tag: $0, erledigt: fertig.contains($0)) }
+    }
+
+    /// Sprechtext einer Gym-Woche: "Du: 2 von 3 Tagen, heute erledigt".
+    static func gymSprechtext(name: String, tage: [WidgetGymTag], ziel: Int, jetzt: Date) -> String {
+        let heute = Datum.text(jetzt)
+        let heuteFertig = tage.first { $0.tag == heute }?.erledigt ?? false
+        return "\(name): \(gymZahl(tage, jetzt: jetzt)) von \(max(ziel, 1)) Tagen" + (heuteFertig ? ", heute erledigt" : "")
+    }
+
+    // MARK: - Schlaf auf dem Sperrbildschirm
+
+    /// "Schlaf 7:12 h" für die Inline-Zeile; ohne Wert von heute "Schlaf –".
+    static func schlafInline(_ snapshot: WidgetSnapshot?, jetzt: Date) -> String {
+        guard istVonHeute(snapshot, jetzt: jetzt), let m = snapshot?.boegen?.schlafMinuten else { return "Schlaf –" }
+        return "Schlaf " + LockscreenLogik.schlafText(minuten: m) + " h"
+    }
+
+    // MARK: - Einzelne Gewohnheit
+
+    /// Die gewählte Gewohnheit; ohne Wahl oder wenn sie nicht mehr da ist die erste.
+    static func habit(id: String?, snapshot: WidgetSnapshot?) -> WidgetHabitKachel? {
+        let liste = snapshot?.habits ?? []
+        return liste.first { $0.id == id } ?? liste.first
+    }
 }

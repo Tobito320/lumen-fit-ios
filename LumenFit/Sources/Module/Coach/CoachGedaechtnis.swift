@@ -42,6 +42,14 @@ enum CoachGedaechtnisRegeln {
         return text
     }
 
+    /// Der Eintrag zu einer Kennung aus `aendere` oder `vergiss`: erst der Schlüssel (`CoachLokal.schluessel`), dann der ganze Text
+    /// (Groß- und Kleinschreibung egal). Unbekannt: `nil`.
+    static func finde(_ kennung: String, in liste: [String]) -> String? {
+        let k = kennung.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !k.isEmpty else { return nil }
+        return liste.first { CoachLokal.schluessel($0) == k } ?? liste.first { gleich($0, k) }
+    }
+
     private static let merkAnfaenge = ["bitte merk dir", "merk dir", "merke dir", "vergiss nicht"]
     private static let zielAnfaenge = ["mein ziel ist", "mein ziel:", "mein ziel"]
 

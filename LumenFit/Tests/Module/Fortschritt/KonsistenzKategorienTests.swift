@@ -70,3 +70,43 @@ final class KonsistenzKategorienTests: XCTestCase {
         XCTAssertEqual(KonsistenzKategorienLogik.lesen("kaputt"), .standard)
     }
 }
+
+/// Die Kategorien im Profilordner: tolerantes Lesen, Sichern, Farben, Namen bereinigen.
+final class KonsistenzKategorienDateiTests: XCTestCase {
+    func testOhneDateiGeltenDieStandardKategorien() throws {
+        XCTAssertEqual(KonsistenzKategorienDatei.lesen(try tempOrdner()), .standard)
+        XCTAssertEqual(KonsistenzKategorienDatei.lesen(nil), .standard)
+    }
+
+    func testSichernUndLesenBringtDasGleicheZurueck() throws {
+        let ordner = try tempOrdner()
+        var e = KonsistenzEinstellung.standard
+        e.kategorien.append(KonsistenzKategorie(id: "x", name: "Mobility", farbe: "112233"))
+        e.zuordnung["plan1"] = "x"
+        KonsistenzKategorienDatei.sichern(e, in: ordner)
+        XCTAssertEqual(KonsistenzKategorienDatei.lesen(ordner), e)
+    }
+
+    func testEineDateiOhneZuordnungUndEineLeereDateiSindLesbar() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"kategorien":[{"id":"a","name":"Beine","farbe":"34C3A0"}]}"#.utf8).write(to: ordner.appendingPathComponent("konsistenz.json"))
+        let e = KonsistenzKategorienDatei.lesen(ordner)
+        XCTAssertEqual(e.kategorien.map(\.name), ["Beine"])
+        XCTAssertEqual(e.zuordnung, [:])
+        try Data("{}".utf8).write(to: ordner.appendingPathComponent("konsistenz.json"))
+        XCTAssertEqual(KonsistenzKategorienDatei.lesen(ordner).kategorien, KonsistenzKategorienLogik.standardKategorien)
+    }
+
+    func testBereinigtLoeschtLeereNamenUndKuerztDenRand() {
+        var e = KonsistenzEinstellung.standard
+        e.kategorien = [KonsistenzKategorie(id: "a", name: "  Beine ", farbe: "34C3A0"), KonsistenzKategorie(id: "b", name: "   ", farbe: "34C3A0")]
+        XCTAssertEqual(KonsistenzKategorienDatei.bereinigt(e).kategorien.map(\.name), ["Beine"])
+    }
+
+    func testFarbeHexRunde() throws {
+        let k = try XCTUnwrap(KonsistenzFarbe.kanaele(hex: "F0609E"))
+        XCTAssertEqual(KonsistenzFarbe.hex(r: k.r, g: k.g, b: k.b), "F0609E")
+        XCTAssertNil(KonsistenzFarbe.kanaele(hex: "XYZ"))
+        XCTAssertEqual(KonsistenzFarbe.hex(r: 2, g: -1, b: 0.5), "FF0080")
+    }
+}

@@ -18,6 +18,10 @@ struct EnergieBank: View {
                     verlauf
                     Text(energie.ergebnis.satz.components(separatedBy: "\n").first ?? "")
                         .font(.subheadline).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
+                    ForEach(Array(energie.klartext.gruende.prefix(2).enumerated()), id: \.offset) { _, zeile in
+                        Label(zeile.text, systemImage: zeile.bremst ? "arrow.down" : "arrow.up")
+                            .font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
                 .padding(Abstand.l)
             }
@@ -87,6 +91,7 @@ struct EnergieDetail: View {
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var schriftGroesse
+    @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
         NavigationStack {
@@ -145,18 +150,24 @@ struct EnergieDetail: View {
                 ForEach(1...5, id: \.self) { stufe in
                     let gewaehlt = energie.gefuehl == stufe
                     Button { gefuehl(stufe) } label: {
-                        Text(TagesformGefuehl.name(stufe))
-                            .font(.footnote.weight(.semibold))
-                            .lineLimit(1).minimumScaleFactor(0.7)
-                            .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                            .foregroundStyle(gewaehlt ? palette.aufAkzent : palette.text)
-                            .background(gewaehlt ? palette.akzent : palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
+                        VStack(spacing: Abstand.xs) {
+                            Image(systemName: GefuehlBatterie.symbol(stufe))
+                                .font(.title2)
+                                .symbolVariant(gewaehlt ? .fill : .none)
+                                .symbolEffect(.bounce, value: gewaehlt && !bewegungAus)
+                            Text(TagesformGefuehl.name(stufe)).font(.caption2.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + Abstand.m)
+                        .foregroundStyle(gewaehlt ? palette.aufAkzent : palette.text)
+                        .background(gewaehlt ? palette.akzent : palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.federnd)
                     .accessibilityLabel(TagesformGefuehl.name(stufe))
                     .accessibilityAddTraits(gewaehlt ? .isSelected : [])
                 }
             }
+            .animation(bewegungAus ? nil : Feder.schnell, value: energie.gefuehl)
+            .haptik(.auswahl, bei: energie.gefuehl)
             if let v = energie.vergleich { Text(vergleichText(v)).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
         }
     }
@@ -182,11 +193,25 @@ struct EnergieDetail: View {
                         Spacer(minLength: Abstand.s)
                         Text("\(Int(f.wert.rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(palette.text2)
                     }
+                    .overlay(alignment: .bottomLeading) { faktorBalken(f.wert) }
                     .padding(Abstand.l)
                     .accessibilityElement(children: .combine)
                 }
             }
         }
+    }
+
+    /// Wie gut der Faktor gerade ist (0 bis 100), als dünner Balken unter der Zeile.
+    private func faktorBalken(_ wert: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(palette.haar)
+                Capsule().fill(palette.text).frame(width: geo.size.width * min(max(wert / 100, 0), 1))
+            }
+        }
+        .frame(height: 4)
+        .padding(.top, Abstand.s)
+        .accessibilityHidden(true)
     }
 
     private var fehlend: some View {
@@ -195,6 +220,19 @@ struct EnergieDetail: View {
             ForEach(energie.ergebnis.fehlend, id: \.self) { art in
                 Text("\(art.titel): \(art.braucht)").font(.footnote.weight(.medium)).foregroundStyle(palette.text2)
             }
+        }
+    }
+}
+
+/// Fünf Batteriesymbole für das Gefühl (1 leer bis 5 voll).
+enum GefuehlBatterie {
+    static func symbol(_ stufe: Int) -> String {
+        switch TagesformGefuehl.stufe(stufe) {
+        case 1: "battery.0percent"
+        case 2: "battery.25percent"
+        case 3: "battery.50percent"
+        case 4: "battery.75percent"
+        default: "battery.100percent"
         }
     }
 }

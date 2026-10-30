@@ -4,7 +4,9 @@ import Foundation
 /// Gleiche Zeilen wie die Partner-Karte (`PartnerAnzeige`), damit Vorschau und Wirklichkeit nie auseinanderlaufen.
 enum FreigabenVorschau {
     static func zeilen(_ datei: ZusammenfassungDatei) -> [PartnerAnzeige.Zeile] {
-        PartnerAnzeige.zeilen(datei, bereich: .heute) + PartnerAnzeige.zeilen(datei, bereich: .schlaf)
+        var liste = PartnerAnzeige.zeilen(datei, bereich: .heute) + PartnerAnzeige.zeilen(datei, bereich: .schlaf)
+        if let satz = PartnerAnzeige.energieSatz(datei) { liste.append(.init(titel: "Energie", wert: satz, symbol: "bolt.fill")) }
+        return liste
     }
 
     static func name(_ art: FreigabeArt) -> String {
@@ -18,10 +20,10 @@ enum FreigabenVorschau {
 
     static func erklaerung(_ art: FreigabeArt) -> String {
         switch art {
-        case .schritte: "Wie viele Schritte du heute hast und wenn du dein Schrittziel erreichst."
-        case .gym: "An wie vielen Tagen du diese Woche trainiert hast, wann du im Gym bist und wenn du einen Rekord schaffst."
-        case .schlaf: "Wie lange du letzte Nacht geschlafen hast und wenn du gut geschlafen hast."
-        case .essen: "Nur deine Kalorien von heute, nie was du gegessen hast."
+        case .schritte: "Wie viele Schritte du heute und an jedem Tag dieser Woche hast und wenn du dein Schrittziel erreichst."
+        case .gym: "An wie vielen Tagen du diese Woche trainiert hast, an welchen, wann du im Gym bist und wenn du einen Rekord schaffst."
+        case .schlaf: "Wie lange du diese Woche geschlafen hast, wie viel Energie du heute hast und wenn du gut geschlafen hast."
+        case .essen: "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast, nie was du gegessen hast."
         }
     }
 

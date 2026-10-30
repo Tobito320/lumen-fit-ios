@@ -1,82 +1,183 @@
 import SwiftUI
 
-/// Der Verlauf (Ideen 35 und 36): Konstanz-Raster, Gewichtsverlauf mit Prognose, Rekorde und Plateaus der Woche, Hinweis auf Besuche ohne Sätze.
+/// Der Verlauf (Ideen 35 und 36), oben der Umschalter Woche | Verlauf | Plan.
+/// Woche: Besuche, Minuten, Sätze, der Start von heute und die Muskelgruppen als Liste mit Balken und Erholungszeichen.
+/// Verlauf: Konsistenz-Karte mit Kategorien, Konstanz-Raster, Gewichtsverlauf, Rekorde und Plateaus.
+/// Plan: die Trainingstage. Tipp auf eine Gruppe oder Übung öffnet ihre Seite; "Besuche ohne Sätze" führt zu den Trainingstagen.
 struct VerlaufView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @State private var mehrOffen = false
+    @Environment(\.bewegungAus) private var ruhig
+    @State private var seite = VerlaufSeite.woche
+    @State private var weitereOffen: Bool?
+    @State private var ziel: VerlaufZiel?
+    @State private var tipp = 0
+    @State private var start = 0
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
-        let heute = q.heute
-        let gitter = KonstanzRaster.gitter(q.sessions, gym: q.gym, heute: heute)
-        let trend = GewichtVerlauf.trend(werte: q.gewicht, zielKg: q.gewichtZielKg, heute: heute)
-        let laeufe = VerlaufLogik.laeufe(q.sessions)
-        let highlights = VerlaufHighlights.kappen(VerlaufHighlights.berechnen(laeufe, heute: heute))
-        let ohne = VerlaufLogik.ohneSaetze(q.sessions, gym: q.gym, heute: heute, jetzt: q.jetzt)
         ScrollView {
             VStack(spacing: Abstand.l) {
-                if q.hatTraining || !q.gym.isEmpty {
-                    KonstanzRasterKarte(gitter: gitter)
-                } else {
-                    LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
-                        umgebung.router.oeffne(.gym(.training))
-                    }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                Picker("Ansicht", selection: $seite) {
+                    ForEach(VerlaufSeite.allCases) { Text($0.titel).tag($0) }
                 }
-                GewichtVerlaufKarte(trend: trend) { umgebung.router.oeffne(.gewichtEintragen) }
-                if !highlights.offen.isEmpty { highlightKarte(highlights) }
-                if !ohne.isEmpty { ohneSaetzeKarte(ohne) }
-                NavigationLink { RueckblickView() } label: {
-                    Label("Rückblick ansehen", systemImage: "calendar").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                .pickerStyle(.segmented)
+                .controlSize(.large)
+                switch seite {
+                case .woche: woche(q)
+                case .verlauf: verlauf(q)
+                case .plan: plan(q)
                 }
-                .buttonStyle(.bordered)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.m)
+            .animation(ruhig ? nil : Feder.schnell, value: seite)
         }
         .navigationTitle("Verlauf")
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
         .fortschrittToast()
+        .navigationDestination(item: $ziel) { VerlaufZielAnsicht(ziel: $0) }
+        .haptik(.auswahl, bei: tipp)
+        .haptik(.start, bei: start)
+        .haptik(.auswahl, bei: seite)
     }
 
-    private func highlightKarte(_ h: (offen: [VerlaufHighlights.Eintrag], mehr: [VerlaufHighlights.Eintrag])) -> some View {
-        let sichtbar = mehrOffen ? h.offen + h.mehr : h.offen
-        return VStack(alignment: .leading, spacing: Abstand.s) {
-            Text("Rekorde und Plateaus").font(.headline).foregroundStyle(palette.text)
-            ForEach(sichtbar) { e in
-                HStack(spacing: Abstand.m) {
-                    Image(systemName: e.art == .rekord ? "medal.fill" : "equal.circle.fill").frame(width: 28).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(e.uebung.name).font(.subheadline.weight(.semibold))
-                        Text(e.art == .rekord ? "Neuer Rekord: \(VerlaufLogik.zahl(e.e1rm)) kg (1RM)" : "Plateau bei \(VerlaufLogik.zahl(e.e1rm)) kg (1RM), seit drei Einheiten nicht gesteigert")
-                            .font(.caption).foregroundStyle(palette.text2)
-                    }
+    // MARK: Woche
+
+    @ViewBuilder
+    private func woche(_ q: FortschrittQuelle) -> some View {
+        let laeufe = VerlaufLogik.laeufe(q.sessions)
+        let koerper = q.koerper
+        let stand = VerlaufLogik.gruppen(laeufe, heute: q.heute)
+        let stufen = Self.stufen(koerper)
+        let liste = VerlaufWoche.liste(saetze: stand.mapValues(\.woche.saetze), ziele: koerper.ziele.saetze, erholung: stufen, reihenfolge: koerper.ziele.reihenfolge)
+        let ohne = VerlaufLogik.ohneSaetze(q.sessions, gym: q.gym, heute: q.heute, jetzt: q.jetzt)
+        VStack(alignment: .leading, spacing: Abstand.l) {
+            VerlaufZusammenfassung(z: VerlaufWoche.zusammenfassung(q.sessions, laeufe: laeufe, gym: q.gym, heute: q.heute))
+            VerlaufStartKnopf(text: startText(q)) { starten(q) }
+            if !ohne.isEmpty {
+                VerlaufHinweis(tage: ohne) {
+                    tipp += 1
+                    ziel = .trainingstage
                 }
-                .foregroundStyle(palette.text)
-                .accessibilityElement(children: .combine)
             }
-            if !h.mehr.isEmpty && !mehrOffen {
-                Button("Mehr (\(h.mehr.count))") { mehrOffen = true }.frame(minHeight: Abstand.tippflaeche)
+            if laeufe.isEmpty {
+                LeerZustand(stimmung: .bereit, satz: "Noch keine Sätze eingetragen. Im Tab Gym hakst du Sätze ab, dann stehen sie hier.")
+                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            } else {
+                gruppen(liste)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
     }
 
-    private func ohneSaetzeKarte(_ tage: [VerlaufLogik.TagOhneSaetze]) -> some View {
-        VStack(alignment: .leading, spacing: Abstand.xs) {
-            Label(VerlaufWoche.ohneSaetzeText(tage.count), systemImage: "info.circle").font(.subheadline.weight(.semibold))
-            ForEach(tage, id: \.tag) { t in
-                Text("\(Datum.anzeige(t.tag)): \(VerlaufLogik.grund(t.art))").font(.caption).foregroundStyle(palette.text2)
+    /// Ohne erfasstes Training keine Stufe: fehlende Erholung hieße sonst "erholt".
+    static func stufen(_ koerper: KoerperDaten) -> [MuskelGruppe: ErholungsStufe] {
+        var stufen: [MuskelGruppe: ErholungsStufe] = [:]
+        for g in MuskelGruppe.allCases where koerper.stand(g, teil: nil) != nil { stufen[g] = koerper.stufe(g) }
+        return stufen
+    }
+
+    private func gruppen(_ l: VerlaufWoche.Liste) -> some View {
+        let offen = Binding(get: { weitereOffen ?? l.aktiv.isEmpty }, set: { weitereOffen = $0 })
+        return VStack(alignment: .leading, spacing: Abstand.s) {
+            GymAbschnitt(titel: "Sätze pro Muskel")
+            ListenKarte {
+                ForEach(l.aktiv) { zeile in
+                    gruppenKnopf(zeile)
+                    Haarlinie()
+                }
+                if !l.weitere.isEmpty {
+                    VerlaufKlapp(titel: "Weitere Gruppen (\(l.weitere.count))", offen: offen) {
+                        ForEach(l.weitere) { zeile in
+                            gruppenKnopf(zeile)
+                            Haarlinie()
+                        }
+                    }
+                    .padding(.horizontal, Abstand.l)
+                }
             }
         }
-        .foregroundStyle(palette.text)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
-        .accessibilityElement(children: .combine)
+    }
+
+    private func gruppenKnopf(_ zeile: VerlaufWoche.Zeile) -> some View {
+        Button {
+            tipp += 1
+            ziel = .gruppe(zeile.gruppe)
+        } label: {
+            VerlaufGruppenZeile(zeile: zeile)
+        }
+        .buttonStyle(.federnd)
+    }
+
+    /// Wie `GymStartStand.bauen`: läuft eine Einheit, geht es weiter; war eine eben beendet, fortsetzen; sonst starten.
+    private func startArt(_ q: FortschrittQuelle) -> VerlaufStartArt {
+        if q.sessions.contains(where: { TrainingLogik.laufend($0, jetzt: q.jetzt) }) { return .weiter }
+        return TrainingLogik.fortsetzbar(q.sessions, jetzt: q.jetzt) != nil ? .fortsetzen : .starten
+    }
+
+    private func startText(_ q: FortschrittQuelle) -> String {
+        VerlaufWoche.startText(startArt(q), tagName: daten?.training.heutigerTag()?.name)
+    }
+
+    private var daten: DatenSatz? { umgebung.daten }
+
+    private func starten(_ q: FortschrittQuelle) {
+        let sitzung = GymSitzung.von(umgebung)
+        switch startArt(q) {
+        case .weiter: break
+        case .fortsetzen: sitzung.fortsetzen()
+        case .starten: sitzung.starte(planTag: daten?.training.heutigerTag()?.id)
+        }
+        start += 1
+        umgebung.router.oeffne(.gym(.training))
+    }
+
+    // MARK: Verlauf
+
+    @ViewBuilder
+    private func verlauf(_ q: FortschrittQuelle) -> some View {
+        let gitter = KonstanzRaster.gitter(q.sessions, gym: q.gym, heute: q.heute)
+        let trend = GewichtVerlauf.trend(werte: q.gewicht, zielKg: q.gewichtZielKg, heute: q.heute)
+        let highlights = VerlaufHighlights.berechnen(VerlaufLogik.laeufe(q.sessions), heute: q.heute)
+        VStack(alignment: .leading, spacing: Abstand.l) {
+            if q.hatTraining || !q.gym.isEmpty {
+                KonsistenzKarte(sessions: q.sessions)
+                KonstanzRasterKarte(gitter: gitter)
+            } else {
+                LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
+                    umgebung.router.oeffne(.gym(.training))
+                }
+                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            }
+            GewichtVerlaufKarte(trend: trend) { umgebung.router.oeffne(.gewichtEintragen) }
+            StimmungVerlaufKarte()
+            if !highlights.isEmpty {
+                VerlaufHighlightsListe(eintraege: highlights) { id in
+                    tipp += 1
+                    ziel = .uebung(id)
+                }
+            }
+            Button {
+                tipp += 1
+                ziel = .trainingstage
+            } label: {
+                Label("Alle Trainingstage", systemImage: "list.bullet").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+            .buttonStyle(.bordered)
+            NavigationLink { RueckblickView() } label: {
+                Label("Rückblick ansehen", systemImage: "calendar").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    // MARK: Plan
+
+    private func plan(_ q: FortschrittQuelle) -> some View {
+        VerlaufPlan(plan: q.plan) {
+            tipp += 1
+            umgebung.router.oeffne(.gym(.plaene))
+        }
     }
 }

@@ -13,6 +13,8 @@ struct TrainingLaufView: View {
     @State private var einstellungen = false
     @State private var cardioOffen = false
     @State private var cardioIndex = 0
+    @State private var startzeit: GymSession?
+    @Environment(\.bewegungAus) private var ruhig
 
     var body: some View {
         let _ = sitzung.pauseEndeZaehler // die Karte baut sich neu, wenn die Pause endet
@@ -35,17 +37,25 @@ struct TrainingLaufView: View {
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.l)
         }
-        .safeAreaInset(edge: .bottom) { satzFertigLeiste }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: Abstand.s) {
+                rueckgaengigLeiste
+                satzFertigLeiste
+            }
+        }
+        .animation(ruhig ? nil : Feder.schnell, value: sitzung.rueckgaengig)
         .sheet(isPresented: $beenden) { TrainingBeendenView(sitzung: sitzung) }
         .sheet(isPresented: $suche) {
-            UebungsSucheView(titel: "Übung hinzufügen") { sitzung.uebungDazu($0) }
+            UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true)
         }
         .sheet(isPresented: $tagWahl) { TagWechselBlatt(sitzung: sitzung) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
         .sheet(isPresented: $cardioOffen) { CardioAbschlussBlatt(sitzung: sitzung, index: cardioIndex) }
+        .sheet(item: $startzeit) { EinheitStartzeitBlatt(session: $0) }
         .lumenToast($sitzung.toast)
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
+        .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
         .alert("Hinweis zum Studio", isPresented: Binding(get: { sitzung.studioHinweis != nil }, set: { if !$0 { sitzung.hinweisGelesen() } })) {
             Button("OK") { sitzung.hinweisGelesen() }
         } message: {
@@ -63,11 +73,21 @@ struct TrainingLaufView: View {
                     .font(.title3.weight(.bold)).foregroundStyle(palette.text)
                 if let s = sitzung.laufende {
                     HStack(spacing: Abstand.xs) {
-                        Text(s.start, style: .timer).monospacedDigit()
+                        Button { startzeit = s } label: {
+                            HStack(spacing: Abstand.xs) {
+                                Text(s.start, style: .timer).monospacedDigit()
+                                Image(systemName: "pencil").font(.caption).accessibilityHidden(true)
+                            }
+                            .frame(minHeight: Abstand.tippflaeche)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Dauer des Trainings")
+                        .accessibilityHint("Ändert die Startzeit")
                         Text("· \(sitzung.saetzeZahl) Sätze")
+                        if sitzung.volumen > 0 { Text("· \(TrainingLogik.kgText(sitzung.volumen.rounded())) kg").monospacedDigit() }
                     }
                     .font(.subheadline).foregroundStyle(palette.text2)
-                    .accessibilityElement(children: .combine)
+                    liveWerte
                 }
             }
             Spacer()
@@ -77,6 +97,42 @@ struct TrainingLaufView: View {
             }
             Button { einstellungen = true } label: { Image(systemName: "gearshape").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                 .accessibilityLabel("Einstellungen fürs Training")
+        }
+    }
+
+    /// Puls und kcal vom Sensor (Uhr oder Band), alle 10 s neu gelesen; ohne Sensor steht nichts da.
+    private var liveWerte: some View {
+        TimelineView(.periodic(from: .now, by: 10)) { _ in
+            let teile = [sitzung.puls.puls.map { "\($0) Puls" }, sitzung.puls.kcal.map { "\($0) kcal" }].compactMap { $0 }
+            if !teile.isEmpty {
+                Label(teile.joined(separator: " · "), systemImage: "heart.fill")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).monospacedDigit()
+                    .accessibilityLabel(teile.joined(separator: ", "))
+            }
+        }
+    }
+
+    /// "Satz 2 gelöscht" mit "Rückgängig": 5 Sekunden, dann gleitet die Leiste weg.
+    @ViewBuilder
+    private var rueckgaengigLeiste: some View {
+        if let r = sitzung.rueckgaengig {
+            HStack(spacing: Abstand.m) {
+                Text(r.text).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
+                Spacer(minLength: 0)
+                Button("Rückgängig") { withAnimation(Feder.schnell) { sitzung.satzRueckgaengigMachen() } }
+                    .font(.subheadline.weight(.bold))
+                    .frame(minHeight: Abstand.tippflaeche)
+            }
+            .padding(.horizontal, Abstand.m)
+            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(palette.rand, lineWidth: 1))
+            .padding(.horizontal, Abstand.l)
+            .transition(ruhig ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            .task(id: r.id) {
+                try? await Task.sleep(for: .seconds(SatzRueckgaengigLogik.sekunden))
+                guard !Task.isCancelled else { return }
+                withAnimation(Feder.schnell) { sitzung.rueckgaengigVergessen() }
+            }
         }
     }
 

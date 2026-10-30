@@ -3,13 +3,14 @@ import Foundation
 /// Woher eine Nacht kommt. Health vermischt Uhr und Handy schon (je Minute gewinnt die genauere Phase, `SchlafNachtLogik`) und nennt keine
 /// Quelle; hier gilt: Phasen sind "Uhr", nur Dauer ist "Handy", Nächte aus den Ops `fit.band.schlaf` sind "Band".
 enum SchlafQuelle: String, Codable, CaseIterable, Sendable {
-    case uhr, handy, band
+    case uhr, handy, band, eingetragen
 
     var name: String {
         switch self {
         case .uhr: "Uhr"
         case .handy: "Handy"
         case .band: "Band"
+        case .eingetragen: "Eingetragen"
         }
     }
 
@@ -18,12 +19,14 @@ enum SchlafQuelle: String, Codable, CaseIterable, Sendable {
         case .uhr: "applewatch"
         case .handy: "iphone"
         case .band: "dot.radiowaves.left.and.right"
+        case .eingetragen: "pencil"
         }
     }
 
     /// Bei gleicher Genauigkeit gilt das Band vor der Uhr (Lovea: Armband vor Watch), die Uhr vor dem Handy.
     fileprivate var rang: Int {
         switch self {
+        case .eingetragen: 4
         case .band: 3
         case .uhr: 2
         case .handy: 1
@@ -32,7 +35,8 @@ enum SchlafQuelle: String, Codable, CaseIterable, Sendable {
 }
 
 /// Eine Nacht, die nach der Zusammenführung gilt, mit der gewählten Quelle und den Quellen, die dieselbe Nacht auch gemeldet haben.
-struct SchlafGewaehlteNacht: Equatable, Sendable {
+struct SchlafGewaehlteNacht: Equatable, Sendable, Identifiable {
+    var id: String { nacht.tag }
     let nacht: SchlafNacht
     let quelle: SchlafQuelle
     let weitere: [SchlafQuelle]
@@ -83,16 +87,18 @@ enum SchlafQuellenWahl {
         let quelle: SchlafQuelle
 
         /// Phasen zählen mehr als jeder Rang.
-        var gewicht: Int { (SchlafQuellenWahl.hatPhasen(nacht) ? 10 : 0) + quelle.rang }
+        var gewicht: Int { quelle == .eingetragen ? 100 : (SchlafQuellenWahl.hatPhasen(nacht) ? 10 : 0) + quelle.rang }
     }
 
     /// Alle Nächte, aufsteigend nach Aufwachtag. `band` in der Reihenfolge des Eingangs: je Tag gewinnt die zuletzt eingetroffene Op.
-    static func waehle(health: [String: SchlafNacht], band: [BandSchlafOp]) -> [SchlafGewaehlteNacht] {
+    /// `eingetragen` sind die Nächte von Hand (je Aufwachtag eine): sie gewinnen immer.
+    static func waehle(health: [String: SchlafNacht], band: [BandSchlafOp], eingetragen: [String: SchlafNacht] = [:]) -> [SchlafGewaehlteNacht] {
         var bandJeTag: [String: SchlafNacht] = [:]
         for op in band { if let n = nacht(band: op) { bandJeTag[op.tag] = n } }
         // Zwei einfache Zeilen statt einer Summe aus zwei Closures: der Typprüfer braucht dann keine Ratearbeit.
         var kandidaten: [Kandidat] = health.values.map { Kandidat(nacht: $0, quelle: quelle(health: $0)) }
         kandidaten += bandJeTag.values.map { Kandidat(nacht: $0, quelle: .band) }
+        kandidaten += eingetragen.values.map { Kandidat(nacht: $0, quelle: .eingetragen) }
         kandidaten.sort { ($0.nacht.von, $0.quelle.rang) < ($1.nacht.von, $1.quelle.rang) }
         var gruppen: [[Kandidat]] = []
         for k in kandidaten {

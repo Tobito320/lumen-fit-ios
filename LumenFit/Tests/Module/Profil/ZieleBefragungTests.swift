@@ -71,4 +71,30 @@ final class ZieleBefragungTests: XCTestCase {
         ZieleLogik.speichern(prio: zweite.prio, saetze: zweite.saetze, in: raum)
         XCTAssertEqual(ZieleLogik.gespeichert(in: raum), zweite.prio)
     }
+
+    @MainActor
+    func testGespeicherteZieleLesenUndKoerperZieleRechnenDamit() throws {
+        let raum = LokalerRaum(ordner: try tempOrdner(), profil: .testA)
+        XCTAssertFalse(ZieleLogik.befragt(ZieleLogik.werte(in: raum)))
+        let r = ZieleLogik.rechnen(ziele: ["po", "haltung"], tageProWoche: 3)
+        ZieleLogik.speichern(prio: r.prio, saetze: r.saetze, in: raum)
+        let werte = ZieleLogik.werte(in: raum)
+        XCTAssertTrue(ZieleLogik.befragt(werte))
+        let ziele = KoerperZiele.lesen(wert: { werte[$0] })
+        XCTAssertEqual(ziele.prio, r.prio)
+        XCTAssertEqual(ziele.saetze[.beine], 14)
+        XCTAssertEqual(ziele.saetze[.nacken], 6)
+    }
+
+    func testDieJuengsteOpJeSchluesselGewinntUndMuellWirdUeberlesen() {
+        let ops = [
+            ProfilEinstellungD(schluessel: "ziel.saetze.beine", wert: .number(12)),
+            ProfilEinstellungD(schluessel: "ziel.saetze.beine", wert: .number(16)),
+            ProfilEinstellungD(schluessel: "ziel.saetze.brust", wert: .string("zwölf")),
+            ProfilEinstellungD(schluessel: "ziel.saetze.bauch", wert: .number(.infinity)),
+            ProfilEinstellungD(schluessel: "anderes.beine", wert: .number(3)),
+        ]
+        XCTAssertEqual(ZieleLogik.werte(aus: ops), ["ziel.saetze.beine": 16])
+        XCTAssertFalse(ZieleLogik.befragt(["ziel.prio.beine": 1]))
+    }
 }

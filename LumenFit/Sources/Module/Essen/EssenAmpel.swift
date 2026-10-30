@@ -135,6 +135,25 @@ enum EssenAmpel {
     }
 }
 
+/// Zutaten einmalig bei Open Food Facts nachladen (Quelle: Lovea EssenAmpelKarte): reine Regeln, das Netz fragt `LebensmittelSuche.zutatenNachladen`.
+enum EssenAmpelNachladen {
+    /// Nur wenn Zutaten fehlen und ein Barcode da ist, und nie beim Bearbeiten eines Eintrags.
+    static func braucht(_ l: Lebensmittel, bearbeiten: Bool) -> Bool {
+        guard !bearbeiten, let code = l.barcode, !code.isEmpty else { return false }
+        return (l.zutaten ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Das Lebensmittel mit Zutaten und Siegeln aus dem Nachgeladenen; ein vorhandener Zuckerwert bleibt. Ohne Nachgeladenes unverändert.
+    static func zusammen(_ l: Lebensmittel, geladen: Lebensmittel?) -> Lebensmittel {
+        guard let geladen else { return l }
+        var neu = l
+        neu.zutaten = geladen.zutaten
+        neu.siegel = geladen.siegel
+        if neu.pro100.zucker == nil { neu.pro100.zucker = geladen.pro100.zucker }
+        return neu
+    }
+}
+
 /// Was die Pille zeigt: immer Symbol und Text, nie nur Farbe. Fehlende Daten heißen "unklar".
 struct EssenAmpelAnzeige: Equatable, Sendable {
     let symbol: String

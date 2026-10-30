@@ -47,6 +47,10 @@ final class EssenStore {
     /// Rezept-Favoriten zeigen immer die aktuelle Fassung, gelöschte Rezepte fallen weg.
     var favoriten: [Lebensmittel] { faltung.favoritenListe(ich).compactMap { l in l.istRezept ? rezeptAktuell(l.id) : l } }
     func istFavorit(_ l: Lebensmittel) -> Bool { faltung.istFavorit(ich, l.id) }
+    /// Wer das Lebensmittel oder Rezept zuerst angelegt hat; nil bei BLS und Open Food Facts.
+    func ersteller(_ l: Lebensmittel) -> ProfilID? {
+        l.istRezept ? faltung.ersteller(rezept: String(l.id.dropFirst("rezept-".count))) : faltung.ersteller(lebensmittel: l.id)
+    }
     var rezepte: [Rezept] { faltung.rezepte }
     /// Für `rezept-…`-IDs die neueste Fassung als Lebensmittel, sonst nil.
     func rezeptAktuell(_ lebensmittelId: String) -> Lebensmittel? {
