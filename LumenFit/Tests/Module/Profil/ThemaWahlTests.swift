@@ -33,9 +33,9 @@ final class ThemaWahlTests: XCTestCase {
         XCTAssertEqual(ProfilThemaWahl.waehle(.stahl, aktuell: g).erscheinung, .hell, "ein anderes Theme ändert die Erscheinung nie")
     }
 
-    func testZehnKombinationenHabenEinePalette() {
-        XCTAssertEqual(ProfilThemaWahl.kombinationen.count, 10)
-        XCTAssertEqual(Set(ProfilThemaWahl.kombinationen.map { "\($0.thema)-\($0.dunkel)" }).count, 10)
+    func testZwoelfKombinationenHabenEinePalette() {
+        XCTAssertEqual(ProfilThemaWahl.kombinationen.count, 12)
+        XCTAssertEqual(Set(ProfilThemaWahl.kombinationen.map { "\($0.thema)-\($0.dunkel)" }).count, 12)
         for (thema, dunkel) in ProfilThemaWahl.kombinationen.map({ ($0.thema, $0.dunkel) }) {
             let palette = LumenFarben.palette(thema: thema, dunkel: dunkel, kontrastHoch: false)
             XCTAssertNotEqual(palette.grund, palette.text, "\(thema) \(dunkel): Text und Grund sind verschieden")

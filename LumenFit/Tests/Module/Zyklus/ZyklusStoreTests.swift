@@ -6,11 +6,12 @@ import XCTest
 final class ZyklusStoreTests: XCTestCase {
     private let heute = "2026-10-30"
 
+    private lazy var testUhr = TestUhr(Datum.datum(heute))
+
     private func aufbau() throws -> (ZyklusStore, LokalerRaum, URL) {
         let ordner = try tempOrdner()
-        let jetzt = Datum.datum(heute)
-        let raum = LokalerRaum(ordner: ordner, profil: .testA, uhr: { jetzt })
-        return (ZyklusStore(raum: raum, ordner: ordner, uhr: { jetzt }), raum, ordner)
+        let raum = LokalerRaum(ordner: ordner, profil: .testA, uhr: testUhr.uhr)
+        return (ZyklusStore(raum: raum, ordner: ordner, uhr: testUhr.uhr), raum, ordner)
     }
 
     private func periodeTage(_ store: ZyklusStore, start: String, anzahl: Int) {
@@ -37,6 +38,7 @@ final class ZyklusStoreTests: XCTestCase {
         var t = ZyklusTag(id: heute)
         t.notiz = "Hallo"
         store.setze(t)
+        testUhr.vor(sekunden: 1) // gleiche Zeit wäre ein Gleichstand der Ops
         store.alleTageLeeren()
         XCTAssertNil(store.tage[heute])
         XCTAssertEqual(raum.ops(arten: [ZyklusOps.tagArt]).count, 2, "Anhängen-nur: alte Zeile bleibt, dazu die Löschmarke")
