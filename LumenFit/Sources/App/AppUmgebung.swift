@@ -19,6 +19,8 @@ final class AppUmgebung {
     let bruecke: any PartnerAustausch
     /// Konto beim Lumen-Server: Einstellungen ohne Build und Lovea-Freigabe (SPEC 18). Ohne Zugang kein Netz, nur Standardwerte.
     let konto: KontoDienst
+    /// Der einmalige Import aus Lovea (läuft von selbst, wenn der Server das Konto freigibt und er noch nicht war).
+    let loveaImport = LoveaEinmalImport()
     @ObservationIgnored let healthLeser: any HealthLeser
     var coachMotor: any CoachMotor = RueckfallCoachMotor()              // setzt das Modul coach in start()
     var liveAnzeige: any LiveAnzeige = KeineLiveAnzeige()               // setzt das Modul widgets
@@ -50,9 +52,17 @@ final class AppUmgebung {
         self.http = http
         self.mitteiler = mitteiler
         self.healthSchreiber = healthSchreiber
-        self.bruecke = bruecke
         self.healthLeser = leser
-        self.konto = KontoDienst(zugang: kontoZugang, schluesselbund: schluesselbund, http: http, ordner: ordner, uhr: uhr)
+        let dienst = KontoDienst(zugang: kontoZugang, schluesselbund: schluesselbund, http: http, ordner: ordner, uhr: uhr)
+        self.konto = dienst
+        if kontoZugang != nil {
+            // Mit Server: Partner-Daten laufen über ihn, der Datei-Weg zu Lovea bleibt darunter (SPEC 18.7). Ohne Server (Tests, Vorschau) bleibt die Brücke wie übergeben.
+            let hochlader = PartnerHochlader()
+            hochlader.setze { daten in Task { @MainActor in dienst.partnerHochladen(daten) } }
+            self.bruecke = ServerPartnerBruecke(innen: bruecke, serverDatei: ordner.appendingPathComponent(KontoDienst.partnerDatei), hochlader: hochlader)
+        } else {
+            self.bruecke = bruecke
+        }
         self.router = Router()
         let profile = ProfilStore(schluesselbund: schluesselbund, ereignisse: kanal, runden: passwortRunden, uhr: uhr)
         self.profil = profile

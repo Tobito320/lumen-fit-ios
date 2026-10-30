@@ -20,6 +20,7 @@ struct AppRootView: View {
                         .accessibilityHint("Schließt die Meldung")
                 }
             }
+            .overlay(alignment: .top) { if !speicherFehler { LoveaEinmalKarte() } }
             .task(id: speicherFehler) {
                 guard speicherFehler else { return }
                 try? await Task.sleep(for: .seconds(8))
@@ -31,9 +32,17 @@ struct AppRootView: View {
             .bewegungsSchalter()
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))
-            .task(id: umgebung.profil.aktiv?.id) { await auffrischen() }
+            .task(id: umgebung.profil.aktiv?.id) {
+                if umgebung.profil.hatProfil { umgebung.konto.nutzung.bereich(NutzungName.tab(umgebung.router.tab)) }
+                await auffrischen()
+            }
+            // Nutzung: nur Zähler, welcher Tab, welche Seite, welche Funktion (nie Inhalte); gesendet wird gebündelt einmal je Start.
+            .onChange(of: umgebung.router.tab) { _, neu in umgebung.konto.nutzung.bereich(NutzungName.tab(neu)) }
+            .onChange(of: umgebung.router.blatt) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.blatt(neu)) } }
+            .onChange(of: umgebung.router.pfade[umgebung.router.tab]?.last) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.seite(neu)) } }
             .task {
                 for await ereignis in umgebung.ereignisse.strom() {
+                    if let funktion = NutzungName.funktion(ereignis) { umgebung.konto.nutzung.funktion(funktion) }
                     if case .vordergrund = ereignis { await auffrischen() }
                     if case .speichernFehlgeschlagen = ereignis { speicherFehler = true }
                 }
@@ -73,13 +82,22 @@ struct AppRootView: View {
         await umgebung.gesundheit.aktualisiere()
     }
 
-    /// Meldet das Gerät beim Server an, holt Einstellungen und Lovea-Freigabe. Sagt der Server (nicht nur der gemerkte Stand) "nicht freigegeben",
-    /// geht ein alter Schalter "Mit Lovea verbinden" einmal aus: die Brücke liest ihn direkt.
+    /// Meldet das Gerät beim Server an, holt Einstellungen, Lovea-Freigabe und den Partner. Gibt der Server das Konto für Lovea frei, ist die Partner-Verbindung
+    /// ohne Schalter an und der einmalige Import startet von selbst; sagt er (nicht nur der gemerkte Stand) "nicht freigegeben", geht ein alter Schalter einmal aus.
     private func kontoAbgleichen() async {
-        await umgebung.konto.aktualisiere(profilName: umgebung.profil.aktiv?.name)
-        guard umgebung.konto.freigabeAktuell, !umgebung.konto.loveaErlaubt,
-              umgebung.daten?.einstellungen.werte.loveaVerbunden == true else { return }
-        umgebung.daten?.einstellungen.aendere { $0.loveaVerbunden = false }
+        let konto = umgebung.konto
+        await konto.aktualisiere(profilName: umgebung.profil.aktiv?.name)
+        if let einstellungen = umgebung.daten?.einstellungen {
+            let verbunden = einstellungen.werte.loveaVerbunden
+            if konto.loveaErlaubt, !LoveaFreigabe.demoAktiv, !verbunden {
+                einstellungen.aendere { $0.loveaVerbunden = true }
+                Task { _ = await umgebung.mitteiler.erlaubnisHolen() }
+            } else if konto.freigabeAktuell, !konto.loveaErlaubt, verbunden {
+                einstellungen.aendere { $0.loveaVerbunden = false }
+            }
+        }
+        await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http)
+        umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())   // der Partner-Stand vom Server liegt jetzt da
     }
 }
 

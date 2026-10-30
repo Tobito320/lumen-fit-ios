@@ -30,9 +30,15 @@ export const WERKZEUGE = [
         umgebung, id: kontoId,
         einstellungen: { type: "object", description: "Schalter je Konto, z. B. {\"loveaVerbinden\": true, \"nameAendernTage\": 3}" },
         lovea_person: { type: ["string", "null"], enum: ["ahmed", "annika", null], description: "Welche Lovea-Person das Konto importieren darf; null entzieht sie." },
+        lovea_import_zuruecksetzen: { type: "boolean", description: "true: der Merker \"Lovea-Import fertig\" wird gelöscht, die App importiert beim nächsten Start nochmal (nichts wird doppelt)." },
       },
       required: ["id"],
     },
+  },
+  {
+    name: "lumenfit_nutzung",
+    description: "Nutzung je Konto (aus den gebündelten Meldungen der App, nur Zähler, nie Inhalte oder Gesundheitswerte): zuletzt aktiv, aktive Tage der letzten 7 und 30 Tage, meistgenutzte Bereiche und Funktionen, nie genutzte (laut Liste der App), App-Version und ob der Lovea-Import fertig ist.",
+    inputSchema: { type: "object", properties: { umgebung } },
   },
   {
     name: "lumenfit_config_setzen",
@@ -59,6 +65,7 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
   if (!w) throw new Error(`Werkzeug unbekannt: ${name}`);
   let pfad, methode = "GET", body;
   if (name === "lumenfit_konten") pfad = "/admin/konten";
+  else if (name === "lumenfit_nutzung") pfad = "/admin/nutzung";
   else if (name === "lumenfit_config_setzen") [pfad, methode, body] = ["/admin/config", "PATCH", a.einstellungen];
   else {
     if (typeof a.id !== "string" || !a.id) throw new Error("id fehlt");
@@ -69,7 +76,8 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
       body = {};
       if (a.einstellungen !== undefined) body.einstellungen = a.einstellungen;
       if (a.lovea_person !== undefined) body.lovea_person = a.lovea_person;
-      if (!Object.keys(body).length) throw new Error("mindestens einstellungen oder lovea_person angeben");
+      if (a.lovea_import_zuruecksetzen === true) body.lovea_import = null;
+      if (!Object.keys(body).length) throw new Error("mindestens einstellungen, lovea_person oder lovea_import_zuruecksetzen angeben");
     }
   }
   const url = basis[a.umgebung ?? "live"];
@@ -91,7 +99,7 @@ async function antworten(msg) {
       protocolVersion: params?.protocolVersion ?? "2025-06-18",
       capabilities: { tools: {} },
       serverInfo: { name: "lumenfit", version: "1.0.0" },
-      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Schalter je Konto und global ändern, Konten sperren. Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
+      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Schalter je Konto und global ändern, Konten sperren. Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
     };
   }
   if (method === "ping") return {};

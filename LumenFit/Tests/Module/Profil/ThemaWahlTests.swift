@@ -51,7 +51,7 @@ final class ThemaWahlTests: XCTestCase {
     }
 
     func testJedesThemeHatEigenesMusterUndBeschreibung() {
-        XCTAssertEqual(Set(ThemaID.allCases.map(ProfilThemaWahl.muster)).count, 5)
+        XCTAssertEqual(Set(ThemaID.allCases.map(ProfilThemaWahl.muster)).count, 6)
         for thema in ThemaID.allCases {
             XCTAssertFalse(ProfilThemaWahl.beschreibung(thema).isEmpty)
             XCTAssertFalse(thema.anzeigeName.isEmpty)

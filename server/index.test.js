@@ -162,7 +162,7 @@ test("Lovea-Freigabe: nur für freigegebenes Konto, nennt Person, nie den Key", 
   assert.deepEqual(r.json, { erlaubt: false });
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { loveaVerbinden: true }, lovea_person: "annika" } });
   r = await ruf(env, "GET", "/lovea/freigabe", { headers: app() });
-  assert.deepEqual(r.json, { erlaubt: true, person: "annika" });
+  assert.deepEqual(r.json, { erlaubt: true, person: "annika", importErledigt: false });
   assert.ok(!r.text.includes("lovea-geheim"));
 });
 
@@ -219,4 +219,99 @@ test("Unbekannte Pfade 404, Antworten sind JSON ohne Geheimnisse", async () => {
   const env = umgebung();
   assert.equal((await ruf(env, "GET", "/", { headers: app() })).status, 404);
   assert.equal((await ruf(env, "GET", "/gesundheit")).status, 200);
+});
+
+// --- Einmal-Import, Nutzung, Partner ---
+const ID2 = "b".repeat(32);
+const GEHEIM2 = "k".repeat(48);
+const app2 = () => ({ "X-App-Key": APP, "X-Konto": ID2, "X-Geheimnis": GEHEIM2 });
+const freigeben = (env, id, person) => ruf(env, "PATCH", `/admin/konto/${id}`, { headers: admin, body: { einstellungen: { loveaVerbinden: true }, lovea_person: person } });
+const heute = () => new Date().toISOString().slice(0, 10);
+
+test("Import-erledigt: nur mit Person, der erste Zeitpunkt bleibt, Freigabe meldet es, Admin setzt zurück", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 403, "ohne lovea_person nicht");
+  await freigeben(env, ID, "ahmed");
+  assert.deepEqual((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json, { erlaubt: true, person: "ahmed", importErledigt: false });
+  assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);
+  const erste = env.DB.roh.prepare("SELECT wert FROM konto_merker").get().wert;
+  assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);
+  assert.equal(env.DB.roh.prepare("SELECT wert FROM konto_merker").get().wert, erste);
+  assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.importErledigt, true);
+  assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app({ "X-Geheimnis": "x".repeat(48) }) })).status, 401);
+  assert.equal((await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_import: true } })).status, 400);
+  assert.equal((await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_import: null } })).status, 200);
+  assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.importErledigt, false);
+});
+
+test("Nutzung: Bündel werden addiert, Form und Tag geprüft, alte Tage fallen weg", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  const senden = (body) => ruf(env, "POST", "/nutzung", { headers: app({ "X-App-Version": "1.2" }), body });
+  assert.equal((await senden({ tag: heute(), bereiche: { "tab.gym": 2 }, funktionen: { training: 1 } })).status, 200);
+  assert.equal((await senden({ tag: heute(), bereiche: { "tab.gym": 1, "tab.heute": 1 } })).status, 200);
+  const z = env.DB.roh.prepare("SELECT * FROM nutzung").get();
+  assert.deepEqual(JSON.parse(z.bereiche), { "tab.gym": 3, "tab.heute": 1 });
+  assert.deepEqual(JSON.parse(z.funktionen), { training: 1 });
+  assert.equal(z.version, "1.2");
+  for (const schlecht of [
+    { tag: "gestern" }, { tag: "2020-01-01" }, { tag: heute(), bereiche: { "Freitext mit Leerzeichen": 1 } },
+    { tag: heute(), bereiche: { "tab.gym": -1 } }, { tag: heute(), bereiche: { "tab.gym": 1.5 } }, { tag: heute(), funktionen: [1] },
+    { tag: heute(), bereiche: Object.fromEntries(Array.from({ length: 61 }, (_, i) => [`n${i}`, 1])) },
+  ]) assert.equal((await senden(schlecht)).status, 400, JSON.stringify(schlecht).slice(0, 60));
+  assert.equal((await ruf(env, "POST", "/nutzung", { headers: app({ "X-Geheimnis": "x".repeat(48) }), body: { tag: heute() } })).status, 401);
+  env.DB.roh.prepare("INSERT INTO nutzung (konto, tag) VALUES (?, '2020-01-01')").run(ID);
+  await senden({ tag: heute() });
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM nutzung WHERE tag < '2021-01-01'").get().n, 0);
+});
+
+test("Nutzung: Admin-Auswertung mit aktiven Tagen, Meistgenutztem und Nie-Genutztem", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  const ein = (tag, b, f) => env.DB.roh.prepare("INSERT INTO nutzung (konto, tag, bereiche, funktionen) VALUES (?, ?, ?, ?)").run(ID, tag, JSON.stringify(b), JSON.stringify(f));
+  const vor = (n) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  ein(vor(0), { "tab.gym": 5 }, { training: 2 });
+  ein(vor(3), { "tab.gym": 1, "tab.essen": 4 }, {});
+  ein(vor(20), { "tab.schlaf": 1 }, {});
+  ein(vor(60), { "tab.coach": 1 }, {});
+  assert.equal((await ruf(env, "GET", "/admin/nutzung")).status, 401);
+  const k = (await ruf(env, "GET", "/admin/nutzung", { headers: admin })).json.konten[0];
+  assert.equal(k.zuletzt_aktiv, vor(0));
+  assert.equal(k.aktive_tage_7, 2);
+  assert.equal(k.aktive_tage_30, 3);
+  assert.deepEqual(k.meistgenutzt.bereiche[0], { name: "tab.gym", anzahl: 6 });
+  assert.ok(k.nie_genutzt.bereiche.includes("tab.heute") && !k.nie_genutzt.bereiche.includes("tab.gym"));
+  assert.ok(k.nie_genutzt.funktionen.includes("satz") && !k.nie_genutzt.funktionen.includes("training"));
+  assert.equal(k.lovea_import_erledigt, null);
+  assert.ok(!JSON.stringify(k).includes(GEHEIM));
+});
+
+test("Partner: Annika sieht nur die Zusammenfassung von Ahmed (und umgekehrt), nur freigegebene Felder, nur bei Freigabe", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await registrieren(env, ID2, GEHEIM2, "Zweites Gerät");
+  const datei = (name, extra = {}) => ({
+    version: 1, geschrieben: new Date().toISOString(), profilName: name, freigaben: ["schritte", "gym"],
+    heute: { tag: heute(), schritte: 4200, gymTageWoche: 2, schlafMinuten: 400, kcal: 1800, geheim: "x" },
+    ereignisse: [{ id: "e1", art: "gymEnde", zeit: new Date().toISOString(), text: "war im Gym" }, { id: "e2", art: "unbekannt", zeit: new Date().toISOString(), text: "x" }],
+    ...extra,
+  });
+  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei("Ahmed") })).status, 403, "ohne Freigabe nicht");
+  assert.equal((await ruf(env, "GET", "/partner", { headers: app() })).status, 403);
+  await freigeben(env, ID, "ahmed");
+  await freigeben(env, ID2, "annika");
+  assert.deepEqual((await ruf(env, "GET", "/partner", { headers: app2() })).json, { partner: null, aktualisiert: null });
+  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei("Ahmed") })).status, 200);
+  const p = (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner;
+  assert.equal(p.profilName, "Ahmed");
+  assert.deepEqual(p.freigaben, ["schritte", "gym"]);
+  assert.deepEqual(p.heute, { tag: heute(), schritte: 4200, gymTageWoche: 2 }, "Schlaf und kcal waren nicht freigegeben, Fremdfelder fallen weg");
+  assert.deepEqual(p.ereignisse.map((e) => e.id), ["e1"]);
+  assert.equal((await ruf(env, "GET", "/partner", { headers: app() })).json.partner, null, "man sieht nie sich selbst");
+  for (const schlecht of [{}, datei("Ahmed", { version: 2 }), datei("  "), datei("A", { geschrieben: "nie" }), datei("A", { heute: { tag: "x" } })])
+    assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: schlecht })).status, 400);
+  // Gesperrtes Partner-Konto liefert nichts mehr.
+  await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { gesperrt: true } });
+  assert.equal((await ruf(env, "GET", "/partner", { headers: app2() })).json.partner, null);
 });

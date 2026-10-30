@@ -1,6 +1,6 @@
 import Foundation
 
-enum ThemaID: String, Codable, CaseIterable, Sendable { case monochrom, graphit, stahl, glut, wald }
+enum ThemaID: String, Codable, CaseIterable, Sendable { case monochrom, graphit, stahl, glut, wald, lovea }
 enum Erscheinung: String, Codable, CaseIterable, Sendable { case system, hell, dunkel }
 enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
 

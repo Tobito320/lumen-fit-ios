@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Die Seite "Verbindungen" (Profil): Lovea verbinden (Idee 81, nur wenn der Server das Konto freigibt; sonst gar nicht sichtbar), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83),
+/// Die Seite "Verbindungen" (Profil): der Partner (Idee 81; ohne Schalter, er entsteht einmal über den Server und ist nur sichtbar, wenn der Server das Konto freigibt), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83)
 /// und die Freunde (89). Das Band wohnt seit 30.10. unter Profil > Geräte (`GeraeteView`). Nicht verbunden zeigt sie nur die Schalter, nie etwas vom Partner und keine Fehlermeldung.
 struct VerbindungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -34,7 +34,7 @@ private struct VerbindungenInhalt: View {
     var body: some View {
         Form {
             if loveaErlaubt {
-                loveaAbschnitt
+                partnerAbschnitt
                 if loveaAn {
                     freigabenAbschnitt
                     vorschauAbschnitt
@@ -46,23 +46,23 @@ private struct VerbindungenInhalt: View {
         .verbindenFormular()
     }
 
-    // MARK: Lovea
+    // MARK: Partner
 
-    private var loveaAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Lovea", fuss: loveaStatus) {
-            Toggle("Mit Lovea verbinden", isOn: Binding(
-                get: { loveaAn },
-                set: { neu in
-                    einstellungen.aendere { $0.loveaVerbunden = neu }
-                    if neu { Task { _ = await umgebung.mitteiler.erlaubnisHolen() } }
-                }))
+    /// Kein Schalter: die Verbindung entsteht einmal am Server und bleibt. Hier steht nur, wie es gerade steht.
+    private var partnerAbschnitt: some View {
+        VerbindenAbschnitt(titel: "Partner", fuss: partnerStatus) {
+            Label(partnerZeile, systemImage: "person.2.fill")
         }
     }
 
-    private var loveaStatus: String {
-        guard loveaAn else { return "Aus. Lumen Fit läuft wie gewohnt." }
-        if case .verbunden(let datei) = verbindung.partner { return "Verbunden mit \(datei.profilName)." }
-        return "Noch keine Verbindung. Sie entsteht, sobald Lovea seine Datei geschrieben hat."
+    private var partnerZeile: String {
+        if case .verbunden(let datei) = verbindung.partner { return "Verbunden mit \(datei.profilName)" }
+        return "Noch keine Daten"
+    }
+
+    private var partnerStatus: String {
+        if case .verbunden = verbindung.partner { return "Du teilst nur, was du unten freigibst." }
+        return "Sobald dein Partner Lumen Fit nutzt und teilt, erscheint er hier. Du teilst nur, was du unten freigibst."
     }
 
     // MARK: Freigaben und Vorschau

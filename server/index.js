@@ -11,6 +11,21 @@ const GEHEIM_FORM = /^[A-Za-z0-9_-]{32,128}$/;
 const SCHLUESSEL_FORM = /^[A-Za-z][A-Za-z0-9_]{0,40}$/;
 const MAX_EINSTELLUNGEN_BYTES = 4000;
 const MAX_LIMIT = 200;
+const TAG_FORM = /^\d{4}-\d{2}-\d{2}$/;
+const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
+const MAX_NAMEN = 60;
+const NUTZUNG_TAGE = 90;
+const FREIGABEN = ["schritte", "gym", "schlaf", "essen"];
+const EREIGNIS_ARTEN = ["gymStart", "gymEnde", "ziel", "rekord", "schlafGut"];
+// Namen, die die App meldet (Tabs, Seiten, Funktionen). "Nie genutzt" in der Auswertung = in dieser Liste, aber nie gemeldet.
+// Nur Namen, die die App wirklich senden kann: Tabs, die Seiten, die als eigene Route auf einem Tab liegen, und die zwei Blätter. Die Unterseiten im Profil
+// (Aussehen, Ziele ...) sind Links innerhalb des Blatts und werden nicht einzeln gemessen: das Profil zählt als "blatt.profil".
+export const BEKANNTE_BEREICHE = [
+  "tab.heute", "tab.gym", "tab.essen", "tab.schlaf", "tab.coach", "blatt.profil", "blatt.freund",
+  "seite.gym.plaene", "seite.gym.fortschritt", "seite.essen.scan", "seite.essen.favoriten", "seite.schlaf.verlauf", "seite.schlaf.werte",
+  "seite.verlauf", "seite.gewichtEintragen", "seite.uebung",
+];
+export const BEKANNTE_FUNKTIONEN = ["training", "satz", "mahlzeit", "gewicht", "habit", "meilenstein"];
 
 const json = (o, status = 200) => Response.json(o, { status });
 const nein = (status, fehler) => json({ fehler }, status);
@@ -102,7 +117,117 @@ function freigegeben(konto) {
 async function loveaFreigabe(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
-  return json(freigegeben(konto) ? { erlaubt: true, person: konto.lovea_person } : { erlaubt: false });
+  if (!freigegeben(konto)) return json({ erlaubt: false });
+  return json({ erlaubt: true, person: konto.lovea_person, importErledigt: !!(await merker(env, konto.id, "lovea_import")) });
+}
+
+const merker = (env, konto, schluessel) => env.DB.prepare("SELECT wert FROM konto_merker WHERE konto = ? AND schluessel = ?").bind(konto, schluessel).first();
+
+// Der einmalige Lovea-Import ist fertig: je Konto auf dem Server gemerkt, damit er nach einer Neuinstallation nicht nochmal läuft. Der erste Zeitpunkt bleibt.
+async function importErledigt(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!PERSONEN.includes(konto.lovea_person)) return nein(403, "nicht freigegeben");
+  await env.DB.prepare("INSERT OR IGNORE INTO konto_merker (konto, schluessel, wert) VALUES (?, 'lovea_import', ?)").bind(konto.id, new Date().toISOString()).run();
+  return json({ ok: true });
+}
+
+// Zähler { name: Anzahl } prüfen; null bei ungültiger Form. Nur Namen aus Kleinbuchstaben-Anfang, nie Freitext.
+function zaehler(x) {
+  if (x === undefined) return {};
+  if (!istObjekt(x) || Object.keys(x).length > MAX_NAMEN) return null;
+  const aus = {};
+  for (const [k, v] of Object.entries(x)) {
+    if (!NAME_FORM.test(k) || !Number.isInteger(v) || v < 0 || v > 9999) return null;
+    aus[k] = v;
+  }
+  return aus;
+}
+const summe = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = Math.min(9999, (o[k] ?? 0) + v); return o; };
+
+// Nutzung: ein Bündel je Start (Tag, Zähler für Bereiche und Funktionen). Keine Inhalte, keine Gesundheitswerte. Mehrere Bündel am Tag werden addiert.
+async function nutzungMelden(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  const b = await koerper(request);
+  if (!istObjekt(b) || !TAG_FORM.test(b.tag ?? "")) return nein(400, "ungültig");
+  const t = Date.parse(`${b.tag}T00:00:00Z`);
+  if (!(t > Date.now() - 3 * 864e5 && t < Date.now() + 2 * 864e5)) return nein(400, "tag");
+  const bereiche = zaehler(b.bereiche), funktionen = zaehler(b.funktionen);
+  if (!bereiche || !funktionen) return nein(400, "ungültig");
+  const alt = await env.DB.prepare("SELECT bereiche, funktionen FROM nutzung WHERE konto = ? AND tag = ?").bind(konto.id, b.tag).first();
+  const neuB = summe(lesen(alt?.bereiche), bereiche), neuF = summe(lesen(alt?.funktionen), funktionen);
+  if (Object.keys(neuB).length > MAX_NAMEN || Object.keys(neuF).length > MAX_NAMEN) return nein(400, "zu viele Namen");
+  const version = (request.headers.get("X-App-Version") ?? konto.version).slice(0, 20);
+  await env.DB.prepare("INSERT OR REPLACE INTO nutzung (konto, tag, version, bereiche, funktionen) VALUES (?, ?, ?, ?, ?)")
+    .bind(konto.id, b.tag, version, JSON.stringify(neuB), JSON.stringify(neuF)).run();
+  const grenze = new Date(Date.now() - NUTZUNG_TAGE * 864e5).toISOString().slice(0, 10);
+  await env.DB.prepare("DELETE FROM nutzung WHERE konto = ? AND tag < ?").bind(konto.id, grenze).run();
+  return json({ ok: true });
+}
+
+// Auswertung je Konto für den MCP: zuletzt aktiv, aktive Tage 7/30, meistgenutzt, nie genutzt (laut Liste der App).
+function auswerten(konto, zeilen, jetzt = Date.now()) {
+  const tag = (n) => new Date(jetzt - n * 864e5).toISOString().slice(0, 10);
+  const ab7 = tag(6), ab30 = tag(29);
+  const bereiche = {}, funktionen = {};
+  const tage = zeilen.map((z) => z.tag).sort();
+  for (const z of zeilen) {
+    for (const [k, v] of Object.entries(lesen(z.bereiche))) bereiche[k] = (bereiche[k] ?? 0) + v;
+    for (const [k, v] of Object.entries(lesen(z.funktionen))) funktionen[k] = (funktionen[k] ?? 0) + v;
+  }
+  const oben = (o) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, anzahl]) => ({ name, anzahl }));
+  return {
+    id: konto.id, name: konto.name, lovea_person: konto.lovea_person, version: konto.version, zuletzt_gesehen: konto.gesehen,
+    zuletzt_aktiv: tage.at(-1) ?? null,
+    aktive_tage_7: tage.filter((t) => t >= ab7).length,
+    aktive_tage_30: tage.filter((t) => t >= ab30).length,
+    meistgenutzt: { bereiche: oben(bereiche), funktionen: oben(funktionen) },
+    nie_genutzt: { bereiche: BEKANNTE_BEREICHE.filter((n) => !bereiche[n]), funktionen: BEKANNTE_FUNKTIONEN.filter((n) => !funktionen[n]) },
+  };
+}
+
+// Zusammenfassung für den Partner: Form von SPEC 5.5 (zusammenfassung.json), nur freigegebene Felder, alles andere fliegt raus.
+function zusammenfassungSauber(b) {
+  const ganz = (x) => (Number.isInteger(x) && x >= 0 && x < 1e6 ? x : undefined);
+  if (!istObjekt(b) || b.version !== 1 || typeof b.profilName !== "string" || !b.profilName.trim() || !istObjekt(b.heute)) return null;
+  const geschrieben = Date.parse(b.geschrieben);
+  if (!Number.isFinite(geschrieben) || typeof b.heute.tag !== "string" || !TAG_FORM.test(b.heute.tag)) return null;
+  const freigaben = Array.isArray(b.freigaben) ? [...new Set(b.freigaben.filter((f) => FREIGABEN.includes(f)))] : [];
+  const h = b.heute;
+  const heute = { tag: h.tag };
+  if (freigaben.includes("schritte") && ganz(h.schritte) !== undefined) heute.schritte = h.schritte;
+  if (freigaben.includes("gym") && ganz(h.gymTageWoche) !== undefined) heute.gymTageWoche = h.gymTageWoche;
+  if (freigaben.includes("schlaf") && ganz(h.schlafMinuten) !== undefined) heute.schlafMinuten = h.schlafMinuten;
+  if (freigaben.includes("essen") && ganz(h.kcal) !== undefined) heute.kcal = h.kcal;
+  const ereignisse = (Array.isArray(b.ereignisse) ? b.ereignisse : []).slice(0, 20).filter((e) => istObjekt(e)
+    && typeof e.id === "string" && e.id.length <= 80 && EREIGNIS_ARTEN.includes(e.art) && Number.isFinite(Date.parse(e.zeit)) && typeof e.text === "string")
+    .map((e) => ({ id: e.id, art: e.art, zeit: e.zeit, text: e.text.slice(0, 120) }));
+  return { version: 1, geschrieben: b.geschrieben, profilName: b.profilName.trim().slice(0, 40), freigaben, heute, ereignisse };
+}
+
+// Der andere der zwei freigegebenen Konten (ahmed <-> annika), das zuletzt aktive ungesperrte.
+const andere = (person) => PERSONEN.find((p) => p !== person);
+
+async function partnerLegen(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
+  const sauber = zusammenfassungSauber(await koerper(request));
+  if (!sauber) return nein(400, "ungültig");
+  await env.DB.prepare("INSERT OR REPLACE INTO partner_stand (konto, aktualisiert, daten) VALUES (?, ?, ?)")
+    .bind(konto.id, new Date().toISOString(), JSON.stringify(sauber)).run();
+  return json({ ok: true });
+}
+
+async function partnerLesen(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
+  const zeile = await env.DB.prepare(
+    "SELECT p.daten, p.aktualisiert FROM partner_stand p JOIN konten k ON k.id = p.konto WHERE k.lovea_person = ? AND k.gesperrt = 0 ORDER BY p.aktualisiert DESC")
+    .bind(andere(konto.lovea_person)).first();
+  return json({ partner: zeile ? lesen(zeile.daten) : null, aktualisiert: zeile?.aktualisiert ?? null });
 }
 
 // Proxy statt Schlüssel: nur GET /agent/ops, Person und Key setzt der Server, die App bekommt den Key nie.
@@ -136,6 +261,17 @@ async function verwalten(request, url, env) {
     const { results } = await env.DB.prepare("SELECT * FROM konten ORDER BY gesehen DESC").all();
     return json({ konten: results.map(oeffentlich), global: { ...STANDARD, ...(await globaleConfig(env)) } });
   }
+  if (url.pathname === "/admin/nutzung" && m === "GET") {
+    const { results: konten } = await env.DB.prepare("SELECT * FROM konten ORDER BY gesehen DESC").all();
+    const { results: zeilen } = await env.DB.prepare("SELECT konto, tag, bereiche, funktionen FROM nutzung").all();
+    const { results: importe } = await env.DB.prepare("SELECT konto, wert FROM konto_merker WHERE schluessel = 'lovea_import'").all();
+    return json({
+      konten: konten.map((k) => ({
+        ...auswerten(k, zeilen.filter((z) => z.konto === k.id)),
+        lovea_import_erledigt: importe.find((i) => i.konto === k.id)?.wert ?? null,
+      })),
+    });
+  }
   if (url.pathname === "/admin/config" && m === "PATCH") {
     const r = flicken(await globaleConfig(env), await koerper(request), ["loveaVerbinden"]);
     if (r.fehler) return nein(400, r.fehler);
@@ -157,6 +293,10 @@ async function verwalten(request, url, env) {
     if ("gesperrt" in b) {
       if (typeof b.gesperrt !== "boolean") return nein(400, "gesperrt: true oder false");
       gesperrt = b.gesperrt ? 1 : 0;
+    }
+    if ("lovea_import" in b) {
+      if (b.lovea_import !== null) return nein(400, "lovea_import: nur null (setzt den Merker zurück)");
+      await env.DB.prepare("DELETE FROM konto_merker WHERE konto = ? AND schluessel = 'lovea_import'").bind(zeile.id).run();
     }
     let einstellungen = lesen(zeile.einstellungen);
     if ("einstellungen" in b) {
@@ -182,6 +322,10 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/config" && m === "GET") return config(request, env);
   if (url.pathname === "/lovea/freigabe" && m === "GET") return loveaFreigabe(request, env);
   if (url.pathname === "/lovea/agent/ops" && m === "GET") return loveaOps(request, url, env, holen);
+  if (url.pathname === "/lovea/import-erledigt" && m === "POST") return importErledigt(request, env);
+  if (url.pathname === "/nutzung" && m === "POST") return nutzungMelden(request, env);
+  if (url.pathname === "/partner" && m === "PUT") return partnerLegen(request, env);
+  if (url.pathname === "/partner" && m === "GET") return partnerLesen(request, env);
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }
