@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Themenwahl der Aussehen-Seite (Idee 73): sechs Themes, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
+/// Themenwahl der Aussehen-Seite (Idee 73): fünf Themes für alle, ein sechstes (Lovea) nur für die zwei freigegebenen Konten, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
 enum ProfilThemaWahl {
     /// Diese zwei Themes sind für Dunkel gedacht: beim ersten Aktivieren schaltet die Erscheinung von System auf Dunkel.
     static let dunkelVorwahl: Set<ThemaID> = [.graphit, .glut]
@@ -22,8 +22,21 @@ enum ProfilThemaWahl {
         }
     }
 
-    /// Alle zwölf Kombinationen aus Theme und hell/dunkel.
-    static let kombinationen: [(thema: ThemaID, dunkel: Bool)] = ThemaID.allCases.flatMap { t in [(thema: t, dunkel: false), (thema: t, dunkel: true)] }
+    /// Lovea sehen und wählen nur Konten, die der Server freigibt (`KontoDienst.loveaErlaubt`), nie nach dem getippten Profilnamen.
+    static func verfuegbar(loveaErlaubt: Bool) -> [ThemaID] {
+        ThemaID.allCases.filter { $0 != .lovea || loveaErlaubt }
+    }
+
+    /// Das Theme, das wirklich gilt: ein gespeichertes Lovea ohne Freigabe (alter Stand, Freigabe zurückgenommen, von Hand gesetzt) fällt auf Monochrom zurück.
+    /// Gespeichert wird nichts um; kommt die Freigabe wieder, gilt die Wahl wieder.
+    static func wirksam(_ thema: ThemaID, loveaErlaubt: Bool) -> ThemaID {
+        verfuegbar(loveaErlaubt: loveaErlaubt).contains(thema) ? thema : .monochrom
+    }
+
+    /// Alle Kombinationen aus Theme und hell/dunkel: zwölf mit Lovea, sonst zehn.
+    static func kombinationen(loveaErlaubt: Bool) -> [(thema: ThemaID, dunkel: Bool)] {
+        verfuegbar(loveaErlaubt: loveaErlaubt).flatMap { t in [(thema: t, dunkel: false), (thema: t, dunkel: true)] }
+    }
 
     static func muster(_ thema: ThemaID) -> String {
         switch thema {
@@ -32,7 +45,7 @@ enum ProfilThemaWahl {
         case .stahl: "Raster"
         case .glut: "Wellen"
         case .wald: "Höhenlinien"
-        case .lovea: "Herzen"
+        case .lovea: "Flach"
         }
     }
 
@@ -43,7 +56,7 @@ enum ProfilThemaWahl {
         case .stahl: "Kühles Blau auf hellem Grund."
         case .glut: "Warmes Orange, am schönsten im Dunkeln."
         case .wald: "Gedämpftes Grün, ruhig und natürlich."
-        case .lovea: "Rosé und leise Herzen, die Stimmung der Lovea-App."
+        case .lovea: "Wie in Lovea: System-Flächen, Rosé als Akzent, ohne Muster."
         }
     }
 }

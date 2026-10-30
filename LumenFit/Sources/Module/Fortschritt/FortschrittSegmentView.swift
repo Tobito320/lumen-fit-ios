@@ -23,7 +23,7 @@ struct FortschrittSegmentView: View {
                     LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 }
                 if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
                 SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }

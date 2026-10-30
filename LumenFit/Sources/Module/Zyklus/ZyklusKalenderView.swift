@@ -45,7 +45,7 @@ struct ZyklusKalenderView: View {
             }
             .padding(Abstand.l)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
         .haptik(.auswahl, bei: geaendert)
         .sheet(item: $blatt) { a in ZyklusEintragBlatt(store: store, datum: a.id) }
     }

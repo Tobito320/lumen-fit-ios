@@ -131,7 +131,7 @@ struct TrainingLaufView: View {
                     .frame(minHeight: Abstand.tippflaeche)
             }
             .padding(.horizontal, Abstand.m)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
             .overlay(RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(palette.rand, lineWidth: 1))
             .padding(.horizontal, Abstand.l)
             .transition(ruhig ? .opacity : .move(edge: .bottom).combined(with: .opacity))

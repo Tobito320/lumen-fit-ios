@@ -40,12 +40,14 @@ final class StromsparBeobachter {
 
 private struct BewegungsSchalter: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduziert
+    @Environment(\.lumenThema) private var thema
 
     func body(content: Content) -> some View {
         let spar = StromsparBeobachter.geteilt.an
+        // Thema Lovea wie Lovea: der Stromsparmodus nimmt nur Überschwinger und Herzen, nicht jede Bewegung (HerzenSpritzer.swift:13, TagesMoment.swift:54).
         content
             .environment(\.stromsparmodus, spar)
-            .environment(\.bewegungAus, BewegungsRegel.ruhig(reduziert: reduziert, stromsparmodus: spar))
+            .environment(\.bewegungAus, BewegungsRegel.ruhig(reduziert: reduziert, stromsparmodus: spar && thema != .lovea))
     }
 }
 

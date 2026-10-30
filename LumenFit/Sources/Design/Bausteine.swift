@@ -85,7 +85,7 @@ struct FehlerKarte: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .combine)
     }
 }
@@ -112,7 +112,7 @@ struct DiagrammKarte<Inhalt: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 }
 
@@ -174,7 +174,7 @@ private struct ToastModifier: ViewModifier {
                     .accessibilityElement(children: .combine)
                 }
             }
-            .animation(reduceMotion ? nil : Feder.federnd, value: inhalt)
+            .animation(reduceMotion ? nil : (stromsparmodus ? Feder.weich : Feder.federnd), value: inhalt)
             .haptik(.erfolg, bei: inhalt)
             .task(id: inhalt) {
                 guard inhalt != nil else { return }

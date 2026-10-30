@@ -56,7 +56,7 @@ private struct HeuteHinweisReihe: View {
         }
         .padding(.leading, Abstand.l)
         .padding(.vertical, Abstand.xs)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .offset(x: versatz)
         .opacity(1 - min(abs(versatz) / 240, 0.6))
         // simultan, sonst fängt die Karte das senkrechte Scrollen der Seite ab; nur waagerechtes Ziehen bewegt sie

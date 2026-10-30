@@ -33,7 +33,7 @@ struct EssenWasserKarte: View {
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .haptik(.auswahl, bei: zaehler)
     }
 

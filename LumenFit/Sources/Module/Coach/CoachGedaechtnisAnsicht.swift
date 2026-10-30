@@ -76,7 +76,7 @@ struct CoachGedaechtnisAnsicht: View {
                 .padding(.horizontal, Abstand.l)
                 .padding(.vertical, Abstand.m)
                 .frame(minHeight: Abstand.tippflaeche)
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
                 .overlay(RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(palette.haar, lineWidth: 1))
             Button { hinzufuegen() } label: {
                 Image(systemName: "plus")

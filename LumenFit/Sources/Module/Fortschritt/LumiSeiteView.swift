@@ -16,7 +16,7 @@ struct LumiSeiteView: View {
                     LeerZustand(stimmung: .bereit, satz: "Hake deinen ersten Satz ab, dann wächst Lumi.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 }
                 pfad(stand)
                 if let ziel { zielKarte(ziel) }
@@ -81,7 +81,7 @@ struct LumiSeiteView: View {
         .foregroundStyle(palette.text)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func zielKarte(_ ziel: MeilensteinZiel) -> some View {
@@ -94,7 +94,7 @@ struct LumiSeiteView: View {
         .foregroundStyle(palette.text)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .combine)
     }
 }

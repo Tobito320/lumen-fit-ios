@@ -47,9 +47,12 @@ enum LumenFarben {
         case (.glut, true): (0x0D0D0D, 0x1A1A1A, 0xF5F5F5, 0x9A9A9A, 0x808080, 0x2A2A2A, 0xFF6A00, 0x000000)
         case (.wald, false): (0xF7F8F6, 0xE9ECE6, 0x111611, 0x566156, 0x7A877A, 0xD8DDD4, 0x2F5D3A, 0xFFFFFF)
         case (.wald, true): (0x0C120D, 0x172019, 0xEEF3EE, 0x9DAE9D, 0x7E907F, 0x2A3A2D, 0x8FC79A, 0x0C120D)
-        // Lovea: Rosé aus dem Lovea-Icon (Akzent), flache Karten mit leichtem Rosé-Ton, sonst System-Grau (Werte aus Lovea `Farben.swift`, `HealthStil.swift`).
-        case (.lovea, false): (0xFFFFFF, 0xFFEDF0, 0x1C1C1E, 0x6A5A5E, 0x8C7C80, 0xF4D6DC, 0xCF1F41, 0xFFFFFF)
-        case (.lovea, true): (0x000000, 0x211418, 0xF5F5F7, 0xB9A6AB, 0x8F7C82, 0x3A2A2E, 0xFF3B5C, 0x000000)
+        // Lovea 1:1 (docs/theme-lovea-vergleich.md): Lovea malt mit System-Farben (systemBackground, secondarySystemBackground, label, secondaryLabel,
+        // Hex aus der UIKit-Tabelle) und dem Akzent #FF3B5C (Lovea `Color.loveaRose`). Ein paar Paare fallen unter 4,5:1 und sind in Lovea selbst so
+        // (hell: Akzent auf Weiß 3,48:1, secondaryLabel 3,44:1; weiße Schrift auf dem Akzent 3,48:1). Sie stehen mit Absicht so da; FarbenKontrastTests kennt
+        // genau diese Paare und verlangt für sie 3:1. Ob abgedunkelt wird, entscheidet der Besitzer.
+        case (.lovea, false): (0xFFFFFF, 0xF2F2F7, 0x000000, 0x8A8A8E, 0x8A8A8E, 0xC6C6C8, 0xFF3B5C, 0xFFFFFF)
+        case (.lovea, true): (0x000000, 0x1C1C1E, 0xFFFFFF, 0x8D8D93, 0x8E8E93, 0x38383A, 0xFF3B5C, 0xFFFFFF)
         }
     }
 
@@ -83,6 +86,9 @@ enum LumenFarben {
     }
 
     nonisolated static let ringPlatte = Color(red: 0, green: 0, blue: 0)
+
+    /// Der Lovea-Akzent aus dem App-Icon (Lovea `Color.loveaRose`, `AccentColor`): hell wie dunkel gleich. Nur für Flächen ohne Text (Schalterspur), 3,48:1 auf Weiß.
+    nonisolated static let loveaRose = Color(red: 0xFF / 255, green: 0x3B / 255, blue: 0x5C / 255)
 }
 
 extension EnvironmentValues {

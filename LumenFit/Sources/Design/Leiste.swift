@@ -15,3 +15,22 @@ private struct LumenLeiste: ViewModifier {
 extension View {
     func lumenLeiste() -> some View { modifier(LumenLeiste()) }
 }
+
+/// Tab-Leiste wie in Lovea (`AppRootView.leiste()`): `.sidebarAdaptable` und die Leiste schrumpft beim Abwärtsscrollen. Nur im Theme Lovea; auf dem iPhone ändert
+/// `.sidebarAdaptable` nichts am Aufbau. Der Tint kommt schon aus dem Theme (`lumenTheme` setzt `.tint(palette.akzent)`).
+private struct LumenTabLeiste: ViewModifier {
+    @Environment(\.lumenThema) private var thema
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if thema == .lovea {
+            content.tabViewStyle(.sidebarAdaptable).tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    func lumenTabLeiste() -> some View { modifier(LumenTabLeiste()) }
+}

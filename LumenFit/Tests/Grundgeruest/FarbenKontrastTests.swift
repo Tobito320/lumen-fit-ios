@@ -25,6 +25,17 @@ final class FarbenKontrastTests: XCTestCase {
         XCTAssertEqual(kontrast(0x808080, 0x808080), 1, accuracy: 0.0001)
     }
 
+    /// Die einzigen Paare, die unter 4,5:1 bleiben dürfen: Lovea malt sie selbst so (Systemwerte und `#FF3B5C`), das Theme gibt sie 1:1 wieder
+    /// (Auftrag 30.10.: "1:1 wie Lovea", durchfallende Lovea-Werte nicht von selbst ändern). Für sie gilt die Untergrenze 3:1; alle anderen Themes und Paare bleiben streng.
+    /// Zahlen: docs/theme-lovea-vergleich.md. Wer abdunkeln will, ändert die Tokens und leert diese Liste.
+    private static let loveaBekannt: Set<String> = [
+        "lovea hell: text2 auf grund", "lovea hell: text2 auf flaeche",
+        "lovea hell: akzent auf grund", "lovea hell: akzent auf flaeche", "lovea hell: aufAkzent auf akzent",
+        "lovea dunkel: aufAkzent auf akzent",
+    ]
+
+    private func grenze(_ schluessel: String) -> Double { Self.loveaBekannt.contains(schluessel) ? 3.0 : 4.5 }
+
     func testAlleThemesInBeidenModiHaltenDieGrenzen() {
         for thema in ThemaID.allCases {
             for dunkel in [false, true] {
@@ -32,11 +43,11 @@ final class FarbenKontrastTests: XCTestCase {
                 let name = "\(thema) \(dunkel ? "dunkel" : "hell")"
                 for (flaeche, bezeichnung) in [(t.grund, "grund"), (t.flaeche, "flaeche")] {
                     XCTAssertGreaterThanOrEqual(kontrast(t.text, flaeche), 4.5, "\(name): text auf \(bezeichnung)")
-                    XCTAssertGreaterThanOrEqual(kontrast(t.text2, flaeche), 4.5, "\(name): text2 auf \(bezeichnung)")
-                    XCTAssertGreaterThanOrEqual(kontrast(t.akzent, flaeche), 4.5, "\(name): akzent auf \(bezeichnung)")
+                    XCTAssertGreaterThanOrEqual(kontrast(t.text2, flaeche), grenze("\(name): text2 auf \(bezeichnung)"), "\(name): text2 auf \(bezeichnung)")
+                    XCTAssertGreaterThanOrEqual(kontrast(t.akzent, flaeche), grenze("\(name): akzent auf \(bezeichnung)"), "\(name): akzent auf \(bezeichnung)")
                     XCTAssertGreaterThanOrEqual(kontrast(t.rand, flaeche), 3.0, "\(name): rand auf \(bezeichnung)")
                 }
-                XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzent, t.akzent), 4.5, "\(name): aufAkzent auf akzent")
+                XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzent, t.akzent), grenze("\(name): aufAkzent auf akzent"), "\(name): aufAkzent auf akzent")
             }
         }
     }

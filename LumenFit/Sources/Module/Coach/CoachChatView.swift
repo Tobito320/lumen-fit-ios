@@ -265,7 +265,7 @@ struct CoachChatView: View {
                     .padding(.horizontal, Abstand.l)
                     .padding(.vertical, Abstand.m)
                     .frame(minHeight: Abstand.tippflaeche)
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                     .overlay(RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(palette.haar, lineWidth: 1))
                     .onChange(of: modell.entwurf) {
                         if modell.entwurf.count > CoachModell.maxZeichen { modell.entwurf = String(modell.entwurf.prefix(CoachModell.maxZeichen)) }
@@ -278,7 +278,7 @@ struct CoachChatView: View {
                         .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
                         .background(palette.akzent, in: .circle)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.gelee)
                 .disabled(!kannSenden)
                 .opacity(kannSenden ? 1 : 0.35)
                 .accessibilityLabel("Senden")

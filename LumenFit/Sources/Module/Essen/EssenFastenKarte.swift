@@ -23,7 +23,7 @@ struct EssenFastenKarte: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func kopf(_ plan: FastenPlan) -> some View {

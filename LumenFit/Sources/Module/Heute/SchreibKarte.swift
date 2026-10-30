@@ -76,7 +76,7 @@ struct SchreibKarte: View {
         .padding(.leading, Abstand.l)
         .padding(.trailing, Abstand.xs)
         .frame(minHeight: 48)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .animation(anim, value: kannSenden)
     }
 
@@ -114,7 +114,7 @@ struct SchreibKarte: View {
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .transition(.opacity.combined(with: .move(edge: .top)))
     }
 
@@ -126,7 +126,7 @@ struct SchreibKarte: View {
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .contain)
         .transition(.opacity.combined(with: .move(edge: .top)))
     }

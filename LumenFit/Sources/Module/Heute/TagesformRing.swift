@@ -35,7 +35,7 @@ struct TagesformRing: View {
     private var ring: some View {
         let durchmesser = min(ringGroesse, 120)
         return ZStack {
-            Circle().stroke(palette.haar, lineWidth: 8)
+            Circle().stroke(Color.secondary.opacity(0.2), lineWidth: 8)   // Lovea: `Color.secondary.opacity(0.2)`
             if let akku {
                 Circle()
                     .trim(from: 0, to: Double(min(max(akku, 0), 100)) / 100)

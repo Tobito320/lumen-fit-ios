@@ -134,7 +134,7 @@ private struct HabitKartenRahmen<Inhalt: View>: View {
             .padding(.vertical, Abstand.l)
             .padding(.horizontal, innenRand ? Abstand.l : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
     }
 }
 

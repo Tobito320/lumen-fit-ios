@@ -67,7 +67,7 @@ struct ZyklusEintragBlatt: View {
                 .padding(Abstand.l)
             }
             .scrollDismissesKeyboard(.interactively)
-            .lumenHintergrund()
+            .lumenZyklusHintergrund()
             .navigationTitle(Datum.anzeige(datum))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -28,7 +28,7 @@ struct TrainingVerlaufView: View {
                     LeerZustand(stimmung: .bereit, satz: "Noch keine Einheit. Starte ein Training, dann steht es hier.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 } else {
                     kennzahlen(sessions, heute: heute)
                     monate(sessions, nurHaken: nurHaken, heute: heute)

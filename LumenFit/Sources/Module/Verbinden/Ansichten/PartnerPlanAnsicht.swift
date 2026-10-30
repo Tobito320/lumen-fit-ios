@@ -50,7 +50,7 @@ private struct PartnerPlanInhalt: View {
                 ForEach(spalten) { spalte in spalteView(spalte) }
             }
             .padding(Abstand.m)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
         }
     }
 
@@ -92,7 +92,7 @@ private struct PartnerPlanInhalt: View {
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .combine)
     }
 

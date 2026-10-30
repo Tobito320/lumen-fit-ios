@@ -60,6 +60,7 @@ struct PartnerKarte: View {
                 PartnerEinstiegZeilen(einstiege: einstiege)
             }
         }
+        .karteScrollt()
         .sheet(isPresented: $vergleichOffen) { SchritteVergleichSeite(partner: datei) }
         .haptik(.auswahl, bei: vergleichOffen)
     }

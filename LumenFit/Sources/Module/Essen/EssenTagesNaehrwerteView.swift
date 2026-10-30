@@ -38,7 +38,7 @@ struct EssenTagesNaehrwerteView: View {
         VStack(alignment: .leading, spacing: Abstand.s) { inhalt() }
             .padding(Abstand.l)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
     }
 
     // MARK: Kalorien und Makros

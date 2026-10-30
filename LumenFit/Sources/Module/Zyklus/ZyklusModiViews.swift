@@ -57,7 +57,7 @@ struct ZyklusSchwangerView: View {
             }
             .padding(Abstand.l)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
     }
 
     private var terminWahl: some View {
@@ -129,7 +129,7 @@ struct ZyklusKinderwunschView: View {
             .padding(Abstand.l)
         }
         .scrollDismissesKeyboard(.interactively)
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
         .haptik(.erfolg, bei: gespeichert)
         .onAppear { notiz = store.tage[store.heute]?.notiz ?? "" }
     }
@@ -208,7 +208,7 @@ struct ZyklusPilleView: View {
             }
             .padding(Abstand.l)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
     }
 
     private var packung: some View {
