@@ -6,6 +6,9 @@ import SwiftUI
 struct NaechsterSatzKarte: View {
     let sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
+    @State private var mehr = 0
+    @State private var weniger = 0
+    @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
     @ScaledMetric(relativeTo: .largeTitle) private var heldenGroesse: CGFloat = 56
 
     var body: some View {
@@ -20,6 +23,8 @@ struct NaechsterSatzKarte: View {
             }
         }
         .accessibilityElement(children: .contain)
+        .haptik(.mehr, bei: mehr)
+        .haptik(.weniger, bei: weniger)
     }
 
     // MARK: Pause
@@ -34,7 +39,15 @@ struct NaechsterSatzKarte: View {
                     .font(.system(size: heldenGroesse, weight: .bold, design: .rounded)).monospacedDigit()
                     .accessibilityLabel("Pause, noch \(GymFormat.zeit(PauseLogik.rest(pause, jetzt: jetzt) ?? 0))")
             } else {
-                Text("Pause vorbei").font(.system(size: heldenGroesse * 0.6, weight: .bold, design: .rounded))
+                // Ziel überschritten: die Uhr zählt rot hoch (Lovea: roter Überlauf); bei "Satz-Zeit" ist es zugleich die Uhr des Satzes.
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(satzzeit ? "Satz läuft" : "Pause vorbei").font(.footnote.weight(.semibold))
+                    Text(pause.ende ?? pause.seit, style: .timer)
+                        .font(.system(size: heldenGroesse, weight: .bold, design: .rounded)).monospacedDigit()
+                        .foregroundStyle(Color(red: 1, green: 0.42, blue: 0.4))
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(satzzeit ? "Satz läuft seit Pausenende" : "Pause vorbei, Überzeit")
             }
         } else {
             Text(pause.seit, style: .timer)
@@ -42,9 +55,9 @@ struct NaechsterSatzKarte: View {
         }
         if let letztes = naechsterSatzText { Text(letztes).font(.subheadline) }
         HStack(spacing: Abstand.s) {
-            Button("−15 s") { sitzung.pauseAendern(sekunden: -PauseLogik.schritt) }
+            Button("−15 s") { weniger += 1; sitzung.pauseAendern(sekunden: -PauseLogik.schritt) }
                 .accessibilityLabel("15 Sekunden weniger")
-            Button("+15 s") { sitzung.pauseAendern(sekunden: PauseLogik.schritt) }
+            Button("+15 s") { mehr += 1; sitzung.pauseAendern(sekunden: PauseLogik.schritt) }
                 .accessibilityLabel("15 Sekunden mehr")
             Spacer(minLength: 0)
             Button("Überspringen") { sitzung.pauseUeberspringen() }

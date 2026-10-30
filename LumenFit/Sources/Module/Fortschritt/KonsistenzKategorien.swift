@@ -104,3 +104,55 @@ enum KonsistenzKategorienLogik {
         return String(decoding: daten, as: UTF8.self)
     }
 }
+
+extension KonsistenzEinstellung {
+    /// Tolerant lesen: ein fehlendes `zuordnung` (älterer Stand) wird leer, eine fehlende Liste die Standard-Kategorien.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Schluessel.self)
+        kategorien = try c.decodeIfPresent([KonsistenzKategorie].self, forKey: .kategorien) ?? KonsistenzKategorienLogik.standardKategorien
+        zuordnung = try c.decodeIfPresent([String: String].self, forKey: .zuordnung) ?? [:]
+    }
+
+    private enum Schluessel: String, CodingKey { case kategorien, zuordnung }
+}
+
+/// Die Kategorien liegen als `konsistenz.json` im Profilordner (nicht in den Einstellungen): lesen und sichern, ohne Ordner nur im Speicher.
+enum KonsistenzKategorienDatei {
+    static func datei(_ ordner: URL) -> JSONDatei<KonsistenzEinstellung> {
+        JSONDatei<KonsistenzEinstellung>(ordner.appendingPathComponent("konsistenz.json"))
+    }
+
+    static func lesen(_ ordner: URL?) -> KonsistenzEinstellung {
+        ordner.flatMap { datei($0).lade() } ?? .standard
+    }
+
+    static func sichern(_ e: KonsistenzEinstellung, in ordner: URL?) {
+        guard let ordner else { return }
+        datei(ordner).speichere(e)
+    }
+
+    /// Namen bereinigen (Rand, leer weg) vor dem Sichern.
+    static func bereinigt(_ e: KonsistenzEinstellung) -> KonsistenzEinstellung {
+        var neu = e
+        neu.kategorien = e.kategorien.map { k in
+            var kopie = k
+            kopie.name = k.name.trimmingCharacters(in: .whitespaces)
+            return kopie
+        }.filter { !$0.name.isEmpty }
+        return neu
+    }
+}
+
+/// Hex ("RRGGBB") und Farbe. Die Kanäle werden vor dem Hex auf 0 bis 1 begrenzt (`ColorPicker` kann darüber liegen).
+enum KonsistenzFarbe {
+    nonisolated static func kanaele(hex: String) -> (r: Double, g: Double, b: Double)? {
+        let sauber = hex.trimmingCharacters(in: CharacterSet(charactersIn: "# "))
+        guard sauber.count == 6, let wert = UInt32(sauber, radix: 16) else { return nil }
+        return (Double((wert >> 16) & 0xFF) / 255, Double((wert >> 8) & 0xFF) / 255, Double(wert & 0xFF) / 255)
+    }
+
+    nonisolated static func hex(r: Double, g: Double, b: Double) -> String {
+        func kanal(_ x: Double) -> String { String(format: "%02X", Int((min(max(x, 0), 1) * 255).rounded())) }
+        return kanal(r) + kanal(g) + kanal(b)
+    }
+}

@@ -73,6 +73,22 @@ enum CoachModellPrompt {
     static let verlaufNachrichten = 6
     static let maxZeichenJeNachricht = 300
 
+    /// Die Wünsche aus dem Chat-Menü: Ton, eigenes Ziel und "hält mich an den Plan". Alle Zeilen dürfen die Regeln der Persona nicht lockern.
+    static func wunschZeilen(_ anfrage: CoachAnfrage) -> [String] {
+        var zeilen: [String] = []
+        switch anfrage.ton {
+        case "locker": zeilen.append("Gewünschter Ton: locker und entspannt, trotzdem höflich.")
+        case "knapp": zeilen.append("Gewünschter Ton: knapp, nur das Wichtigste.")
+        case "direkt": zeilen.append("Gewünschter Ton: direkt und klar, ohne Vorwurf und ohne Druck.")
+        default: break
+        }
+        if !anfrage.ziel.isEmpty { zeilen.append("Eigenes Ziel der Person: \(anfrage.ziel)") }
+        if anfrage.disziplin {
+            zeilen.append("Die Person möchte, dass du sie freundlich an die Übungen, Sätze und Gewichte ihres Plans erinnerst. Bei Schmerz, Verletzung oder Schwindel sofort davon absehen.")
+        }
+        return zeilen
+    }
+
     /// Der Kontext mit den echten Zahlen, die Vorliebe aus den Daumen, das bisherige Gespräch und die Frage. Fehlendes steht als "unbekannt",
     /// damit das Modell nachfragt statt zu raten.
     static func bauen(_ anfrage: CoachAnfrage) -> String {
@@ -90,6 +106,7 @@ enum CoachModellPrompt {
         if !k.merkzettel.isEmpty { zeilen.append("Merkzettel der Person:\n" + k.merkzettel.suffix(10).map { "- \($0)" }.joined(separator: "\n")) }
         let hinweis = CoachLernen.stil(anfrage.verlauf).hinweis
         if !hinweis.isEmpty { zeilen.append("Vorliebe der Person: \(hinweis)") }
+        zeilen.append(contentsOf: wunschZeilen(anfrage))
         let bisher = anfrage.verlauf.suffix(verlaufNachrichten).map { n -> String in
             let text = String(CoachMarker.zerlegen(n.text).text.prefix(maxZeichenJeNachricht))
             return "\(n.rolle == .nutzer ? "Person" : "Coach"): \(text)"

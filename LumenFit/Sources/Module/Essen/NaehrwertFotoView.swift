@@ -13,6 +13,8 @@ struct NaehrwertFotoView: View {
     @State private var kameraOffen = false
     @State private var wahl: PhotosPickerItem?
     @State private var zustand: Zustand = .bereit
+    /// Zählt gelesene Tabellen: löst die Erfolgs-Haptik aus (Lovea: `Haptik.erfolg()` beim Übernehmen).
+    @State private var gelesen = 0
 
     private enum Zustand: Equatable {
         case bereit, liest, nichtGelesen
@@ -44,6 +46,7 @@ struct NaehrwertFotoView: View {
                 Spacer(minLength: 0)
             }
             .padding(Abstand.l)
+            .haptik(.erfolg, bei: gelesen)
             .navigationTitle("Etikett lesen")
             .navigationBarTitleDisplayMode(.inline)
             .lumenHintergrund()
@@ -77,6 +80,9 @@ struct NaehrwertFotoView: View {
         zustand = .liest
         let zeilen = await NaehrwertLeser.erkennen(bildDaten: daten)
         if let werte = NaehrwertLeser.parsen(zeilen) {
+            gelesen += 1
+            // Kurz warten, damit die Haptik noch auf der sichtbaren Seite ausgelöst wird, bevor das Blatt schließt.
+            try? await Task.sleep(for: .milliseconds(200))
             uebernehmen(werte)
         } else {
             zustand = .nichtGelesen

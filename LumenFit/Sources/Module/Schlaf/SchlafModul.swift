@@ -42,8 +42,20 @@ enum SchlafDaten {
         return raum.ops(arten: [SchlafModul.bandArt]).compactMap { $0.daten(BandSchlafOp.self) }
     }
 
+    /// Die Nächte von Hand (Op `fit.schlaf.hand`), je Aufwachtag die zuletzt eingetroffene.
+    static func eingetragen(_ umgebung: AppUmgebung) -> [String: SchlafNacht] {
+        guard let raum = umgebung.daten?.raum else { return [:] }
+        return SchlafHandLogik.naechte(ops: raum.ops(arten: [SchlafHandLogik.art]))
+    }
+
+    static func zielExtra(_ umgebung: AppUmgebung) -> SchlafZielExtra {
+        guard let raum = umgebung.daten?.raum else { return SchlafZielExtra() }
+        return SchlafZielLogik.extra(ops: raum.ops(arten: [SchlafZielLogik.art]))
+    }
+
     static func uebersicht(_ umgebung: AppUmgebung, band: [BandSchlafOp]) -> SchlafUebersicht {
         SchlafUebersicht.bauen(health: umgebung.gesundheit.naechte, band: band, vitale: umgebung.gesundheit.vitale,
-                               zielMinuten: umgebung.daten?.ziele.ziele.schlafMinuten ?? 480, heute: Datum.text(umgebung.uhr()))
+                               zielMinuten: umgebung.daten?.ziele.ziele.schlafMinuten ?? 480, heute: Datum.text(umgebung.uhr()),
+                               eingetragen: eingetragen(umgebung), zielExtra: zielExtra(umgebung))
     }
 }

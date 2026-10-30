@@ -26,6 +26,8 @@ struct UebungsKarte: View {
         return ListenKarte {
             kopf(u, gruen)
             Haarlinie()
+            DefektAbschnitt(sitzung: sitzung, index: index)
+            GeraeteAbschnitt(sitzung: sitzung, index: index)
             if u.planUebung.istCardio {
                 cardioZeile(u, gruen)
             } else if u.ausgelassen {

@@ -24,6 +24,7 @@ struct WochenStreifen: View {
                                     .font(.caption.weight(tag.istHeute ? .bold : .medium))
                                     .foregroundStyle(tag.istHeute ? palette.text : palette.text2)
                                 Capsule().fill(tag.istHeute ? palette.text : Color.clear).frame(width: 14, height: 2)
+                                WochenPersonenPunkte(tag: tag.tag, ichGym: tag.gym > 0)
                             }
                             .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                             .opacity(tag.zukunft ? 0.45 : 1)
@@ -54,6 +55,7 @@ struct HeuteTagView: View {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     if let daten = umgebung.daten {
                         zeilen(daten)
+                        StimmungTagKarte(tag: tag)
                     }
                 }
                 .padding(Abstand.l)

@@ -34,7 +34,7 @@ final class SchlafAutomatikTests: XCTestCase {
         XCTAssertEqual(SchlafQuelle.band.rawValue, "band")
         XCTAssertEqual(SchlafQuelle.uhr.rawValue, "uhr")
         XCTAssertEqual(SchlafQuelle.handy.rawValue, "handy")
-        XCTAssertEqual(SchlafQuelle.allCases.map(\.name), ["Uhr", "Handy", "Band"])
+        XCTAssertEqual(SchlafQuelle.allCases.map(\.name), ["Uhr", "Handy", "Band", "Eingetragen"])
     }
 
     func testUnterDreiStundenIstKeineNacht() {

@@ -38,11 +38,14 @@ private struct SchlafTabInhalt: View {
     @Environment(\.openURL) private var openURL
     @State private var band: [BandSchlafOp] = []
     @State private var position: String?
+    @State private var version = 0
+    @State private var eintragen = false
 
     private static let wertenAnker = "schlaf-werte"
 
     var body: some View {
         let uebersicht = SchlafDaten.uebersicht(umgebung, band: band)
+        let _ = version
         ScrollView {
             VStack(spacing: Abstand.l) {
                 if let letzte = uebersicht.letzte {
@@ -50,6 +53,7 @@ private struct SchlafTabInhalt: View {
                 } else {
                     leer(uebersicht)
                 }
+                SchlafDoppelKarte()
                 PartnerKarte(bereich: .schlaf)
             }
             .scrollTargetLayout()
@@ -64,7 +68,15 @@ private struct SchlafTabInhalt: View {
         }
         .navigationTitle("Schlaf")
         .lumenHintergrund()
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() } }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Schlaf eintragen", systemImage: "plus") { eintragen = true }
+            }
+            ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() }
+        }
+        .sheet(isPresented: $eintragen) {
+            SchlafEintragenView(tag: Datum.text(umgebung.uhr()), nacht: SchlafDaten.uebersicht(umgebung, band: band).letzte?.nacht) { version += 1 }
+        }
         .task(id: umgebung.profil.aktiv?.id) { band = SchlafDaten.bandOps(umgebung) }
         .task { await beobachte() }
     }
@@ -83,11 +95,12 @@ private struct SchlafTabInhalt: View {
 
     @ViewBuilder
     private func inhalt(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
-        SchlafCard(nacht: letzte, titel: u.titelLetzte, zielMinuten: u.zielMinuten, lumi: u.lumi(jetzt: umgebung.uhr()))
+        SchlafCard(nacht: letzte, titel: u.titelLetzte, zielMinuten: u.ziel(fuer: letzte.nacht.tag), lumi: u.lumi(jetzt: umgebung.uhr()))
         phasen(u, letzte)
         wochenAbschnitt(u)
         erholungsAbschnitt(u)
         ruheAbschnitt(u)
+        leistungsAbschnitt(u)
         weiter(u, letzte)
     }
 
@@ -112,6 +125,16 @@ private struct SchlafTabInhalt: View {
         SchlafRegelKarte(ergebnis: u.regelmaessigkeit)
     }
 
+    @ViewBuilder
+    private func leistungsAbschnitt(_ u: SchlafUebersicht) -> some View {
+        let minuten = Dictionary(u.naechte.map { ($0.nacht.tag, $0.nacht.schlafMinuten) }, uniquingKeysWith: { $1 })
+        let punkte = SchlafLeistung.punkte(umgebung.daten?.training.sessions ?? [], schlafMinuten: minuten)
+        if punkte.count >= 3 {
+            SchlafAbschnittKopf("Schlaf und Leistung")
+            SchlafLeistungKarte(punkte: punkte)
+        }
+    }
+
     private func phasen(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
         let balken = PhasenBalken(nacht: letzte.nacht)
         let aussage = u.ohnePhasen ? "Nur die Schlafzeit" : "So hast du geschlafen"
@@ -126,6 +149,12 @@ private struct SchlafTabInhalt: View {
                 SchlafNachtDetailView(nacht: letzte, vergleich: u.vergleichLetzte, verlauf: u.vergleich)
             } label: {
                 zeile(symbol: letzte.quelle.symbolName, titel: "Quelle: \(letzte.quelle.name)", text: "Details zur Nacht")
+            }
+            Haarlinie()
+            NavigationLink {
+                SchlafZielView()
+            } label: {
+                zeile(symbol: "target", titel: "Schlafziel", text: "Extra-Tage, zum Beispiel vor dem Training")
             }
             Haarlinie()
             NavigationLink(value: Route.schlaf(.verlauf)) {

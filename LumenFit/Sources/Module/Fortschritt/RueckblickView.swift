@@ -17,6 +17,7 @@ struct RueckblickView: View {
                     ForEach(RueckblickDaten.Zeitraum.allCases) { Text($0.name).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                .haptik(.auswahl, bei: zeitraum)
                 if daten.gymTage > 0 {
                     RueckblickKarte(daten: daten, stufe: q.stufe)
                 } else {

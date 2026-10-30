@@ -57,7 +57,7 @@ final class AppUmgebung {
         let profile = ProfilStore(schluesselbund: schluesselbund, ereignisse: kanal, runden: passwortRunden, uhr: uhr)
         self.profil = profile
         let anker = UmgebungsAnker()
-        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() })
+        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -154,11 +154,13 @@ final class AppUmgebung {
 @MainActor private final class UmgebungsAnker {
     weak var umgebung: AppUmgebung?
 
+    func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
+
     func bandTage() -> [BandTagOp] {
         guard let raum = umgebung?.daten?.raum else { return [] }
         var tage: [String: BandTagOp] = [:]
         for op in raum.ops(arten: ["fit.band.tag"]) { if let t = op.daten(BandTagOp.self) { tage[t.tag] = t } }
-        return Array(tage.values)
+        return SchritteHandLogik.zusammen(band: tage, hand: SchritteHandLogik.tage(ops: raum.ops(arten: [SchritteHandLogik.art])))
     }
 }
 

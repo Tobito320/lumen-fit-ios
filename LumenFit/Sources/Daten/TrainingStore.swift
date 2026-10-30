@@ -141,7 +141,8 @@ final class TrainingStore {
     /// Spätere Korrektur: sendet Check-in und/oder Check-out neu (der neueste gilt).
     func zeitenAendern(_ s: GymSession, start: Date, ende: Date?) {
         if start != s.start { raum.senden("gym.checkin", GymD(session: s.id, tag: s.tag, start: start)) }
-        if let ende, ende != s.ende { raum.senden("gym.checkout", GymD(session: s.id, ende: ende)) }
+        // kcal und Puls mitschicken: die neueste Ende-Zeile gilt, sonst gingen sie bei jeder Zeitkorrektur verloren.
+        if let ende, ende != s.ende { raum.senden("gym.checkout", GymD(session: s.id, ende: ende, kcal: s.kcal, puls: s.puls)) }
     }
 
     /// Ein Training von Hand nachtragen: Start und Ende, ohne einzuchecken.

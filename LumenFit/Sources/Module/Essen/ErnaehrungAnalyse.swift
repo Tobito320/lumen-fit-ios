@@ -3,6 +3,34 @@ import Foundation
 
 // Zeiträume von einer Woche bis zu 2 Jahren: bei langen Zeiträumen Werte je Woche bzw. Monat gemittelt statt Tag für Tag.
 
+// MARK: - Zeitraum
+
+/// Wählbarer Zeitraum der Auswertung (Quelle: Lovea AnalyseZeitraum). `rawValue` = Anzahl Tage.
+enum AnalyseZeitraum: Int, CaseIterable, Identifiable, Hashable, Sendable {
+    case woche = 7, monat = 30, dreiMonate = 90, jahr = 365, zweiJahre = 730
+
+    var id: Int { rawValue }
+
+    var name: String {
+        switch self {
+        case .woche: "Woche"
+        case .monat: "Monat"
+        case .dreiMonate: "3 Monate"
+        case .jahr: "Jahr"
+        case .zweiJahre: "2 Jahre"
+        }
+    }
+
+    /// Je länger der Zeitraum, desto gröber die Balken: Tag, Woche oder Monat.
+    var gruppierung: AnalyseGruppierung {
+        switch self {
+        case .woche, .monat: .tag
+        case .dreiMonate: .woche
+        case .jahr, .zweiJahre: .monat
+        }
+    }
+}
+
 enum AnalyseGruppierung: Sendable { case tag, woche, monat }
 
 /// Ein Abschnitt im Diagramm (ein Tag, eine Woche oder ein Monat) mit den Tagen, die hineinfallen.

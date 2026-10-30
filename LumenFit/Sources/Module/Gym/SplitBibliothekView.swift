@@ -17,6 +17,15 @@ struct SplitBibliothekView: View {
             let geschlecht = umgebung.daten?.ziele.koerper.geschlecht
             let treffer = SplitLogik.treffer(SplitLogik.fuer(geschlecht), art: art, tage: tage, suche: suche)
             List {
+                Section {
+                    NavigationLink { SplitGefuehrtView(sitzung: sitzung, fertig: { schliessen() }) } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Geführt erstellen").font(.body.weight(.medium)).foregroundStyle(palette.text)
+                            Text("Drei Fragen, dann ein Vorschlag").font(.footnote).foregroundStyle(palette.text2)
+                        }
+                        .frame(minHeight: Abstand.tippflaeche, alignment: .leading)
+                    }
+                }
                 Section { filter }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 Section(treffer.isEmpty ? "Nichts gefunden" : "\(treffer.count) \(treffer.count == 1 ? "Split" : "Splits")") {
                     if treffer.isEmpty {
@@ -76,6 +85,7 @@ struct SplitDetailView: View {
     @Environment(\.palette) private var palette
     @State private var ersetzen = false
     @State private var meldung: String?
+    @State private var erfolg = 0
 
     var body: some View {
         List {
@@ -115,7 +125,7 @@ struct SplitDetailView: View {
                 }
                 .frame(minHeight: Abstand.tippflaeche)
                 Button("Nur diese Woche testen") {
-                    if sitzung.training?.testwocheStarten(vorlage) == true { fertig() } else { meldung = "In dieser Woche ist kein Tag mehr übrig. Probier es am Montag." }
+                    if sitzung.training?.testwocheStarten(vorlage) == true { erfolg += 1; fertig() } else { meldung = "In dieser Woche ist kein Tag mehr übrig. Probier es am Montag." }
                 }
                 .frame(minHeight: Abstand.tippflaeche)
             } footer: {
@@ -126,6 +136,7 @@ struct SplitDetailView: View {
         .lumenHintergrund()
         .navigationTitle(vorlage.name)
         .navigationBarTitleDisplayMode(.inline)
+        .haptik(.erfolg, bei: erfolg)
         .confirmationDialog("Deinen Plan ersetzen?", isPresented: $ersetzen, titleVisibility: .visible) {
             Button("Ersetzen", role: .destructive) { uebernehmen() }
         } message: {
@@ -140,6 +151,7 @@ struct SplitDetailView: View {
 
     private func uebernehmen() {
         sitzung.training?.planSichern(SplitLogik.alsPlan(vorlage))
+        erfolg += 1
         fertig()
     }
 }

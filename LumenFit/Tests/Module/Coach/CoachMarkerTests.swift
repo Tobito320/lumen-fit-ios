@@ -144,12 +144,21 @@ final class CoachMarkerTests: XCTestCase {
 
     // MARK: - Umfang: keine Wecker, Erinnerungen oder Kalender
 
-    func testWeckerErinnerungTerminUndTrackingMarkerVerschwinden() {
+    func testWeckerErinnerungTerminUndErinnernVerschwinden() {
         for roh in ["[[wecker: 2026-10-08 | 07:30]]", "[[erinnerung: 07:30 | Wasser trinken]]", "[[termin: 2026-10-08 | 10:00 | 11:00 | Zahnarzt]]",
-                    "[[wasser: 250]]", "[[gewicht: 81,3]]", "[[training: start]]", "[[satz: abc | 60 | 8]]", "[[erinnern: neu | 07:30 | x]]"] {
+                    "[[erinnern: neu | 07:30 | x]]"] {
             let z = zerlegt("Okay. \(roh)")
             XCTAssertEqual(z.text, "Okay.", roh)
             XCTAssertTrue(z.marker.isEmpty, roh)
+        }
+    }
+
+    /// Früher verschwanden die Eintrags- und Training-Marker; jetzt werden sie erkannt (als Vorschlag mit Bestätigung), der Text bleibt ohne sie.
+    func testTrackingMarkerWerdenErkanntUndAusDemTextGenommen() {
+        for roh in ["[[wasser: 250]]", "[[gewicht: 81,3]]", "[[training: start]]", "[[satz: abc | 60 | 8]]"] {
+            let z = zerlegt("Okay. \(roh)")
+            XCTAssertEqual(z.text, "Okay.", roh)
+            XCTAssertEqual(z.marker.count, 1, roh)
         }
     }
 }

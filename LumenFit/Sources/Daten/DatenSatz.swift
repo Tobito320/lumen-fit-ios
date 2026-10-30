@@ -16,6 +16,8 @@ final class DatenSatz {
     let meilensteine: MeilensteinStore
     let coach: CoachStore
     let verbindung: VerbindungStore
+    let importVerlauf: ImportVerlaufStore
+    let zyklus: ZyklusStore
 
     init(profil: ProfilID, ordner: URL, ereignisse: EreignisKanal, uhr: @escaping Uhr, bruecke: any PartnerAustausch = KeinePartnerBruecke()) {
         self.profil = profil
@@ -38,6 +40,8 @@ final class DatenSatz {
         self.training = TrainingStore(raum: raum, einstellungen: einstellungen, ereignisse: ereignisse, uhr: uhr)
         self.meilensteine = MeilensteinStore(raum: raum, ereignisse: ereignisse, uhr: uhr)
         self.coach = CoachStore(raum: raum)
+        self.importVerlauf = ImportVerlaufStore(raum: raum)
+        self.zyklus = ZyklusStore(raum: raum, ordner: ordner, uhr: uhr)
         self.verbindung = VerbindungStore(ordner: ordner, bruecke: bruecke, einstellungen: einstellungen, ereignisse: ereignisse)
     }
 }

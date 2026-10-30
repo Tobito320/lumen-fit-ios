@@ -90,6 +90,13 @@ enum WidgetHabitAktion {
             s.habits?[i].heute = wert
             WidgetSnapshotDatei.schreibe(s, ordner: ordner)
         }
+        // Gym: auch die Gym-Woche (Punkte im Gym-Widget) zeigt den Haken sofort.
+        if habit == "gym", var s = WidgetSnapshotDatei.lade(ordner: ordner), s.tag == tag, s.profilKennung == profil, var woche = s.gymWoche,
+           let i = woche.firstIndex(where: { $0.tag == tag }) {
+            woche[i].erledigt = wert > 0
+            s.gymWoche = woche
+            WidgetSnapshotDatei.schreibe(s, ordner: ordner)
+        }
         return true
     }
 }

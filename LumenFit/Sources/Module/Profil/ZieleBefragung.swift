@@ -50,6 +50,23 @@ enum ZieleLogik {
         raum.senden(ProfilEinstellungD.art, ProfilEinstellungD(schluessel: schluessel, wert: .number(Double(wert))))
     }
 
+    /// Alle gespeicherten `ziel.*`-Zahlen, die jüngste Op je Schlüssel gewinnt. Das Fortschritt-Segment liest damit `KoerperZiele.lesen`.
+    static func werte(aus ops: [ProfilEinstellungD]) -> [String: Int] {
+        var ergebnis: [String: Int] = [:]
+        for d in ops where d.schluessel.hasPrefix("ziel.") {
+            if case .number(let n) = d.wert, n.isFinite { ergebnis[d.schluessel] = Int(n) }
+        }
+        return ergebnis
+    }
+
+    @MainActor
+    static func werte(in raum: LokalerRaum) -> [String: Int] {
+        werte(aus: raum.ops(arten: [ProfilEinstellungD.art]).compactMap { $0.daten(ProfilEinstellungD.self) })
+    }
+
+    /// Die Befragung ist gemacht, sobald ein Satzziel gespeichert ist.
+    static func befragt(_ werte: [String: Int]) -> Bool { werte.keys.contains { $0.hasPrefix("ziel.saetze.") } }
+
     /// Das zuletzt gespeicherte Ergebnis (`ziel.prio.*`), für die Anzeige. nil ohne Befragung.
     @MainActor
     static func gespeichert(in raum: LokalerRaum) -> [MuskelGruppe]? {

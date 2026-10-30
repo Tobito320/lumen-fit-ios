@@ -1,26 +1,35 @@
 import SwiftUI
 
-/// Das Segment "Fortschritt" im Tab Gym (Ideen 31 bis 34): nächstes Training, Kraftkurve, Sätze je Muskel, Erholungs-Silhouette und die Wege zu Verlauf,
-/// Rückblick, Meilensteinen und Lumi. Die Seite bringt ihren eigenen Hintergrund und kein Navigationstitel mit, der Tab Gym setzt ihn.
+/// Das Segment "Fortschritt" im Tab Gym (Ideen 31 bis 34): Wochenleiste, nächstes Training, Kraftkurve, Sätze je Muskel (Felder und Balken), Erholungs-Silhouette
+/// und die Wege zu Verlauf, Messungen, Rückblick, Meilensteinen und Lumi. Ein Tipp auf Silhouette, Legende oder Feld öffnet das Blatt der Muskelgruppe;
+/// "Ziele" in der Leiste öffnet die Befragung. Die Seite bringt ihren eigenen Hintergrund und kein Navigationstitel mit, der Tab Gym setzt ihn.
 struct FortschrittSegmentView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @State private var auswahl: KoerperAuswahl?
+    @State private var befragung = false
+    @State private var tipp = 0
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         let koerper = q.koerper
         ScrollView {
             VStack(spacing: Abstand.l) {
+                KoerperWochenLeiste(woche: koerper.streifen)
                 if q.hatTraining {
                     NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
                     KraftKurveKarte(sessions: q.sessions, heute: q.heute)
-                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
-                    SilhouetteKarte(daten: koerper)
                 } else {
                     LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
                     .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                }
+                if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
+                SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }
+                if q.hatTraining {
+                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
+                    SilhouetteKarte(daten: koerper, beiGruppe: waehle)
                 }
                 links(stufe: q.stufe, medaillen: q.medaillen.count)
             }
@@ -30,11 +39,26 @@ struct FortschrittSegmentView: View {
         .lumenHintergrund()
         .fortschrittToast()
         .onAppear { FortschrittModul.waechter.pruefeAlles() }
+        .haptik(.auswahl, bei: tipp)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Ziele", systemImage: "slider.horizontal.3") { befragung = true }
+            }
+        }
+        .sheet(item: $auswahl) { a in KoerperBlattView(gruppe: a.gruppe, teil: a.teil) }
+        .sheet(isPresented: $befragung) { ZieleBefragungView().presentationDetents([.large]) }
+    }
+
+    private func waehle(_ gruppe: MuskelGruppe, _ teil: MuskelTeil?) {
+        tipp += 1
+        auswahl = KoerperAuswahl(gruppe: gruppe, teil: teil)
     }
 
     private func links(stufe: Int, medaillen: Int) -> some View {
         ListenKarte {
             zeile("Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
+            Haarlinie()
+            zeile("Messungen", detail: "Gewicht, Umfänge, Körperfett", symbol: "ruler") { MessungenView() }
             Haarlinie()
             zeile("Rückblick", detail: "Woche und Monat teilen", symbol: "calendar") { RueckblickView() }
             Haarlinie()

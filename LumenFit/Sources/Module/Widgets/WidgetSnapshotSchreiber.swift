@@ -94,6 +94,8 @@ final class WidgetSnapshotSchreiber {
             hrv: gesundheit.vitale[.hrv]?.last.map { Int($0.wert.rounded()) },
             sessions: daten.training.sessions, plan: daten.training.plan,
             kcal: Int(summe.kcal.rounded()), kcalZiel: essenZiele.kcal, protein: Int(summe.protein.rounded()), proteinZiel: essenZiele.protein,
-            habits: habits, lumi: stimmungen.last { $0.tag == heute }?.stimmung ?? .bereit, lumiStufe: daten.meilensteine.stufe)
+            habits: habits, lumi: stimmungen.last { $0.tag == heute }?.stimmung ?? .bereit, lumiStufe: daten.meilensteine.stufe,
+            gymTage: WochenStreifenLogik.gymTage(sessions: daten.training.sessions, haken: daten.habits.werte(Habit.gym.id)),
+            partner: PartnerAnzeige.zusammenfassung(daten.verbindung.partner))
     }
 }

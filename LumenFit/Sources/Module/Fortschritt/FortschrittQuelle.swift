@@ -21,7 +21,13 @@ struct FortschrittQuelle {
     var medaillenDatum: [String: Date] { Dictionary(medaillen.map { ($0.id, $0.erreicht) }, uniquingKeysWith: { erste, _ in erste }) }
     var erreichteIds: Set<String> { Set(medaillen.map(\.id)) }
     var stufe: Int { LumiStufe.stufe(erreicht: medaillen.count) }
-    var koerper: KoerperDaten { KoerperDaten.bauen(sessions: sessions, plan: plan, jetzt: jetzt) }
+    /// Die Satzziele aus der Befragung (`ziel.prio.*`, `ziel.saetze.*`); leer, solange sie nicht gemacht ist.
+    var zielWerte: [String: Int] { daten?.raum.map { ZieleLogik.werte(in: $0) } ?? [:] }
+    var zieleGesetzt: Bool { ZieleLogik.befragt(zielWerte) }
+    var koerper: KoerperDaten {
+        let werte = zielWerte
+        return KoerperDaten.bauen(sessions: sessions, plan: plan, wert: { werte[$0] }, jetzt: jetzt)
+    }
     /// Der Plantag von heute (mit verlegten Tagen und Testwoche), nil an einem Ruhetag.
     var plantagHeute: TrainingsTag? {
         WochenLogik.effektiverPlan(plan, woche: Datum.montagDerWoche(heute)).tage.first { $0.wochentage.contains(Datum.wochentag(heute)) }

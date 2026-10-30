@@ -52,3 +52,23 @@ final class TrainingNotizTests: XCTestCase {
         XCTAssertEqual(TrainingLogik.notiz(String(repeating: "a", count: 900))?.count, 500)
     }
 }
+
+/// Zeiten einer Einheit ändern darf Kalorien und Puls nicht löschen.
+@MainActor
+final class TrainingZeitenTests: XCTestCase {
+    private let uhr = TestUhr()
+
+    func testZeitenAendernBehaeltKcalUndPuls() throws {
+        let satz = DatenSatz(profil: .testA, ordner: try tempOrdner(), ereignisse: EreignisKanal(), uhr: uhr.uhr)
+        let id = satz.training.einchecken(tag: nil)
+        uhr.vor(sekunden: 3600)
+        satz.training.auschecken(id, kcal: 310, puls: 121)
+        let vorher = try XCTUnwrap(satz.training.sessions.first)
+        uhr.vor(sekunden: 60)
+        satz.training.zeitenAendern(vorher, start: vorher.start, ende: vorher.ende?.addingTimeInterval(600))
+        let danach = try XCTUnwrap(satz.training.sessions.first)
+        XCTAssertEqual(danach.kcal, 310)
+        XCTAssertEqual(danach.puls, 121)
+        XCTAssertEqual(danach.ende, vorher.ende?.addingTimeInterval(600))
+    }
+}

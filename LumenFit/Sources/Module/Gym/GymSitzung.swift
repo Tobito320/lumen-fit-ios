@@ -21,6 +21,8 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var gemeldet: Set<String> = []
     @ObservationIgnored private var pauseGemeldet = false
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
+    @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
+    @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
 
     /// Das laufende Training, nil ohne.
@@ -32,6 +34,14 @@ final class GymSitzung: TrainingSteuerung {
     private(set) var pauseEndeZaehler = 0
     /// Zählt hoch bei jedem Haken: Haptik `.satzFertig`.
     private(set) var hakenZaehler = 0
+    /// Zählt hoch, wenn ein Haken zurückgenommen wird: leichte Haptik (`.haptik(.auswahl, bei:)`).
+    private(set) var hakenZurueckZaehler = 0
+    /// Wann der nächste Satz begann (Ende der Pause oder Haken davor); nil = unbekannt. Aus der Zeit wird beim Haken die Satzdauer (`SatzUhrLogik`).
+    private(set) var satzSeit: Date?
+    /// Letztes Löschen oder Kopieren eines Satzes: die Leiste "Rückgängig" (5 s).
+    private(set) var rueckgaengig: SatzRueckgaengig?
+    /// Rekord-Beschriftung je Satz ("plan|zeile"), im Training gemerkt; die Zeile zeigt sie neben dem Haken.
+    private(set) var rekordLabel: [String: String] = [:]
     /// Der Rekord-Toast (`.lumenToast`); die Ansicht bindet ihn.
     var toast: ToastInhalt?
     /// Das Studio hat beim Einchecken zu: einmalig anzeigen, dann `hinweisGelesen()`.
@@ -64,6 +74,24 @@ final class GymSitzung: TrainingSteuerung {
         if let vorhanden = studios[d.profil] { return vorhanden }
         let neu = StudioStore(ordner: d.ordner)
         studios[d.profil] = neu
+        return neu
+    }
+
+    /// Die Defekt-Notizen des aktiven Profils (`defekte.json`); ein Objekt je Profil.
+    var defekte: DefektStore? {
+        guard let d = daten else { return nil }
+        if let vorhanden = defektStores[d.profil] { return vorhanden }
+        let neu = DefektStore(ordner: d.ordner)
+        defektStores[d.profil] = neu
+        return neu
+    }
+
+    /// Die Geräte-Einstellungen des aktiven Profils (`geraete.json`); ein Objekt je Profil.
+    var geraete: GeraeteStore? {
+        guard let d = daten else { return nil }
+        if let vorhanden = geraeteStores[d.profil] { return vorhanden }
+        let neu = GeraeteStore(ordner: d.ordner)
+        geraeteStores[d.profil] = neu
         return neu
     }
 
@@ -188,10 +216,14 @@ final class GymSitzung: TrainingSteuerung {
             liste[u].saetze[i].ok = nil
             liste[u].saetze[i].sek = nil
             liste[u].saetze[i].pause = nil
+            rekordLabel["\(liste[u].id)|\(i)"] = nil
             if let p = pause, p.plan == liste[u].id, p.satz == i { setzePause(nil) }
             sende(u)
+            hakenZurueckZaehler += 1
         } else {
             let andere = pauseAbschliessen(jetzt)
+            liste[u].saetze[i].sek = SatzUhrLogik.dauer(seit: satzSeit, jetzt: jetzt, an: UserDefaults.standard.bool(forKey: GymAnzeige.satzzeitSchluessel))
+            satzSeit = nil
             liste[u].saetze[i].ok = true
             let rekord = rekordPruefen(u, i)
             let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung))
@@ -216,6 +248,7 @@ final class GymSitzung: TrainingSteuerung {
     private func pauseAbschliessen(_ jetzt: Date) -> Int? {
         guard let p = pause else { return nil }
         setzePause(nil)
+        satzSeit = SatzUhrLogik.satzStart(pause: p, jetzt: jetzt)
         guard let u = liste.firstIndex(where: { $0.id == p.plan }), liste[u].saetze.indices.contains(p.satz) else { return nil }
         liste[u].saetze[p.satz].pause = PauseLogik.gedauert(p, jetzt: jetzt)
         return u
@@ -233,6 +266,7 @@ final class GymSitzung: TrainingSteuerung {
         for art in arten where gemeldet.insert("\(w.id)|\(art.rawValue)|\(RekordLogik.wert([satz], art) ?? 0)").inserted { neue.append(art) }
         guard let meldung = RekordLogik.toast(uebung: w.planUebung.anzeigeName, arten: neue, satz: satz) else { return false }
         toast = meldung
+        rekordLabel["\(w.id)|\(i)"] = neue.map(\.kurz).joined(separator: ", ")
         return true
     }
 
@@ -282,7 +316,28 @@ final class GymSitzung: TrainingSteuerung {
         }
     }
 
-    func satzKopieren(_ u: Int, _ i: Int) { aendere(u, senden: true) { WorkoutLogik.kopieren($0, i) } }
+    func satzKopieren(_ u: Int, _ i: Int) {
+        merkeRueckgaengig(u, i, .kopiert)
+        aendere(u, senden: true) { WorkoutLogik.kopieren($0, i) }
+    }
+
+    /// Merkt die Zeilen vor dem Eingriff für "Rückgängig".
+    private func merkeRueckgaengig(_ u: Int, _ i: Int, _ aktion: SatzRueckgaengigLogik.Aktion) {
+        ladeWennNoetig()
+        guard liste.indices.contains(u), liste[u].saetze.indices.contains(i) else { return }
+        let nummer = liste[u].saetze[i].kuerzel ?? "\(liste[u].saetze[..<i].filter { $0.kuerzel == nil }.count + 1)"
+        rueckgaengig = SatzRueckgaengig(text: SatzRueckgaengigLogik.text(aktion, nummer: nummer), plan: liste[u].id, vorher: liste[u].saetze)
+    }
+
+    /// "Rückgängig": die Zeilen von vorher zurück (samt Haken und Zeiten) und senden.
+    func satzRueckgaengigMachen() {
+        guard let r = rueckgaengig, let ziel = SatzRueckgaengigLogik.wiederherstellen(r, in: liste) else { rueckgaengig = nil; return }
+        rueckgaengig = nil
+        aendere(ziel.index, senden: true) { _ in ziel.saetze }
+        liveSenden()
+    }
+
+    func rueckgaengigVergessen() { rueckgaengig = nil }
 
     func satzDazu(_ u: Int) {
         aendere(u, senden: true) { saetze in
@@ -293,6 +348,7 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     func satzLoeschen(_ u: Int, _ i: Int) {
+        if liste.indices.contains(u), liste[u].saetze.count > 1 { merkeRueckgaengig(u, i, .geloescht) }
         aendere(u, senden: true) { saetze in
             guard saetze.indices.contains(i), saetze.count > 1 else { return saetze }
             var neu = saetze
@@ -421,11 +477,12 @@ final class GymSitzung: TrainingSteuerung {
         geaendert.name = nil
         let vorher = WorkoutLogik.vorherige(geaendert, in: fruehere(s))
         let saetze = AusweichLogik.saetzeNachTausch(liste[u].saetze, vorher: vorher)
-        t.tauschen(sid, liste[u].planUebung, zu: neu.id, ersatzFuer: original, saetze: saetze)
+        let ersatz = neu.id == original ? nil : original // zurück zum Original: kein Ersatz mehr
+        t.tauschen(sid, liste[u].planUebung, zu: neu.id, ersatzFuer: ersatz, saetze: saetze)
         liste[u].planUebung = geaendert
         liste[u].saetze = saetze
         liste[u].vorher = vorher
-        liste[u].ersatzFuer = original
+        liste[u].ersatzFuer = ersatz
         liveSenden()
     }
 
@@ -487,12 +544,21 @@ final class GymSitzung: TrainingSteuerung {
 
     /// Cardio-Übung abschließen: Dauer, Distanz, Energie und Puls (Idee 29). Das Laufband oder den Stairmaster trägt es zusätzlich als `CardioEintrag` ein.
     func cardioAbschliessen(_ u: Int, minuten: Int, km: Double?, kcal: Int?, puls pulswert: Int?) {
+        var e = CardioEintrag(datum: "", geraet: "laufband", minuten: minuten, kcal: kcal, km: km)
+        if liste.indices.contains(u), let g = TrainingLogik.cardioGeraet(liste[u].planUebung.katalog) { e.geraet = g }
+        cardioAbschliessen(u, eintrag: e, puls: pulswert)
+    }
+
+    /// Cardio-Übung fertig mit allen Werten des Geräts (Dauer, Entfernung, Höhe, Stufen, Etagen, Steigung, Geschwindigkeit, Stufe).
+    func cardioAbschliessen(_ u: Int, eintrag vorlage: CardioEintrag, puls pulswert: Int?) {
         ladeWennNoetig()
         guard let sid = sessionId, let t = training, liste.indices.contains(u), liste[u].planUebung.istCardio else { return }
         t.fertig(sid, liste[u].planUebung, saetze: [])
         liste[u].cardioFertig = true
         if let geraet = TrainingLogik.cardioGeraet(liste[u].planUebung.katalog) {
-            let eintrag = CardioEintrag(datum: Datum.text(umgebung.uhr()), geraet: geraet, minuten: minuten, kcal: kcal, km: km)
+            var eintrag = vorlage
+            eintrag.datum = Datum.text(umgebung.uhr())
+            eintrag.geraet = geraet
             t.cardioSichern(eintrag)
             cardioPuls?.setze(eintrag.id, puls: pulswert)
         }

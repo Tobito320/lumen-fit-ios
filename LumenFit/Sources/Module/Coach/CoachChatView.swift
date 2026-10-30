@@ -9,41 +9,73 @@ struct CoachChatView: View {
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var blatt: CoachBlatt?
+    @State private var hervorgehoben: String?
+    @State private var amEnde = true
+    @State private var neueAntwort = false
+    @State private var stoppSignal = 0
+    @State private var sendeZaehler = 0
+    @State private var ausblendenFrage = false
+    @State private var zielFrage = false
+    @State private var zielText = ""
     @FocusState private var fokus: Bool
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Abstand.l) {
-                    if modell.morgenCheckSichtbar { CoachMorgenCheckKarte(modell: modell) }
-                    if modell.heute.isEmpty, !modell.denkt { willkommen }
+                    if modell.morgenCheckSichtbar { CoachMorgenCheckKarte(modell: modell).transition(.opacity) }
+                    if modell.heute.isEmpty, !modell.denkt { willkommen.transition(.opacity) }
                     ForEach(Array(modell.heute.enumerated()), id: \.element.id) { index, nachricht in
                         if CoachText.trennerNoetig(vorher: index > 0 ? modell.heute[index - 1].zeit : nil, jetzt: nachricht.zeit, kalender: Datum.kalender) {
                             trenner(nachricht.zeit)
                         }
-                        zeile(nachricht).id(nachricht.id)
+                        zeile(nachricht, letzte: index == modell.heute.count - 1)
+                            .id(nachricht.id)
+                            .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
                     }
-                    if modell.denkt, let seit = modell.denkBeginn { CoachDenkAnzeige(seit: seit).id("denkt") }
+                    if modell.denkt, let seit = modell.denkBeginn { CoachDenkAnzeige(seit: seit).id("denkt").transition(.opacity) }
                     Color.clear.frame(height: 1).id("ende")
                 }
                 .padding(.horizontal, Abstand.l)
                 .padding(.top, Abstand.m)
                 .padding(.bottom, Abstand.l)
+                .animation(reduceMotion ? nil : Feder.weich, value: modell.heute.isEmpty)
+                .animation(reduceMotion ? nil : Feder.weich, value: modell.heute.count)
+                .animation(reduceMotion ? nil : Feder.weich, value: modell.morgenCheckSichtbar)
             }
             .scrollDismissesKeyboard(.interactively)
             .defaultScrollAnchor(.bottom)
-            .onChange(of: modell.heute.count) { scrolle(proxy) }
+            .onScrollGeometryChange(for: Bool.self) { geometrie in
+                geometrie.contentOffset.y + geometrie.containerSize.height >= geometrie.contentSize.height - 80
+            } action: { _, unten in
+                amEnde = unten
+                if unten { neueAntwort = false }
+            }
+            .onChange(of: modell.heute.count) { antwortAnzeigen(proxy) }
             .onChange(of: modell.denkt) { scrolle(proxy) }
+            .overlay(alignment: .bottomTrailing) {
+                if !amEnde, !modell.heute.isEmpty { nachUnten(proxy) }
+            }
+            .animation(reduceMotion ? nil : Feder.schnell, value: amEnde)
+            .sheet(item: $blatt) { art in
+                CoachBlattAnsicht(blatt: art, modell: modell) { id in springe(id, proxy) }
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { eingabe }
-        .navigationTitle(modell.einstellungen?.anzeigeName ?? CoachLokal.standardName)
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: Abstand.s) {
+                    LumiView(stimmung: modell.denkt ? .denkt : .bereit, groesse: 24)
+                    Text(modell.einstellungen?.anzeigeName ?? CoachLokal.standardName).font(.headline)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+            }
             ToolbarItem(placement: .topBarLeading) { menue }
             ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() }
         }
-        .sheet(item: $blatt) { CoachBlattAnsicht(blatt: $0, modell: modell) }
         .task(id: frage) {
             modell.pruefeMorgenCheck()
             modell.beiVordergrund()
@@ -64,15 +96,45 @@ struct CoachChatView: View {
             }
         }
         .haptik(.erfolg, bei: modell.handlung?.id)
+        .haptik(.erfolg, bei: modell.erfolgSignal)
+        .haptik(.warnung, bei: modell.warnungSignal)
+        .haptik(.auswahl, bei: modell.auswahlSignal)
+        .haptik(.stopp, bei: stoppSignal)
+        .haptik(.start, bei: sendeZaehler)
+        .confirmationDialog("Verlauf ausblenden?", isPresented: $ausblendenFrage, titleVisibility: .visible) {
+            Button("Ausblenden", role: .destructive) { modell.verlaufAusblenden() }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Der Chat und der Verlauf werden leer. Nichts wird gelöscht, der Coach kennt die letzten Nachrichten weiter.")
+        }
+        .alert("Mein Ziel", isPresented: $zielFrage) {
+            TextField("Zum Beispiel: 5 kg abnehmen bis Sommer", text: $zielText)
+            Button("Sichern") { modell.setzeZiel(zielText) }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Ein Satz. Der Coach richtet seine Antworten danach aus. Leer lassen entfernt das Ziel.")
+        }
     }
 
     // MARK: - Teile
 
     private var menue: some View {
         Menu {
+            Button("Suchen", systemImage: "magnifyingglass") { blatt = .suche }
             Button("Verlauf", systemImage: "clock.arrow.circlepath") { blatt = .verlauf }
             Button("Gedächtnis", systemImage: "brain.head.profile") { blatt = .gedaechtnis }
             Button("Gemerkte Antworten", systemImage: "bookmark") { blatt = .merkliste }
+            Divider()
+            Button("Mein Ziel", systemImage: "target") { zielText = modell.ziel; zielFrage = true }
+            Picker("Ton", selection: Binding(get: { modell.ton }, set: { modell.setzeTon($0) })) {
+                ForEach(CoachEinstellungen.toene, id: \.wert) { Text($0.name).tag($0.wert) }
+            }
+            Toggle("Morgen-Check", systemImage: "sun.max", isOn: Binding(get: { modell.morgenAn }, set: { modell.setzeMorgen($0) }))
+            Toggle("Coach pausieren", systemImage: "pause.circle", isOn: Binding(get: { modell.pausiert }, set: { modell.setzePause($0) }))
+            Divider()
+            if !modell.heute.isEmpty {
+                Button("Verlauf ausblenden", systemImage: "eye.slash") { ausblendenFrage = true }
+            }
             Button("Einstellungen", systemImage: "gearshape") { blatt = .einstellungen }
         } label: {
             Image(systemName: "ellipsis.circle")
@@ -107,20 +169,13 @@ struct CoachChatView: View {
     }
 
     @ViewBuilder
-    private func zeile(_ nachricht: CoachNachricht) -> some View {
+    private func zeile(_ nachricht: CoachNachricht, letzte: Bool) -> some View {
+        let hervor = hervorgehoben == nachricht.id
         switch nachricht.rolle {
         case .nutzer:
-            CoachNutzerBlase(text: nachricht.text)
+            CoachNutzerBlase(modell: modell, nachricht: nachricht, hervor: hervor)
         case .coach:
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                if nachricht.text == CoachPersona.fehlerText {
-                    CoachFehlerZeile(text: nachricht.text)
-                } else {
-                    CoachAntwortText(text: nachricht.text)
-                }
-                CoachChipLeiste(nachricht: nachricht, modell: modell)
-                if nachricht.text != CoachPersona.fehlerText { CoachAktionsZeile(nachricht: nachricht, modell: modell) }
-            }
+            CoachAntwortZeile(modell: modell, nachricht: nachricht, letzte: letzte, hervor: hervor)
         }
     }
 
@@ -132,11 +187,64 @@ struct CoachChatView: View {
         }
     }
 
+    /// Neue Nachricht: eine Antwort des Coachs beginnt oben im Bild (lesen von vorn), alles andere läuft nach unten.
+    private func antwortAnzeigen(_ proxy: ScrollViewProxy) {
+        guard let letzte = modell.heute.last, letzte.rolle == .coach, letzte.text != CoachPersona.fehlerText else {
+            scrolle(proxy)
+            return
+        }
+        if reduceMotion {
+            proxy.scrollTo(letzte.id, anchor: .top)
+        } else {
+            withAnimation(Feder.weich) { proxy.scrollTo(letzte.id, anchor: .top) }
+        }
+        stoppSignal += 1
+        neueAntwort = true
+        AccessibilityNotification.Announcement("Antwort vom Coach: " + String(CoachAnzeige.klartext(CoachAnzeige.kopierText(letzte.text)).prefix(160))).post()
+    }
+
+    private func springe(_ id: String, _ proxy: ScrollViewProxy) {
+        guard modell.heute.contains(where: { $0.id == id }) else { return }
+        hervorgehoben = id
+        if reduceMotion {
+            proxy.scrollTo(id, anchor: .center)
+        } else {
+            withAnimation(Feder.weich) { proxy.scrollTo(id, anchor: .center) }
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            withAnimation(reduceMotion ? nil : Feder.weich) { if hervorgehoben == id { hervorgehoben = nil } }
+        }
+    }
+
+    private func nachUnten(_ proxy: ScrollViewProxy) -> some View {
+        Button {
+            stoppSignal += 1
+            scrolle(proxy)
+        } label: {
+            HStack(spacing: Abstand.xs) {
+                if neueAntwort { Text("Neue Antwort").font(.footnote.weight(.semibold)) }
+                Image(systemName: "arrow.down").font(.footnote.weight(.bold))
+            }
+            .foregroundStyle(palette.text)
+            .padding(.horizontal, Abstand.m)
+            .frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
+            .glassEffect(.regular.interactive(), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .padding(Abstand.l)
+        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.8)))
+        .accessibilityLabel(neueAntwort ? "Neue Antwort, nach unten" : "Nach unten")
+    }
+
     // MARK: - Eingabe
 
     private var eingabe: some View {
         VStack(spacing: Abstand.s) {
+            CoachEintragsKarte(modell: modell, gedaechtnisOeffnen: { blatt = .gedaechtnis })
+                .padding(.horizontal, Abstand.l)
             if let handlung = modell.handlung { handlungsLeiste(handlung) }
+            if modell.pausiert { pauseLeiste }
             if !modell.schnellfragen.isEmpty, !modell.heute.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: Abstand.s) {
@@ -147,6 +255,7 @@ struct CoachChatView: View {
                     .padding(.horizontal, Abstand.l)
                 }
             }
+            if !modell.pausiert {
             HStack(alignment: .bottom, spacing: Abstand.s) {
                 TextField("Frag deinen Coach", text: $modell.entwurf, axis: .vertical)
                     .lineLimit(1...5)
@@ -161,9 +270,10 @@ struct CoachChatView: View {
                     .onChange(of: modell.entwurf) {
                         if modell.entwurf.count > CoachModell.maxZeichen { modell.entwurf = String(modell.entwurf.prefix(CoachModell.maxZeichen)) }
                     }
-                Button { modell.senden() } label: {
+                Button { sende() } label: {
                     Image(systemName: "arrow.up")
                         .font(.headline)
+                        .symbolEffect(.bounce, value: sendeZaehler)
                         .foregroundStyle(palette.aufAkzent)
                         .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
                         .background(palette.akzent, in: .circle)
@@ -174,6 +284,7 @@ struct CoachChatView: View {
                 .accessibilityLabel("Senden")
             }
             .padding(.horizontal, Abstand.l)
+            }
             if CoachVorschlag.zaehlerSichtbar(anzahl: modell.entwurf.count, maximal: CoachModell.maxZeichen) {
                 Text("\(modell.entwurf.count) von \(CoachModell.maxZeichen)")
                     .font(.caption.weight(CoachVorschlag.zaehlerWarnt(anzahl: modell.entwurf.count, maximal: CoachModell.maxZeichen) ? .bold : .regular))
@@ -181,10 +292,35 @@ struct CoachChatView: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .padding(.horizontal, Abstand.l)
             }
+            Text("KI-Coach, kein Arzt")
+                .font(.caption2).foregroundStyle(palette.text2)
+                .frame(maxWidth: .infinity)
         }
         .padding(.top, Abstand.s)
         .padding(.bottom, Abstand.s)
         .lumenLeiste()
+    }
+
+    private func sende() {
+        guard kannSenden else { return }
+        sendeZaehler += 1
+        modell.senden()
+    }
+
+    private var pauseLeiste: some View {
+        HStack(spacing: Abstand.m) {
+            Image(systemName: "pause.circle").accessibilityHidden(true)
+            Text("Der Coach macht Pause.").font(.subheadline.weight(.semibold))
+            Spacer(minLength: Abstand.s)
+            Button("Weiter") { modell.setzePause(false) }
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: Abstand.tippflaeche)
+        }
+        .foregroundStyle(palette.text)
+        .padding(.horizontal, Abstand.l)
+        .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .padding(.horizontal, Abstand.l)
+        .accessibilityElement(children: .combine)
     }
 
     private var kannSenden: Bool {

@@ -20,6 +20,10 @@ struct WidgetEingabe: Sendable {
     var habits: [WidgetHabitEingabe]
     var lumi: LumiStimmung
     var lumiStufe: Int
+    /// Alle Tage mit Gym aus Einheiten und Haken (`WochenStreifenLogik.gymTage`), für die Gym-Woche.
+    var gymTage: Set<String> = []
+    /// Der Partner im Stand `verbunden`; nil sonst. Das Widget bekommt nur, was er freigibt (`WidgetPartnerStand.aus`).
+    var partner: ZusammenfassungDatei? = nil
 }
 
 /// Eine sichtbare Gewohnheit mit ihren Tageswerten und dem Ziel aus den Einstellungen (`HabitStore.habitZiel`).
@@ -46,7 +50,9 @@ enum WidgetSnapshotBauer {
             plan: naechsterTag(plan: e.plan, sessions: e.sessions, heute: heute),
             serieWochen: TrainingLogik.serieWochen(e.sessions, heute: heute),
             essen: WidgetEssenStand(kcal: e.kcal, kcalZiel: e.kcalZiel, protein: e.protein, proteinZiel: e.proteinZiel),
-            habits: e.habits.prefix(hoechstensHabits).map { kachel($0, heute: heute) })
+            habits: e.habits.prefix(hoechstensHabits).map { kachel($0, heute: heute) },
+            gymWoche: HabitLogik.wochenTage(heute: heute).map { WidgetGymTag(tag: $0, erledigt: e.gymTage.contains($0) && $0 <= heute) },
+            partner: e.partner.map(WidgetPartnerStand.aus))
     }
 
     /// Verschiedene Tage mit Training in der Woche von `heute` (zwei Einheiten an einem Tag zählen einmal).

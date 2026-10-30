@@ -134,8 +134,9 @@ final class ProfilLoveaImportTests: XCTestCase {
         let leer = Data("{}".utf8)
         func b(_ art: String) -> ProfilLoveaBehandlung { ProfilLoveaArten.behandlung(art: art, d: leer) }
         for art in ["gym.plan", "gym.checkin", "gym.uebung", "gym.checkout", "gym.loeschen", "cardio.setzen", "essen.setzen", "lebensmittel.favorit",
-                    "koerper.setzen", "habit.setzen", "habit.anlegen", "habit.loeschen"] { XCTAssertEqual(b(art), .uebernehmen, art) }
-        for art in ["schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen", "zyklus.tag", "coach.nachricht"] { XCTAssertEqual(b(art), .rohBehalten, art) }
+                    "koerper.setzen", "habit.setzen", "habit.anlegen", "habit.loeschen",
+                    "schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen", "zyklus.tag", "zyklus.einstellung"] { XCTAssertEqual(b(art), .uebernehmen, art) }
+        for art in ["coach.nachricht"] { XCTAssertEqual(b(art), .rohBehalten, art) }
         XCTAssertEqual(b("nachricht.neu"), .ausschliessen("Chat"))
         XCTAssertEqual(b("entwurf.setzen"), .ausschliessen("Chat"))
         XCTAssertEqual(b("notizbuch.setzen"), .ausschliessen("Notizen"))
@@ -173,8 +174,8 @@ final class ProfilLoveaImportTests: XCTestCase {
         XCTAssertEqual(plan.ops.map(\.id), ["a", "c"])
         XCTAssertEqual(plan.ops.map(\.von), [TestDaten.profilID, TestDaten.profilID])
         XCTAssertEqual(plan.ops[0].zeit.timeIntervalSince1970 - plan.ops[1].zeit.timeIntervalSince1970, -1.75, accuracy: 0.001, "mit und ohne Bruchteil")
-        XCTAssertEqual(plan.abdeckung.uebernommen, ["habit.setzen": 2])
-        XCTAssertEqual(plan.abdeckung.roh, ["schritte.setzen": 1])
+        XCTAssertEqual(plan.abdeckung.uebernommen, ["habit.setzen": 2, "schritte.setzen": 1])
+        XCTAssertEqual(plan.abdeckung.roh, [:])
         XCTAssertEqual(plan.abdeckung.ausgeschlossen, ["Chat": ["nachricht.neu": 1]])
         XCTAssertEqual(plan.abdeckung.unbekannt, ["neu.unbekannt": 1])
         XCTAssertEqual(plan.abdeckung.unlesbar, 2, "ein unlesbarer Eintrag aus dem Holen und eine kaputte Zeit")

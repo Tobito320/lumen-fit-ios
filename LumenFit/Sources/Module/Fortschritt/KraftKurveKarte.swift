@@ -52,6 +52,8 @@ struct KraftKurveKarte: View {
                     diagramm(punkte)
                 }
             }
+            .haptik(.auswahl, bei: messwert)
+            .haptik(.auswahl, bei: aktuell.id)
         } else {
             LeerZustand(stimmung: .bereit, satz: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit.", handlung: "Training starten") {
                 umgebung.router.oeffne(.gym(.training))

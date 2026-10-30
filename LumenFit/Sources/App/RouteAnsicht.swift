@@ -30,6 +30,7 @@ struct RouteAnsicht: View {
         case .quellen: QuellenView()
         case .meilensteine: MeilensteineView()
         case .lumi: LumiSeiteView()
+        case .zyklus: ZyklusRouteSeite()
         }
     }
 

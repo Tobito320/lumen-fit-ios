@@ -155,6 +155,15 @@ final class AlteDateienLadenTests: XCTestCase {
         let neu = op(#"{"session":"s1","notiz":"Schulter zwickt","zukunft":{"a":[1,2]}}"#).daten(GymD.self)
         XCTAssertEqual(neu?.notiz, "Schulter zwickt")
     }
+
+    func testKonsistenzDateiOhneZuordnungUndGeraeteDateiOhneFelderSindLesbar() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"kategorien":[{"id":"a","name":"Beine","farbe":"34C3A0"}],"fremd":1}"#.utf8).write(to: ordner.appendingPathComponent("konsistenz.json"))
+        XCTAssertEqual(KonsistenzKategorienDatei.lesen(ordner).kategorien.map(\.name), ["Beine"])
+        try Data(#"{"eintraege":{"bank":{"stufe":"4"}}}"#.utf8).write(to: ordner.appendingPathComponent("geraete.json"))
+        XCTAssertEqual(GeraeteEinstellungDatei.lesen(ordner).eintraege["bank"]?.stufe, "4")
+        XCTAssertNil(GeraeteEinstellungDatei.lesen(ordner).eintraege["bank"]?.notiz)
+    }
 }
 
 private extension NamenAenderung {

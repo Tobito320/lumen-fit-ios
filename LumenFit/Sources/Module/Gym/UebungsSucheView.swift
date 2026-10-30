@@ -6,12 +6,18 @@ import SwiftUI
 struct UebungsSucheView: View {
     var titel = "Übungen"
     var auswahl: ((Uebung) -> Void)?
+    /// true = das Blatt bleibt offen, jeder Tipp fügt eine Übung hinzu (Plus wird zum Haken), "Fertig" schließt.
+    var mehrfach = false
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
     @Environment(\.palette) private var palette
     @State private var text = ""
     @State private var koerper: String?
     @State private var geraet: String?
+    @State private var muskel: String?
+    @State private var filterBlatt = false
+    @State private var hinzugefuegt: [String] = []
+    @Environment(\.bewegungAus) private var ruhig
 
     private static let anzeigeLimit = 120
 
@@ -50,8 +56,18 @@ struct UebungsSucheView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $text, prompt: "Name, Muskel oder Gerät")
         .toolbar {
-            if auswahl != nil { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } } }
+            if auswahl != nil { ToolbarItem(placement: .cancellationAction) { Button(mehrfach ? "Fertig" : "Abbrechen") { schliessen() } } }
+            ToolbarItem(placement: .primaryAction) {
+                Button { filterBlatt = true } label: {
+                    let n = UebungsFilterLogik.anzahl(koerper: koerper, muskel: muskel, geraet: geraet)
+                    Label(n > 0 ? "Filter (\(n))" : "Filter", systemImage: n > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                }
+                .accessibilityLabel("Filter nach Muskel und Gerät")
+                .accessibilityValue(UebungsFilterLogik.anzahl(koerper: koerper, muskel: muskel, geraet: geraet) == 0 ? "aus" : "\(UebungsFilterLogik.anzahl(koerper: koerper, muskel: muskel, geraet: geraet)) aktiv")
+            }
         }
+        .sheet(isPresented: $filterBlatt) { UebungsFilterBlatt(koerper: $koerper, muskel: $muskel, geraet: $geraet) }
+        .haptik(.auswahl, bei: hinzugefuegt.count)
     }
 
     // MARK: Daten
@@ -61,7 +77,7 @@ struct UebungsSucheView: View {
     }
 
     private func passt(_ u: Uebung) -> Bool {
-        (koerper == nil || u.koerper == koerper) && UebungsKatalog.passtGeraet(u, wahl: geraet)
+        (koerper == nil || u.koerper == koerper) && (muskel == nil || u.muskel == muskel) && UebungsKatalog.passtGeraet(u, wahl: geraet)
     }
 
     private func gefiltert(_ liste: [Uebung]) -> [Uebung] { liste.filter(passt) }
@@ -116,8 +132,23 @@ struct UebungsSucheView: View {
         if let auswahl {
             Button {
                 auswahl(u)
-                schliessen()
-            } label: { inhaltsZeile(u) }
+                if mehrfach {
+                    withAnimation(ruhig ? nil : Feder.schnell) { hinzugefuegt.append(u.id) }
+                } else {
+                    schliessen()
+                }
+            } label: {
+                HStack {
+                    inhaltsZeile(u)
+                    if mehrfach {
+                        let da = hinzugefuegt.contains(u.id)
+                        Image(systemName: da ? "checkmark.circle.fill" : "plus.circle")
+                            .font(.title3).foregroundStyle(da ? palette.akzent : palette.text2)
+                            .contentTransition(.symbolEffect(.replace))
+                            .accessibilityLabel(da ? "Hinzugefügt" : "Hinzufügen")
+                    }
+                }
+            }
         } else {
             NavigationLink(value: Route.uebung(id: u.id)) { inhaltsZeile(u) }
         }
@@ -134,5 +165,61 @@ struct UebungsSucheView: View {
         .frame(minHeight: Abstand.tippflaeche)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(UebungsSymbol.beschreibung(u))
+    }
+}
+
+/// Wie viele Filter aktiv sind (für den Zähler am Knopf) und welche Muskeln zu einem Körperteil gehören.
+enum UebungsFilterLogik {
+    /// Körperteil, Muskel und ein gewähltes Gerät zählen; "Hanteln & Maschinen" (nil) ist der Standard und zählt nicht.
+    static func anzahl(koerper: String?, muskel: String?, geraet: String?) -> Int {
+        [koerper, muskel, geraet].compactMap { $0 }.count
+    }
+
+    /// Die Muskeln der Übungen eines Körperteils (alle ohne Körperteil), sortiert, ohne Doppelte.
+    static func muskeln(koerper: String?, in liste: [Uebung] = UebungsKatalog.alle) -> [String] {
+        Array(Set(liste.filter { koerper == nil || $0.koerper == koerper }.map(\.muskel))).sorted()
+    }
+}
+
+/// Das Filterblatt: Körperteil, Muskel und Gerät auf einmal, mit "Zurücksetzen".
+struct UebungsFilterBlatt: View {
+    @Binding var koerper: String?
+    @Binding var muskel: String?
+    @Binding var geraet: String?
+    @Environment(\.dismiss) private var schliessen
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Körperteil") {
+                    Picker("Körperteil", selection: Binding(get: { koerper ?? "" }, set: { koerper = $0.isEmpty ? nil : $0; muskel = nil })) {
+                        Text("Alle").tag("")
+                        ForEach(UebungsKatalog.koerperteile, id: \.self) { Text($0).tag($0) }
+                    }
+                }
+                Section("Muskel") {
+                    Picker("Muskel", selection: Binding(get: { muskel ?? "" }, set: { muskel = $0.isEmpty ? nil : $0 })) {
+                        Text("Alle").tag("")
+                        ForEach(UebungsFilterLogik.muskeln(koerper: koerper), id: \.self) { Text($0).tag($0) }
+                    }
+                }
+                Section("Gerät") {
+                    Picker("Gerät", selection: Binding(get: { geraet ?? "" }, set: { geraet = $0.isEmpty ? nil : $0 })) {
+                        Text(UebungsKatalog.standardTitel).tag("")
+                        Text(UebungsKatalog.alleGeraete).tag(UebungsKatalog.alleGeraete)
+                        ForEach(UebungsKatalog.geraete, id: \.self) { Text($0).tag($0) }
+                    }
+                }
+                Section {
+                    Button("Zurücksetzen", role: .destructive) { koerper = nil; muskel = nil; geraet = nil }
+                        .frame(minHeight: Abstand.tippflaeche)
+                }
+            }
+            .navigationTitle("Filter")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { schliessen() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

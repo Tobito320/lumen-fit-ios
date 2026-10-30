@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Bausteine des Coach-Chats im Lumen-Design (Apple monochrom, Lumi als Figur): Antworttext ohne Blase, Blase der Person, Tippanzeige, Chips,
 // Daumen und Merken, Karte des Morgen-Checks. Jede Tippfläche hat mindestens 44 pt, jedes Symbol ein Label, Reduce Motion wird beachtet.
@@ -14,6 +15,29 @@ enum CoachAnzeige {
     /// "09:41".
     static func uhrzeit(_ datum: Date) -> String {
         datum.formatted(Date.FormatStyle(date: .omitted, time: .shortened, locale: deutsch, timeZone: Datum.zone))
+    }
+
+    /// "Heute, 14:05" oder "Mittwoch, 23. September, 14:05": für die Uhrzeit unter einer Nachricht und für VoiceOver.
+    static func zeitText(_ datum: Date) -> String {
+        let kalender = Datum.kalender
+        let tagText = kalender.isDateInToday(datum) ? "Heute" : kalender.isDateInYesterday(datum) ? "Gestern" : tag(datum)
+        return "\(tagText), \(uhrzeit(datum))"
+    }
+
+    /// Zahl ohne unnötige Nachkommastellen, deutsch: 8200 -> "8.200", 82,4 -> "82,4".
+    static func zahl(_ wert: Double) -> String {
+        let begrenzt = min(max(wert, 0), 1_000_000_000)
+        return begrenzt.formatted(.number.precision(.fractionLength(0...1)).locale(deutsch))
+    }
+
+    /// Der Text ohne Markdown-Zeichen, für VoiceOver.
+    static func klartext(_ text: String) -> String {
+        String(CoachText.inline(text).characters)
+    }
+
+    /// Antwort ohne Marker und ohne Fett-Sterne, zum Kopieren und Teilen.
+    static func kopierText(_ roh: String) -> String {
+        CoachMarker.zerlegen(roh).text.replacingOccurrences(of: "**", with: "")
     }
 
     /// Das Symbol eines Chips nach seiner Handlung.
@@ -42,20 +66,28 @@ enum CoachAnzeige {
 
 // MARK: - Antworttext
 
-/// Die Antwort des Coachs: Absätze, Überschriften, Listen, Nummern und Tabellen ohne Blase. Marker fallen weg.
+/// Die Antwort des Coachs: Absätze, Überschriften, Listen, Nummern und Tabellen ohne Blase. Marker fallen weg. Mit `aufgaben` sind
+/// Aufgabenzeilen zum Abhaken (Haken pro Antwort); `woerter` blendet nur die ersten Wörter ein (Wort für Wort).
 struct CoachAntwortText: View {
     let text: String
+    var aufgaben: CoachAufgabenAnbindung?
+    var woerter: Int?
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let zeilen = CoachText.zeilen(CoachMarker.zerlegen(text).text)
+        let alle = CoachText.zeilen(CoachMarker.zerlegen(text).text)
         VStack(alignment: .leading, spacing: Abstand.s) {
-            ForEach(Array(zeilen.enumerated()), id: \.offset) { _, zeile in
+            ForEach(Array(zeigen(alle).enumerated()), id: \.offset) { _, zeile in
                 ansicht(zeile)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .textSelection(.enabled)
+    }
+
+    private func zeigen(_ zeilen: [CoachText.Zeile]) -> [CoachText.Zeile] {
+        guard let woerter else { return zeilen }
+        return CoachText.eingeblendet(zeilen, woerter: woerter)
     }
 
     @ViewBuilder
@@ -76,9 +108,15 @@ struct CoachAntwortText: View {
                 Text(CoachAnzeige.markiert(zeile.text)).font(.body).foregroundStyle(palette.text)
             }
         case .aufgabe:
-            HStack(alignment: .firstTextBaseline, spacing: Abstand.s) {
-                Image(systemName: "circle").foregroundStyle(palette.text2).accessibilityHidden(true)
-                Text(CoachAnzeige.markiert(zeile.text)).font(.body).foregroundStyle(palette.text)
+            if let aufgaben {
+                CoachAufgabeZeile(text: zeile.text, erledigt: aufgaben.modell.istAbgehakt(aufgaben.nachricht, zeile.text)) {
+                    aufgaben.modell.schalteHaken(aufgaben.nachricht, zeile.text)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: Abstand.s) {
+                    Image(systemName: "circle").foregroundStyle(palette.text2).accessibilityHidden(true)
+                    Text(CoachAnzeige.markiert(zeile.text)).font(.body).foregroundStyle(palette.text)
+                }
             }
         case .tabelle(let kopf, let daten):
             Grid(alignment: .leading, horizontalSpacing: Abstand.m, verticalSpacing: Abstand.xs) {
@@ -95,27 +133,174 @@ struct CoachAntwortText: View {
                     }
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Tabelle. " + daten.map { reihe in zip(kopf, reihe).map { "\($0): \($1)" }.joined(separator: ", ") }.joined(separator: ". "))
         }
     }
 }
 
+/// Womit eine Antwort ihre Aufgaben abhakt: das Modell und die Nachricht, an die der Haken gebunden ist.
+struct CoachAufgabenAnbindung {
+    let modell: CoachModell
+    let nachricht: CoachNachricht
+}
+
 // MARK: - Blase der Person
 
+extension CoachMarker.Ziel {
+    /// Die Seite zu einem Ring-Label ("Schritte", "Schlaf", ...); `nil`, wenn es dazu keine gibt.
+    static func fuer(label: String) -> CoachMarker.Ziel? {
+        let klein = label.lowercased()
+        if klein.contains("schritt") { return .schritte }
+        if klein.contains("schlaf") { return .schlaf }
+        if klein.contains("gewicht") { return .gewicht }
+        if klein.contains("training") || klein.contains("satz") || klein.contains("sätze") { return .training }
+        if klein.contains("kcal") || klein.contains("kalorien") || klein.contains("protein") || klein.contains("essen") { return .essen }
+        return nil
+    }
+}
+
+/// Blase der Person. Tippen zeigt die Uhrzeit; langes Drücken: Kopieren, Teilen, Anheften, In die Eingabe übernehmen.
 struct CoachNutzerBlase: View {
-    let text: String
+    let modell: CoachModell
+    let nachricht: CoachNachricht
+    var hervor = false
     @Environment(\.palette) private var palette
+    @State private var zeitSichtbar = false
 
     var body: some View {
-        Text(text)
-            .font(.body)
-            .foregroundStyle(palette.aufAkzent)
-            .padding(.horizontal, Abstand.l)
-            .padding(.vertical, Abstand.m)
-            .background(palette.akzent, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.leading, Abstand.xxl)
-            .textSelection(.enabled)
-            .accessibilityLabel("Du: \(text)")
+        VStack(alignment: .trailing, spacing: Abstand.xs) {
+            Text(nachricht.text)
+                .font(.body)
+                .foregroundStyle(palette.aufAkzent)
+                .padding(.horizontal, Abstand.l)
+                .padding(.vertical, Abstand.m)
+                .background(palette.akzent, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .overlay {
+                    if hervor {
+                        RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(palette.text, lineWidth: 2)
+                    }
+                }
+                .padding(.leading, Abstand.xxl)
+                .contentShape(.rect)
+                .onTapGesture { withAnimation(Feder.schnell) { zeitSichtbar.toggle() } }
+                .contextMenu {
+                    Button("Kopieren", systemImage: "doc.on.doc") { UIPasteboard.general.string = nachricht.text }
+                    ShareLink(item: nachricht.text) { Label("Teilen", systemImage: "square.and.arrow.up") }
+                    Button(modell.istGemerkt(nachricht) ? "Nicht mehr anheften" : "Anheften",
+                           systemImage: modell.istGemerkt(nachricht) ? "pin.slash" : "pin") { modell.schalteMerkliste(nachricht) }
+                    Button("In Eingabe übernehmen", systemImage: "arrow.up.doc") {
+                        modell.entwurf = String(nachricht.text.prefix(CoachModell.maxZeichen))
+                    }
+                }
+            if zeitSichtbar {
+                Text(CoachAnzeige.zeitText(nachricht.zeit)).font(.caption).foregroundStyle(palette.text2)
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Du: \(nachricht.text). \(CoachAnzeige.zeitText(nachricht.zeit))")
+    }
+}
+
+// MARK: - Antwort des Coachs
+
+/// Eine Antwort mit allem darunter: Text (Wort für Wort, solange sie frisch ist), Diagramm, Ring, Nacht, Ziel, Chips, Aktionen.
+/// Der volle Text steht unsichtbar im Layout, damit die Zeile beim Einblenden nicht wächst und springt.
+struct CoachAntwortZeile: View {
+    let modell: CoachModell
+    let nachricht: CoachNachricht
+    let letzte: Bool
+    var hervor = false
+
+    @Environment(\.palette) private var palette
+    @Environment(\.bewegungAus) private var reduceMotion
+    @State private var zeitSichtbar = false
+    @State private var fertig: Bool
+    private let start: Date?
+    private let gesamt: Int
+
+    init(modell: CoachModell, nachricht: CoachNachricht, letzte: Bool, hervor: Bool = false) {
+        self.modell = modell
+        self.nachricht = nachricht
+        self.letzte = letzte
+        self.hervor = hervor
+        let n = CoachText.gesamtWoerter(CoachText.zeilen(CoachMarker.zerlegen(nachricht.text).text))
+        gesamt = n
+        var beginn: Date?
+        if letzte, nachricht.text != CoachPersona.fehlerText, CoachText.einblendenLohnt(gesamt: n),
+           let seit = modell.frischSeit(nachricht.id), modell.jetzt.timeIntervalSince(seit) < CoachText.einblendDauer(gesamt: n) {
+            beginn = seit
+        }
+        start = beginn
+        _fertig = State(initialValue: beginn == nil)
+    }
+
+    var body: some View {
+        let zerlegt = CoachMarker.zerlegen(nachricht.text)
+        let fehler = nachricht.text == CoachPersona.fehlerText
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            if fehler {
+                CoachFehlerZeile(text: nachricht.text)
+            } else {
+                textBlock
+                    .contentShape(.rect)
+                    .onTapGesture { withAnimation(Feder.schnell) { zeitSichtbar.toggle() } }
+                    .contextMenu {
+                        Button("Kopieren", systemImage: "doc.on.doc") { UIPasteboard.general.string = CoachAnzeige.kopierText(nachricht.text) }
+                        ShareLink(item: CoachAnzeige.kopierText(nachricht.text)) { Label("Teilen", systemImage: "square.and.arrow.up") }
+                        Button(modell.istGemerkt(nachricht) ? "Nicht mehr anheften" : "Anheften",
+                               systemImage: modell.istGemerkt(nachricht) ? "pin.slash" : "pin") { modell.schalteMerkliste(nachricht) }
+                    }
+                if zeitSichtbar {
+                    Text(CoachAnzeige.zeitText(nachricht.zeit)).font(.caption).foregroundStyle(palette.text2).transition(.opacity)
+                }
+            }
+            if fertig || reduceMotion {
+                extras(zerlegt)
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
+                CoachChipLeiste(nachricht: nachricht, modell: modell)
+                if !fehler { CoachAktionsZeile(nachricht: nachricht, modell: modell, letzte: letzte) }
+            }
+        }
+        .padding(hervor ? Abstand.s : 0)
+        .background(hervor ? palette.akzent.opacity(0.12) : .clear, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .task {
+            guard let start, !fertig else { return }
+            let rest = start.addingTimeInterval(CoachText.einblendDauer(gesamt: gesamt)).timeIntervalSince(modell.jetzt)
+            try? await Task.sleep(for: .seconds(max(0, rest)))
+            withAnimation(reduceMotion ? nil : Feder.weich) { fertig = true }
+        }
+    }
+
+    @ViewBuilder
+    private var textBlock: some View {
+        let anbindung = CoachAufgabenAnbindung(modell: modell, nachricht: nachricht)
+        if let start, !fertig, !reduceMotion {
+            TimelineView(.explicit(CoachText.einblendTermine(start: start, gesamt: gesamt))) { zeit in
+                let n = CoachText.sichtbareWoerter(vergangen: zeit.date.timeIntervalSince(start), gesamt: gesamt)
+                ZStack(alignment: .topLeading) {
+                    CoachAntwortText(text: nachricht.text).hidden()
+                    CoachAntwortText(text: nachricht.text, woerter: n)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(CoachAnzeige.klartext(CoachAnzeige.kopierText(nachricht.text)))
+        } else {
+            CoachAntwortText(text: nachricht.text, aufgaben: anbindung)
+        }
+    }
+
+    @ViewBuilder
+    private func extras(_ zerlegt: CoachMarker.Zerlegt) -> some View {
+        if let d = zerlegt.diagramm { CoachDiagramm(titel: d.titel, punkte: d.punkte) }
+        if let l = zerlegt.linie { CoachDiagramm(titel: l.titel, punkte: l.punkte, linie: true) }
+        if let f = zerlegt.fortschritt {
+            CoachFortschritt(label: f.label, aktuell: f.aktuell, ziel: f.ziel, weg: CoachMarker.Ziel.fuer(label: f.label)?.route)
+        }
+        if let nacht = zerlegt.schlafNacht { CoachSchlafKarte(tag: nacht) }
+        if let ziel = zerlegt.vorgeschlagenesZiel { CoachZielKnopf(text: ziel, modell: modell) }
     }
 }
 
@@ -194,11 +379,14 @@ struct CoachChipLeiste: View {
     }
 }
 
-// MARK: - Daumen und Merken
+// MARK: - Daumen, Merken, Kopieren, Nochmal
 
 struct CoachAktionsZeile: View {
     let nachricht: CoachNachricht
     let modell: CoachModell
+    /// Nur die letzte Antwort bekommt "Nochmal".
+    var letzte = false
+    @State private var kopiert = false
 
     var body: some View {
         HStack(spacing: Abstand.xs) {
@@ -208,6 +396,19 @@ struct CoachAktionsZeile: View {
                   an: nachricht.daumen == false) { modell.setzeDaumen(false, an: nachricht) }
             knopf(symbol: modell.istGemerkt(nachricht) ? "bookmark.fill" : "bookmark", label: "Antwort merken",
                   an: modell.istGemerkt(nachricht)) { modell.schalteMerkliste(nachricht) }
+            knopf(symbol: kopiert ? "checkmark" : "doc.on.doc", label: kopiert ? "Kopiert" : "Antwort kopieren", an: false) { kopieren() }
+            if letzte, !modell.denkt, !modell.pausiert {
+                knopf(symbol: "arrow.clockwise", label: "Nochmal fragen", an: false) { modell.nochmal() }
+            }
+        }
+    }
+
+    private func kopieren() {
+        UIPasteboard.general.string = CoachAnzeige.kopierText(nachricht.text)
+        withAnimation(Feder.schnell) { kopiert = true }
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(Feder.schnell) { kopiert = false }
         }
     }
 
@@ -215,6 +416,7 @@ struct CoachAktionsZeile: View {
         Button(action: aktion) {
             Image(systemName: symbol)
                 .font(.body)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
                 .contentShape(.rect)
         }

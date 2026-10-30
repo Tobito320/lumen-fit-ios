@@ -12,12 +12,12 @@ struct GymStartView: View {
     @State private var gewaehlt: String?
     /// Ein anderer Plantag statt des geplanten, nur für heute ("Heute Beine statt Push").
     @State private var andererTag: String?
-    @State private var cardio = false
+    @State private var cardioGeraet: CardioWahl?
     @State private var einstellungen = false
     @State private var fehler: String?
-    /// Die Einheit, deren Notiz gerade bearbeitet wird.
-    @State private var notizFuer: GymSession?
-    @State private var notizText = ""
+    /// Die vergessene Einheit, deren Endzeit gerade eingetragen wird.
+    @State private var endzeitFuer: GymSession?
+    @State private var nachtragen = false
 
     var body: some View {
         ScrollView {
@@ -29,18 +29,15 @@ struct GymStartView: View {
                 LeerZustand(stimmung: .denkt, satz: "Das Training lädt noch.")
             }
         }
-        .sheet(isPresented: $cardio) { CardioEingabeView(sitzung: sitzung) }
+        .sheet(item: $cardioGeraet) { CardioEingabeView(sitzung: sitzung, geraet: $0.rawValue) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
         .alert("Das geht gerade nicht", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
             Button("OK") { fehler = nil }
         } message: {
             Text(fehler ?? "")
         }
-        .alert("Notiz zum Training", isPresented: Binding(get: { notizFuer != nil }, set: { if !$0 { notizFuer = nil } })) {
-            TextField("Notiz", text: $notizText)
-            Button("Speichern") { if let s = notizFuer { sitzung.training?.notizAendern(s, notizText) } }
-            Button("Abbrechen", role: .cancel) {}
-        }
+        .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
+        .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
         .task { sitzung.ladeWennNoetig() }
     }
 
@@ -56,10 +53,16 @@ struct GymStartView: View {
             tagesKarte(stand, training: training, anderer: anderer)
             if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             verlegenKarte(stand, training: training)
-            Button { cardio = true } label: {
-                Label("Cardio eintragen", systemImage: "figure.run").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            HStack(spacing: Abstand.s) {
+                Button { cardioGeraet = .laufband } label: {
+                    Label("Laufband", systemImage: "figure.walk.treadmill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                }
+                Button { cardioGeraet = .stairmaster } label: {
+                    Label("Stairmaster", systemImage: "figure.stair.stepper").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                }
             }
             .buttonStyle(.bordered)
+            .accessibilityHint("Cardio eintragen")
             Button { einstellungen = true } label: {
                 Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
@@ -166,10 +169,17 @@ struct GymStartView: View {
 
     private func vergessenKarte(_ s: GymSession, training: TrainingStore) -> some View {
         ListenKarte {
-            GymZeile(titel: "Auschecken vergessen?", untertitel: "Die Einheit von \(GymFormat.tag(s.start)) läuft noch. Das Ende wird auf 1,5 Stunden nach dem Start gesetzt.") {
-                Button("Auschecken") { training.auschecken(s.id, ende: s.start.addingTimeInterval(TrainingLogik.langNach / 2)) }
+            GymZeile(titel: "Auschecken vergessen?", untertitel: "Die Einheit von \(GymFormat.tag(s.start)) läuft noch. Trag ein, wann du fertig warst, oder setz das Ende auf 1,5 Stunden nach dem Start.") {
+                EmptyView()
+            }
+            HStack(spacing: Abstand.s) {
+                Button("Endzeit eintragen") { endzeitFuer = s }
+                    .buttonStyle(.bordered).controlSize(.large)
+                Button("Nach 1,5 Stunden") { training.auschecken(s.id, ende: EinheitZeitenLogik.endeVorschlag(start: s.start, jetzt: umgebung.uhr())) }
                     .buttonStyle(.bordered).controlSize(.large)
             }
+            .padding(.horizontal, Abstand.l)
+            .padding(.bottom, Abstand.m)
         }
     }
 
@@ -213,29 +223,47 @@ struct GymStartView: View {
     @ViewBuilder
     private func letzte(_ training: TrainingStore, jetzt: Date) -> some View {
         let liste = training.sessions.sorted { $0.start > $1.start }.prefix(5)
-        if !liste.isEmpty {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                GymAbschnitt(titel: "Letzte Einheiten")
-                ListenKarte {
-                    ForEach(Array(liste)) { s in
-                        let tag = Datum.text(s.start)
-                        Button {
-                            notizText = s.notiz ?? ""
-                            notizFuer = s
-                        } label: {
-                            GymZeile(titel: training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training",
-                                     untertitel: GymFormat.tag(s.start) + (s.notiz.map { " · \($0.prefix(60))" } ?? "")) {
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            GymAbschnitt(titel: "Letzte Einheiten")
+            ListenKarte {
+                ForEach(Array(liste)) { s in
+                    let tag = Datum.text(s.start)
+                    NavigationLink {
+                        EinheitNachlesenView(sessionId: s.id)
+                    } label: {
+                        GymZeile(titel: training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training",
+                                 untertitel: GymFormat.tag(s.start) + (s.notiz.map { " · \($0.prefix(60))" } ?? "")) {
+                            HStack(spacing: Abstand.xs) {
                                 Text(GymStartLogik.status([s], datum: tag, heute: Datum.text(jetzt), geplant: nil, jetzt: jetzt))
                                     .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.trailing)
+                                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                             }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityHint("Notiz zum Training ändern")
-                        .accessibilityElement(children: .combine)
-                        if s.id != liste.last?.id { Haarlinie() }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Öffnet die Einheit zum Nachlesen")
+                    .accessibilityElement(children: .combine)
+                    Haarlinie()
+                }
+                NavigationLink {
+                    TrainingVerlaufView()
+                } label: {
+                    GymZeile(titel: "Alle Trainingstage", untertitel: "Monatsraster, Serie und alle Einheiten") {
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                     }
                 }
+                .buttonStyle(.plain)
+                Haarlinie()
+                Button { nachtragen = true } label: {
+                    GymZeile(titel: "Training nachtragen", untertitel: "Start, Ende und Trainingstag von Hand eintragen") {
+                        Image(systemName: "plus").accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(.plain)
             }
         }
     }
 }
+
+/// Die zwei Schnellknöpfe für Cardio ohne Training.
+enum CardioWahl: String, Identifiable { case laufband, stairmaster; var id: String { rawValue } }

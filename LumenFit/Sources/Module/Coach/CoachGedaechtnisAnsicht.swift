@@ -4,6 +4,7 @@ import SwiftUI
 struct CoachGedaechtnisAnsicht: View {
     let modell: CoachModell
     @Environment(\.palette) private var palette
+    @Environment(\.bewegungAus) private var reduceMotion
     @State private var neu = ""
     @State private var zuAendern: String?
     @State private var aenderungsText = ""
@@ -12,26 +13,36 @@ struct CoachGedaechtnisAnsicht: View {
 
     var body: some View {
         let eintraege = modell.gedaechtnis?.eintraege ?? []
-        ScrollView {
-            VStack(alignment: .leading, spacing: Abstand.l) {
-                Text("Dein Coach merkt sich nur, was hier steht: Ziele, Verletzungen, Vorlieben. Es bleibt auf deinem iPhone, und du kannst jeden Eintrag ändern oder löschen.")
+        List {
+            Section {
+                Text("Dein Coach merkt sich nur, was hier steht: Ziele, Verletzungen, Vorlieben. Es bleibt auf deinem iPhone, und du kannst jeden Eintrag ändern oder löschen. Nach links wischen löscht.")
                     .font(.subheadline).foregroundStyle(palette.text2)
                 eingabe(eintraege)
+            }
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            Section {
                 if eintraege.isEmpty {
                     LeerZustand(stimmung: .bereit, satz: "Noch nichts gemerkt. Schreib oben, was dein Coach wissen soll, oder sag im Chat: Merk dir, dass ...")
+                        .listRowBackground(Color.clear)
                 } else {
-                    ListenKarte {
-                        ForEach(Array(eintraege.enumerated()), id: \.element) { index, eintrag in
-                            if index > 0 { Haarlinie() }
-                            zeile(eintrag)
-                        }
+                    ForEach(eintraege, id: \.self) { eintrag in
+                        zeile(eintrag)
+                            .listRowBackground(palette.flaeche)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button("Löschen", systemImage: "trash", role: .destructive) { loesche(eintrag) }
+                                Button("Ändern", systemImage: "pencil") { aenderungsText = eintrag; zuAendern = eintrag }.tint(palette.text2)
+                            }
                     }
                 }
+            } footer: {
                 Text("\(eintraege.count) von \(CoachGedaechtnis.maxEintraege) Einträgen")
                     .font(.footnote).foregroundStyle(palette.text2)
+                    .accessibilityLabel("\(eintraege.count) von \(CoachGedaechtnis.maxEintraege) Einträgen gemerkt")
             }
-            .padding(Abstand.l)
         }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Gedächtnis")
         .navigationBarTitleDisplayMode(.inline)
@@ -45,8 +56,13 @@ struct CoachGedaechtnisAnsicht: View {
             Button("Abbrechen", role: .cancel) { zuAendern = nil }
         }
         .safeAreaInset(edge: .bottom) {
-            if let text = geloescht { rueckgaengigLeiste(text) }
+            if let text = geloescht {
+                rueckgaengigLeiste(text)
+                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(reduceMotion ? nil : Feder.weich, value: geloescht)
+        .haptik(.warnung, bei: geloescht)
     }
 
     private func eingabe(_ eintraege: [String]) -> some View {
@@ -87,8 +103,6 @@ struct CoachGedaechtnisAnsicht: View {
             }
             .accessibilityLabel("Eintrag bearbeiten: \(eintrag)")
         }
-        .padding(.leading, Abstand.l)
-        .padding(.vertical, Abstand.xs)
         .accessibilityElement(children: .contain)
         .accessibilityAction(named: "Löschen") { loesche(eintrag) }
     }

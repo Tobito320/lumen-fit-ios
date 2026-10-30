@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Ein Lebensmittel ansehen und eintragen: Nährwerte, Portion-Schieber (Gramm, Stück, Portion) mit rollenden Zahlen, Halal- und Zucker-Ampel,
-/// Schilder, Quelle ("Quelle: BLS" oder "Quelle: Open Food Facts") und Favorit. Mit `bearbeiten` ändert oder löscht es einen Tagebuch-Eintrag.
+/// Schilder, Quelle ("Quelle: BLS" oder "Quelle: Open Food Facts"), Nutri-Score, Portionsbeispiele und Favorit. Mit `bearbeiten` ändert oder löscht es einen Tagebuch-Eintrag.
+/// Unten die Mengen-Leiste mit Zahlenfeld, Einheit und Dreier-Rad (Lovea `LebensmittelDetailView`). Fehlen die Zutaten, holt die Ampel sie einmal bei Open Food Facts nach.
 struct EssenDetailView: View {
     let lebensmittel: Lebensmittel
     let bearbeiten: EssenEintrag?
@@ -13,9 +14,12 @@ struct EssenDetailView: View {
     @State private var mahlzeit: Mahlzeit
     @State private var auswahl: MengenOption
     @State private var zahl: Double
-    @State private var feld = ""
     @State private var loeschenFragen = false
-    @FocusState private var tippt: Bool
+    @State private var portionsbeispieleOffen = false
+    /// Zutaten und Siegel von Open Food Facts, einmal nachgeladen (nur für die Ampel, nie gespeichert).
+    @State private var nachgeladen: Lebensmittel?
+    /// Zählt das Sichern: löst die Haptik aus und sperrt den Knopf gegen doppelte Einträge.
+    @State private var gesichert = 0
 
     init(lebensmittel: Lebensmittel, mahlzeit: Mahlzeit, tag: String, bearbeiten: EssenEintrag? = nil, fertig: @escaping @MainActor (Bool) -> Void) {
         self.lebensmittel = lebensmittel
@@ -43,17 +47,20 @@ struct EssenDetailView: View {
 
     private var werte: Naehrwerte { ErnaehrungLogik.naehrwerte(fuerMenge, menge: zahl, einheit: auswahl.einheit) }
 
+    /// Für Ampel und Zutatenzeile: mit den nachgeladenen Zutaten, sonst unverändert.
+    private var angezeigt: Lebensmittel { EssenAmpelNachladen.zusammen(lebensmittel, geladen: nachgeladen) }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 kopf
                 werteKarte
-                mengenKarte
                 mahlzeitWahl
-                EssenAmpelKarte(lebensmittel: lebensmittel)
+                EssenAmpelKarte(lebensmittel: angezeigt)
                 let schilder = FoodRating.schilder(lebensmittel)
                 if !schilder.isEmpty { EssenSchilderZeile(schilder: schilder) }
                 naehrwerteKarte
+                portionsbeispieleZeile
                 herkunft
             }
             .padding(Abstand.l)
@@ -63,19 +70,22 @@ struct EssenDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
         .toolbar { werkzeugleiste }
-        .safeAreaInset(edge: .bottom) { speichernLeiste }
+        .safeAreaInset(edge: .bottom) {
+            EssenMengenLeiste(lebensmittel: lebensmittel, auswahl: auswahl, zahl: $zahl, knopf: bearbeiten == nil ? "Eintragen" : "Speichern",
+                              deaktiviert: gesichert > 0, einheitWechseln: { einheitWechseln($0) }, aktion: { speichern() })
+        }
+        .haptik(.erfolg, bei: gesichert)
+        .sheet(isPresented: $portionsbeispieleOffen) { EssenPortionsBeispieleBlatt() }
         .task {
-            feld = MengenRad.feldText(zahl)
             guard bearbeiten == nil, let letzte = essen?.letzteMenge(lebensmittel) else { return }
             let start = EssenMenge.start(lebensmittel, letzte: letzte)
             auswahl = start.option
             zahl = start.zahl
-            feld = MengenRad.feldText(zahl)
         }
-        .onChange(of: zahl) { _, neu in if !tippt { feld = MengenRad.feldText(neu) } }
-        .onChange(of: feld) { _, neu in
-            guard tippt else { return }
-            zahl = ErnaehrungLogik.eingabe(neu) ?? 0
+        .task(id: lebensmittel.id) {
+            // Einmal pro Barcode und Sitzung, leise bei Fehlern; nie beim Bearbeiten eines Eintrags.
+            guard EssenAmpelNachladen.braucht(lebensmittel, bearbeiten: bearbeiten != nil), let code = lebensmittel.barcode else { return }
+            nachgeladen = await EssenModul.suche(umgebung).zutatenNachladen(code)
         }
         .confirmationDialog("Eintrag löschen?", isPresented: $loeschenFragen, titleVisibility: .visible) {
             Button("Löschen", role: .destructive) {
@@ -93,6 +103,9 @@ struct EssenDetailView: View {
             Text(lebensmittel.name).font(.title2.weight(.bold)).foregroundStyle(palette.text)
             if let marke = lebensmittel.marke { Text(marke).font(.subheadline).foregroundStyle(palette.text2) }
             Text(EssenQuelle.zeile(lebensmittel)).font(.footnote).foregroundStyle(palette.text2)
+            if let note = EssenNutriScoreLogik.note(lebensmittel.nutriscore) {
+                EssenNutriScoreAbzeichen(note: note).padding(.top, Abstand.xs)
+            }
         }
         .accessibilityElement(children: .combine)
     }
@@ -123,54 +136,6 @@ struct EssenDetailView: View {
             }
             Text(name).font(.footnote)
         }
-    }
-
-    private var mengenKarte: some View {
-        VStack(alignment: .leading, spacing: Abstand.m) {
-            Text("Menge").font(.headline).foregroundStyle(palette.text)
-            HStack(spacing: Abstand.s) {
-                TextField("0", text: $feld)
-                    .keyboardType(.decimalPad)
-                    .multilineTextAlignment(.trailing)
-                    .focused($tippt)
-                    .font(.title3.weight(.semibold)).fontDesign(.rounded).monospacedDigit()
-                    .frame(width: 96, height: Abstand.tippflaeche)
-                    .padding(.horizontal, Abstand.m)
-                    .background(palette.grund, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
-                    .accessibilityLabel("Menge")
-                Menu {
-                    Picker("Einheit", selection: Binding(get: { auswahl }, set: { einheitWechseln($0) })) {
-                        ForEach(MengenOption.optionen(lebensmittel), id: \.self) { Text($0.anzeige(lebensmittel)).tag($0) }
-                    }
-                } label: {
-                    HStack {
-                        Text(auswahl.anzeige(lebensmittel)).lineLimit(1).minimumScaleFactor(0.75)
-                        Spacer(minLength: Abstand.xs)
-                        Image(systemName: "chevron.up.chevron.down").accessibilityHidden(true)
-                    }
-                    .foregroundStyle(palette.text)
-                    .padding(.horizontal, Abstand.m)
-                    .frame(minHeight: Abstand.tippflaeche)
-                    .background(palette.grund, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
-                }
-                .accessibilityLabel("Einheit: \(auswahl.anzeige(lebensmittel))")
-            }
-            HStack(spacing: Abstand.s) {
-                Button { schieben(-1) } label: { Image(systemName: "minus.circle.fill").font(.title2).frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
-                    .accessibilityLabel("Weniger")
-                Slider(value: Binding(get: { min(zahl, EssenMenge.bereich(auswahl).upperBound) }, set: { zahl = $0 }),
-                       in: EssenMenge.bereich(auswahl), step: EssenMenge.schritt(auswahl))
-                    .accessibilityLabel("Menge")
-                    .accessibilityValue(ErnaehrungLogik.mengeText(zahl, auswahl.einheit, fuerMenge))
-                Button { schieben(1) } label: { Image(systemName: "plus.circle.fill").font(.title2).frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
-                    .accessibilityLabel("Mehr")
-            }
-            .haptik(.auswahl, bei: zahl)
-            Text(ErnaehrungLogik.mengeText(zahl, auswahl.einheit, fuerMenge)).font(.footnote).foregroundStyle(palette.text2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
     }
 
     private var mahlzeitWahl: some View {
@@ -236,7 +201,7 @@ struct EssenDetailView: View {
     @ViewBuilder
     private var herkunft: some View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
-            if let zutaten = lebensmittel.zutaten, !zutaten.isEmpty {
+            if let zutaten = angezeigt.zutaten, !zutaten.isEmpty {
                 Text("Zutaten").font(.footnote.weight(.semibold)).foregroundStyle(palette.text)
                 Text(zutaten).font(.footnote).foregroundStyle(palette.text2)
             }
@@ -258,6 +223,7 @@ struct EssenDetailView: View {
                 Button { essen.favoritSetzen(lebensmittel, an: !favorit) } label: {
                     Image(systemName: favorit ? "star.fill" : "star")
                 }
+                .haptik(.auswahl, bei: favorit)
                 .accessibilityLabel(favorit ? "Aus den Favoriten nehmen" : "Zu den Favoriten")
             }
             if bearbeiten != nil {
@@ -265,30 +231,23 @@ struct EssenDetailView: View {
                     .accessibilityLabel("Eintrag löschen")
             }
         }
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button("Fertig") { tippt = false }
-        }
     }
 
-    private var speichernLeiste: some View {
-        Button { speichern() } label: {
-            Text(bearbeiten == nil ? "Eintragen" : "Speichern").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+    private var portionsbeispieleZeile: some View {
+        Button { portionsbeispieleOffen = true } label: {
+            HStack {
+                Text("Portionsbeispiele").foregroundStyle(palette.text)
+                Spacer()
+                Image(systemName: "chevron.right").font(.footnote.weight(.bold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+            }
+            .frame(minHeight: Abstand.tippflaeche)
+            .contentShape(.rect)
         }
-        .buttonStyle(.lumenHauptknopf)
-        .controlSize(.large)
-        .disabled(zahl <= 0)
-        .padding(.horizontal, Abstand.l)
-        .padding(.vertical, Abstand.s)
-        .lumenLeiste()
+        .buttonStyle(.plain)
+        .accessibilityHint("Zeigt, wie groß eine Portion ungefähr ist")
     }
 
     // MARK: - Aktionen
-
-    private func schieben(_ richtung: Double) {
-        let schritt = EssenMenge.schritt(auswahl)
-        zahl = max(0, zahl + richtung * schritt)
-    }
 
     private func einheitWechseln(_ neu: MengenOption) {
         guard neu != auswahl else { return }
@@ -297,7 +256,7 @@ struct EssenDetailView: View {
     }
 
     private func speichern() {
-        guard let essen, zahl > 0 else { return }
+        guard let essen, zahl > 0, gesichert == 0 else { return }
         if var e = bearbeiten {
             e.menge = zahl
             e.einheit = auswahl.einheit
@@ -307,6 +266,11 @@ struct EssenDetailView: View {
         } else {
             essen.eintragen(fuerMenge, menge: zahl, einheit: auswahl.einheit, mahlzeit: mahlzeit, datum: tag)
         }
-        fertig(true)
+        gesichert += 1
+        // Kurz warten, damit die Haptik noch auf der sichtbaren Seite ausgelöst wird, bevor das Blatt schließt.
+        Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            fertig(true)
+        }
     }
 }

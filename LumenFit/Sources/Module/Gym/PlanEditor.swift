@@ -43,4 +43,47 @@ enum PlanEditor {
         if an { t.wochentage = (t.wochentage + [w]).sorted() }
         return t
     }
+
+    /// Die Übung direkt dahinter noch einmal, mit neuer Id (Doppeln per Wischen). Die Kopplung zur nächsten Übung gehört nur dem Original.
+    static func duplizieren(_ tag: TrainingsTag, id: String, neueId: () -> String = { UUID().uuidString }) -> TrainingsTag {
+        guard let i = tag.uebungen.firstIndex(where: { $0.id == id }) else { return tag }
+        var t = tag
+        var kopie = tag.uebungen[i]
+        kopie.id = neueId()
+        kopie.supersatz = nil
+        t.uebungen.insert(kopie, at: i + 1)
+        t.uebungen[i].supersatz = nil
+        return t
+    }
+
+    /// Satz `i` einer Übung ändern: Wiederholungen, Gewicht (nil = ohne) und Versagen. Außerhalb der Liste passiert nichts.
+    static func satzAendern(_ u: PlanUebung, _ i: Int, wdh: Int? = nil, kg: Double?? = nil, versagen: Bool? = nil) -> PlanUebung {
+        guard u.saetze.indices.contains(i) else { return u }
+        var neu = u
+        if let wdh { neu.saetze[i].wdh = max(1, min(100, wdh)) }
+        if let kg { neu.saetze[i].kg = kg.map { max(0, $0) } }
+        if let versagen { neu.saetze[i].failure = versagen }
+        return neu
+    }
+
+    /// Alle Übungen (oder nur die gewählten Ids) eines anderen Tages ans Ende dieses Tages, mit neuen Ids. Cardio und Kraft gleich.
+    static func vonTagKopieren(_ ziel: TrainingsTag, quelle: TrainingsTag, nur ids: Set<String>? = nil, neueId: () -> String = { UUID().uuidString }) -> TrainingsTag {
+        var t = ziel
+        for u in quelle.uebungen where ids?.contains(u.id) ?? true {
+            var kopie = u
+            kopie.id = neueId()
+            kopie.supersatz = nil
+            t.uebungen.append(kopie)
+        }
+        return t
+    }
+
+    /// Eine Variante: dieselbe Stelle im Tag, aber ein anderes Gerät oder eine andere Übung; die Sätze bleiben. Nicht für Cardio.
+    static func variante(_ tag: TrainingsTag, id: String, zu neu: Uebung) -> TrainingsTag {
+        guard let i = tag.uebungen.firstIndex(where: { $0.id == id }), !tag.uebungen[i].istCardio, !neu.istCardio else { return tag }
+        var t = tag
+        t.uebungen[i].uebung = neu.id
+        t.uebungen[i].name = nil
+        return t
+    }
 }

@@ -104,4 +104,40 @@ final class EssenAmpelTests: XCTestCase {
         let unklar = EssenAmpelAnzeige.halal(AmpelUrteil(stufe: .gelb, grund: "a", unklar: true)).symbol
         XCTAssertEqual(Set([gruen, gelb, rot, unklar]).count, 4, "ohne Farbe unterscheidbar")
     }
+
+    // MARK: - Zutaten nachladen
+
+    func testNachladenNurMitBarcodeOhneZutatenUndNichtBeimBearbeiten() {
+        var l = essen(zucker: nil)
+        XCTAssertFalse(EssenAmpelNachladen.braucht(l, bearbeiten: false), "ohne Barcode gibt es nichts zu fragen")
+        l.barcode = "4311501679715"
+        XCTAssertTrue(EssenAmpelNachladen.braucht(l, bearbeiten: false))
+        XCTAssertFalse(EssenAmpelNachladen.braucht(l, bearbeiten: true), "beim Bearbeiten eines Eintrags kein Netz")
+        l.zutaten = "   "
+        XCTAssertTrue(EssenAmpelNachladen.braucht(l, bearbeiten: false), "leere Zutaten zählen als fehlend")
+        l.zutaten = "Wasser, Zucker"
+        XCTAssertFalse(EssenAmpelNachladen.braucht(l, bearbeiten: false))
+    }
+
+    func testZusammenfuehrenUebernimmtZutatenUndSiegelUndBehaeltVorhandenenZucker() {
+        var l = essen(zucker: 4)
+        l.barcode = "1"
+        var geladen = essen(zucker: 60)
+        geladen.zutaten = "Zucker, Gelatine"
+        geladen.siegel = ["en:halal"]
+        let z = EssenAmpelNachladen.zusammen(l, geladen: geladen)
+        XCTAssertEqual(z.zutaten, "Zucker, Gelatine")
+        XCTAssertEqual(z.siegel, ["en:halal"])
+        XCTAssertEqual(z.pro100.zucker, 4, "ein vorhandener Zuckerwert bleibt")
+        XCTAssertEqual(EssenAmpel.halal(z).stufe, .rot, "mit den Zutaten greift die Halal-Ampel")
+    }
+
+    func testZusammenfuehrenFuelltFehlendenZuckerUndLaesstNilUnveraendert() {
+        let l = essen(zucker: nil)
+        var geladen = essen(zucker: 12)
+        geladen.zutaten = "Wasser"
+        XCTAssertEqual(EssenAmpelNachladen.zusammen(l, geladen: geladen).pro100.zucker, 12)
+        XCTAssertEqual(EssenAmpelNachladen.zusammen(l, geladen: nil), l)
+        XCTAssertNil(EssenAmpelNachladen.zusammen(l, geladen: nil).zutaten)
+    }
 }

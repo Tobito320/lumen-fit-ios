@@ -67,6 +67,35 @@ final class BarcodeLogikTests: XCTestCase {
         _ = await BarcodeKette.suchen(" 012345678905\n", q)
         XCTAssertEqual(gesehen.liste, ["0012345678905", "0012345678905"])
     }
+
+    // MARK: Namensquelle (optional): "Meintest du ...?"
+
+    private func mitNamen(name: (name: String, marke: String?)?, liste: [Lebensmittel]) -> BarcodeQuellen {
+        BarcodeQuellen(lokal: { _ in nil }, offLive: { _ in nil },
+                       name: { _ in name }, namensSuche: { _ in liste })
+    }
+
+    func testUnbekannterCodeMitNamensquelleLiefertVorschlaege() async {
+        let r = await BarcodeKette.suchen("4311501679715", mitNamen(name: (name: "Skyr", marke: "Beispiel"), liste: [skyr]))
+        XCTAssertEqual(r, .vorschlaege(name: "Skyr", [skyr], code: "4311501679715"))
+    }
+
+    func testNamensquelleOhneNamenOderOhneTrefferBleibtUnbekannt() async {
+        let keinName = await BarcodeKette.suchen("4311501679715", mitNamen(name: nil, liste: [skyr]))
+        XCTAssertEqual(keinName, .unbekannt("4311501679715"))
+        let keineTreffer = await BarcodeKette.suchen("4311501679715", mitNamen(name: (name: "Skyr", marke: nil), liste: []))
+        XCTAssertEqual(keineTreffer, .unbekannt("4311501679715"))
+    }
+
+    func testNamensquelleWirdBeiTrefferNichtGefragt() async {
+        let p = EssenAufrufProtokoll()
+        let treffer = skyr
+        let q = BarcodeQuellen(lokal: { _ in nil }, offLive: { _ in treffer },
+                               name: { _ in p.add("name"); return nil }, namensSuche: { _ in p.add("suche"); return [] })
+        let r = await BarcodeKette.suchen("4311501679715", q)
+        XCTAssertEqual(r, .gefunden(skyr))
+        XCTAssertTrue(p.liste.isEmpty)
+    }
 }
 
 /// Sammelt Aufrufe aus `@Sendable`-Rückrufen.
@@ -75,4 +104,5 @@ final class EssenAufrufProtokoll: @unchecked Sendable { // @unchecked: alle Zugr
     private var _liste: [String] = []
     var liste: [String] { sperre.withLock { _liste } }
     func add(_ s: String) { sperre.withLock { _liste.append(s) } }
+
 }

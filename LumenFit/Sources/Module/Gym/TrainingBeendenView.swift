@@ -119,6 +119,8 @@ struct GymEinstellungenBlatt: View {
     let sitzung: GymSitzung
     @Environment(\.dismiss) private var schliessen
     @AppStorage(GymPulsMessung.schluessel) private var pulsAn = false
+    @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
+    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = true
 
     var body: some View {
         NavigationStack {
@@ -129,6 +131,12 @@ struct GymEinstellungenBlatt: View {
                         set: { neu in sitzung.daten?.einstellungen.aendere { $0.healthSchreiben = neu } }))
                 } footer: {
                     Text("Beim Beenden entsteht ein Krafttraining in Health, mit der Dauer. Energie und Puls kommen nur dazu, wenn dein Sensor sie liefert. Nichts wird geschätzt.")
+                }
+                Section {
+                    Toggle("Satz-Zeit messen", isOn: $satzzeit)
+                    Toggle("Anstrengung (RPE) zeigen", isOn: $rpeSpalte)
+                } footer: {
+                    Text("Satz-Zeit: nach der Pause läuft die Uhr des Satzes; beim Haken wird die Dauer gemerkt. RPE: nach dem Haken erscheint die Anstrengung an der Zeile.")
                 }
                 Section {
                     Toggle("Puls und Energie messen", isOn: $pulsAn)
@@ -142,6 +150,6 @@ struct GymEinstellungenBlatt: View {
             // Mitten im Training eingeschaltet: die Messung startet gleich, nicht erst beim nächsten Training.
             .onChange(of: pulsAn) { _, an in if an, sitzung.sessionId != nil { sitzung.puls.starten() } }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }

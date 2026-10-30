@@ -36,12 +36,12 @@ struct PlanTagBlatt: View {
             .onAppear { name = tag?.name ?? "" }
             .onDisappear { nameSichern() }
             .sheet(isPresented: $suche) {
-                UebungsSucheView(titel: "Übung hinzufügen") { k in
+                UebungsSucheView(titel: "Übung hinzufügen", auswahl: { k in
                     guard let t = tag else { return }
                     var neu = t
                     neu.uebungen.append(PlanUebung.neu(k))
                     sichern(neu)
-                }
+                }, mehrfach: true)
             }
             .confirmationDialog("Tag löschen?", isPresented: $loeschen, titleVisibility: .visible) {
                 Button("Tag löschen", role: .destructive) {
@@ -102,6 +102,10 @@ struct PlanTagBlatt: View {
                 if tag.uebungen.isEmpty { Text("Noch keine Übungen.").foregroundStyle(palette.text2) }
                 ForEach(tag.uebungen) { u in
                     UebungsPlanZeile(tag: tag, uebungId: u.id, sichern: sichern)
+                        .swipeActions(edge: .leading) {
+                            Button { sichern(PlanEditor.duplizieren(tag, id: u.id)) } label: { Label("Doppeln", systemImage: "plus.square.on.square") }
+                                .tint(palette.akzent)
+                        }
                 }
                 .onDelete { weg in
                     var neu = tag
@@ -113,12 +117,26 @@ struct PlanTagBlatt: View {
                     sichern(PlanEditor.verschieben(tag, von: v, nach: nach > v ? nach - 1 : nach))
                 }
                 Button { suche = true } label: { Label("Übung hinzufügen", systemImage: "plus").frame(minHeight: Abstand.tippflaeche) }
+                if let plan = training?.plan, plan.tage.contains(where: { $0.id != tag.id && !$0.uebungen.isEmpty }) {
+                    Menu {
+                        ForEach(plan.tage.filter { $0.id != tag.id && !$0.uebungen.isEmpty }) { quelle in
+                            Button("\(quelle.name.isEmpty ? "Training" : quelle.name) (\(quelle.uebungen.count))") {
+                                sichern(PlanEditor.vonTagKopieren(tag, quelle: quelle))
+                            }
+                        }
+                    } label: {
+                        Label("Von anderem Tag kopieren", systemImage: "doc.on.doc").frame(minHeight: Abstand.tippflaeche)
+                    }
+                }
             }
             Section {
                 Button("Tag löschen", role: .destructive) { loeschen = true }.frame(minHeight: Abstand.tippflaeche)
             }
         }
         .scrollContentBackground(.hidden)
+        .animation(Feder.schnell, value: tag.uebungen.map(\.id))
+        .haptik(.stufe, bei: tag.uebungen.map(\.id))
+        .haptik(.auswahl, bei: tag.wochentage)
     }
 }
 
@@ -131,6 +149,7 @@ private struct UebungsPlanZeile: View {
     @Environment(\.palette) private var palette
     @State private var offen = false
     @State private var notiz = ""
+    @State private var variante = false
 
     private var index: Int? { tag.uebungen.firstIndex { $0.id == uebungId } }
 
@@ -152,6 +171,20 @@ private struct UebungsPlanZeile: View {
         aendere(index) { var x = $0; x.notiz = wert; return x }
     }
 
+    /// Ein Satz der Übung: Wiederholungen, Gewicht und der Schalter "bis zum Versagen".
+    private func satzZeile(_ index: Int, _ u: PlanUebung, _ i: Int) -> some View {
+        let satz = u.saetze[i]
+        return VStack(alignment: .leading, spacing: Abstand.xs) {
+            Stepper("Satz \(i + 1): \(satz.wdh) Wdh.", value: Binding(get: { satz.wdh }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, wdh: v) } }), in: 1...100)
+            Stepper("Gewicht \(satz.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
+                    value: Binding(get: { satz.kg ?? 0 }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, kg: .some(v)) } }),
+                    in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
+            Toggle("Bis zum Versagen", isOn: Binding(get: { satz.failure }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, versagen: v) } }))
+        }
+        .font(.subheadline)
+        .accessibilityElement(children: .contain)
+    }
+
     private func zeile(_ index: Int, _ u: PlanUebung) -> some View {
         DisclosureGroup(isExpanded: $offen) {
             if u.istCardio {
@@ -161,6 +194,9 @@ private struct UebungsPlanZeile: View {
                 Stepper("Wiederholungen \(u.saetze.first?.wdh ?? 10)", value: Binding(get: { u.saetze.first?.wdh ?? 10 }, set: { v in aendere(index) { SplitFrei.alleWdh($0, v) } }), in: 1...100)
                 Stepper("Gewicht \(u.saetze.first?.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
                         value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere(index) { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: u.katalog?.geraet))
+                DisclosureGroup("Satz für Satz") {
+                    ForEach(u.saetze.indices, id: \.self) { i in satzZeile(index, u, i) }
+                }
                 if index < tag.uebungen.count - 1 {
                     Toggle("Supersatz mit der nächsten", isOn: Binding(get: { u.supersatz == true }, set: { an in
                         var neu = tag
@@ -169,6 +205,9 @@ private struct UebungsPlanZeile: View {
                         sichern(neu)
                     }))
                 }
+            }
+            if !u.istCardio, u.katalog != nil {
+                Button { variante = true } label: { Label("Variante wählen", systemImage: "arrow.triangle.swap").frame(minHeight: Abstand.tippflaeche) }
             }
             TextField("Notiz, zum Beispiel Sitz auf Stufe 4", text: $notiz, axis: .vertical)
                 .onSubmit { notizSichern(index) }
@@ -182,8 +221,42 @@ private struct UebungsPlanZeile: View {
             }
             .frame(minHeight: Abstand.tippflaeche)
         }
+        .sheet(isPresented: $variante) { VarianteBlatt(uebung: u) { sichern(PlanEditor.variante(tag, id: u.id, zu: $0)) } }
         .onAppear { notiz = u.notiz ?? "" }
         .onChange(of: offen) { _, neu in if !neu { notizSichern(index) } }
         .onDisappear { if let i = self.index { notizSichern(i) } }
+    }
+}
+
+/// Variante für eine Plan-Übung: andere Übungen für denselben Muskel (`AusweichLogik`), Sätze bleiben.
+private struct VarianteBlatt: View {
+    let uebung: PlanUebung
+    let waehle: (Uebung) -> Void
+    @Environment(\.dismiss) private var schliessen
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        NavigationStack {
+            List {
+                let alternativen = uebung.katalog.map { AusweichLogik.alternativen(fuer: $0) } ?? []
+                if alternativen.isEmpty { Text("Keine passende Variante gefunden.").foregroundStyle(palette.text2) }
+                ForEach(alternativen) { alt in
+                    Button { waehle(alt); schliessen() } label: {
+                        HStack(spacing: Abstand.m) {
+                            UebungsBild(id: alt.id, koerper: alt.koerper).frame(width: 48, height: 48)
+                            VStack(alignment: .leading) {
+                                Text(alt.name).font(.body.weight(.medium)).foregroundStyle(palette.text)
+                                Text("\(alt.muskel) · \(alt.geraet)").font(.footnote).foregroundStyle(palette.text2)
+                            }
+                        }
+                        .frame(minHeight: Abstand.tippflaeche)
+                    }
+                }
+            }
+            .navigationTitle("Variante")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } } }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

@@ -30,4 +30,17 @@ final class MengenRadLogikTests: XCTestCase {
         XCTAssertNil(ErnaehrungLogik.eingabe("abc"))
         XCTAssertEqual(ErnaehrungLogik.eingabe("99999"), 99999)
     }
+
+    func testRadZahlLaesstPassendeMengeUnberuehrt() {
+        // 150,3 rundet am Rad auf 150 und 1/4: steht das Rad schon so, bleibt der getippte Wert stehen.
+        let z = MengenRad.zerlegen(150.3)
+        XCTAssertNil(MengenRad.radZahl(ganz: z.ganz, bruch: z.bruch, aktuell: 150.3))
+        XCTAssertNil(MengenRad.radZahl(ganz: 100, bruch: 0, aktuell: 100))
+    }
+
+    func testRadZahlMeldetDrehung() {
+        XCTAssertEqual(MengenRad.radZahl(ganz: 120, bruch: 0, aktuell: 100), 120)
+        XCTAssertEqual(MengenRad.radZahl(ganz: 100, bruch: 4, aktuell: 100), 100.5)
+        XCTAssertEqual(MengenRad.radZahl(ganz: 3, bruch: 99, aktuell: 1), 3.875, "ein Bruch-Index außerhalb klemmt am Rand")
+    }
 }

@@ -36,11 +36,16 @@ struct SchlafUebersicht: Sendable {
     let vergleich: [SchlafVergleichNacht]
     let werktag: SchlafZeiten?
     let wochenende: SchlafZeiten?
+    /// Extra-Tage mit anderem Schlafziel (Op `fit.schlaf.ziel`); ohne Eintrag gilt `zielMinuten` an jedem Tag.
+    var zielExtra = SchlafZielExtra()
 
     /// Die neueste Nacht bis heute.
     var letzte: SchlafGewaehlteNacht? { naechte.last }
 
     var hatDaten: Bool { !naechte.isEmpty }
+
+    /// Das Schlafziel für die Nacht, die an `tag` endet (an Extra-Tagen mehr oder weniger).
+    func ziel(fuer tag: String) -> Int { SchlafZielLogik.ziel(basis: zielMinuten, extra: zielExtra, tag: tag) }
 
     /// "Letzte Nacht" oder bei älteren Nächten "Nacht auf Mittwoch, 23. September".
     var titelLetzte: String {
@@ -78,8 +83,9 @@ struct SchlafUebersicht: Sendable {
         return SchlafLogik.gewohnheit(bekannt, wochenende: wochenende).map { SchlafZeiten(bett: $0.bett, auf: $0.auf) }
     }
 
-    static func bauen(health: [String: SchlafNacht], band: [BandSchlafOp], vitale: [VitalArt: [VitalMesswert]], zielMinuten: Int, heute: String) -> SchlafUebersicht {
-        let gewaehlt = SchlafQuellenWahl.waehle(health: health, band: band).filter { $0.nacht.tag <= heute }
+    static func bauen(health: [String: SchlafNacht], band: [BandSchlafOp], vitale: [VitalArt: [VitalMesswert]], zielMinuten: Int, heute: String,
+                       eingetragen: [String: SchlafNacht] = [:], zielExtra: SchlafZielExtra = SchlafZielExtra()) -> SchlafUebersicht {
+        let gewaehlt = SchlafQuellenWahl.waehle(health: health, band: band, eingetragen: eingetragen).filter { $0.nacht.tag <= heute }
         let reine = gewaehlt.map(\.nacht)
         let hrv = SchlafVitalStand.bauen(art: .hrv, werte: vitale[.hrv] ?? [], heute: heute)
         let chips = SchlafVitalStand.chipArten.map { SchlafVitalStand.bauen(art: $0, werte: vitale[$0] ?? [], heute: heute) }
@@ -94,6 +100,6 @@ struct SchlafUebersicht: Sendable {
             hrv: hrv, chips: chips,
             erholung: ErholungsKlartext.bewerte(hrv: hrv.frischerBereich, ruhepuls: ruhepuls, letzteNachtMinuten: frisch, ziel: zielMinuten),
             vergleich: SchlafVergleich.verlauf(health: health, band: band, heute: heute),
-            werktag: zeiten(reine, wochenende: false), wochenende: zeiten(reine, wochenende: true))
+            werktag: zeiten(reine, wochenende: false), wochenende: zeiten(reine, wochenende: true), zielExtra: zielExtra)
     }
 }

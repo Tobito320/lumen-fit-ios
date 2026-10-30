@@ -69,6 +69,33 @@ private struct SatzFertigKnopf: View {
     }
 }
 
+/// "Satz 3 von 4", darunter "60 kg × 8" und die Satz-Uhr (ab Pausenende, hochzählend). Ist alles fertig oder gibt es keinen Satz,
+/// steht stattdessen "2 von 5 Übungen fertig".
+private struct SatzZeilen: View {
+    let stand: TrainingLiveStand
+    let farben: WidgetFarben
+
+    var body: some View {
+        if stand.von > 0 {
+            Text("Satz \(stand.satz) von \(stand.von)").font(.subheadline.weight(.semibold)).foregroundStyle(farben.text2)
+            if let zeile = stand.satzZeile {
+                HStack(spacing: 6) {
+                    Text(zeile).font(.subheadline).foregroundStyle(farben.text)
+                    if let seit = stand.satzSeit {
+                        Text(seit, style: .timer)
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(farben.text2)
+                            .frame(maxWidth: 56, alignment: .leading)
+                            .accessibilityLabel("Satz läuft seit")
+                    }
+                }
+            }
+        } else if let fertig = stand.uebungenFertig, let gesamt = stand.uebungenGesamt, gesamt > 0 {
+            Text("\(fertig) von \(gesamt) Übungen fertig").font(.subheadline).foregroundStyle(farben.text2)
+        }
+    }
+}
+
 /// Die Pause als Zähler, solange sie läuft. Nach ihrem Ende bleibt der Zähler bei 0:00 stehen, bis die App den nächsten Satz meldet (kein Neuzeichnen ohne Aktualisierung).
 private struct PausenZeile: View {
     let stand: TrainingLiveStand
@@ -115,7 +142,7 @@ private struct TrainingSperrbildschirm: View {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(stand.uebung).font(.headline).foregroundStyle(farben.text).lineLimit(1)
-                    Text("Satz \(stand.satz) von \(stand.von)").font(.subheadline).foregroundStyle(farben.text2)
+                    SatzZeilen(stand: stand, farben: farben)
                     PausenZeile(stand: stand, farben: farben)
                 }
                 Spacer(minLength: 8)
@@ -137,7 +164,7 @@ private struct TrainingInselUnten: View {
         let farben = trainingFarben(systemDunkel: true, kontrastHoch: false)
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Satz \(stand.satz) von \(stand.von)").font(.subheadline.weight(.semibold))
+                SatzZeilen(stand: stand, farben: farben)
                 PausenZeile(stand: stand, farben: farben)
             }
             Spacer(minLength: 8)

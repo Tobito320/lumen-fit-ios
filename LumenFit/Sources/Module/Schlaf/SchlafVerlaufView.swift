@@ -6,11 +6,23 @@ struct SchlafVerlaufView: View {
     @Environment(\.palette) private var palette
     @Environment(\.openURL) private var openURL
     @State private var band: [BandSchlafOp] = []
+    @State private var umfang = Umfang.dreissig
+    @State private var offen: String?
+    @State private var korrigiere: SchlafGewaehlteNacht?
+    @State private var version = 0
+    @Environment(\.bewegungAus) private var bewegungAus
+
+    private enum Umfang: String, CaseIterable, Identifiable {
+        case sieben = "7 Nächte", dreissig = "30 Nächte", alle = "Alle"
+        var id: String { rawValue }
+        var anzahl: Int? { switch self { case .sieben: 7; case .dreissig: 30; case .alle: nil } }
+    }
 
     private static let tageImDiagramm = 30
 
     var body: some View {
         let u = SchlafDaten.uebersicht(umgebung, band: band)
+        let _ = version
         ScrollView {
             VStack(spacing: Abstand.l) {
                 if u.hatDaten {
@@ -26,6 +38,11 @@ struct SchlafVerlaufView: View {
         .navigationTitle("Schlafverlauf")
         .lumenHintergrund()
         .task(id: umgebung.profil.aktiv?.id) { band = SchlafDaten.bandOps(umgebung) }
+        .sheet(item: $korrigiere) { n in
+            SchlafEintragenView(tag: n.nacht.tag, nacht: n.nacht) { version += 1 }
+        }
+        .haptik(.auswahl, bei: offen)
+        .haptik(.auswahl, bei: umfang)
     }
 
     @ViewBuilder
@@ -33,7 +50,11 @@ struct SchlafVerlaufView: View {
         diagramm(u)
         zeiten(u)
         SchlafRegelKarte(ergebnis: u.regelmaessigkeit)
-        SchlafAbschnittKopf("Alle Nächte")
+        SchlafAbschnittKopf("Nächte")
+        Picker("Zeitraum", selection: $umfang.animation(bewegungAus ? nil : Feder.schnell)) {
+            ForEach(Umfang.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
         naechte(u)
     }
 
@@ -76,21 +97,45 @@ struct SchlafVerlaufView: View {
     }
 
     private func naechte(_ u: SchlafUebersicht) -> some View {
-        let liste = Array(u.naechte.reversed())
+        let alle = Array(u.naechte.reversed())
+        let liste = umfang.anzahl.map { Array(alle.prefix($0)) } ?? alle
         return ListenKarte {
             ForEach(Array(liste.enumerated()), id: \.element.nacht.tag) { index, nacht in
                 if index > 0 { Haarlinie() }
-                NavigationLink {
-                    SchlafNachtDetailView(nacht: nacht, vergleich: u.vergleichsnacht(fuer: nacht.nacht.tag), verlauf: u.vergleich)
-                } label: {
-                    zeile(nacht)
+                VStack(spacing: 0) {
+                    Button {
+                        withAnimation(bewegungAus ? nil : Feder.schnell) { offen = offen == nacht.nacht.tag ? nil : nacht.nacht.tag }
+                    } label: {
+                        zeile(nacht, offen: offen == nacht.nacht.tag)
+                    }
+                    .buttonStyle(.plain)
+                    if offen == nacht.nacht.tag {
+                        aktionen(u, nacht)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                    }
                 }
-                .buttonStyle(.plain)
+                .clipped()
             }
         }
     }
 
-    private func zeile(_ n: SchlafGewaehlteNacht) -> some View {
+    private func aktionen(_ u: SchlafUebersicht, _ n: SchlafGewaehlteNacht) -> some View {
+        HStack(spacing: Abstand.m) {
+            NavigationLink {
+                SchlafNachtDetailView(nacht: n, vergleich: u.vergleichsnacht(fuer: n.nacht.tag), verlauf: u.vergleich)
+            } label: {
+                Label("Details", systemImage: "chart.bar.doc.horizontal").frame(minHeight: Abstand.tippflaeche)
+            }
+            Spacer(minLength: Abstand.s)
+            Button("Korrigieren", systemImage: "pencil") { korrigiere = n }.frame(minHeight: Abstand.tippflaeche)
+        }
+        .font(.subheadline.weight(.semibold))
+        .foregroundStyle(palette.text)
+        .padding(.horizontal, Abstand.l)
+        .padding(.bottom, Abstand.s)
+    }
+
+    private func zeile(_ n: SchlafGewaehlteNacht, offen: Bool) -> some View {
         HStack(spacing: Abstand.m) {
             Image(systemName: n.quelle.symbolName).frame(width: 24).foregroundStyle(palette.text2).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
@@ -99,7 +144,7 @@ struct SchlafVerlaufView: View {
             }
             Spacer(minLength: Abstand.s)
             Text(SchlafFormat.dauer(n.nacht.schlafMinuten)).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
-            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+            Image(systemName: "chevron.down").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).rotationEffect(.degrees(offen ? 180 : 0)).accessibilityHidden(true)
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.s)
@@ -107,6 +152,7 @@ struct SchlafVerlaufView: View {
         .contentShape(.rect)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(Datum.anzeige(n.nacht.tag)): \(SchlafFormat.sprechDauer(n.nacht.schlafMinuten)), von \(Datum.uhrzeit(n.nacht.von)) bis \(Datum.uhrzeit(n.nacht.bis)), Quelle \(n.quelle.name)")
-        .accessibilityHint("Öffnet die Nacht")
+        .accessibilityHint(offen ? "Klappt die Nacht zu" : "Klappt Details und Korrigieren auf")
+        .accessibilityAddTraits(.isButton)
     }
 }
