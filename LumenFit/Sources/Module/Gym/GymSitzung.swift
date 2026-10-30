@@ -23,6 +23,7 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
     @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
     @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
+    @ObservationIgnored private var eigeneStores: [ProfilID: GymEigeneStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
 
     /// Das laufende Training, nil ohne.
@@ -85,6 +86,18 @@ final class GymSitzung: TrainingSteuerung {
         defektStores[d.profil] = neu
         return neu
     }
+
+    /// Die eigenen Übungen des aktiven Profils (Op `fit.gym.uebung`); ein Objekt je Profil.
+    var eigene: GymEigeneStore? {
+        guard let d = daten else { return nil }
+        if let vorhanden = eigeneStores[d.profil] { return vorhanden }
+        let neu = GymEigeneStore(raum: d.raum, uhr: umgebung.uhr)
+        eigeneStores[d.profil] = neu
+        return neu
+    }
+
+    /// Katalog- oder eigene Übung zu einem Planeintrag (`PlanUebung.katalog` kennt die eigenen nicht).
+    func katalog(_ p: PlanUebung) -> Uebung? { p.katalog ?? eigene?.finde(p.uebung) }
 
     /// Die Geräte-Einstellungen des aktiven Profils (`geraete.json`); ein Objekt je Profil.
     var geraete: GeraeteStore? {
@@ -281,7 +294,7 @@ final class GymSitzung: TrainingSteuerung {
 
     func gewicht(_ u: Int, _ i: Int, richtung: Int) {
         guard liste.indices.contains(u) else { return }
-        let schritt = LetztesMal.kgSchritt(geraet: liste[u].planUebung.katalog?.geraet)
+        let schritt = LetztesMal.kgSchritt(geraet: katalog(liste[u].planUebung)?.geraet)
         aendere(u) { LetztesMal.aendereKg($0, i, richtung: richtung, schritt: schritt) }
     }
 
@@ -432,7 +445,7 @@ final class GymSitzung: TrainingSteuerung {
     func uebungDazu(_ k: Uebung) {
         ladeWennNoetig()
         guard let sid = sessionId, let t = training else { return }
-        let neu = PlanUebung.neu(k)
+        let neu = GymEigeneLogik.planUebung(k)
         liste.append(WorkoutUebung(planUebung: neu, saetze: neu.saetze, vorher: WorkoutLogik.vorherige(neu, in: laufende.map(fruehere) ?? []), extra: true))
         if !neu.istCardio { t.saetzeSenden(sid, neu, neu.saetze) } else { t.starten(sid, neu) }
         liveSenden()

@@ -33,6 +33,7 @@ struct TrainingLaufView: View {
                     Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.bordered)
+                .gymTipp(.trainingBeenden, tippKontext)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.l)
@@ -84,7 +85,7 @@ struct TrainingLaufView: View {
                         .accessibilityLabel("Dauer des Trainings")
                         .accessibilityHint("Ändert die Startzeit")
                         Text("· \(sitzung.saetzeZahl) Sätze")
-                        if sitzung.volumen > 0 { Text("· \(TrainingLogik.kgText(sitzung.volumen.rounded())) kg").monospacedDigit() }
+                        if sitzung.volumen > 0 { Text("· \(TrainingLogik.kgText(sitzung.volumen.rounded())) kg").monospacedDigit().gymTipp(.volumen, tippKontext) }
                     }
                     .font(.subheadline).foregroundStyle(palette.text2)
                     liveWerte
@@ -94,10 +95,16 @@ struct TrainingLaufView: View {
             if WorkoutLogik.tagWechselbar(sitzung.liste) {
                 Button { tagWahl = true } label: { Image(systemName: "arrow.left.arrow.right").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                     .accessibilityLabel("Anderen Trainingstag wählen")
+                    .gymTipp(.trainingstagWechseln, tippKontext)
             }
             Button { einstellungen = true } label: { Image(systemName: "gearshape").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                 .accessibilityLabel("Einstellungen fürs Training")
         }
+    }
+
+    /// Was die Hinweise (`GymTippRegeln`) vom laufenden Training wissen müssen.
+    private var tippKontext: GymTippKontext {
+        GymTippKontext(trainingLaeuft: true, volumen: sitzung.volumen, tagWechselbar: WorkoutLogik.tagWechselbar(sitzung.liste))
     }
 
     /// Puls und kcal vom Sensor (Uhr oder Band), alle 10 s neu gelesen; ohne Sensor steht nichts da.

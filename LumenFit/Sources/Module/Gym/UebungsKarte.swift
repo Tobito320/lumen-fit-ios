@@ -35,6 +35,7 @@ struct UebungsKarte: View {
                     Button("Wieder dazu") { sitzung.wiederAufnehmen(index) }.buttonStyle(.bordered).controlSize(.large)
                 }
             } else {
+                GymTippZeile(art: .satzWischen, kontext: tippKontext(u))
                 ForEach(u.saetze.indices, id: \.self) { i in
                     SatzZeile(sitzung: sitzung, uebung: index, satz: i)
                     if i < u.saetze.count - 1 { Haarlinie() }
@@ -63,7 +64,7 @@ struct UebungsKarte: View {
 
     private func kopf(_ u: WorkoutUebung, _ gruen: Color) -> some View {
         HStack(spacing: Abstand.m) {
-            UebungsBild(id: u.planUebung.uebung, koerper: u.planUebung.katalog?.koerper)
+            UebungsBild(id: u.planUebung.uebung, koerper: sitzung.katalog(u.planUebung)?.koerper)
                 .frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(u.planUebung.anzeigeName)
@@ -98,13 +99,19 @@ struct UebungsKarte: View {
                     .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
             }
             .accessibilityLabel("Mehr zu \(u.planUebung.anzeigeName)")
+            .gymTipp(.uebungMehr, tippKontext(u))
         }
         .padding(Abstand.m)
         .accessibilityElement(children: .contain)
     }
 
+    private func tippKontext(_ u: WorkoutUebung) -> GymTippKontext {
+        GymTippKontext(trainingLaeuft: true, kartenIndex: index, saetze: u.saetze.count)
+    }
+
     private func untertitel(_ u: WorkoutUebung) -> String {
         var teile = ["\(u.fertigZahl) von \(u.gesamt)"]
+        if GymEigeneLogik.istEigene(u.planUebung.uebung) { teile.append("Eigene") }
         if u.planUebung.supersatz == true { teile.append("Supersatz") }
         if let p = u.planUebung.pause { teile.append("Pause \(WorkoutLogik.pauseText(p))") }
         if let original = u.ersatzFuer, let name = UebungsKatalog.nachId[original]?.name { teile.append("statt \(name)") }

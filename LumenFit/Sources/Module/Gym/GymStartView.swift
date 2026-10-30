@@ -63,6 +63,7 @@ struct GymStartView: View {
             }
             .buttonStyle(.bordered)
             .accessibilityHint("Cardio eintragen")
+            .gymTipp(.cardioSchnell, GymTippKontext())
             Button { einstellungen = true } label: {
                 Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }

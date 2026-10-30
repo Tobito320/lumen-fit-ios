@@ -14,6 +14,9 @@ struct UebungDetailView: View {
     @State private var reiter = Reiter.uebersicht
     @State private var art = RekordArt.gewicht
     @State private var hinzugefuegt = 0
+    @State private var formular = false
+    @State private var loeschenFrage = false
+    @Environment(\.dismiss) private var schliessen
 
     private enum Reiter: String, CaseIterable, Identifiable {
         case uebersicht = "Übersicht", historie = "Historie", sogehts = "So geht's"
@@ -22,18 +25,18 @@ struct UebungDetailView: View {
 
     var body: some View {
         Group {
-            if let u = UebungsKatalog.nachId[id] {
+            if let u = uebung {
                 inhalt(u)
             } else {
                 LeerZustand(stimmung: .denkt, satz: "Diese Übung gibt es im Katalog nicht (mehr).")
             }
         }
         .lumenHintergrund()
-        .navigationTitle(UebungsKatalog.nachId[id]?.name ?? "Übung")
+        .navigationTitle(uebung?.name ?? "Übung")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Nur mit laufendem Training: die Übung kommt ans Ende der Liste (wie "Übung hinzufügen" im Training).
-            if let u = UebungsKatalog.nachId[id], GymSitzung.von(umgebung).laufende != nil {
+            if let u = uebung, GymSitzung.von(umgebung).laufende != nil {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         GymSitzung.von(umgebung).uebungDazu(u)
@@ -46,20 +49,46 @@ struct UebungDetailView: View {
                 }
             }
         }
+        .toolbar {
+            if let eigene, eigene.istEigene(id) {
+                ToolbarItem(placement: .secondaryAction) {
+                    Menu {
+                        Button("Bearbeiten", systemImage: "pencil") { formular = true }
+                        Button("Löschen", systemImage: "trash", role: .destructive) { loeschenFrage = true }
+                    } label: {
+                        Label("Eigene Übung", systemImage: "ellipsis.circle").frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $formular) {
+            if let eigene { GymEigenesFormular(store: eigene, bearbeiten: eigene.daten(id)) { _ in } }
+        }
+        .confirmationDialog("Diese Übung löschen?", isPresented: $loeschenFrage, titleVisibility: .visible) {
+            Button("Löschen", role: .destructive) {
+                eigene?.loeschen(id)
+                schliessen()
+            }
+        } message: {
+            Text("Sie verschwindet aus Suche und Auswahl. Pläne und Trainings behalten sie mit ihrem Namen.")
+        }
         .haptik(.auswahl, bei: hinzugefuegt)
     }
+
+    private var eigene: GymEigeneStore? { GymSitzung.von(umgebung).eigene }
+    private var uebung: Uebung? { eigene?.finde(id) ?? UebungsKatalog.nachId[id] }
 
     private func inhalt(_ u: Uebung) -> some View {
         let tage = RekordLogik.tage(katalogId: u.id, in: umgebung.daten?.training.sessions ?? [])
         return ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
-                UebungsBild(id: u.id, koerper: u.koerper)
+                // Schleife der GIF-Bilder nur hier, nur sichtbar, nicht bei Reduce Motion und Stromsparmodus (`GymGifLogik`).
+                GymUebungGif(id: u.id, koerper: u.koerper)
                     .aspectRatio(1.4, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: Abstand.xs) {
                     Text(u.name).font(.title2.bold()).foregroundStyle(palette.text)
-                    Text("Primär: \(u.muskel)").font(.subheadline).foregroundStyle(palette.text2)
+                    Text(GymEigeneLogik.istEigene(u.id) ? "Primär: \(u.muskel) · Eigene" : "Primär: \(u.muskel)").font(.subheadline).foregroundStyle(palette.text2)
                 }
                 .accessibilityElement(children: .combine)
                 Picker("Ansicht", selection: $reiter) {
@@ -162,8 +191,14 @@ struct UebungDetailView: View {
                 Haarlinie()
                 GymZeile(titel: "Hilft mit") { Text(u.neben.joined(separator: ", ")).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
             }
-            Haarlinie()
-            GymZeile(titel: "Englisch") { Text(u.en.capitalized).foregroundStyle(palette.text2) }
+            if let notiz = eigene?.daten(u.id)?.notiz {
+                Haarlinie()
+                GymZeile(titel: "Notiz") { Text(notiz).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
+            }
+            if !GymEigeneLogik.istEigene(u.id) {
+                Haarlinie()
+                GymZeile(titel: "Englisch") { Text(u.en.capitalized).foregroundStyle(palette.text2) }
+            }
         }
     }
 }

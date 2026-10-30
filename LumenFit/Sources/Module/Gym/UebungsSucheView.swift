@@ -17,6 +17,8 @@ struct UebungsSucheView: View {
     @State private var muskel: String?
     @State private var filterBlatt = false
     @State private var hinzugefuegt: [String] = []
+    @State private var eigenesOffen = false
+    @State private var eigenerName = ""
     @Environment(\.bewegungAus) private var ruhig
 
     private static let anzeigeLimit = 120
@@ -34,8 +36,10 @@ struct UebungsSucheView: View {
             Section { filter }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
+            if eigene != nil { eigenAnlegen }
             if text.isEmpty, koerper == nil {
                 abschnitt("Zuletzt", zuletzt)
+                abschnitt("Eigene", gefiltert(eigene?.uebungen ?? []))
                 abschnitt("Gängig", UebungsKatalog.vorschlaege(in: gefiltert(UebungsKatalog.alle)))
             }
             let treffer = ergebnis
@@ -67,13 +71,18 @@ struct UebungsSucheView: View {
             }
         }
         .sheet(isPresented: $filterBlatt) { UebungsFilterBlatt(koerper: $koerper, muskel: $muskel, geraet: $geraet) }
+        .sheet(isPresented: $eigenesOffen) {
+            if let eigene { GymEigenesFormular(store: eigene, vorname: eigenerName) { nachErstellen($0) } }
+        }
         .haptik(.auswahl, bei: hinzugefuegt.count)
     }
 
     // MARK: Daten
 
+    private var eigene: GymEigeneStore? { GymSitzung.von(umgebung).eigene }
+
     private var zuletzt: [Uebung] {
-        UebungsKatalog.zuletzt(umgebung.daten?.training.sessions ?? [], limit: 6).filter { passt($0) }
+        UebungsKatalog.zuletzt(umgebung.daten?.training.sessions ?? [], in: eigene?.nachId ?? UebungsKatalog.nachId, limit: 6).filter { passt($0) }
     }
 
     private func passt(_ u: Uebung) -> Bool {
@@ -83,7 +92,8 @@ struct UebungsSucheView: View {
     private func gefiltert(_ liste: [Uebung]) -> [Uebung] { liste.filter(passt) }
 
     private var ergebnis: [Uebung] {
-        let rohe = text.trimmingCharacters(in: .whitespaces).isEmpty ? UebungsKatalog.alle.sorted { $0.name < $1.name } : UebungsKatalog.suchen(text)
+        let alle = eigene?.alle ?? UebungsKatalog.alle
+        let rohe = text.trimmingCharacters(in: .whitespaces).isEmpty ? alle.sorted { $0.name < $1.name } : UebungsKatalog.suchen(text, in: alle)
         return gefiltert(rohe)
     }
 
@@ -118,6 +128,31 @@ struct UebungsSucheView: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(aktiv ? .isSelected : [])
+    }
+
+    /// Loveas "Erstellen", hier als erste Zeile; der Suchtext wird zum Namen.
+    private var eigenAnlegen: some View {
+        Section {
+            Button {
+                eigenerName = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                eigenesOffen = true
+            } label: {
+                Label("Eigene Übung erstellen", systemImage: "plus.circle")
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+            }
+            .accessibilityHint("Öffnet ein Formular mit Name, Muskel und Gerät")
+        }
+    }
+
+    /// Mit Auswahl wird die neue Übung gleich gewählt (wie bei Loveas "Hinzufügen"), sonst steht sie in der Liste.
+    private func nachErstellen(_ u: Uebung) {
+        guard let auswahl else { return }
+        auswahl(u)
+        if mehrfach {
+            withAnimation(ruhig ? nil : Feder.schnell) { hinzugefuegt.append(u.id) }
+        } else {
+            schliessen()
+        }
     }
 
     @ViewBuilder
@@ -159,12 +194,12 @@ struct UebungsSucheView: View {
             UebungsBild(id: u.id, koerper: u.koerper).frame(width: 48, height: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(u.name).font(.body.weight(.medium)).foregroundStyle(palette.text).lineLimit(3)
-                Text("\(u.muskel) · \(u.geraet)").font(.footnote).foregroundStyle(palette.text2)
+                Text(GymEigeneLogik.istEigene(u.id) ? "\(u.muskel) · \(u.geraet) · Eigene" : "\(u.muskel) · \(u.geraet)").font(.footnote).foregroundStyle(palette.text2)
             }
         }
         .frame(minHeight: Abstand.tippflaeche)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(UebungsSymbol.beschreibung(u))
+        .accessibilityLabel(GymEigeneLogik.istEigene(u.id) ? "\(UebungsSymbol.beschreibung(u)), eigene Übung" : UebungsSymbol.beschreibung(u))
     }
 }
 
