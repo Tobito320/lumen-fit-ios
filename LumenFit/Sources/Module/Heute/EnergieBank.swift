@@ -7,14 +7,19 @@ struct EnergieBank: View {
     let energie: HeuteEnergie
     let oeffne: () -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.lumenThema) private var thema
 
     var body: some View {
         Button(action: oeffne) {
             ListenKarte {
                 VStack(alignment: .leading, spacing: Abstand.m) {
                     HeuteKartenKopf(symbol: "bolt.heart.fill", titel: "Energie-Bank", zusatz: energie.ergebnis.urteil)
-                    zahl
-                    balken
+                    if thema == .lovea {
+                        TagesformRing(akku: energie.ergebnis.akku, urteil: energie.ergebnis.urteil)
+                    } else {
+                        zahl
+                        balken
+                    }
                     verlauf
                     Text(energie.ergebnis.satz.components(separatedBy: "\n").first ?? "")
                         .font(.subheadline).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)

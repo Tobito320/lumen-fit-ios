@@ -1,0 +1,369 @@
+// Quelle: Lovea Health/Heute/TagesFormen.swift
+import SwiftUI
+
+// Tagesformen (nur im Theme "Lovea"): Kacheln von "Dein Tag", jede mit eigener Form, die sich von unten füllt. Wasser mit Wellen, Koffein mit Dampf.
+// Pfade 1:1 aus Lovea (Koordinatenraum 64 × 64). Wellen und Dampf laufen nur, solange die Kachel zu sehen ist, die App aktiv ist und Bewegung erlaubt
+// ist ("Bewegung reduzieren" und Stromsparmodus: `bewegungAus`); sonst steht die Füllung ruhig. Ausgelassen: Schritte, Gewohnheiten, Stimmung, Training, Waage.
+
+enum TagesForm: String, CaseIterable, Sendable {
+    case wasser, schlaf, koffein, protein, creatin
+}
+
+private func tf(_ hex: UInt32, _ alpha: Double = 1) -> Color {
+    Color(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255).opacity(alpha)
+}
+
+extension TagesForm {
+    var farbe: Color {
+        switch self {
+        case .wasser: tf(0x5AC8FA)
+        case .schlaf: tf(0x8E91FF)
+        case .koffein: tf(0xD9A066)
+        case .protein: tf(0xE5534B)
+        case .creatin: tf(0xBF8CFF)
+        }
+    }
+
+    /// Senkrechtes Maß der Form: unten = leer, oben = voll.
+    fileprivate var bereich: ClosedRange<Double> {
+        switch self {
+        case .wasser: 10...60
+        case .schlaf: 12...52
+        case .koffein: 22...58
+        case .protein: 9...55
+        case .creatin: 8...56
+        }
+    }
+
+    fileprivate var pfad: String {
+        switch self {
+        case .wasser: "M15 10H49L44.5 55C44.2 57.9 41.9 60 39 60H25C22.1 60 19.8 57.9 19.5 55Z"
+        case .schlaf:
+            "M6 14C6 12.9 6.9 12 8 12H10C11.1 12 12 12.9 12 14V32H55C57.8 32 60 34.2 60 37V50C60 51.1 59.1 52 58 52H56C54.9 52 54 51.1 54 50V46.5H12V50C12 51.1 11.1 52 10 52H8C6.9 52 6 51.1 6 50ZM14.5 30.5C14.5 26.5 16.5 24.5 20 24.5H25.5C28 24.5 30 26.5 30 29V32H14.5Z"
+        case .koffein: "M10 22H46V46C46 52.6 40.6 58 34 58H22C15.4 58 10 52.6 10 46Z"
+        case .protein:
+            "M13 21C18 11 33 7 46 11C56 14 60.5 23.5 57.5 34C54.5 44.5 46 52.5 34 54.5C22 56.5 9.5 50.5 7.5 40C6.3 33 8.8 26.5 13 21Z"
+        case .creatin: "M24 8H40C44.4 8 48 11.6 48 16V48C48 52.4 44.4 56 40 56H24C19.6 56 16 52.4 16 48V16C16 11.6 19.6 8 24 8Z"
+        }
+    }
+}
+
+/// SVG-Pfadtext im 64 × 64 Raum als `Shape`. Kann M L H V C Q Z, klein geschrieben = relativ.
+// shortcut: keine Befehle S T A, die Formen brauchen sie nicht; bei neuen Formen mit Bögen ausschreiben.
+struct TagesPfad: Shape {
+    let d: String
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        for (befehl, n) in Self.teile(d) {
+            let art = befehl.lowercased()
+            guard let anzahl = ["m": 2, "l": 2, "h": 1, "v": 1, "c": 6, "q": 4][art] else {
+                if art == "z" { p.closeSubpath() }
+                continue
+            }
+            for i in stride(from: 0, to: n.count - anzahl + 1, by: anzahl) {
+                let a = Array(n[i..<i + anzahl])
+                let hier = p.currentPoint ?? .zero
+                let o = befehl.isLowercase ? hier : .zero
+                func pt(_ j: Int) -> CGPoint { CGPoint(x: o.x + a[j], y: o.y + a[j + 1]) }
+                switch art {
+                case "m" where i == 0: p.move(to: pt(0))
+                case "m", "l": p.addLine(to: pt(0))
+                case "h": p.addLine(to: CGPoint(x: o.x + a[0], y: hier.y))
+                case "v": p.addLine(to: CGPoint(x: hier.x, y: o.y + a[0]))
+                case "c": p.addCurve(to: pt(4), control1: pt(0), control2: pt(2))
+                case "q": p.addQuadCurve(to: pt(2), control: pt(0))
+                default: break
+                }
+            }
+        }
+        return p.applying(CGAffineTransform(scaleX: rect.width / 64, y: rect.height / 64)).offsetBy(dx: rect.minX, dy: rect.minY)
+    }
+
+    private static func teile(_ d: String) -> [(Character, [Double])] {
+        var out: [(Character, [Double])] = []
+        var zahl = ""
+        func fertig() {
+            if let z = Double(zahl), !out.isEmpty { out[out.count - 1].1.append(z) }
+            zahl = ""
+        }
+        for c in d {
+            if c.isLetter {
+                fertig()
+                out.append((c, []))
+            } else if c == "-" || c == " " || c == "," {
+                fertig()
+                if c == "-" { zahl = "-" }
+            } else {
+                zahl.append(c)
+            }
+        }
+        fertig()
+        return out
+    }
+}
+
+/// Füllung bis `ziel` (y im 64er Raum). Ohne `welle` ein Rechteck, mit `welle` die Wellenlinie (Amplitude 3,2, Periode 32). `linie` ist nur die helle Oberkante.
+private struct TagesFuellung: Shape {
+    var ziel: Double
+    var phase: Double = 0
+    var welle = false
+    var linie = false
+
+    var animatableData: Double {
+        get { ziel }
+        set { ziel = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        guard welle else {
+            p.addRect(CGRect(x: 0, y: ziel, width: 64, height: linie ? 1.8 : 70))
+            return p
+        }
+        p.move(to: CGPoint(x: -64 + phase, y: ziel))
+        for i in 0..<9 {
+            let x = -64 + Double(i) * 16 + phase
+            p.addQuadCurve(to: CGPoint(x: x + 16, y: ziel), control: CGPoint(x: x + 8, y: ziel + (i.isMultiple(of: 2) ? -3.2 : 3.2)))
+        }
+        if !linie {
+            p.addLine(to: CGPoint(x: 80 + phase, y: 70))
+            p.addLine(to: CGPoint(x: -64 + phase, y: 70))
+            p.closeSubpath()
+        }
+        return p
+    }
+}
+
+/// Der Takt der Wellen und des Dampfes: 12 Bilder pro Sekunde, und die Uhr steht, wenn die Kachel nicht zu sehen ist oder die App nicht aktiv ist.
+private struct TagesFormenTakt<Inhalt: View>: View {
+    @ViewBuilder let inhalt: (Date) -> Inhalt
+    @State private var sichtbar = false
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 12, paused: !sichtbar || scenePhase != .active)) { kontext in
+            inhalt(kontext.date)
+        }
+        .onAppear { sichtbar = true }
+        .onDisappear { sichtbar = false }
+        .onScrollVisibilityChange(threshold: 0.05) { sichtbar = $0 }
+    }
+}
+
+/// Eine Form mit Füllung und Details, 70 pt.
+struct TagesFormView: View {
+    let form: TagesForm
+    let fuellung: Double
+    @Environment(\.bewegungAus) private var ruhig
+
+    var body: some View {
+        ZStack {
+            TagesPfad(d: form.pfad).fill(tf(0x2C2C30))
+            schicht.mask { TagesPfad(d: form.pfad) }
+            TagesPfad(d: form.pfad).stroke(form.farbe, style: StrokeStyle(lineWidth: 2.2, lineJoin: .round))
+            details
+        }
+        .frame(width: 64, height: 64)
+        .scaleEffect(70.0 / 64)
+        .frame(width: 70, height: 70)
+        .accessibilityHidden(true)
+    }
+
+    private var q: Double { min(max(fuellung, 0), 1) }
+
+    @ViewBuilder private var schicht: some View {
+        let b = form.bereich
+        let ziel = b.upperBound - q * (b.upperBound - b.lowerBound)
+        Group {
+            if form == .wasser || form == .koffein {
+                // Bei 0 % sitzt der Wellenkamm unter dem Rand, sonst blitzt ein Streifen auf.
+                let z = ziel + 4 * (1 - q)
+                if ruhig { welle(z, 0) } else { TagesFormenTakt { welle(z, Self.phase($0)) } }
+            } else {
+                TagesFuellung(ziel: ziel).fill(form.farbe)
+                TagesFuellung(ziel: ziel, linie: true).fill(.white.opacity(0.7))
+            }
+        }
+        .animation(ruhig ? nil : .spring(duration: 0.9, bounce: 0), value: fuellung)
+    }
+
+    private func welle(_ ziel: Double, _ phase: Double) -> some View {
+        ZStack {
+            TagesFuellung(ziel: ziel, phase: phase, welle: true).fill(form.farbe)
+            TagesFuellung(ziel: ziel, phase: phase, welle: true, linie: true).stroke(.white.opacity(0.7), lineWidth: 1.6)
+        }
+    }
+
+    private static func phase(_ datum: Date) -> Double {
+        (datum.timeIntervalSinceReferenceDate / 2.6).truncatingRemainder(dividingBy: 1) * 32
+    }
+
+    // MARK: Details je Form (Klassen `.z` aus dem Lovea-Entwurf)
+
+    @ViewBuilder private var details: some View {
+        switch form {
+        case .wasser: strich("M21.5 15.5L24.5 50", .white, 2.2, 0.35)
+        case .schlaf:
+            ZStack {
+                strich("M31 32C38 28.5 48 28.5 55 32", form.farbe, 1.8, 0.8)
+                zeichen("z", 11, x: 45, y: 21)
+                zeichen("z", 8, x: 51, y: 14)
+            }
+        case .koffein: tasse
+        case .protein: steak
+        case .creatin: strich("M16 32H48", .white, 1.6, 0.35)
+        }
+    }
+
+    private func strich(_ d: String, _ farbe: Color, _ breite: Double, _ deckkraft: Double = 1) -> some View {
+        TagesPfad(d: d).stroke(farbe, style: StrokeStyle(lineWidth: breite, lineCap: .round, lineJoin: .round)).opacity(deckkraft)
+    }
+
+    private func punkt(_ x: Double, _ y: Double, _ r: Double, _ farbe: Color) -> some View {
+        Circle().fill(farbe).frame(width: r * 2, height: r * 2).position(x: x, y: y)
+    }
+
+    /// SVG setzt `y` auf die Grundlinie, `position` meint die Mitte des Textes.
+    private func zeichen(_ text: String, _ groesse: Double, x: Double, y: Double) -> some View {
+        Text(text).font(.system(size: groesse, weight: .bold)).foregroundStyle(tf(0xAEAEB2))
+            .position(x: x + groesse * 0.25, y: y - groesse * 0.35)
+    }
+
+    private var tasse: some View {
+        ZStack {
+            strich("M46 28H50C53.9 28 57 31.1 57 35C57 38.9 53.9 42 50 42H46", form.farbe, 2.4)
+            if q > 0 && !ruhig { dampf }
+        }
+    }
+
+    private var dampf: some View {
+        TagesFormenTakt { datum in
+            ZStack {
+                ForEach(0..<3, id: \.self) { i in
+                    let x = 21.0 + Double(i) * 8
+                    let u = ((datum.timeIntervalSinceReferenceDate - Double(i) * 0.5) / 2.4).truncatingRemainder(dividingBy: 1)
+                    let v = u < 0 ? u + 1 : u
+                    strich("M\(x) 16C\(x - 2) 13 \(x + 2) 11 \(x) 7", tf(0xAEAEB2), 1.8)
+                        .offset(y: 4 - 9 * v)
+                        .opacity(v < 0.4 ? 0.8 * v / 0.4 : 0.8 * (1 - v) / 0.6)
+                }
+            }
+        }
+    }
+
+    private var steak: some View {
+        ZStack {
+            strich("M14.5 22.5C19.5 14 33.5 10 45 13.8", tf(0xFFEBDD), 3.6)
+            Circle().fill(tf(0xFFEBDD)).overlay(Circle().stroke(tf(0xC9A48E), lineWidth: 1.4))
+                .frame(width: 10, height: 10).position(x: 40, y: 31)
+            punkt(40, 31, 2, tf(0xE8C9B6))
+            strich("M20 36C24 34 26 38 30 36M28 45C32 43 35 46 39 44", tf(0xFFD0C2), 1.3, 0.8)
+        }
+    }
+}
+
+/// Kachel wie in Lovea: Form 70 pt, Titel, Wert mit Einheit. Mit `aktion` ein Knopf (hüpft, Haptik).
+struct TagesFormKachel: View {
+    let form: TagesForm
+    let titel: String
+    let wert: String
+    let einheit: String
+    let fuellung: Double
+    var aktion: (() -> Void)?
+
+    @State private var hopp = false
+    @State private var tipp = 0
+    @Environment(\.bewegungAus) private var ruhig
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        if let aktion {
+            Button {
+                tipp += 1
+                hopp = true
+                aktion()
+            } label: { inhalt }
+                .buttonStyle(.federnd)
+                .accessibilityHint("Antippen zum Eintragen")
+                .haptik(.mehr, bei: tipp)
+        } else {
+            inhalt
+        }
+    }
+
+    private var inhalt: some View {
+        VStack(spacing: 2) {
+            TagesFormView(form: form, fuellung: fuellung)
+                .scaleEffect(hopp && !ruhig ? 1.12 : 1)
+                .rotationEffect(.degrees(hopp && !ruhig ? -3 : 0))
+                .animation(ruhig ? nil : .spring(bounce: 0.35), value: hopp)
+            Text(titel).font(.caption.weight(.semibold)).foregroundStyle(palette.text2).padding(.top, 4)
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text(wert).font(.body.bold()).monospacedDigit().foregroundStyle(palette.text)
+                Text(einheit).font(.caption2).foregroundStyle(palette.text2)
+            }
+            .lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .multilineTextAlignment(.center)
+        .padding(.vertical, Abstand.m)
+        .padding(.horizontal, Abstand.xs)
+        .frame(maxWidth: .infinity)
+        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .contentShape(.rect(cornerRadius: Rundung.karte, style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(titel): \(wert) \(einheit)")
+        .task(id: hopp) {
+            guard hopp else { return }
+            try? await Task.sleep(for: .milliseconds(200))
+            hopp = false
+        }
+    }
+}
+
+/// "Dein Tag" im Theme Lovea: Schlaf, Wasser, Koffein und was sonst als Gewohnheit da ist, als Raster mit Formkacheln.
+struct TagesFormenReihe: View {
+    let stand: HeuteStand
+    let tippe: (HeuteHabitZeile) -> Void
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Abstand.m) {
+            Text("Dein Tag").font(.headline).foregroundStyle(palette.text)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: 3), spacing: Abstand.s) {
+                if let schlaf = stand.boegen.first(where: { $0.id == .erholen }) {
+                    TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: schlaf.zahl, einheit: schlaf.zahl == "–" ? "" : "h", fuellung: schlaf.anteil)
+                }
+                ForEach(TagesForm.allCases.filter { $0 != .schlaf }, id: \.self) { form in
+                    if let zeile = stand.habits.first(where: { $0.habit.id == form.habitID }) { habitKachel(form, zeile) }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func habitKachel(_ form: TagesForm, _ zeile: HeuteHabitZeile) -> some View {
+        let ziel = zeile.ziel ?? zeile.habit.tagesziel
+        let nurTag = stand.istHeute
+        return TagesFormKachel(
+            form: form, titel: zeile.habit.name,
+            wert: zeile.habit.zaehlen ? String(zeile.wert) : (zeile.erledigt ? "Ja" : "Nein"),
+            einheit: zeile.habit.zaehlen ? (ziel.map { "von \($0)" } ?? "") : "",
+            // Ohne Ziel (Koffein) füllt sich die Form bis vier Stück.
+            fuellung: zeile.habit.zaehlen && ziel == nil ? min(1, Double(zeile.wert) / 4) : zeile.anteil,
+            aktion: nurTag ? { tippe(zeile) } : nil)
+    }
+}
+
+private extension TagesForm {
+    /// Die Gewohnheit hinter der Form (Schlaf hat keine).
+    var habitID: String {
+        switch self {
+        case .wasser: Habit.wasser.id
+        case .koffein: Habit.koffein.id
+        case .protein: Habit.protein.id
+        case .creatin: Habit.creatin.id
+        case .schlaf: ""
+        }
+    }
+}

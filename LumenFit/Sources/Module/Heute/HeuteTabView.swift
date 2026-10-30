@@ -16,6 +16,7 @@ struct HeuteTabView: View {
     @State private var deckkraft = 1.0
     @Namespace private var zoom
     @Environment(\.bewegungAus) private var bewegungAus
+    @Environment(\.lumenThema) private var thema
 
     var body: some View {
         ScrollView {
@@ -86,6 +87,8 @@ struct HeuteTabView: View {
         PlanKarte(plan: s.plan) { starte(s.plan) }
         ZyklusHinweisAnsicht()
         if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
+        // Nur im Theme Lovea: "Dein Tag" mit den Formkacheln (Wellen, Dampf) aus Lovea.
+        if thema == .lovea, s.hatGesundheit { TagesFormenReihe(stand: s, tippe: { m.tippe($0) }) }
         SchreibKarte(modell: m)
         CoachKachelView()
         habitsKarte(s, m)
