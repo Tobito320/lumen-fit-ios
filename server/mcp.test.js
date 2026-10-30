@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("vier Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
+test("fünf Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -43,4 +43,14 @@ test("Fehler vom Server werden zu Fehlertext, Key steht nie in der Meldung", asy
   await assert.rejects(werkzeugAufrufen("lumenfit_konten", {}, { holen, key: "GEHEIM", basis: { live: "https://l.test" } }), (e) => /400/.test(e.message) && !e.message.includes("GEHEIM"));
   await assert.rejects(werkzeugAufrufen("lumenfit_konto_setzen", { id: "abc" }, { holen, key: "K", basis: { live: "https://l.test" } }), /mindestens/);
   await assert.rejects(werkzeugAufrufen("nope", {}, { holen, key: "K", basis: {} }), /unbekannt/);
+});
+
+test("nutzung: GET /admin/nutzung; konto_setzen kann den Import-Merker zurücksetzen", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "K", basis: { live: "https://live.test", test: "https://test.test" } };
+  await werkzeugAufrufen("lumenfit_nutzung", { umgebung: "test" }, opt);
+  assert.equal(aufrufe[0].url, "https://test.test/admin/nutzung");
+  assert.equal(aufrufe[0].opt.method, "GET");
+  await werkzeugAufrufen("lumenfit_konto_setzen", { id: "abc", lovea_import_zuruecksetzen: true }, opt);
+  assert.deepEqual(JSON.parse(aufrufe[1].opt.body), { lovea_import: null });
 });
