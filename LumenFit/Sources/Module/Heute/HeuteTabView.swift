@@ -10,7 +10,12 @@ struct HeuteTabView: View {
     @State private var blatt: HeuteBlatt?
     @State private var start = 0
     @State private var habitSeite: String?
+    @State private var tagGewechselt = 0
+    /// Verschiebung und Deckkraft des Inhalts beim Tagwechsel: er gleitet in Wischrichtung hinaus und von der Gegenseite herein.
+    @State private var versatz: CGFloat = 0
+    @State private var deckkraft = 1.0
     @Namespace private var zoom
+    @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
         ScrollView {
@@ -30,6 +35,7 @@ struct HeuteTabView: View {
             HabitDetailView(habitId: id).navigationTransition(.zoom(sourceID: id, in: zoom))
         }
         .haptik(.start, bei: start)
+        .haptik(.auswahl, bei: tagGewechselt)
         .task(id: umgebung.profil.aktiv?.id) {
             let m = modell ?? HeuteModell(umgebung: umgebung)
             modell = m
@@ -39,31 +45,109 @@ struct HeuteTabView: View {
         }
     }
 
-    @ViewBuilder
     private func inhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        VStack(spacing: Abstand.l) {
-            if s.hatGesundheit {
-                Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-                ScoreKarte(score: s.score) { blatt = .score }
-            } else if s.healthGeprueft {
-                HeuteLeerKarte(modell: m)
+        // Karten zum Wegwischen (Hinweise) wischen selbst waagerecht: dann gilt die Tagwahl-Geste nur auf der Leiste, sonst auf der ganzen Seite.
+        let ueberall = !s.istHeute || s.hinweise.isEmpty
+        return VStack(spacing: Abstand.l) {
+            HeuteTagLeiste(tag: s.tag, heute: Datum.text(umgebung.uhr()), blaettere: { blaettere($0) }, kalender: { blatt = .kalender },
+                           zuHeute: { springe(zu: Datum.text(umgebung.uhr())) })
+                .simultaneousGesture(tagWischen, including: ueberall ? .subviews : .all)
+            VStack(spacing: Abstand.l) {
+                if s.istHeute { heuteInhalt(s, m) } else { vergangenerTag(s, m) }
             }
-            if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
-            if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-            PlanKarte(plan: s.plan) { starte(s.plan) }
-            ZyklusHinweisAnsicht()
-            if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
-            SchreibKarte(modell: m)
-            CoachKachelView()
-            HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
-                        verwalte: { blatt = .habits }, zoom: zoom)
-            GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
-            if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
-            WochenStreifen(woche: s.woche) { blatt = .tag($0) }
-            PartnerKarte(bereich: .heute)
+            .id(s.tag)
+            .offset(x: versatz)
+            .opacity(deckkraft)
+            .transition(.opacity)
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
+        .simultaneousGesture(tagWischen, including: ueberall ? .all : .subviews)
+    }
+
+    /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).
+    private var tagWischen: some Gesture {
+        DragGesture(minimumDistance: 30).onEnded { geste in
+            guard let schritt = HeuteTagWahl.wischSchritt(breite: geste.translation.width, hoehe: geste.translation.height) else { return }
+            blaettere(schritt)
+        }
+    }
+
+    @ViewBuilder
+    private func heuteInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        if s.hatGesundheit {
+            Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
+            ScoreKarte(score: s.score) { blatt = .score }
+        } else if s.healthGeprueft {
+            HeuteLeerKarte(modell: m)
+        }
+        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
+        if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
+        PlanKarte(plan: s.plan) { starte(s.plan) }
+        ZyklusHinweisAnsicht()
+        if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
+        SchreibKarte(modell: m)
+        CoachKachelView()
+        habitsKarte(s, m)
+        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
+        if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
+        WochenStreifen(woche: s.woche) { blatt = .tag($0) }
+        PartnerKarte(bereich: .heute)
+    }
+
+    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt, Coach und Partner fehlen
+    /// mit Absicht (sie gelten für heute). Gewohnheiten lassen sich nachtragen, weil der Speicher einen Tag entgegennimmt.
+    @ViewBuilder
+    private func vergangenerTag(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        if s.hatTagesdaten {
+            if s.hatGesundheit {
+                Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
+                ScoreKarte(score: s.score) { blatt = .score }
+            }
+            if let daten = umgebung.daten { HeuteTagZeilen(tag: s.tag, daten: daten) }
+        } else {
+            LeerZustand(stimmung: .schlaeft, satz: "Keine Daten für diesen Tag.")
+        }
+        habitsKarte(s, m)
+        if s.hatTagesdaten { GewichtKarte(gewicht: s.gewicht, wiege: {}, eintragbar: false) }
+    }
+
+    private func habitsKarte(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
+                    verwalte: { blatt = .habits }, zoom: zoom)
+    }
+
+    // MARK: - Tag wählen
+
+    private func blaettere(_ tage: Int) {
+        guard let s = modell?.stand else { return }
+        springe(zu: HeuteTagWahl.schritt(s.tag, tage: tage, heute: Datum.text(umgebung.uhr())))
+    }
+
+    /// Wechselt den Tag mit Übergang: der Inhalt gleitet in Wischrichtung hinaus und von der Gegenseite herein (Feder). Reduce Motion und Stromsparmodus: Überblendung.
+    private func springe(zu tag: String) {
+        guard let m = modell, let s = m.stand else { return }
+        let richtung = HeuteTagWahl.richtung(von: s.tag, nach: HeuteTagWahl.begrenze(tag, heute: Datum.text(umgebung.uhr())))
+        guard richtung != 0 else { return }
+        tagGewechselt += 1
+        if bewegungAus {
+            withAnimation(.easeInOut(duration: 0.2)) { m.waehleTag(tag) }
+            return
+        }
+        withAnimation(.easeIn(duration: 0.12)) {
+            versatz = CGFloat(-richtung) * 40
+            deckkraft = 0
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(130))
+            versatz = CGFloat(richtung) * 40
+            m.waehleTag(tag)
+            try? await Task.sleep(for: .milliseconds(30))
+            withAnimation(Feder.weich) {
+                versatz = 0
+                deckkraft = 1
+            }
+        }
     }
 
     @ViewBuilder
@@ -75,6 +159,8 @@ struct HeuteTabView: View {
         case .gewicht: NavigationStack { GewichtEintragenView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Schließen") { self.blatt = nil } } } }
         case .habits: HabitVerwaltungView()
         case .tag(let tag): HeuteTagView(tag: tag)
+        case .kalender:
+            HeuteKalenderBlatt(tag: s.tag, heute: Datum.text(umgebung.uhr())) { springe(zu: $0) }
         }
     }
 
@@ -91,7 +177,7 @@ struct HeuteTabView: View {
 
 /// Welches Blatt über dem Heute-Tab liegt.
 private enum HeuteBlatt: Identifiable {
-    case score, energie, schritte, gewicht, habits
+    case score, energie, schritte, gewicht, habits, kalender
     case tag(String)
 
     var id: String {
@@ -101,6 +187,7 @@ private enum HeuteBlatt: Identifiable {
         case .schritte: "schritte"
         case .gewicht: "gewicht"
         case .habits: "habits"
+        case .kalender: "kalender"
         case .tag(let tag): "tag-\(tag)"
         }
     }
