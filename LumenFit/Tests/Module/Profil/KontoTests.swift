@@ -209,6 +209,15 @@ final class KontoTests: XCTestCase {
         await nein.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertFalse(nein.loveaErlaubt)
         XCTAssertTrue(nein.freigabeAktuell)
+        // Eine 200-Antwort ohne `erlaubt` ändert nichts.
+        let ordner2 = try tempOrdner(), bund2 = SpeicherSchluesselbund()
+        let erst = try dienst(SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson)]), bund: bund2, ordner: ordner2)
+        await erst.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        XCTAssertTrue(erst.loveaErlaubt)
+        let leer = try dienst(SkriptLader([antwort(200, configJson), antwort(200, "{}")]), bund: bund2, ordner: ordner2)
+        await leer.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        XCTAssertTrue(leer.loveaErlaubt, "{} nimmt die Freigabe nicht weg")
+        XCTAssertFalse(leer.freigabeAktuell, "ohne erlaubt ist nichts bestätigt")
     }
 
     func testLoveaZugangNurMitFreigabeUndUeberDenProxy() async throws {

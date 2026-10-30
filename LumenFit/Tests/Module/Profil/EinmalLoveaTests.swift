@@ -201,6 +201,44 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertFalse(d.loveaImportOffen)
     }
 
+    func testUnbekannteArtLaesstDenImportOffenUndDerBelegZeigtEs() async throws {
+        let konto = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson)])
+        let d = try dienst(konto)
+        await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
+        try u.profil.anlegen(name: "Ziel", passwort: "efgh")
+        let ops: [[String: Any]] = [
+            ["seq": 1, "id": "op-1", "art": "habit.anlegen", "von": "person-a", "zeit": "2026-09-23T10:00:00.123Z", "d": [:]],
+            ["seq": 2, "id": "op-2", "art": "neu.unbekannt", "von": "person-a", "zeit": "2026-09-23T10:00:00.123Z", "d": [:]],
+        ]
+        let lader = SkriptLader([antwort(200, String(decoding: try JSONSerialization.data(withJSONObject: ["ops": ops, "mehr": false]), as: UTF8.self))])
+        let lauf = LoveaEinmalImport()
+        _ = await lauf.starteWennOffen(konto: d, daten: u.daten, lader: lader)
+        guard case .unvollstaendig = lauf.zustand else { return XCTFail("erwartet unvollständig, ist \(lauf.zustand)") }
+        XCTAssertTrue(d.loveaImportOffen, "mit Lücke nie erledigt")
+        XCTAssertFalse(pfade(konto).contains("/lovea/import-erledigt"))
+        let beleg = try XCTUnwrap(konto.anfragen.last { $0.url?.path == "/lovea/import-beleg" }?.httpBody)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: beleg) as? [String: Any])
+        XCTAssertEqual(json["vollstaendig"] as? Bool, false)
+        XCTAssertEqual(json["typ"] as? String, "beleg")
+        lauf.schliesse()
+        let nochmal = await lauf.starteWennOffen(konto: d, daten: u.daten, lader: lader)
+        XCTAssertFalse(nochmal, "in diesem Start nicht nochmal alles laden")
+        XCTAssertEqual(lader.aufrufe, 1)
+    }
+
+    func testStillerGrundWirdJeStartEinmalGemeldet() async throws {
+        let konto = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson)])
+        let d = try dienst(konto)
+        await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        let lauf = LoveaEinmalImport()
+        for _ in 0..<3 { _ = await lauf.starteWennOffen(konto: d, daten: nil, lader: SkriptLader()) }
+        let belege = konto.anfragen.filter { $0.url?.path == "/lovea/import-beleg" }
+        XCTAssertEqual(belege.count, 1)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(belege.first?.httpBody)) as? [String: Any])
+        XCTAssertEqual(json["fehler"] as? String, "keine_daten")
+    }
+
     func testOhneFreigabeKeinImport() async throws {
         let d = try dienst(SkriptLader([antwort(201), antwort(200, configJson), antwort(200, #"{"erlaubt":false}"#)]))
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)

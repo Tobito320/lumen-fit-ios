@@ -82,6 +82,14 @@ struct ProfilLoveaAbzug: Sendable {
     var ops: [ProfilLoveaOp] = []
     /// Einträge ohne Kennung, Art, `seq` oder Zeit.
     var unlesbar = 0
+    /// Höchste `seq`, die gelesen wurde (auch von unlesbaren Einträgen).
+    var hoechsteSeq = 0
+}
+
+/// Wie weit `hole` gekommen ist, damit ein Fehler sagen kann, bis wohin geladen war. Wird nur nacheinander beschrieben und erst nach dem Aufruf gelesen.
+final class ProfilLoveaLadeStand: @unchecked Sendable {
+    var geladen = 0
+    var bisSeq = 0
 }
 
 struct ProfilLoveaAbdeckung: Equatable, Sendable {
@@ -91,6 +99,11 @@ struct ProfilLoveaAbdeckung: Equatable, Sendable {
     var ausgeschlossen: [String: [String: Int]] = [:]
     var unbekannt: [String: Int] = [:]
     var unlesbar = 0
+    /// Alles, was geholt wurde, je Art (auch Ausgeschlossenes und Unbekanntes).
+    var geholt: [String: Int] = [:]
+    /// Übernommene oder roh behaltene Ops, deren Zeit unlesbar war und die deshalb nicht geschrieben werden.
+    var zeitKaputt: [String: Int] = [:]
+    var hoechsteSeq = 0
 
     var ausgeschlossenGesamt: Int { ausgeschlossen.values.reduce(0) { $0 + $1.values.reduce(0, +) } }
 }
@@ -109,6 +122,11 @@ struct ProfilLoveaErgebnis: Equatable, Sendable {
     var trainings: Int
     var essenstage: Int
     var abdeckung: ProfilLoveaAbdeckung
+    /// Je Art: wie viele Ops geschrieben werden sollten, wie viele davon nach dem Schreiben per Kennung im lokalen Speicher stehen,
+    /// und wie viele bewusst fehlen, weil lokal schon eine neuere "letzte gewinnt"-Op da war.
+    var geplant: [String: Int] = [:]
+    var wiedergefunden: [String: Int] = [:]
+    var uebersprungenArt: [String: Int] = [:]
 }
 
 enum ProfilLoveaImport {
@@ -147,7 +165,7 @@ enum ProfilLoveaImport {
     }
 
     /// Lädt alle Ops einer Person, Seite für Seite. Erst wenn alles da ist, wird geschrieben (Aufrufer): bei einem Netzfehler bleibt das Profil unberührt.
-    static func hole(zugang: ProfilLoveaZugang, lader: any HTTPLader,
+    static func hole(zugang: ProfilLoveaZugang, lader: any HTTPLader, stand: ProfilLoveaLadeStand? = nil,
                      fortschritt: @MainActor (Int) -> Void = { _ in }) async throws -> ProfilLoveaAbzug {
         var abzug = ProfilLoveaAbzug()
         var seit = 0
@@ -168,6 +186,9 @@ enum ProfilLoveaImport {
                 guard let s = e.seq, let id = e.id, !id.isEmpty, let art = e.art, let zeit = e.zeit else { abzug.unlesbar += 1; continue }
                 abzug.ops.append(ProfilLoveaOp(seq: s, id: id, art: art, zeit: zeit, d: (try? enc.encode(e.d ?? .object([:]))) ?? Data("{}".utf8)))
             }
+            abzug.hoechsteSeq = max(abzug.hoechsteSeq, hoechste)
+            stand?.geladen = abzug.ops.count
+            stand?.bisSeq = abzug.hoechsteSeq
             await fortschritt(abzug.ops.count)
             guard seite.mehr == true else { break }
             guard hoechste > seit else { throw ProfilLoveaFehler.antwortKaputt }   // kein Fortschritt: nie endlos fragen
@@ -186,8 +207,10 @@ enum ProfilLoveaImport {
         let ohneBruch = ISO8601DateFormatter()
         var abdeckung = ProfilLoveaAbdeckung()
         abdeckung.unlesbar = abzug.unlesbar
+        abdeckung.hoechsteSeq = abzug.hoechsteSeq
         var ops: [Op] = []
         for roh in abzug.ops {
+            abdeckung.geholt[roh.art, default: 0] += 1
             switch ProfilLoveaArten.behandlung(art: roh.art, d: roh.d) {
             case .ausschliessen(let grund):
                 abdeckung.ausgeschlossen[grund, default: [:]][roh.art, default: 0] += 1
@@ -200,6 +223,7 @@ enum ProfilLoveaImport {
             }
             guard let zeit = mitBruch.date(from: roh.zeit) ?? ohneBruch.date(from: roh.zeit) else {
                 abdeckung.unlesbar += 1
+                abdeckung.zeitKaputt[roh.art, default: 0] += 1
                 continue
             }
             ops.append(Op(id: roh.id, art: roh.art, von: profil, zeit: zeit, d: roh.d))
@@ -217,13 +241,14 @@ enum ProfilLoveaImport {
         let leer = vorher.isEmpty
         var bekannt = Set(vorher.map(\.id))
         var neuste: [String: Date] = [:]
-        for op in vorher where ProfilSicherungLogik.letzteGewinnt.contains(op.art) { neuste[op.art] = max(neuste[op.art] ?? .distantPast, op.zeit) }
+        for op in vorher where ProfilSicherungLogik.letzteGewinnt.contains(op.art) { neuste[letzteSchluessel(op)] = max(neuste[letzteSchluessel(op)] ?? .distantPast, op.zeit) }
 
         var ergebnis = ProfilLoveaErgebnis(neu: 0, schonDa: 0, uebersprungen: 0, trainings: 0, essenstage: 0, abdeckung: plan.abdeckung)
         for (i, op) in plan.ops.enumerated() {
             guard bekannt.insert(op.id).inserted else { ergebnis.schonDa += 1; continue }
-            if !leer, ProfilSicherungLogik.letzteGewinnt.contains(op.art), let juengste = neuste[op.art], op.zeit < juengste {
+            if !leer, ProfilSicherungLogik.letzteGewinnt.contains(op.art), let juengste = neuste[letzteSchluessel(op)], op.zeit < juengste {
                 ergebnis.uebersprungen += 1
+                ergebnis.uebersprungenArt[op.art, default: 0] += 1
                 continue
             }
             daten.raum.einreihen(op)
@@ -232,19 +257,31 @@ enum ProfilLoveaImport {
         }
         fortschritt(plan.ops.count, plan.ops.count)
         // `einreihen` meldet einen vollen Speicher nur als Ereignis: hier zählen wir nach, was wirklich in der Datei steht.
-        guard ProfilSicherungLogik.alleOps(daten).count == vorher.count + ergebnis.neu else { throw ProfilLoveaFehler.speichern }
+        let danach = ProfilSicherungLogik.alleOps(daten)
+        guard danach.count == vorher.count + ergebnis.neu else { throw ProfilLoveaFehler.speichern }
+        // Echtes Zurücklesen: jede geplante Op wird per Kennung im lokalen Speicher gesucht, nicht aus dem Plan abgeleitet.
+        let vorhandene = Set(danach.map(\.id))
+        for op in plan.ops {
+            ergebnis.geplant[op.art, default: 0] += 1
+            if vorhandene.contains(op.id) { ergebnis.wiedergefunden[op.art, default: 0] += 1 }
+        }
         ergebnis.trainings = daten.training.sessions.count
         ergebnis.essenstage = daten.essen.tage.count
         return ergebnis
     }
 
+    /// "Letzte gewinnt" gilt je Art; bei `einstellung.setzen` je Schlüssel (sonst überdeckt eine neue Wahl alle älteren Ziele).
+    private static func letzteSchluessel(_ op: Op) -> String {
+        op.art == "einstellung.setzen" ? op.art + "|" + (ProfilLoveaArten.einstellungSchluessel(op.d) ?? "") : op.art
+    }
+
     /// Ganzer Ablauf: Freigabe, Leer-Prüfung, holen, planen, einspielen. Das Profil bleibt bei jedem Fehler vor dem Einspielen unberührt.
     @MainActor
     static func fuehreAus(zugang: ProfilLoveaZugang, in daten: DatenSatz, lader: any HTTPLader, freigegeben: Bool,
-                          bestaetigt: Bool, fortschritt: @MainActor (String) -> Void = { _ in }) async throws -> ProfilLoveaErgebnis {
+                          bestaetigt: Bool, stand: ProfilLoveaLadeStand? = nil, fortschritt: @MainActor (String) -> Void = { _ in }) async throws -> ProfilLoveaErgebnis {
         guard freigegeben else { throw ProfilLoveaFehler.nichtErlaubt }
         if ProfilSicherungLogik.hatDaten(daten), !bestaetigt { throw ProfilLoveaFehler.profilNichtLeer }
-        let abzug = try await hole(zugang: zugang, lader: lader) { n in fortschritt("\(n) Einträge geladen") }
+        let abzug = try await hole(zugang: zugang, lader: lader, stand: stand) { n in fortschritt("\(n) Einträge geladen") }
         let plan = plane(abzug, fuer: daten.profil)
         return try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt("\(fertig) von \(gesamt) gespeichert") }
     }

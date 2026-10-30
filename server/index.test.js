@@ -235,9 +235,9 @@ test("Import-erledigt: nur mit Person, der erste Zeitpunkt bleibt, Freigabe meld
   await freigeben(env, ID, "ahmed");
   assert.deepEqual((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json, { erlaubt: true, person: "ahmed", importErledigt: false });
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);
-  const erste = env.DB.roh.prepare("SELECT wert FROM konto_merker").get().wert;
+  const erste = env.DB.roh.prepare("SELECT wert FROM konto_merker WHERE schluessel = 'lovea_import'").get().wert;
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);
-  assert.equal(env.DB.roh.prepare("SELECT wert FROM konto_merker").get().wert, erste);
+  assert.equal(env.DB.roh.prepare("SELECT wert FROM konto_merker WHERE schluessel = 'lovea_import'").get().wert, erste);
   assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.importErledigt, true);
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app({ "X-Geheimnis": "x".repeat(48) }) })).status, 401);
   assert.equal((await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_import: true } })).status, 400);
