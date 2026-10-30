@@ -26,7 +26,7 @@ struct AppRootView: View {
                 try? await Task.sleep(for: .seconds(8))
                 if !Task.isCancelled { speicherFehler = false }
             }
-            .lumenTheme(einstellungen.thema, erscheinung: einstellungen.erscheinung)
+            .lumenTheme(ProfilThemaWahl.wirksam(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt), erscheinung: einstellungen.erscheinung)
             .toggleStyle(.lumenSchalter)
             .environment(\.haptikAn, einstellungen.haptik)
             .bewegungsSchalter()
@@ -116,6 +116,7 @@ private struct TabsAnsicht: View {
                 }
             }
         }
+        .lumenTabLeiste()
         // Medaillen aus Gym und Heute zeigen ihren Toast auf jedem Tab (die Seiten im Fortschritt hängen ihn auch an, gezeigt wird er nur einmal).
         .fortschrittToast()
         .sheet(isPresented: Binding(get: { router.blatt != nil }, set: { if !$0 { router.blatt = nil } })) {

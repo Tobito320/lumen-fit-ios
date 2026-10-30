@@ -124,7 +124,7 @@ jobs:
         with:
           path: derived
           key: dd-mtime-iphone-${{ env.XCV }}-${{ hashFiles('project.yml') }}-${{ github.sha }}
-      # Aussehen ohne Mac prüfen: jede Tab-Seite, Lumi in allen Stimmungen und alle fünf Themes, hell und dunkel, mit Demo-Daten
+      # Aussehen ohne Mac prüfen: jede Tab-Seite, Lumi in allen Stimmungen und alle Themes (mit Lovea, in der Demo freigegeben), hell und dunkel, mit Demo-Daten
       # (Start-Argument, nur Debug; HealthKit und Kamera fragen im Simulator nie). Darf den Lauf nie röten.
       # Vertrag mit der App (SPEC): -lumenFitDemo YES, -lumenFitTab <tab>, -lumenFitTheme <theme>, -lumenFitLumi YES (Debug-Ansicht
       # aller Stimmungen), -lumenFitRoute <lumenfit://-Link>, -lumenFitFixtures <Ordner>. Ohne Argumente startet das Onboarding.
@@ -136,7 +136,7 @@ jobs:
           set -u
           mkdir -p screenshots
           TABS="heute gym essen schlaf coach"
-          THEMES="monochrom graphit stahl glut wald"
+          THEMES="monochrom graphit stahl glut wald lovea"
           IPHONE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
           APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
           test -n "$IPHONE_ID" && test -n "$APP"

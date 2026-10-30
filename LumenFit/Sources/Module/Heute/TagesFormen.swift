@@ -378,16 +378,16 @@ struct TagesFormKachel: View {
             Text(titel).font(.caption.weight(.semibold)).foregroundStyle(palette.text2).padding(.top, 4)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(wert).font(.body.bold()).monospacedDigit().foregroundStyle(palette.text)
-                Text(einheit).font(.caption2).foregroundStyle(palette.text2)
+                Text(einheit).font(.caption2).foregroundStyle(.tertiary)   // Lovea `TagesFormen.swift:395`
             }
             .lineLimit(1).minimumScaleFactor(0.7)
         }
         .multilineTextAlignment(.center)
-        .padding(.vertical, Abstand.m)
-        .padding(.horizontal, Abstand.xs)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 6)
         .frame(maxWidth: .infinity)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
-        .contentShape(.rect(cornerRadius: Rundung.karte, style: .continuous))
+        .background(palette.flaeche, in: .rect(cornerRadius: 20, style: .continuous))   // Lovea: Radius 20 (nicht 16), `TagesFormen.swift:405`
+        .contentShape(.rect(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(titel): \(wert) \(einheit)")
         .task(id: hopp) {

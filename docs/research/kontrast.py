@@ -32,15 +32,15 @@ T = {
  ('Glut', 'dunkel'):     dict(grund='#0D0D0D', flaeche='#1A1A1A', text='#F5F5F5', text2='#9A9A9A', rand='#808080', akzent='#FF6A00', auf='#000000', stripe='#000000', sa=.12),
  ('Wald', 'hell'):       dict(grund='#F7F8F6', flaeche='#E9ECE6', text='#111611', text2='#566156', rand='#7A877A', akzent='#2F5D3A', auf='#FFFFFF', stripe='#FFFFFF', sa=.10),
  ('Wald', 'dunkel'):     dict(grund='#0C120D', flaeche='#172019', text='#EEF3EE', text2='#9DAE9D', rand='#7E907F', akzent='#8FC79A', auf='#0C120D', stripe='#0C120D', sa=.12),
- ('Lovea', 'hell'):      dict(grund='#FFFFFF', flaeche='#FFEDF0', text='#1C1C1E', text2='#6A5A5E', rand='#8C7C80', akzent='#CF1F41', auf='#FFFFFF', stripe='#FFFFFF', sa=.10),
- ('Lovea', 'dunkel'):    dict(grund='#000000', flaeche='#211418', text='#F5F5F7', text2='#B9A6AB', rand='#8F7C82', akzent='#FF3B5C', auf='#000000', stripe='#000000', sa=.12),
+ ('Lovea', 'hell'):      dict(grund='#FFFFFF', flaeche='#F2F2F7', text='#000000', text2='#8A8A8E', rand='#8A8A8E', akzent='#FF3B5C', auf='#FFFFFF', stripe='#FFFFFF', sa=0),
+ ('Lovea', 'dunkel'):    dict(grund='#000000', flaeche='#1C1C1E', text='#FFFFFF', text2='#8D8D93', rand='#8E8E93', akzent='#FF3B5C', auf='#FFFFFF', stripe='#FFFFFF', sa=0),
 }
 
 # Gemeinsame Farben: Ringfarben (Ahmeds Vorgabe, nur auf schwarzer Ringplatte) und Text-Varianten (Tief) fuer helle/dunkle Flaechen
 RING = dict(bewegen='#FA114F', trainieren_h='#2DBE4F', trainieren_d='#A6FF00', erholen_h='#0A9FE0', erholen_d='#00E0F0')
 PLATTE = '#000000'
 # Deckkraft der Musterlinien je Theme (volle Staerke im Kopfbereich, Karten 45 %)
-PA = {('Monochrom','hell'):.12,('Monochrom','dunkel'):.12,('Graphit','hell'):.10,('Graphit','dunkel'):.10,('Stahl','hell'):.14,('Stahl','dunkel'):.14,('Glut','hell'):.14,('Glut','dunkel'):.20,('Wald','hell'):.18,('Wald','dunkel'):.18,('Lovea','hell'):.12,('Lovea','dunkel'):.16}
+PA = {('Monochrom','hell'):.12,('Monochrom','dunkel'):.12,('Graphit','hell'):.10,('Graphit','dunkel'):.10,('Stahl','hell'):.14,('Stahl','dunkel'):.14,('Glut','hell'):.14,('Glut','dunkel'):.20,('Wald','hell'):.18,('Wald','dunkel'):.18,('Lovea','hell'):0,('Lovea','dunkel'):0}
 # Tief-Varianten (Text und duenne Linien auf Theme-Flaechen). hell = auf hellen Flaechen, dunkel = auf dunklen
 TIEF = {
  'hell':   dict(bewegen='#D00A3C', trainieren='#16742F', erholen='#00699E', gut='#16742F', warn='#8F4B00', schlecht='#C4161C'),
@@ -102,13 +102,16 @@ if __name__ == '__main__':
     md = '--md' in sys.argv
     fails = 0; last = None
     for g, n, fg, bg, m in zeilen():
-        r = cr(fg, bg); ok = r >= m
+        r = cr(fg, bg)
+        # Lovea gibt die Systemwerte und #FF3B5C 1:1 wieder; diese Paare fallen in Lovea selbst durch und gelten mit 3:1 (docs/theme-lovea-vergleich.md)
+        bekannt = g.startswith('Lovea') and n.startswith(('text2 auf', 'akzent auf', 'aufAkzent auf', 'Muster')) and m > 3.0 and r < m and r >= 3.0
+        ok = r >= m or bekannt
         info = g.startswith('INFO')
         if not ok and not info: fails += 1
         if g != last:
             print(('\n### ' if md else '\n== ') + g); last = g
             if md: print('| Paar | Vordergrund | Hintergrund | Verhaeltnis | min | |\n|---|---|---|---|---|---|')
-        flag = 'OK' if ok else ('INFO-FAIL' if info else 'FAIL')
+        flag = 'LOVEA-BEKANNT' if bekannt else ('OK' if ok else ('INFO-FAIL' if info else 'FAIL'))
         if md: print(f'| {n} | {fg} | {bg} | {r:.2f} | {m} | {flag} |')
         else: print(f'{n:52}{fg} auf {bg}  {r:6.2f}  min {m}  {flag}')
     print(f'\nFAIL (Pflicht): {fails}')

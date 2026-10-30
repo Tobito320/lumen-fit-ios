@@ -89,7 +89,7 @@ final class WidgetSnapshotSchreiber {
         let stimmungen = daten.raum.ops(arten: ["fit.lumi.stimmung"]).compactMap { $0.daten(StimmungsEintrag.self) }
         return WidgetEingabe(
             jetzt: jetzt, profilName: profil.name, profilKennung: profil.id.rawValue,
-            thema: daten.einstellungen.werte.thema, erscheinung: daten.einstellungen.werte.erscheinung, ziele: daten.ziele.ziele,
+            thema: ProfilThemaWahl.wirksam(daten.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt), erscheinung: daten.einstellungen.werte.erscheinung, ziele: daten.ziele.ziele,
             schritte: gesundheit.tage[heute]?.schritte, schlafMinuten: gesundheit.naechte[heute]?.schlafMinuten,
             hrv: gesundheit.vitale[.hrv]?.last.map { Int($0.wert.rounded()) },
             sessions: daten.training.sessions, plan: daten.training.plan,

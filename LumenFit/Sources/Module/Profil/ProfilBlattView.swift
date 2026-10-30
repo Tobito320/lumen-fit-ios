@@ -19,7 +19,7 @@ struct ProfilBlattView: View {
                 }
 
                 gruppe("Aussehen und Gefühl") {
-                    link(symbol: "paintpalette.fill", titel: "Aussehen", wert: umgebung.daten?.einstellungen.werte.thema.anzeigeName) { AussehenView() }
+                    link(symbol: "paintpalette.fill", titel: "Aussehen", wert: umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }) { AussehenView() }
                     Haarlinie()
                     Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
                                          set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Aussehen (Idee 73): fünf Theme-Karten mit Mini-Vorschau (Farbe, Muster) und die Erscheinung System, Hell, Dunkel. Wirkt sofort: die Wahl
+/// Aussehen (Idee 73): Theme-Karten (fünf, mit Freigabe sechs) mit Mini-Vorschau (Farbe, Muster) und die Erscheinung System, Hell, Dunkel. Wirkt sofort: die Wahl
 /// geht über `EinstellungenStore` und `AppRootView` setzt Thema und Erscheinung aus den Einstellungen.
 struct AussehenView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -10,7 +10,14 @@ struct AussehenView: View {
     private let spalten = [GridItem(.flexible(), spacing: Abstand.m), GridItem(.flexible(), spacing: Abstand.m)]
 
     var body: some View {
-        let einstellungen = umgebung.daten?.einstellungen.werte ?? Einstellungen()
+        let loveaErlaubt = umgebung.konto.loveaErlaubt
+        let gespeichert = umgebung.daten?.einstellungen.werte ?? Einstellungen()
+        // Mit dem Theme, das wirklich gilt (ein gespeichertes Lovea ohne Freigabe zählt als Monochrom).
+        let einstellungen: Einstellungen = {
+            var e = gespeichert
+            e.thema = ProfilThemaWahl.wirksam(e.thema, loveaErlaubt: loveaErlaubt)
+            return e
+        }()
         // Steht die Erscheinung auf System, ist `schema` das des Systems; bei Hell und Dunkel zählt die Wahl.
         let dunkel = ProfilThemaWahl.istDunkel(einstellungen.erscheinung, systemDunkel: schema == .dark)
         ScrollView {
@@ -28,7 +35,7 @@ struct AussehenView: View {
                 VStack(alignment: .leading, spacing: Abstand.s) {
                     ProfilGruppenKopf(text: "Farbwelt")
                     LazyVGrid(columns: spalten, spacing: Abstand.m) {
-                        ForEach(ThemaID.allCases, id: \.self) { thema in karte(thema, aktiv: einstellungen.thema == thema, dunkel: dunkel) }
+                        ForEach(ProfilThemaWahl.verfuegbar(loveaErlaubt: loveaErlaubt), id: \.self) { thema in karte(thema, aktiv: einstellungen.thema == thema, dunkel: dunkel) }
                     }
                     Text(ProfilThemaWahl.beschreibung(einstellungen.thema))
                         .font(.footnote).foregroundStyle(palette.text2)
