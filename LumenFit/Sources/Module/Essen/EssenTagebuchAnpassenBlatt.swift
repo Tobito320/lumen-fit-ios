@@ -47,6 +47,7 @@ struct EssenTagebuchAnpassenBlatt: View {
                         .listRowBackground(palette.flaeche)
                     }
                 }
+                EssenLiveSchalter()
             }
             .environment(\.editMode, .constant(.active))
             .scrollContentBackground(.hidden)

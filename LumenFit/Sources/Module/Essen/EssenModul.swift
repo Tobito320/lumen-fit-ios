@@ -8,6 +8,7 @@ enum EssenModul {
     /// Idempotent und synchron. Legt nur die Suche samt Open-Food-Facts-Quelle an (ohne Abfrage); der Limiter lebt damit so lange wie die App.
     @MainActor static func start(_ umgebung: AppUmgebung) {
         _ = suche(umgebung)
+        EssenLiveModul.start(umgebung)
     }
 
     /// Die eine Suche der App: BLS lokal, Open Food Facts mit Rate-Limit über `umgebung.http`, Barcodes aus dem Speicher des aktiven Profils.
