@@ -231,8 +231,9 @@ final class KontoDienst {
         }
         if let f = await sende(anfrage("/lovea/freigabe", kennung: kennung)), f.status == 200 {
             struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool? }
-            if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten) {
-                stand.loveaErlaubt = a.erlaubt == true   // nur ein klares true gibt frei
+            // Nur ein vorhandenes `erlaubt` ändert den Stand: true gibt frei, false nimmt zurück, fehlend (`{}`) ändert nichts.
+            if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten), let erlaubt = a.erlaubt {
+                stand.loveaErlaubt = erlaubt
                 // Der Server vergisst das nicht (Neuinstallation); ein ausdrückliches false (Merker zurückgesetzt) gilt, solange keine eigene Meldung aussteht.
                 if let erledigt = a.importErledigt, !stand.importMeldungOffen { stand.loveaImportErledigt = erledigt }
                 freigabeAktuell = true
@@ -257,6 +258,13 @@ final class KontoDienst {
         stand.importMeldungOffen = true
         sichere()
         if case .da(let k) = liesKennung(), k.registriert { await meldeImportAnServer(k) }
+    }
+
+    /// Meldet den Beleg eines Import-Laufs (nur Zahlen) oder einen Fehler. Gibt den Status des Servers zurück; nil, wenn nicht gesendet werden konnte
+    /// (Netzfehler, Gerät beim Server nicht angemeldet). Ein Wiederholen gibt es nicht: der nächste Lauf meldet neu.
+    func meldeImportBeleg<T: Encodable & Sendable>(_ beleg: T) async -> Int? {
+        guard case .da(let k) = liesKennung(), k.registriert, let koerper = try? JSONEncoder().encode(beleg) else { return nil }
+        return await sendeMitKonto("/lovea/import-beleg", methode: "POST", body: koerper, kennung: k)?.status
     }
 
     private func meldeImportAnServer(_ kennung: KontoKennung) async {

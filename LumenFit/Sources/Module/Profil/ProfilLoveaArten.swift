@@ -23,15 +23,16 @@ enum ProfilLoveaArten {
         "zyklus.tag", "zyklus.einstellung",
     ]
 
-    /// Health-Arten ohne Leser in Lumen Fit. Roh behalten, im Bericht genannt.
-    static let rohBehalten: Set<String> = ["coach.nachricht"]
+    /// Health-Arten ohne Leser in Lumen Fit. Roh behalten, im Bericht genannt. `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank)
+    /// aus älteren Lovea-Fassungen: kein Leser hier, aber nichts geht verloren.
+    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg"]
 
-    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym) und Coach. Der Rest ist Lovea-Oberfläche.
-    static let einstellungPraefixe = ["ziel.", "coach."]
+    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach und die Konsistenz-Kategorien. Der Rest ist Lovea-Oberfläche.
+    static let einstellungPraefixe = ["ziel.", "coach.", "konsistenz."]
 
     private static let gruppen: [(grund: String, exakt: Set<String>, praefixe: [String])] = [
         ("Chat", ["entwurf.setzen", "geste", "gruss", "gefuehl.setzen"], ["nachricht.", "snap.", "sprachpost.", "medium.", "brief."]),
-        ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "einkauf.liste", "spiegel.setzen"], ["notizbuch.", "kuehl."]),
+        ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "spiegel.setzen"], ["notizbuch."]),
         ("Kalender und Orte", ["jahrestag.setzen", "dates.idee", "puenktlich.setzen", "muster.setzen", "muster.loeschen", "ausnahme.setzen"], ["termin.", "treffen.", "ort."]),
         ("Wecker und Erinnerungen", ["wecker.setzen"], []),
         ("Figuren und Shop", ["stern"], ["figur.", "look.", "katze.", "shop.", "punkte."]),
@@ -43,7 +44,7 @@ enum ProfilLoveaArten {
     /// `d` wird nur für `einstellung.setzen` gelesen (Schlüssel).
     static func behandlung(art: String, d: Data) -> ProfilLoveaBehandlung {
         if art == "einstellung.setzen" {
-            let schluessel = (try? JSONDecoder().decode(EinstellungSchluessel.self, from: d))?.schluessel ?? ""
+            let schluessel = einstellungSchluessel(d) ?? ""
             return einstellungPraefixe.contains { schluessel.hasPrefix($0) } ? .uebernehmen : .ausschliessen("Lovea-Oberfläche (Chat, Zimmer, Profil)")
         }
         if uebernehmen.contains(art) { return .uebernehmen }
@@ -51,6 +52,9 @@ enum ProfilLoveaArten {
         for g in gruppen where g.exakt.contains(art) || g.praefixe.contains(where: { art.hasPrefix($0) }) { return .ausschliessen(g.grund) }
         return .unbekannt
     }
+
+    /// Der Schlüssel einer `einstellung.setzen`-Op (`ziel.schritte` ...); nil, wenn die Op keinen hat.
+    static func einstellungSchluessel(_ d: Data) -> String? { (try? JSONDecoder().decode(EinstellungSchluessel.self, from: d))?.schluessel }
 
     private struct EinstellungSchluessel: Decodable { var schluessel: String? }
 }
