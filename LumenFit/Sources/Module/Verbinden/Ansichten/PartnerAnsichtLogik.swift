@@ -68,7 +68,7 @@ enum PartnerAnsichtLogik {
     /// Der Hinweis über den Daten, wenn der Stand älter als 48 Stunden ist. Sonst nil.
     static func veraltetHinweis(_ datei: ZusammenfassungDatei, veraltet: Bool) -> String? {
         guard veraltet else { return nil }
-        return "Stand vom \(kurzDatum(Datum.text(datei.geschrieben))). \(datei.profilName) hat sich länger nicht gemeldet."
+        return "Stand vom \(kurzDatum(Datum.text(datei.geschrieben))) \(datei.profilName) hat sich länger nicht gemeldet."
     }
 
     // MARK: Einstiege (Partner-Karte, Verbindungen)
