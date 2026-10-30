@@ -30,7 +30,8 @@ treffer=$(git grep -n -i -w -E --untracked -e "$muster" -- "${PFADE[@]}" "${AUSN
 if [ -n "$treffer" ]; then echo "FUND im Arbeitsbaum (Pfad:Zeile):"; echo "$treffer"; fund=1; fi
 
 # 2. Commit-Texte und Autorzeilen
-if git log --all --format='%an%n%B' | grep -q -i -w -E "$muster"; then echo "FUND in Commit-Texten"; fund=1; fi
+# Merge-Commits der GitHub-Oberfläche tragen den Kontonamen als Autor: bei ihnen zählt nur die Betreffzeile; alle anderen Commits wie bisher mit Autor und Text.
+if { git log --all --no-merges --format='%an%n%B'; git log --all --merges --format='%s'; } | grep -q -i -w -E "$muster"; then echo "FUND in Commit-Texten"; fund=1; fi
 
 # 3. Historie, Dateiinhalte
 trefferZeile() { # COMMIT: 0, wenn der Commit in den geprüften Pfaden eine Zeile mit einem Namen hinzufügt
