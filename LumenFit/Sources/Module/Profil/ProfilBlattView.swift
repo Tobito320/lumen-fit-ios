@@ -48,7 +48,7 @@ struct ProfilBlattView: View {
                 }
 
                 gruppe("Verbindungen") {
-                    link(symbol: "link", titel: "Freunde und Band") { VerbindungenView() }
+                    link(symbol: "link", titel: "Freunde und Partner") { VerbindungenView() }
                 }
 
                 gruppe("Deine Daten") {
