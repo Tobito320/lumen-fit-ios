@@ -60,7 +60,7 @@ actor EssenLiveDienst {
         let laufend = await fabrik.laufenderTag()
         // shortcut: "weggewischt" merkt sich nur dieser Prozess; nach einem App-Neustart startet der nächste Abgleich sie wieder, bei Bedarf in UserDefaults legen.
         if laufend == nil, gestartetTag == stand.tag { beendetTag = stand.tag }
-        if !an { beendetTag = nil }
+        if !an { beendetTag = nil; gestartetTag = nil }
         let training = await fabrik.trainingLaeuft()
         let aktion = EssenLiveLogik.aktion(laufendTag: laufend, heute: stand.tag, an: an, trainingLaeuft: training, vomNutzerBeendet: beendetTag == stand.tag)
         let veraltetAb = WidgetAnzeige.naechsteMitternacht(uhr())

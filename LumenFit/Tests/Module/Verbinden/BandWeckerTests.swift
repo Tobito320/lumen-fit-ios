@@ -112,7 +112,7 @@ final class BandWeckerTests: XCTestCase {
     func testRufGibtDreiPulseOhneStempel() async {
         let g = geber()
         XCTAssertTrue(g.wecker(.ruf, jetzt: VerbindenTest.jetzt))
-        for _ in 0..<20 { await Task.yield() }
+        await warte { befehle == 3 }
         XCTAssertEqual(befehle, 3)
         XCTAssertNil(BandQuelle.wunsch.letzte(defaults))
     }

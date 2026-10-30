@@ -156,7 +156,7 @@ final class VerbindenDienste {
         schlange.verarbeite()
         guard let zeit = schlange.naechsteZeit() else { return }
         let warte = max(0, zeit.timeIntervalSince(umgebung.uhr()))
-        let schlafe = schlafe
+        let schlafe = self.schlafe
         alarmTakt = Task { @MainActor [weak self] in
             await schlafe(warte)
             guard !Task.isCancelled else { return }

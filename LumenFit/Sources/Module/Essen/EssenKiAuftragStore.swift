@@ -220,7 +220,12 @@ final class EssenKiAuftragStore {
 
     private func laden() {
         let datei = ordner.appendingPathComponent(Self.indexName)
-        guard let daten = try? Data(contentsOf: datei) else { return }
+        // Ohne Index-Datei (erster Start) gilt die leere Liste; ein vorhandener, aber nicht lesbarer Index bricht ab.
+        var daten = Data("[]".utf8)
+        if FileManager.default.fileExists(atPath: datei.path) {
+            guard let gelesen = try? Data(contentsOf: datei) else { return }
+            daten = gelesen
+        }
         guard let liste = EssenKiAuftragLogik.lesen(daten) else {
             // Nicht lesbar: zur Seite legen, nie überschreiben.
             let stempel = Int(Date().timeIntervalSince1970)

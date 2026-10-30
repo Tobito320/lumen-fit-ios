@@ -64,7 +64,7 @@ enum PartnerAnsichtsDaten {
         let trainings = neueste.filter { GymTageLogik.hatDaten($0) }.prefix(trainingsMax).map { s in
             let name = plan.tag(id: s.tag).map { kurz($0.name, 40) }
             return PartnerTrainingKurz(
-                tag: Datum.text(s.start), name: name?.isEmpty == false ? name : nil, minuten: s.dauer.map { max(0, Int($0 / 60)) },
+                tag: Datum.text(s.start), name: name?.isEmpty == false ? name : nil, minuten: s.ende.map { max(0, Int($0.timeIntervalSince(s.start) / 60)) },
                 saetze: s.laeufe.reduce(0) { $0 + ($1.saetze?.count ?? 0) },
                 uebungen: s.laeufe.filter { ($0.saetze?.isEmpty == false) || $0.fertig }.count, kcal: s.kcal)
         }

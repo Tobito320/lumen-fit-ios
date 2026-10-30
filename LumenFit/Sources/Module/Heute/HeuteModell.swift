@@ -271,7 +271,10 @@ final class HeuteModell {
         let tagesWerte = tage[heute]
         let habitGesetzt = habits.contains { $0.wert > 0 }
         let gesundheitTag = tagesWerte.map { $0.schritte > 0 || $0.distanzMeter > 0 || $0.etagen > 0 } ?? false
-        let hatTagesdaten = istHeute || nacht != nil || trainiert || stimmungsWert != nil || gw[heute] != nil || habitGesetzt || gesundheitTag
+        let hatGewicht: Bool = gw[heute] != nil
+        let hatStimmung: Bool = stimmungsWert != nil
+        let hatNacht: Bool = nacht != nil
+        let hatTagesdaten: Bool = istHeute || hatNacht || trainiert || hatStimmung || hatGewicht || habitGesetzt || gesundheitTag
         let stimmungAnzeige: LumiStimmung = istHeute ? satz.stimmung : (voll ? .stolz : .denkt)
         let satzAnzeige = istHeute ? satz.satz : (voll ? "An diesem Tag waren alle drei Bögen voll." : "So sah dieser Tag aus.")
 
