@@ -153,6 +153,13 @@ enum HealthLogik {
     /// is the night. So the night before (ends the day before) is never added in, and an afternoon
     /// nap on `tag` neither adds minutes nor moves the wake-up time.
     static func schlafNacht(_ intervalle: [SchlafIntervall], tag: String) -> (minuten: Int, von: Date, bis: Date)? {
+        schlafBloecke(intervalle)
+            .filter { Datum.text($0.bis) == tag }
+            .max { $0.minuten < $1.minuten }
+    }
+
+    /// Alle Blöcke (Pausen bis 3 h verbinden), je zusammengefasst.
+    private static func schlafBloecke(_ intervalle: [SchlafIntervall]) -> [(minuten: Int, von: Date, bis: Date)] {
         var bloecke: [[SchlafIntervall]] = []
         var blockEnde = Date.distantPast
         for intervall in intervalle.sorted(by: { $0.von < $1.von }) {
@@ -163,10 +170,15 @@ enum HealthLogik {
             }
             blockEnde = max(blockEnde, intervall.bis)
         }
-        return bloecke
-            .compactMap { schlafZusammenfassen($0) }
-            .filter { Datum.text($0.bis) == tag }
-            .max { $0.minuten < $1.minuten }
+        return bloecke.compactMap { schlafZusammenfassen($0) }
+    }
+
+    /// Nickerchen am Aufwachtag `tag` (wie Lovea `SchlafPunkte`): die Blöcke ab 20 Minuten, die nicht die Nacht sind.
+    static func nickerchen(_ intervalle: [SchlafIntervall], tag: String) -> [SchlafIntervall] {
+        let nacht = schlafNacht(intervalle, tag: tag)
+        return schlafBloecke(intervalle)
+            .filter { Datum.text($0.bis) == tag && $0.minuten >= 20 && $0.von != nacht?.von }
+            .map { SchlafIntervall(von: $0.von, bis: $0.bis) }
     }
 
     // MARK: - Tracker und Health zusammen

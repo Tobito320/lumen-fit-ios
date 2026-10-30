@@ -55,6 +55,11 @@ struct SchlafNacht: Codable, Equatable, Sendable {
     let abschnitte: [SchlafAbschnitt]
     /// Schlafdauer genau wie im Schlaf-Tab (`HealthLogik.schlafNacht`): Chat, Tab und Coach-Text nennen dieselbe Zahl.
     let schlafMinuten: Int
+    /// Kurze Schläfchen am selben Aufwachtag (Blöcke ab 20 Minuten, nicht die Nacht). Optional, damit alte Dateien ladbar bleiben.
+    var nickerchen: [SchlafAbschnitt]? = nil
+
+    /// Wach in der Nacht: die Lücken zwischen den Schlaf-Abschnitten, ab 2 Minuten.
+    var wachPhasen: [SchlafAbschnitt] { abschnitte.filter { $0.phase == .wach && $0.bis.timeIntervalSince($0.von) >= 120 } }
 
     /// Die Phasen, die in dieser Nacht vorkommen, in Zeilenreihenfolge.
     var phasen: [SchlafPhase] { SchlafPhase.allCases.filter { phase in abschnitte.contains { $0.phase == phase } } }
@@ -111,11 +116,18 @@ enum SchlafNachtLogik {
                 abschnitte.append(SchlafAbschnitt(phase: phase, von: a, bis: b))
             }
         }
-        let nacht = SchlafNacht(tag: tag, von: block.von, bis: block.bis, abschnitte: abschnitte, schlafMinuten: block.minuten)
+        let nacht = SchlafNacht(tag: tag, von: block.von, bis: block.bis, abschnitte: abschnitte, schlafMinuten: block.minuten,
+                                nickerchen: nickerchen(schlaf, tag: tag))
         let gesamt = Double(nacht.abschnittsMinuten)
         let mitPhase = Double(nacht.minuten(.rem) + nacht.minuten(.kern) + nacht.minuten(.tief))
         guard gesamt > 0, mitPhase / gesamt >= mindestAnteilMitPhase else { return nil }
         return nacht
+    }
+
+    /// Nickerchen aus den rohen Schlaf-Abschnitten als Abschnitte ohne Phase.
+    static func nickerchen(_ schlaf: [Roh], tag: String) -> [SchlafAbschnitt] {
+        HealthLogik.nickerchen(schlaf.map { HealthLogik.SchlafIntervall(von: $0.von, bis: $0.bis) }, tag: tag)
+            .map { SchlafAbschnitt(phase: .unbestimmt, von: $0.von, bis: $0.bis) }
     }
 
     /// `yyyy-MM-dd` als echter Tag: "2026-02-30" und "2026-1-5" sind keiner. Schützt `Datum.datum`, das bei Unsinn abstürzt.

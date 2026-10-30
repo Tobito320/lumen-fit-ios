@@ -20,11 +20,18 @@ struct SchlafCard: View {
         return ("arrow.down", "\(SchlafFormat.dauer(zielMinuten - minuten)) unter deinem Ziel")
     }
 
+    /// "02:10–02:40, 04:05–04:20": Wach in der Nacht und Nickerchen aus den Schlafphasen (Lovea `SchlafCard`).
+    private func zeitText(_ liste: [SchlafAbschnitt]) -> String {
+        liste.map { "\(Datum.uhrzeit($0.von))–\(Datum.uhrzeit($0.bis))" }.joined(separator: ", ")
+    }
+
     private var sprechText: String {
         var teile = ["\(titel): \(SchlafFormat.sprechDauer(minuten)) geschlafen", "von \(zeiten)"]
         if zielMinuten > 0 { teile.append("Ziel \(SchlafFormat.sprechDauer(zielMinuten))") }
         teile.append(zielZeile.text)
         teile.append(lumi.beschreibung)
+        if !nacht.nacht.wachPhasen.isEmpty { teile.append("Wach in der Nacht: " + zeitText(nacht.nacht.wachPhasen)) }
+        if let n = nacht.nacht.nickerchen, !n.isEmpty { teile.append("Nickerchen: " + zeitText(n)) }
         return teile.joined(separator: ", ")
     }
 
@@ -59,6 +66,14 @@ struct SchlafCard: View {
                 }
                 Label(zielZeile.text, systemImage: zielZeile.symbol)
                     .font(.subheadline.weight(.semibold))
+                if !nacht.nacht.wachPhasen.isEmpty {
+                    Label("Wach in der Nacht: " + zeitText(nacht.nacht.wachPhasen), systemImage: "eye")
+                        .font(.footnote.weight(.medium)).monospacedDigit()
+                }
+                if let n = nacht.nacht.nickerchen, !n.isEmpty {
+                    Label("Nickerchen: " + zeitText(n), systemImage: "powersleep")
+                        .font(.footnote.weight(.medium)).monospacedDigit()
+                }
             }
         }
         .accessibilityElement(children: .ignore)

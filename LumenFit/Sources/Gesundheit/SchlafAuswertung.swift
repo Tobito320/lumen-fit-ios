@@ -19,6 +19,7 @@ enum SchlafAuswertung {
         let schlaf = roh.filter { $0.phase.schlaeft && $0.bis > $0.von }
         guard let block = HealthLogik.schlafNacht(schlaf.map { HealthLogik.SchlafIntervall(von: $0.von, bis: $0.bis) }, tag: tag) else { return nil }
         return SchlafNacht(tag: tag, von: block.von, bis: block.bis,
-                           abschnitte: [SchlafAbschnitt(phase: .unbestimmt, von: block.von, bis: block.bis)], schlafMinuten: block.minuten)
+                           abschnitte: [SchlafAbschnitt(phase: .unbestimmt, von: block.von, bis: block.bis)], schlafMinuten: block.minuten,
+                           nickerchen: SchlafNachtLogik.nickerchen(schlaf, tag: tag))
     }
 }
