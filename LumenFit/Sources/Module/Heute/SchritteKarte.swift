@@ -19,6 +19,7 @@ struct SchritteKarte: View {
                 }
                 .padding(Abstand.l)
             }
+            .overlay { LoveaZielFeier(erreicht: schritte.anteil >= 1, schluessel: "ziel.schritte") }
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)

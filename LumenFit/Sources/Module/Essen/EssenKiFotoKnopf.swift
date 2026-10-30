@@ -20,7 +20,7 @@ struct EssenKiFotoKnopf: View {
                     }
                     .foregroundStyle(palette.text)
                     .frame(maxWidth: .infinity, minHeight: 64)
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 }
                 .buttonStyle(.federnd)
                 .accessibilityLabel("Essen fotografieren, KI schätzt Kalorien")

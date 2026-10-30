@@ -145,7 +145,7 @@ struct EssenFastenView: View {
         }
         .padding(Abstand.xl)
         .frame(maxWidth: .infinity)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func ring(laufend: FastenEintrag?, plan: FastenPlan, jetzt: Date) -> some View {
@@ -233,7 +233,7 @@ struct EssenFastenView: View {
         }
         .padding(Abstand.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func statistikChart(_ letzte: [FastenEintrag], plan: FastenPlan) -> some View {
@@ -334,7 +334,7 @@ struct EssenFastenView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.federnd)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityAddTraits(ausgewaehlt ? [.isSelected] : [])
     }
 }

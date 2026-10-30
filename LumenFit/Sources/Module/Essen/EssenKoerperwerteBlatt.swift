@@ -58,7 +58,7 @@ struct EssenKoerperwerteBlatt: View {
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.s)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
     }
 
     private func binding(_ art: KoerperArt) -> Binding<String> {

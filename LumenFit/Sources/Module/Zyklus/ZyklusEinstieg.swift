@@ -43,7 +43,7 @@ struct ZyklusEinstieg: View {
             .haptik(.auswahl, bei: aktuell)
             seite(aktuell, modus: modus)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { einstellungen = true } label: { Image(systemName: "gearshape") }
@@ -88,7 +88,7 @@ struct ZyklusRouteSeite: View {
                 .multilineTextAlignment(.center)
                 .padding(Abstand.xl)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .lumenHintergrund()
+                .lumenZyklusHintergrund()
         }
     }
 }

@@ -346,6 +346,8 @@ struct TagesFormKachel: View {
     let wert: String
     let einheit: String
     let fuellung: Double
+    /// Kleine Zeile unter Wert und Einheit (Lovea `TagesFormen.swift:398`): immer genau eine Zeile, auch leer, damit alle Kacheln gleich hoch sind.
+    var zusatz: String?
     var stimmung: Int?
     var aktion: (() -> Void)?
 
@@ -381,6 +383,8 @@ struct TagesFormKachel: View {
                 Text(einheit).font(.caption2).foregroundStyle(.tertiary)   // Lovea `TagesFormen.swift:395`
             }
             .lineLimit(1).minimumScaleFactor(0.7)
+            Text(zusatz ?? " ").font(.caption2).foregroundStyle(.tertiary).lineLimit(1).minimumScaleFactor(0.7)
+                .accessibilityHidden(zusatz == nil)
         }
         .multilineTextAlignment(.center)
         .padding(.vertical, 10)
@@ -409,7 +413,8 @@ struct TagesFormenReihe: View {
             Text("Dein Tag").font(.headline).foregroundStyle(palette.text)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: 3), spacing: Abstand.s) {
                 if let b = stand.boegen.first(where: { $0.id == .bewegen }) {
-                    TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil)
+                    TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil,
+                                    zusatz: stand.schritte.ziel > 0 ? "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))" : nil)
                 }
                 if let b = stand.boegen.first(where: { $0.id == .erholen }) {
                     TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil)
@@ -431,7 +436,8 @@ struct TagesFormenReihe: View {
                                     stimmung: stimmung <= 2 ? 1 : (stimmung == 3 ? 2 : 3))
                 }
                 TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
-                                einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0)
+                                einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0,
+                                zusatz: stand.gewicht.punkte.last.map { "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))" })
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -446,6 +452,7 @@ struct TagesFormenReihe: View {
             einheit: zeile.habit.zaehlen ? (ziel.map { "von \($0)" } ?? "") : "",
             // Ohne Ziel (Koffein) füllt sich die Form bis vier Stück.
             fuellung: zeile.habit.zaehlen && ziel == nil ? min(1, Double(zeile.wert) / 4) : zeile.anteil,
+            zusatz: form == .creatin ? ziel.map { "\(zeile.wert)/\($0) Klicks" } : nil,
             aktion: nurTag ? { tippe(zeile) } : nil)
     }
 }

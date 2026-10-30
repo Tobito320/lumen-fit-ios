@@ -55,6 +55,7 @@ extension ToggleStyle where Self == LumenSchalterStil {
 private struct LoveaSchalterZeile: ButtonStyle {
     let istAn: Bool
     @Environment(\.bewegungAus) private var reduceMotion
+    @Environment(\.stromsparmodus) private var spar
     @Environment(\.isEnabled) private var aktiv
 
     func makeBody(configuration: Configuration) -> some View {
@@ -78,8 +79,8 @@ private struct LoveaSchalterZeile: ButtonStyle {
                 .padding(2)
         }
         .frame(width: 51, height: 31)
-        .animation(reduceMotion ? nil : (gedrueckt ? Feder.schnell : Feder.jelly), value: gedrueckt)
-        .animation(reduceMotion ? nil : Feder.jelly, value: istAn)
+        .animation(reduceMotion ? nil : (gedrueckt || spar ? Feder.schnell : Feder.jelly), value: gedrueckt)
+        .animation(reduceMotion ? nil : (spar ? Feder.schnell : Feder.jelly), value: istAn)
         .accessibilityHidden(true)
     }
 }

@@ -70,7 +70,7 @@ struct ZyklusHeuteView: View {
             }
             .padding(Abstand.l)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
         .haptik(.erfolg, bei: periodeGesetzt)
         .sheet(item: $blatt) { a in ZyklusEintragBlatt(store: store, datum: a.id) }
         .task(id: heute) { alltag = await ZyklusAlltagQuelle.hinweis(umgebung: umgebung, heute: heute) }

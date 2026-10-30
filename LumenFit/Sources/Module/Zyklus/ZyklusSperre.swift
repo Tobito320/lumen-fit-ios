@@ -74,7 +74,7 @@ struct ZyklusSperreAnsicht: View {
         }
         .padding(Abstand.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
         .task { await sperre.entsperren() }
     }
 }

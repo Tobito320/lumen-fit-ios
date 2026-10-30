@@ -42,7 +42,7 @@ private struct PartnerTagebuchInhalt: View {
                     .font(.body).foregroundStyle(palette.text2).multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .padding(Abstand.xl)
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
             }
         }
         .id(tag)
@@ -67,7 +67,7 @@ private struct PartnerTagebuchInhalt: View {
             pfeil("chevron.right", "Ein Tag weiter", richtung: 1)
         }
         .padding(.horizontal, Abstand.s)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .haptik(.auswahl, bei: tag)
     }
 
@@ -112,7 +112,7 @@ private struct PartnerTagebuchInhalt: View {
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func makroZeile(_ titel: String, _ wert: Int, ziel: Int?) -> some View {

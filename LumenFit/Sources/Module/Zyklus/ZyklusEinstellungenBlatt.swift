@@ -25,7 +25,7 @@ struct ZyklusEinstellungenBlatt: View {
                 }
                 .padding(Abstand.l)
             }
-            .lumenHintergrund()
+            .lumenZyklusHintergrund()
             .navigationTitle("Zyklus")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }

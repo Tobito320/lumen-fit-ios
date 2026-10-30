@@ -36,7 +36,7 @@ struct MessungenView: View {
                     historie(punkte)
                 } else {
                     LeerZustand(stimmung: .bereit, satz: "Noch kein Wert für \(art.titel). Ein Wert, dann zeichnet Lumi die Kurve.", handlung: "Messung erfassen") { erfassen = true }
-                        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                        .lumenKartenFlaeche()
                 }
             }
             .padding(.horizontal, Abstand.l)
@@ -75,7 +75,7 @@ struct MessungenView: View {
         .foregroundStyle(palette.text)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .contain)
     }
 

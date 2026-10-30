@@ -130,19 +130,22 @@ struct ZyklusRingAnsicht: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.bewegungAus) private var bewegungAus
+    @Environment(\.lumenThema) private var thema
     @ScaledMetric(relativeTo: .largeTitle) private var durchmesser: CGFloat = 232
     @ScaledMetric(relativeTo: .largeTitle) private var strich: CGFloat = 16
     @State private var angezeigt: Double?
 
     var body: some View {
         let dunkel = schema == .dark
+        // Thema Lovea: Phasenfarben wie in Lovea (`ZyklusPhasenTon`), Linienmuster bleiben, damit die Farbe nie allein trägt.
+        let phasenFarbe: (ZyklusPhase) -> Color = { thema == .lovea ? ZyklusLoveaFarbe.phase($0, dunkel: dunkel) : ZyklusPhaseStil.farbe($0, dunkel: dunkel) }
         let anteil = min(max(angezeigt ?? (bewegungAus ? fortschritt : 0), 0), 1)
         ZStack {
             Circle().stroke(palette.haar, lineWidth: strich)
             ForEach(Array(abschnitte.enumerated()), id: \.offset) { _, a in
                 Circle()
                     .trim(from: a.von + 0.004, to: max(a.von + 0.004, a.bis - 0.004))
-                    .stroke(ZyklusPhaseStil.farbe(a.phase, dunkel: dunkel),
+                    .stroke(phasenFarbe(a.phase),
                             style: StrokeStyle(lineWidth: strich, lineCap: .butt, dash: ZyklusPhaseStil.strichmuster(a.phase)))
                     .rotationEffect(.degrees(-90))
             }
@@ -156,9 +159,13 @@ struct ZyklusRingAnsicht: View {
             }
             VStack(spacing: Abstand.xs) {
                 if let phase {
+                    if thema == .lovea {
+                        // Lovea: ein Herz in der Phasenfarbe über der Zahl (`ZyklusStil.swift:119`); das Phasensymbol bleibt daneben.
+                        ZyklusLoveaHerzForm().fill(phasenFarbe(phase)).frame(width: 18, height: 18).accessibilityHidden(true)
+                    }
                     Image(systemName: ZyklusPhaseStil.symbol(phase))
                         .font(.title3)
-                        .foregroundStyle(ZyklusPhaseStil.farbe(phase, dunkel: dunkel))
+                        .foregroundStyle(phasenFarbe(phase))
                         .accessibilityHidden(true)
                 }
                 Text(titel)
@@ -325,7 +332,7 @@ struct ZyklusKarte<Inhalt: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .zyklusKartenFlaeche()
     }
 }
 

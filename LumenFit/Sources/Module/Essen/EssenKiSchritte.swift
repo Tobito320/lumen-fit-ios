@@ -30,7 +30,7 @@ struct EssenKiSchritte: View {
             .animation(bewegungAus ? nil : Feder.weich, value: aktuell)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Abstand.l)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
         }
     }
 }

@@ -56,7 +56,7 @@ private struct PartnerVerlaufInhalt: View {
         }
         .foregroundStyle(palette.text)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     private func diagramm(_ punkte: [PartnerAnsichtLogik.DauerPunkt]) -> some View {
@@ -95,7 +95,7 @@ private struct PartnerVerlaufInhalt: View {
                 Text("\(name) hat noch kein Training mit Sätzen.").font(.subheadline).foregroundStyle(palette.text2)
                     .padding(Abstand.l)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
             } else {
                 ListenKarte {
                     ForEach(Array(verlauf.trainings.enumerated()), id: \.offset) { i, t in

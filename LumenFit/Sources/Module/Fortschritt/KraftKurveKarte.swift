@@ -58,7 +58,7 @@ struct KraftKurveKarte: View {
             LeerZustand(stimmung: .bereit, satz: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit.", handlung: "Training starten") {
                 umgebung.router.oeffne(.gym(.training))
             }
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
         }
     }
 

@@ -151,7 +151,7 @@ struct CoachFortschritt: View {
             Spacer(minLength: 0)
         }
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(label): \(CoachAnzeige.zahl(aktuell)) von \(CoachAnzeige.zahl(ziel))")
         .onAppear {
@@ -187,7 +187,7 @@ struct CoachSchlafKarte: View {
                 .foregroundStyle(palette.text)
                 .padding(Abstand.l)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
                 .contentShape(.rect)
             }
             .buttonStyle(.federnd)
@@ -275,7 +275,7 @@ struct CoachZielKnopf: View {
             .padding(.horizontal, Abstand.m)
             .padding(.vertical, Abstand.s)
             .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
             .contentShape(.rect)
         }
         .buttonStyle(.federnd)

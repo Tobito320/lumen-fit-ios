@@ -24,7 +24,7 @@ struct RueckblickView: View {
                     LeerZustand(stimmung: .bereit, satz: "\(daten.titel). Starte eins, Lumi schreibt mit.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 }
                 FitPassportKarte(daten: passport)
             }

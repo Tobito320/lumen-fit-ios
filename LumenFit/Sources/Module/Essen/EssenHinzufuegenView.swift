@@ -243,7 +243,7 @@ struct EssenHinzufuegenView: View {
             }
             .foregroundStyle(palette.text)
             .frame(maxWidth: .infinity, minHeight: 64)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
         }
         .buttonStyle(.federnd)
         .accessibilityLabel(titel == "Schnell" ? "Schnell eintragen, nur Kalorien" : titel)

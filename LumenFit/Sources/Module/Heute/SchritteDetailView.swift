@@ -135,7 +135,7 @@ struct SchritteDetailView: View {
         }
         .frame(minWidth: 76, minHeight: 56)
         .padding(.horizontal, Abstand.m)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .animation(bewegungAus ? nil : Feder.weich, value: wert)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(einheit == "h aktiv" ? "Aktive Zeit" : einheit): \(wert.map { "\($0) \(einheit)" } ?? "keine Daten")")
@@ -249,7 +249,7 @@ struct SchritteMonatBoegen: View {
             }
         }
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
     }
 
     @ViewBuilder

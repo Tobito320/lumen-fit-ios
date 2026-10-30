@@ -47,7 +47,7 @@ struct ZyklusInsightsView: View {
             }
             .padding(Abstand.l)
         }
-        .lumenHintergrund()
+        .lumenZyklusHintergrund()
     }
 
     /// Farbe kommt von der Heldenkarte (Text auf Akzent).

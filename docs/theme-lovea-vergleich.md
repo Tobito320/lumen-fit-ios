@@ -24,7 +24,9 @@ die App-Wurzel, die Widgets und die Anzeige im Profil. Die Freigabe wird in `kon
 
 Lovea ist in Health und Home ein System-Look: Grund `systemBackground`, Karten `secondarySystemBackground`, Text `.primary` und `.secondary`, ein einziger Akzent `#FF3B5C`.
 In den gelesenen Health- und Home-Dateien gibt es kein Muster, keinen Verlauf auf Flächen und keinen Schatten außer am Schalterknopf. Das Herzmuster, das das Theme bisher hatte,
-steht dort nirgends (Herzen gibt es als einmaligen Spritzer, `App/HerzenSpritzer.swift:5`). Es ist deshalb entfernt: sichtbare Änderung, Lovea-Theme ist jetzt flach.
+steht in den Health- und Home-Flächen nirgends; es ist dort entfernt. Herzen gibt es in Lovea an genau drei Stellen: als Deko im Bereich Zyklus (`Zyklus/ZyklusDeko.swift:5,67`,
+Hintergrund `Zyklus/ZyklusStil.swift:82`, Herz im Phasen-Ring `Zyklus/ZyklusStil.swift:119`), als einmaliger Spritzer (`App/HerzenSpritzer.swift:5`, genutzt bei Ziel erreicht `Health/SchritteRinge.swift:131`,
+Serie `Health/HabitsSektion.swift:177`, Chat, Notizen) und im Chat-Hintergrund. Zyklus und beide Spritzer sind jetzt im Theme Lovea nachgebaut (Tabelle unten); das Muster bleibt weg.
 Nicht ausgeschlossen: Chat-Hintergründe und der Lovea-Verlauf des Profilkopfs (`Chat/Backdrop.swift`, `Profile/ProfilHintergrund.swift:46`) sind Verläufe und Bilder; die hat Lumen Fit nicht.
 Die bisherigen Hex-Werte des Themes (Rosé-Flächen `#FFEDF0`, `#211418`, Text `#1C1C1E`) stammten nicht aus Lovea.
 
@@ -54,7 +56,14 @@ Spalten: Eigenschaft, Lovea-Wert (Datei:Zeile), Lumen-Fit-Stelle, übernommen.
 | Schrift | System; `.rounded` für Zahlen in Ringen (`Health/SchritteRinge.swift:23,29`) | `SchritteBogen`, `LumenBogen` nutzen `.rounded` für Zahlen; Rest System | ja, schon gleich |
 | Zahlen-Übergang | `.contentTransition(.numericText)` (`Health/SchritteRinge.swift:27`, `Health/Heute/HeuteView.swift:190`) | `RollZahl`, `TagesformRing` | ja, schon gleich |
 | Tagesform-Ring | Spur `Color.secondary.opacity(0.2)`, Strich 8, Rundkappe, Stufenfarbe grün / orange / rot, Zahl `0,38 x Durchmesser` fett (`Health/Heute/HeuteView.swift:180-190`) | `TagesformRing` (`LumenFit/Sources/Module/Heute/TagesformRing.swift`) | ja; die Spur war `haar`, jetzt wie Lovea |
-| Formkacheln "Dein Tag" | Radius 20, Rand 10 / 6, Einheit `.tertiary`, Farben und Pfade der Formen (`Health/Heute/TagesFormen.swift:10-27,394-406`) | `TagesFormKachel` (`LumenFit/Sources/Module/Heute/TagesFormen.swift`) | Formfarben und Pfade waren schon gleich; Radius 20, Rand 10 / 6 und `.tertiary` jetzt übernommen. Lovea zeigt unter dem Wert eine Zusatzzeile (`zusatz`), Lumen Fit nicht: Aufbau, nicht übernommen |
+| Formkacheln "Dein Tag" | Radius 20, Rand 10 / 6, Einheit `.tertiary`, Farben und Pfade der Formen (`Health/Heute/TagesFormen.swift:10-27,394-406`) | `TagesFormKachel` (`LumenFit/Sources/Module/Heute/TagesFormen.swift`) | Formfarben und Pfade waren schon gleich; Radius 20, Rand 10 / 6 und `.tertiary` übernommen |
+| Zusatzzeile der Formkacheln | immer genau eine Zeile `caption2`, `.tertiary`, leer als Leerzeichen (`TagesFormen.swift:398`); Schritte "Ziel N" (`Health/Heute/HeuteView.swift:784`), Creatin "n/ziel Klicks" (`:843`), Gewicht "zuletzt x,x" (`:950`), Food (`:934`) | `TagesFormKachel.zusatz`, gesetzt in `TagesFormenReihe` für Schritte, Creatin, Gewicht | ja. Wasser, Koffein, Protein haben in Lovea keine Zusatzzeile. Food und Lovea-Wasser-Text "/N Gl." gibt es in Lumen Fit nicht als Kachel: nein |
+| Karten-Tönung 14 % | `healthKarte(farbe)`: `secondarySystemBackground` + `farbe.opacity(0.14)`, Rand `farbe.opacity(0.7)` nur bei erhöhtem Kontrast (`Health/HealthStil.swift:42-54`). Farbe je Bereich: Schlaf Indigo (`Health/SchlafCard.swift:23`), Essen Türkis `ErnaehrungStil.akzent` (`Health/Ernaehrung/ErnaehrungView.swift:41`, `TagesNaehrwerte.swift:46`), Gym Mint (`Health/GymSession.swift:48`), Energie Amber (`Health/EnergieKarte.swift:63`), Coach Himmel / Mint / Indigo je Antwortkarte (`Health/Coach/CoachAntwortTeile.swift:93,198,242,277`), Habit nach `habit.tint` (`Health/HabitsSektion.swift:141`); Heute-Karten flach | Umgebungswert `kartenTint` (`Design/LoveaKarte.swift`), gesetzt je Tab in `App/RouteAnsicht.swift`; `ListenKarte` und die Kartenfläche `lumenKartenFlaeche()` (ersetzt in rund 50 Dateien das gleiche `.background(palette.flaeche, ...)`) tönen nur im Theme Lovea | teilweise. Eine Farbe je Bereich statt je Karte (Coach: Himmel statt Wechsel, Gym: Mint); Energie und Habit-Karten nicht eigens getönt; Heute bleibt flach wie in Lovea. Andere Themen unverändert |
+| Gelee-Knopf (1,12 / 0,9) | nur am Senden-Knopf des Coach-Chats (`Health/Coach/CoachChatView.swift:714`) | `GeleeKnopfStil` (`Design/LoveaFeier.swift`) am Senden-Knopf in `CoachChatView`; nur im Theme Lovea gedehnt | ja, am gleichen Anlass. Die Hauptknöpfe sind in Lovea `borderedProminent`, nicht Gelee; dort gibt es also kein Gegenstück |
+| Karten-Scroll (Skala 0,96, Deckkraft 0,5 am Rand) | Home- und Wir-Karten (`Home/PartnerTagCard.swift:33`, `Home/SchritteDuellCard.swift:28`, `Wir/FrageDesTagesCard.swift:33`, `Dates/UI/DatesKarte.swift:29` u. a.), nicht in Health | `karteScrollt()` (`Design/LoveaFeier.swift`) an `PartnerKarte`, dem Gegenstück der Partner-Karte; nur Theme Lovea; Bewegung aus: nur Überblenden | ja, an der einen Karte, die Lovea-Home-Karten entspricht |
+| Ziel erreicht (Siegel, Herzen, Tick) | `ZielFeier` einmal pro Tag (`App/TagesMoment.swift:55-85`), genutzt an den Schritten (`Health/SchritteRinge.swift:131`); Bewegung reduzieren: nur Tick; Stromsparmodus: Siegel ohne Herzen | `LoveaZielFeier` + `LoveaHerzenSpritzer` (`Design/LoveaFeier.swift`) an `SchritteKarte` (Heute), Marke einmal pro Tag auf dem Gerät | ja, nur Theme Lovea. Die gleiche Feier für Trainingsende gibt es in Lovea nicht (nur Schritte und Serien) |
+| Serie +1 (Hüpfer, Herzen) | `serieFeier` (`App/TagesMoment.swift:21`, `Health/HabitsSektion.swift:177`) | nein | nein, nicht nachgebaut: ob Lumen Fit eine Serienzahl in der Gewohnheitszeile zeigt, ist nicht geprüft |
+| Zyklus (Palette, Hintergrund, Karte, Ring) | eigene Palette Zuckerrosa / Himbeere / Perlmutt, dunkel tiefes Beerenrot (`Zyklus/ZyklusStil.swift:6-27`), Verlauf mit Deko (`:82`, `ZyklusDeko.swift:67`), Perlmutt-Karte Radius 26, Rand 1,5, Schatten (`ZyklusStil.swift:119` ff.), Phasenfarben `ZyklusPhasenTon`, Herz im Ring | `Module/Zyklus/ZyklusLoveaStil.swift`: Palette, Hintergrund mit Deko, Karte, Phasenfarben und Herz im Ring; `lumenZyklusHintergrund()` auf allen Zyklus-Seiten | ja im Theme Lovea. Nicht übernommen: Schweben der Deko (kein Takt in Lumen Fit), Himbeere-Knopf `ZyklusKnopf` und `ZyklusChip` (Lumen-Fit-Zyklus nutzt `LumenHauptknopfStil` mit der Himbeere als `akzent` und `ZyklusWahlChip`, Form nicht verglichen), Ring als Fortschrittsring (Lumen Fit: Phasen-Ring mit Linienmustern, damit Farbe nie allein trägt) |
 | Tab-Leiste | `.sidebarAdaptable`, schrumpft beim Abwärtsscrollen, Tint Rosé (`App/AppRootView.swift:205-207`) | `lumenTabLeiste()` in `LumenFit/Sources/Design/Leiste.swift`, nur im Theme Lovea | ja im Code; ob die Leiste im Lumen-Fit-Aufbau wirklich schrumpft, ist ungeprüft |
 | Haptik | leicht / mittel / erfolg / auswahl / warnung, Schalter `Haptik.an` (`App/Feder.swift:57-68`) | `HaptikZentrale` mit gleicher Bedeutung, Schalter `haptikAn` | ja in der Bedeutung; der Lovea-Schalter gibt `auswahl` wie in Lovea |
 | Gewohnheitsfarben | acht Töne hell / dunkel (`Health/HealthStil.swift:10-19`) | `HabitFarbeAnsicht.swift:9-16` | ja, die acht Paare sind gleich (verglichen) |
@@ -62,13 +71,11 @@ Spalten: Eigenschaft, Lovea-Wert (Datei:Zeile), Lumen-Fit-Stelle, übernommen.
 | Schritte-Ring | geschlossen, Strich `0,11 x Seite`, Spur 16 %, Verlauf `0,7 -> 1`, zweite Runde halb so dick mit Schein, Personenfarbe (`Health/SchritteRinge.swift:40-62`) | `SchritteBogen`: offener 270-Grad-Bogen auf schwarzer Platte, Strich 20, Spur 22 % | nein. Anderes Bauteil, nicht nur ein Wert (Vorgabe "kein Aktivitätsring", `design.md` Abschnitt 2); eigener Auftrag, falls gewünscht |
 | Drei Bögen der Ringplatte | gibt es in Lovea nicht | `LumenBogen` | nicht vergleichbar |
 | Personenfarben | Rosé `#E0284A`, Blau `#2F6FE4`, hell wie dunkel (`App/Farben.swift:16,19`) | in Lumen Fit gibt es keine Personenfarbe | nein, kein Gegenstück |
-| Karten-Scroll (Skala 0,96, Deckkraft 0,5 am Rand) | nur auf Home-Karten (`App/KartenScroll.swift:12-13`), nicht in Health | Lumen Fit hat keinen Home-Tab | nein, kein Gegenstück |
-| Schütteln bei Fehleingabe | `schuettelt(bei:)` (`App/GeleeEffekte.swift:7-42`) | kein Gegenstück | nein |
-| Gelee-Knopf (1,12 / 0,9) | an einer Stelle (`App/GeleeEffekte.swift:46-55`) | keiner | nein |
-| Herzen-Spritzer | einmalig bei Reaktion und Tagesmoment (`App/HerzenSpritzer.swift`) | keiner | nein, gehört zu Chat und Tagesmoment, die Lumen Fit nicht hat |
+| Schütteln bei Fehleingabe | `schuettelt(bei:)` (`App/GeleeEffekte.swift:7-42`), in Lovea nur am Ort-Link der Dates (`Dates/UI/DateIdeeOrtLink.swift:120`) | kein Gegenstück: Lumen Fit hat keine Dates | nein |
+| Herzen-Spritzer | Reaktion im Chat, Banner, Notizen, Ziel und Serie | nur bei Ziel erreicht (siehe oben) | Chat, Banner, Notizen hat Lumen Fit nicht |
 | Material / Glas | `.glass`-Knopf an 2 Stellen; sonst flache Karten, `loveaPille` ist absichtlich kein Material (`App/Farben.swift:7-9`) | `glassEffect` bei Avatar-Kapsel und Toast | ungeprüft; nicht je Theme unterschieden |
 | Erscheinung (Hell/Dunkel) | folgt dem System | Auswahl System / Hell / Dunkel | bleibt Lumen-Fit-Funktion |
-| Bewegung bei Stromsparmodus | `federnd` und `jelly` verlieren nur den Überschwinger (`App/Feder.swift:12-18`) | `bewegungAus` schaltet alles aus | nein: Lumen Fit hält die strengere eigene Regel (`BewegungsRegel`) |
+| Bewegung bei Stromsparmodus | `federnd` und `jelly` verlieren nur den Überschwinger; Herzen aus (`HerzenSpritzer.swift:13`, `TagesMoment.swift:54`) | im Theme Lovea: `bewegungAus` nur bei "Bewegung reduzieren" (`Design/Bewegung.swift`); Knopf, Lovea-Schalter und Toast nehmen unter Stromsparmodus `schnell` / `weich` statt der federnden Kurve; Herzen aus | ja im Theme Lovea. Andere Themen behalten die strengere Regel (alles aus) |
 
 ## Kontrast (WCAG AA, berechnet; `docs/research/kontrast.py`, `FarbenKontrastTests`)
 
@@ -90,16 +97,18 @@ Die Lovea-Durchfaller sind Lovea-Befunde; in Lovea ist nichts geändert.
 
 ## Abweichungen, kurz
 
-1. Karte: nur die flache Heute-Karte, keine 14-%-Tönung (siehe Tabelle).
-2. Schritte-Ring, Ringplatte, Bögen: anderes Bauteil, nicht umgebaut.
-3. Stromsparmodus: Lumen Fit schaltet Bewegung ganz aus.
-4. Formkacheln: ohne Zusatzzeile (Aufbau).
-5. Trennlinie, Rand, Flächen-Hex: Apples UIKit-Tabelle statt Lovea-Code, weil Lovea System-Farben nur beim Namen nennt.
-6. Das Herzmuster ist entfernt.
+1. Karten-Tönung: eine Farbe je Bereich statt je Karte; Energie, Habit und Datenbereiche (Diagramm- und Balkenfarben in Schlaf, Essen, Gym) nicht auf Lovea-Farben gezogen, weil jede der vielen Stellen einen Themenwert bräuchte.
+2. Schritte-Ring, Ringplatte, Bögen: anderes Bauteil, nicht umgebaut (Ahmeds Vorgabe: Schritte-Ring bleibt).
+3. Trennlinie, Rand, Flächen-Hex: Apples UIKit-Tabelle statt Lovea-Code, weil Lovea System-Farben nur beim Namen nennt.
+4. Das Herzmuster ist in Health und Home entfernt (dort gibt es keins); Zyklus hat die Herzen-Deko wie Lovea, ohne Schweben.
+5. Kein Gegenstück: Schütteln (nur Dates), Serie-Feier, Chat- und Snap-Herzen, Gelee an Hauptknöpfen (Lovea nimmt dort `borderedProminent`).
+6. Zyklus: `ZyklusKnopf` und `ZyklusChip` nicht nachgebaut.
+7. Gym, Schlaf, Essen, Coach: Karten, Tönung, Radien und Farben der Bereiche verglichen und angepasst, soweit sie über die gemeinsame Kartenfläche laufen. Diagramme (Balken, Linien), Symbolgewichte und Bewegungen je Ansicht sind nicht Stück für Stück verglichen.
 
 ## Ungeprüft
 
-Swift kompiliert hier nicht. Gelaufen ist nur `swift-syntax-check`; es gab keinen Build, keinen Test und kein Bild. Nicht gesehen: 390 pt und 440 pt (an Maßen ändern sich nur
-die Schalterzeile, mindestens 44 pt hoch, und die Formkacheln, Rand 10 / 6, Radius 20), Tab-Leiste beim Scrollen, Schalter beim Drücken. Die CI nimmt jetzt auch das Theme `lovea`
+Neu in dieser Runde, alles ohne Build und ohne Bild: die rund 50 ersetzten Kartenflächen (andere Themen sollten pixelgleich bleiben, ist nicht gesehen), Kontrast der Zyklus-Palette in Lumen Fit (Werte aus Lovea, dort als mindestens 7:1 und 4,5:1 genannt, hier nicht gerechnet), Ring-Phasenfarben auf Perlmutt (nicht gemessen; `follikel` `#E0703A` liegt rechnerisch nahe an 3:1), Sicht von `karteScrollt` auf `PartnerKarte`.
+
+Swift kompiliert hier nicht. Gelaufen ist nur `swift-syntax-check`; es gab keinen Build, keinen Test und kein Bild. Nicht gesehen: 390 pt und 440 pt (an Maßen ändern sich die Schalterzeile, mindestens 44 pt hoch, die Formkacheln mit Zusatzzeile, Rand 10 / 6, Radius 20, und die Zyklus-Karten mit Radius 26), Tab-Leiste beim Scrollen, Schalter beim Drücken. Die CI nimmt jetzt auch das Theme `lovea`
 auf (nur ein iPhone, keine zweite Breite). Der Server nimmt bei einer 200-Antwort ohne `erlaubt` (`{}`) die Freigabe zurück (`KontoDienst.swift:235`, nur gelesen), das passt nicht zum Test
 `testAblehnungOderNetzfehlerNimmtDieFreigabeNichtZurueck` ("erst ein klares erlaubt:false nimmt sie zurück"). Dann verschwindet auch das Theme. Nur gemeldet, nicht geändert.

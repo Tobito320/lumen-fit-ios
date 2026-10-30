@@ -16,7 +16,7 @@ struct MeilensteineView: View {
                     LeerZustand(stimmung: .bereit, satz: "Noch keine Medaille. Hake einen Satz ab, Lumi holt die erste.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
                 }
                 MedaillenRaster(erreicht: datum)
             }

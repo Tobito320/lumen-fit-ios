@@ -64,7 +64,7 @@ struct VerlaufView: View {
             }
             if laeufe.isEmpty {
                 LeerZustand(stimmung: .bereit, satz: "Noch keine Sätze eingetragen. Im Tab Gym hakst du Sätze ab, dann stehen sie hier.")
-                    .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                    .lumenKartenFlaeche()
             } else {
                 gruppen(liste)
             }
@@ -148,7 +148,7 @@ struct VerlaufView: View {
                 LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                     umgebung.router.oeffne(.gym(.training))
                 }
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
             }
             GewichtVerlaufKarte(trend: trend) { umgebung.router.oeffne(.gewichtEintragen) }
             StimmungVerlaufKarte()

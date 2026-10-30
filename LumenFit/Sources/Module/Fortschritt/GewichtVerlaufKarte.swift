@@ -13,7 +13,7 @@ struct GewichtVerlaufKarte: View {
     var body: some View {
         if trend.reihe.isEmpty {
             LeerZustand(stimmung: .bereit, satz: "Noch kein Gewicht eingetragen. Ein Wert, dann zeichnet Lumi die Kurve.", handlung: "Gewicht eintragen", aktion: beiEintragen)
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
         } else {
             DiagrammKarte(aussage: GewichtVerlauf.aussage(trend), kernzeile: GewichtVerlauf.kernzeile(trend)) {
                 diagramm

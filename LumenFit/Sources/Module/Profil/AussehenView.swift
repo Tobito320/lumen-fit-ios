@@ -72,7 +72,7 @@ struct AussehenView: View {
                 }
             }
             .padding(Abstand.s)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
             .overlay(RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).stroke(aktiv ? palette.text : palette.haar, lineWidth: aktiv ? 2 : 1))
             .contentShape(Rectangle())
         }

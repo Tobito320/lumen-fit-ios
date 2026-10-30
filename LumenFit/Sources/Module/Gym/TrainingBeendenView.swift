@@ -92,7 +92,7 @@ struct TrainingBeendenView: View {
         if sitzung.tag != nil, sitzung.neuerTag != nil {
             Toggle("Plan so aktualisieren", isOn: $planBehalten)
                 .padding(Abstand.l)
-                .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                .lumenKartenFlaeche()
         } else if sitzung.tag == nil, sitzung.liste.contains(where: { $0.fertigZahl > 0 }) {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 Text("Als Trainingstag speichern?").font(.headline)
@@ -102,7 +102,7 @@ struct TrainingBeendenView: View {
                 Text("Leer lassen, wenn du ihn nicht speichern willst.").font(.footnote).foregroundStyle(palette.text2)
             }
             .padding(Abstand.l)
-            .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+            .lumenKartenFlaeche()
         }
     }
 

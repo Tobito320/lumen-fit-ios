@@ -37,6 +37,8 @@ struct ListenKarte<Inhalt: View>: View {
     let inhalt: Inhalt
     @Environment(\.palette) private var palette
     @Environment(\.lumenThema) private var thema
+    @Environment(\.kartenTint) private var tint
+    @Environment(\.colorSchemeContrast) private var kontrast
 
     init(@ViewBuilder inhalt: () -> Inhalt) { self.inhalt = inhalt() }
 
@@ -47,6 +49,12 @@ struct ListenKarte<Inhalt: View>: View {
                 ZStack {
                     palette.flaeche
                     MusterFlaeche(thema: thema, ort: .karte)
+                    if thema == .lovea, let tint { tint.opacity(0.14) }
+                }
+            }
+            .overlay {
+                if thema == .lovea, let tint, kontrast == .increased {
+                    RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).strokeBorder(tint.opacity(0.7), lineWidth: 1)
                 }
             }
             .clipShape(.rect(cornerRadius: Rundung.karte, style: .continuous))

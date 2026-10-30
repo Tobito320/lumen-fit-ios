@@ -62,4 +62,14 @@ final class ThemaLoveaTests: XCTestCase {
         XCTAssertEqual(dunkel.flaeche, 0x1C1C1E)
         XCTAssertEqual(dunkel.akzent, 0xFF3B5C, "Lovea-Akzent im Dunkeln unverändert")
     }
+
+    func testFeierKommtNurEinmalProTagUndAnlass() {
+        let speicher = UserDefaults(suiteName: "ThemaLoveaTests.feier")!
+        speicher.removePersistentDomain(forName: "ThemaLoveaTests.feier")
+        let tag = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertTrue(LoveaTagesMoment.einmalHeute("ziel", jetzt: tag, speicher: speicher))
+        XCTAssertFalse(LoveaTagesMoment.einmalHeute("ziel", jetzt: tag, speicher: speicher), "zweites Mal am selben Tag nicht")
+        XCTAssertTrue(LoveaTagesMoment.einmalHeute("anderes", jetzt: tag, speicher: speicher), "anderer Anlass zählt für sich")
+        XCTAssertTrue(LoveaTagesMoment.einmalHeute("ziel", jetzt: tag.addingTimeInterval(86_400 * 2), speicher: speicher), "am nächsten Tag wieder")
+    }
 }

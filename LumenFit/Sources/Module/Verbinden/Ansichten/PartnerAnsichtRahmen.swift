@@ -32,7 +32,7 @@ struct PartnerAnsichtRahmen<Inhalt: View>: View {
                     inhalt(datei)
                 } else {
                     LeerZustand(stimmung: .bereit, satz: PartnerAnsichtLogik.leerSatz(lage, art: art))
-                        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+                        .lumenKartenFlaeche()
                 }
             }
             .padding(.horizontal, Abstand.l)
@@ -50,7 +50,7 @@ struct PartnerAnsichtRahmen<Inhalt: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Hinweis: \(hinweis)")
     }

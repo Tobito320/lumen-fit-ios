@@ -23,7 +23,7 @@ struct FitPassportBild: View {
         .foregroundStyle(palette.text)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
-        .background(palette.flaeche, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenKartenFlaeche()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(daten.sprechtext)
     }

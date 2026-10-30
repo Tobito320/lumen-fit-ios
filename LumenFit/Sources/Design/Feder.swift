@@ -26,11 +26,12 @@ extension ButtonStyle where Self == FederKnopfStil {
 private struct FederKnopfInhalt: View {
     let konfiguration: ButtonStyleConfiguration
     @Environment(\.bewegungAus) private var reduceMotion
+    @Environment(\.stromsparmodus) private var spar
 
     var body: some View {
         konfiguration.label
             .scaleEffect(konfiguration.isPressed && !reduceMotion ? 0.94 : 1)
             .opacity(konfiguration.isPressed && reduceMotion ? 0.6 : 1)
-            .animation(reduceMotion || konfiguration.isPressed ? Feder.schnell : Feder.jelly, value: konfiguration.isPressed)
+            .animation(reduceMotion || spar || konfiguration.isPressed ? Feder.schnell : Feder.jelly, value: konfiguration.isPressed)
     }
 }
