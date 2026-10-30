@@ -7,6 +7,8 @@ enum DarwinKanal {
     nonisolated static let bandStatus = "com.onlyus.lumen-fit.band-status"
     nonisolated static let partner = "com.onlyus.lovea.partner"
     nonisolated static let bandWunsch = "com.onlyus.lovea.band-wunsch"
+    /// Lumen Alarm hat Weck-Wünsche für das Band abgelegt oder gestrichen (`docs/BAND-VERTRAG.md` in Lumen Alarm).
+    nonisolated static let alarmWunsch = "com.onlyus.lumen-alarm.band-wunsch"
 
     /// Meldet `name` an alle Prozesse, die darauf hören.
     static func sende(_ name: String) {

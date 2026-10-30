@@ -17,6 +17,11 @@ enum AppGruppe {
         return support.appendingPathComponent("LumenFit", isDirectory: true)
     }
 
+    /// Wurzel der eigenen Gruppe (nicht `LumenFit/` darin): hier legt Lumen Alarm den Unterordner `LumenAlarm` an. nil ohne Signierung.
+    static func eigeneWurzel() -> URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: eigene)
+    }
+
     /// Ordner der Lovea-Gruppe; nil ohne Signierung oder ohne Berechtigung = nicht verbunden.
     static func loveaOrdner() -> URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: lovea)

@@ -48,14 +48,21 @@ final class VerbindenDienste {
     let kopfhoerer = KopfhoererDienst()
     private var regeln: [ProfilID: PartnerEreignisRegeln] = [:]
     private var wuensche: BandWunschSchlange?
+    /// Die Weck-Wünsche von Lumen Alarm (zweite Brücke) und der eine Wartetakt bis zum nächsten künftigen Wunsch.
+    private var alarmWuensche: BandWunschSchlange?
+    private var alarmTakt: Task<Void, Never>?
+    private let schlafe: @Sendable (TimeInterval) async -> Void
     private var beobachter: [DarwinBeobachter] = []
     private var strom: Task<Void, Never>?
     private var bandWarAn = false
     private var loveaWarAn = false
+    private var alarmWarAn = true
 
-    /// `startAbruf: false` lässt die erste Runde aus (Tests rufen `abruf()` selbst und warten darauf).
-    init(_ umgebung: AppUmgebung, startAbruf: Bool = true) {
+    /// `startAbruf: false` lässt die erste Runde aus (Tests rufen `abruf()` selbst und warten darauf). `schlafe`: der Wartetakt der Weck-Wünsche (Tests geben einen eigenen).
+    init(_ umgebung: AppUmgebung, startAbruf: Bool = true,
+         schlafe: @escaping @Sendable (TimeInterval) async -> Void = { _ = try? await Task.sleep(for: .seconds($0)) }) {
         self.umgebung = umgebung
+        self.schlafe = schlafe
         bruecke = LoveaBrueckeDienst(bruecke: umgebung.bruecke,
                                      quellen: .init(daten: { [weak umgebung] in umgebung?.daten }, gesundheit: umgebung.gesundheit,
                                                     profilName: { [weak umgebung] in umgebung?.profil.aktiv?.name }),
@@ -64,11 +71,13 @@ final class VerbindenDienste {
         band = BandDienstImpl(aktiv: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.bandAktiv ?? false },
                               bruecke: umgebung.bruecke, uhr: uhr,
                               training: { [weak umgebung] in umgebung?.daten?.training.laufende() != nil },
+                              alarmBruecke: umgebung.alarmBruecke,
+                              alarmAn: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.alarmWeckt ?? false },
                               modell: { [weak umgebung] in
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
                               })
         umgebung.band = band
-        band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren() }
+        band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren(); self?.alarmWuenscheAusfuehren() }
         band.beiPauseEnde = { [weak self] in self?.kopfhoerer.pauseEnde() }
         band.beiAkkuWarnung = { [weak umgebung] prozent in
             let inhalt = BandAkkuWarnung.text(prozent: prozent)
@@ -81,10 +90,12 @@ final class VerbindenDienste {
         }
         beobachter = [
             DarwinBeobachter(name: DarwinKanal.partner) { [weak self] in Task { await self?.abruf() } },
-            DarwinBeobachter(name: DarwinKanal.bandWunsch) { [weak self] in self?.wuenscheAusfuehren() }
+            DarwinBeobachter(name: DarwinKanal.bandWunsch) { [weak self] in self?.wuenscheAusfuehren() },
+            DarwinBeobachter(name: DarwinKanal.alarmWunsch) { [weak self] in self?.alarmWuenscheAusfuehren() }
         ]
         bandWarAn = umgebung.daten?.einstellungen.werte.bandAktiv ?? false
         loveaWarAn = umgebung.daten?.einstellungen.werte.loveaVerbunden ?? false
+        alarmWarAn = umgebung.daten?.einstellungen.werte.alarmWeckt ?? true
         if startAbruf { Task { await abruf() } }
     }
 
@@ -103,6 +114,7 @@ final class VerbindenDienste {
         if werte.bandAktiv {
             band.starte()
             wuenscheAusfuehren()
+            alarmWuenscheAusfuehren()
             band.statusSchreiben()
         }
     }
@@ -126,6 +138,31 @@ final class VerbindenDienste {
         wuensche?.verarbeite()
     }
 
+    /// Weck-Wünsche von Lumen Alarm (`<Lumen-Fit-Gruppe>/LumenAlarm/band-wuensche.json`) ausführen: nur mit Band-Schalter und "Lumen Alarm darf das Band wecken",
+    /// ohne den Lovea-Schalter. Wünsche mit künftiger `zeit` bleiben liegen; ein Wartetakt ruft diese Funktion zur Zeit des nächsten Wunsches noch einmal auf
+    /// (läuft nur, solange iOS die App am Leben hält: ein Prozess, der Lumen Fit zur Weckzeit weckt, gibt es nicht).
+    func alarmWuenscheAusfuehren() {
+        alarmTakt?.cancel()
+        alarmTakt = nil
+        guard let werte = umgebung.daten?.einstellungen.werte, werte.bandAktiv, werte.alarmWeckt else { return }
+        if alarmWuensche == nil {
+            alarmWuensche = BandWunschSchlange(bruecke: umgebung.alarmBruecke, uhr: umgebung.uhr, schluessel: BandWunschSchlange.alarmSchluessel,
+                                               merkMaximal: BandWunschSchlange.alarmMerkMaximal, zusammenfassen: true) { [weak self] in
+                self?.band.wunschAusfuehren($0) ?? .spaeter
+            }
+        }
+        guard let schlange = alarmWuensche else { return }
+        schlange.verarbeite()
+        guard let zeit = schlange.naechsteZeit() else { return }
+        let warte = max(0, zeit.timeIntervalSince(umgebung.uhr()))
+        let schlafe = schlafe
+        alarmTakt = Task { @MainActor [weak self] in
+            await schlafe(warte)
+            guard !Task.isCancelled else { return }
+            self?.alarmWuenscheAusfuehren()
+        }
+    }
+
     // MARK: Ereignisse
 
     private func behandle(_ ereignis: Ereignis) async {
@@ -146,8 +183,13 @@ final class VerbindenDienste {
             umgebung.bruecke.loescheEigeneDateien()
             regeln = [:]
             wuensche = nil
+            alarmTakt?.cancel()
+            alarmTakt = nil
+            alarmWuensche = nil
+            umgebung.alarmBruecke.loescheEigeneDateien()
             bandWarAn = false
             loveaWarAn = false
+            alarmWarAn = true
         case .vordergrund:
             await abruf()
             await umgebung.gesundheit.aktualisiere()
@@ -161,10 +203,12 @@ final class VerbindenDienste {
     /// `immer`: auch ohne umgelegten Schalter einen Abruf machen (Profilwechsel: das neue Profil hat eigene Schalter, ein Band des alten wird getrennt).
     private func einstellungenGeaendert(immer: Bool = false) async {
         guard let werte = umgebung.daten?.einstellungen.werte else { return }
-        if immer || werte.loveaVerbunden != loveaWarAn || werte.bandAktiv != bandWarAn {
+        if immer || werte.loveaVerbunden != loveaWarAn || werte.bandAktiv != bandWarAn || werte.alarmWeckt != alarmWarAn {
             let bandAus = bandWarAn && !werte.bandAktiv
             loveaWarAn = werte.loveaVerbunden
             bandWarAn = werte.bandAktiv
+            alarmWarAn = werte.alarmWeckt
+            if !werte.alarmWeckt { alarmTakt?.cancel(); alarmTakt = nil }
             if bandAus { band.ausschalten() }
             await abruf()
         } else if werte.loveaVerbunden {

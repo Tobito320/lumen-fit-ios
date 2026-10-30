@@ -14,13 +14,14 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var healthSchreiben = false          // Training und Gewicht nach Health (Idee 17, 30)
     var bandAktiv = false                // Idee 85, Annahme 9
     var loveaVerbunden = false           // Idee 81
+    var alarmWeckt = true                // Lumen Alarm darf das Band wecken (Gerät, Standard an)
     var mitteilungen: [String: Bool] = [:]
     var healthGefragt = false
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, loveaVerbunden, mitteilungen, healthGefragt
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt
     }
 
     init(from decoder: Decoder) throws {
@@ -32,6 +33,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         healthSchreiben = (try? c.decodeIfPresent(Bool.self, forKey: .healthSchreiben)) ?? false
         bandAktiv = (try? c.decodeIfPresent(Bool.self, forKey: .bandAktiv)) ?? false
         loveaVerbunden = (try? c.decodeIfPresent(Bool.self, forKey: .loveaVerbunden)) ?? false
+        alarmWeckt = (try? c.decodeIfPresent(Bool.self, forKey: .alarmWeckt)) ?? true
         mitteilungen = (try? c.decodeIfPresent([String: Bool].self, forKey: .mitteilungen)) ?? [:]
         healthGefragt = (try? c.decodeIfPresent(Bool.self, forKey: .healthGefragt)) ?? false
     }

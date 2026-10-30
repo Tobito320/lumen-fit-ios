@@ -38,8 +38,12 @@ final class BandDienstImpl: BandDienst {
     @ObservationIgnored private let uhr: Uhr
     @ObservationIgnored private let sende: (String) -> Void
     @ObservationIgnored private let training: @MainActor () -> Bool
+    /// Die zweite Brücke, zu Lumen Alarm (`<Lumen-Fit-Gruppe>/LumenAlarm/`): bekommt denselben `band-status.json`, solange "Lumen Alarm darf das Band wecken" an ist.
+    @ObservationIgnored private let alarmBruecke: any PartnerAustausch
+    @ObservationIgnored private let alarmAn: @MainActor () -> Bool
     @ObservationIgnored private var puls: BandPuls?
     @ObservationIgnored private var letzterStatus: BandStatusDatei?
+    @ObservationIgnored private var alarmStatusGeschrieben = false
     /// Nach jeder fertigen Runde (das Band ist verbunden und hat geantwortet): wartende Wünsche von Lovea ausführen. Setzt `VerbindenDienste`.
     @ObservationIgnored var beiVerbunden: (@MainActor () -> Void)?
     /// Das Pausen-Ende im Training (das Gym ruft es über `vibriere(.pauseEnde)`, auch ohne Band): hier hängt die Ansage über Kopfhörer (`KopfhoererDienst`). Setzt `VerbindenDienste`.
@@ -49,6 +53,7 @@ final class BandDienstImpl: BandDienst {
 
     init(aktiv: @escaping @MainActor () -> Bool, bruecke: any PartnerAustausch, defaults: UserDefaults = .standard, uhr: @escaping Uhr = { Date() },
          sende: @escaping (String) -> Void = DarwinKanal.sende, training: @escaping @MainActor () -> Bool = { false },
+         alarmBruecke: any PartnerAustausch = KeinePartnerBruecke(), alarmAn: @escaping @MainActor () -> Bool = { false },
          modell: @escaping @MainActor () -> TrackerModell) {
         self.aktiv = aktiv
         self.bruecke = bruecke
@@ -56,6 +61,8 @@ final class BandDienstImpl: BandDienst {
         self.uhr = uhr
         self.sende = sende
         self.training = training
+        self.alarmBruecke = alarmBruecke
+        self.alarmAn = alarmAn
         fabrik = modell
     }
 
@@ -134,6 +141,7 @@ final class BandDienstImpl: BandDienst {
     func wunschAusfuehren(_ wunsch: BandWunsch) -> BandWunschSchlange.Ergebnis {
         guard aktiv(), let m = modell, let geber = puls else { return .spaeter }
         guard m.zustand == .verbunden else { return .spaeter }
+        if wunsch.von == BandWunschSchlange.weckerAbsender { return geber.wecker(wunsch.muster, jetzt: uhr()) ? .ausgefuehrt : .spaeter }
         return geber.muster(wunsch.muster, jetzt: uhr()) == nil ? .ausgefuehrt : .verworfen
     }
 
@@ -144,10 +152,15 @@ final class BandDienstImpl: BandDienst {
         guard aktiv() || erzwingen, let m = modell else { return }
         let datei = BandStatusDatei(version: LoveaVertrag.version, geschrieben: uhr(), verbunden: aktiv() && m.zustand == .verbunden,
                                     akkuProzent: m.akku?.prozent, name: m.name)
-        if let alt = letzterStatus, alt.verbunden == datei.verbunden, alt.akkuProzent == datei.akkuProzent, alt.name == datei.name,
+        let alarm = alarmAn()
+        // Der Alarm-Schalter eben angelegt: die Datei fehlt dort noch, auch wenn sich am Band nichts geändert hat.
+        let alarmNeu = alarm && !alarmStatusGeschrieben
+        if !erzwingen, !alarmNeu, let alt = letzterStatus, alt.verbunden == datei.verbunden, alt.akkuProzent == datei.akkuProzent, alt.name == datei.name,
            datei.geschrieben.timeIntervalSince(alt.geschrieben) < 3600 { return }
         letzterStatus = datei
         bruecke.schreibe(status: datei)
+        if alarm { alarmBruecke.schreibe(status: datei) }
+        alarmStatusGeschrieben = alarm
         sende(DarwinKanal.bandStatus)
     }
 }
