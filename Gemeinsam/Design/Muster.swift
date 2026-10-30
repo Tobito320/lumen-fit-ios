@@ -2,7 +2,7 @@ import SwiftUI
 
 enum MusterOrt: Sendable { case kopf, karte, hero }
 
-/// Das Muster eines Themes: Punkte (Monochrom), Diagonalen (Graphit), Raster (Stahl), Wellen (Glut), Höhenlinien (Wald).
+/// Das Muster eines Themes: Punkte (Monochrom), Diagonalen (Graphit), Raster (Stahl), Wellen (Glut), Höhenlinien (Wald), kleine Herzen (Lovea).
 /// Ein `Canvas` mit `drawingGroup()` (Metal-Textur im Cache), kein `TimelineView`, keine Dauerbewegung. Bei erhöhtem Kontrast aus,
 /// immer für VoiceOver verborgen. Nicht hinter Diagramme legen.
 struct MusterFlaeche: View {
@@ -54,6 +54,7 @@ enum MusterZeichner {
         case .stahl: 0.14
         case .glut: dunkel ? 0.20 : 0.14
         case .wald: 0.18
+        case .lovea: dunkel ? 0.16 : 0.12
         }
         return ort == .karte ? basis * 0.45 : basis
     }
@@ -70,7 +71,38 @@ enum MusterZeichner {
         case .stahl: kontext.stroke(raster(groesse, abstand: 16), with: .color(farbe), lineWidth: 1)
         case .glut: kontext.stroke(kreise(groesse, mitte: CGPoint(x: groesse.width * 0.85, y: 0), abstand: 10), with: .color(farbe), lineWidth: 1)
         case .wald: kontext.stroke(hoehenlinien(groesse), with: .color(farbe), lineWidth: 1)
+        case .lovea: kontext.fill(herzen(groesse, raster: 22, groesse: 7), with: .color(farbe))
         }
+    }
+
+    /// Kleine Herzen im versetzten Raster (jede zweite Reihe um die halbe Breite verschoben); `groesse` ist die Breite eines Herzens.
+    nonisolated static func herzen(_ g: CGSize, raster: CGFloat, groesse: CGFloat) -> Path {
+        var pfad = Path()
+        var y = raster / 2
+        var reihe = 0
+        while y < g.height {
+            var x = reihe.isMultiple(of: 2) ? raster / 2 : raster
+            while x < g.width {
+                pfad.addPath(herz(mitte: CGPoint(x: x, y: y), breite: groesse))
+                x += raster
+            }
+            y += raster * 0.8
+            reihe += 1
+        }
+        return pfad
+    }
+
+    /// Ein Herz aus zwei Bögen und einer Spitze, um `mitte`.
+    nonisolated static func herz(mitte: CGPoint, breite: CGFloat) -> Path {
+        let b = breite, x = mitte.x, y = mitte.y
+        var p = Path()
+        p.move(to: CGPoint(x: x, y: y + b * 0.45))
+        p.addCurve(to: CGPoint(x: x - b / 2, y: y - b * 0.1), control1: CGPoint(x: x - b * 0.3, y: y + b * 0.25), control2: CGPoint(x: x - b / 2, y: y + b * 0.1))
+        p.addCurve(to: CGPoint(x: x, y: y - b * 0.15), control1: CGPoint(x: x - b / 2, y: y - b * 0.45), control2: CGPoint(x: x - b * 0.05, y: y - b * 0.4))
+        p.addCurve(to: CGPoint(x: x + b / 2, y: y - b * 0.1), control1: CGPoint(x: x + b * 0.05, y: y - b * 0.4), control2: CGPoint(x: x + b / 2, y: y - b * 0.45))
+        p.addCurve(to: CGPoint(x: x, y: y + b * 0.45), control1: CGPoint(x: x + b / 2, y: y + b * 0.1), control2: CGPoint(x: x + b * 0.3, y: y + b * 0.25))
+        p.closeSubpath()
+        return p
     }
 
     nonisolated static func punkte(_ g: CGSize, raster: CGFloat, radius: CGFloat) -> Path {

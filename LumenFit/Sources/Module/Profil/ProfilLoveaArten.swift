@@ -29,11 +29,12 @@ enum ProfilLoveaArten {
 
     private static let gruppen: [(grund: String, exakt: Set<String>, praefixe: [String])] = [
         ("Chat", ["entwurf.setzen", "geste", "gruss", "gefuehl.setzen"], ["nachricht.", "snap.", "sprachpost.", "medium.", "brief."]),
-        ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "einkauf.liste"], ["notizbuch."]),
-        ("Kalender und Orte", ["jahrestag.setzen", "dates.idee", "puenktlich.setzen", "muster.setzen", "muster.loeschen"], ["termin.", "treffen.", "ort."]),
+        ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "einkauf.liste", "spiegel.setzen"], ["notizbuch.", "kuehl."]),
+        ("Kalender und Orte", ["jahrestag.setzen", "dates.idee", "puenktlich.setzen", "muster.setzen", "muster.loeschen", "ausnahme.setzen"], ["termin.", "treffen.", "ort."]),
         ("Wecker und Erinnerungen", ["wecker.setzen"], []),
         ("Figuren und Shop", ["stern"], ["figur.", "look.", "katze.", "shop.", "punkte."]),
         ("Spiele", ["wuerfel.gezogen"], ["spiel.", "frage."]),
+        ("Lovea-Technik", ["app.kann"], []),
         ("Zeichnen und Galerie", [], ["zeichnung.", "galerie.", "geschenkbox.", "umzug."]),
     ]
 

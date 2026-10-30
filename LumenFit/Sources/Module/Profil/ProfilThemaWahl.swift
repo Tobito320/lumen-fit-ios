@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Themenwahl der Aussehen-Seite (Idee 73): fünf Themes, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
+/// Themenwahl der Aussehen-Seite (Idee 73): sechs Themes, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
 enum ProfilThemaWahl {
     /// Diese zwei Themes sind für Dunkel gedacht: beim ersten Aktivieren schaltet die Erscheinung von System auf Dunkel.
     static let dunkelVorwahl: Set<ThemaID> = [.graphit, .glut]
@@ -22,7 +22,7 @@ enum ProfilThemaWahl {
         }
     }
 
-    /// Alle zehn Kombinationen aus Theme und hell/dunkel.
+    /// Alle zwölf Kombinationen aus Theme und hell/dunkel.
     static let kombinationen: [(thema: ThemaID, dunkel: Bool)] = ThemaID.allCases.flatMap { t in [(thema: t, dunkel: false), (thema: t, dunkel: true)] }
 
     static func muster(_ thema: ThemaID) -> String {
@@ -32,6 +32,7 @@ enum ProfilThemaWahl {
         case .stahl: "Raster"
         case .glut: "Wellen"
         case .wald: "Höhenlinien"
+        case .lovea: "Herzen"
         }
     }
 
@@ -42,6 +43,7 @@ enum ProfilThemaWahl {
         case .stahl: "Kühles Blau auf hellem Grund."
         case .glut: "Warmes Orange, am schönsten im Dunkeln."
         case .wald: "Gedämpftes Grün, ruhig und natürlich."
+        case .lovea: "Rosé und leise Herzen, die Stimmung der Lovea-App."
         }
     }
 }

@@ -52,8 +52,12 @@ struct KontoKennung: Codable, Equatable, Sendable {
 struct KontoStand: Codable, Equatable, Sendable {
     var config = ServerConfig.standard
     var loveaErlaubt = false
+    /// Der einmalige Lovea-Import ist durch (lokal gemerkt; der Server merkt es je Konto, damit er nach einer Neuinstallation nicht nochmal läuft).
+    var loveaImportErledigt = false
+    /// Der Server weiß noch nicht, dass der Import durch ist (Netzfehler beim Melden): beim nächsten Abgleich nochmal melden.
+    var importMeldungOffen = false
 
-    enum CodingKeys: String, CodingKey { case config, loveaErlaubt }
+    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen }
 
     init() {}
 
@@ -61,6 +65,8 @@ struct KontoStand: Codable, Equatable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         config = (try? c.decodeIfPresent(ServerConfig.self, forKey: .config)) ?? .standard
         loveaErlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .loveaErlaubt)) ?? false
+        loveaImportErledigt = (try? c.decodeIfPresent(Bool.self, forKey: .loveaImportErledigt)) ?? false
+        importMeldungOffen = (try? c.decodeIfPresent(Bool.self, forKey: .importMeldungOffen)) ?? false
     }
 }
 
@@ -81,12 +87,24 @@ final class KontoDienst {
     var config: ServerConfig { stand.config }
     /// Lovea verbinden und der Import sind nur sichtbar, wenn der Server das Konto freigibt (nur Debug-Demo darf es erzwingen).
     var loveaErlaubt: Bool { LoveaFreigabe.erlaubt(freigegeben: stand.loveaErlaubt, demo: LoveaFreigabe.demoAktiv) }
+    /// Der Server gibt das Konto frei und der einmalige Import ist noch nicht gelaufen (nie in der Demo).
+    var loveaImportOffen: Bool { stand.loveaErlaubt && !stand.loveaImportErledigt }
+    /// Zähler für den Nutzungs-Bündel (Bereiche und Funktionen, keine Inhalte); wird beim Abgleich einmal je Start gesendet.
+    let nutzung: NutzungSpeicher
 
     @ObservationIgnored private let zugang: KontoZugang?
     @ObservationIgnored private let schluesselbund: any Schluesselbund
     @ObservationIgnored private let http: any HTTPLader
     @ObservationIgnored private let uhr: Uhr
     @ObservationIgnored private let ablage: URL
+    @ObservationIgnored private let ordner: URL
+    /// Der Partner-Stand vom Server, so wie `ServerPartnerBruecke` ihn liest.
+    nonisolated static let partnerDatei = "partner-server.json"
+    /// So selten wird die Zusammenfassung für den Partner hochgeladen.
+    nonisolated static let partnerPause: TimeInterval = 120
+    @ObservationIgnored private var partnerAusstehend: Data?
+    @ObservationIgnored private var letzterPartnerUpload: Date?
+    @ObservationIgnored private var nutzungGesendetInSitzung = false
     @ObservationIgnored private let version: String
     @ObservationIgnored private var laeuft = false
     @ObservationIgnored private var letzterVersuch: Date?
@@ -102,6 +120,8 @@ final class KontoDienst {
         self.version = version
         let datei = ordner.appendingPathComponent(Self.datei)
         self.ablage = datei
+        self.ordner = ordner
+        self.nutzung = NutzungSpeicher(ordner: ordner, uhr: uhr)
         let gelesen = (try? Data(contentsOf: datei)).flatMap { try? JSONDecoder().decode(KontoStand.self, from: $0) }
         self.stand = gelesen ?? KontoStand()
     }
@@ -144,14 +164,14 @@ final class KontoDienst {
         ["X-App-Key": zugang.appKey, "X-Konto": kennung.id, "X-Geheimnis": kennung.geheimnis, "X-App-Version": version]
     }
 
-    private func anfrage(_ pfad: String, post: Data? = nil, kennung: KontoKennung?) -> URLRequest? {
+    private func anfrage(_ pfad: String, methode: String? = nil, post: Data? = nil, kennung: KontoKennung?) -> URLRequest? {
         guard let zugang, var teile = URLComponents(url: zugang.server, resolvingAgainstBaseURL: false) else { return nil }
         let basis = teile.path.hasSuffix("/") ? String(teile.path.dropLast()) : teile.path
         teile.path = basis + pfad
         guard let url = teile.url else { return nil }
         var a = URLRequest(url: url)
         a.timeoutInterval = 15
-        a.httpMethod = post == nil ? "GET" : "POST"
+        a.httpMethod = methode ?? (post == nil ? "GET" : "POST")
         if let post { a.httpBody = post; a.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         var kopf = ["X-App-Key": zugang.appKey, "X-App-Version": version]
         if let kennung { kopf = kopfzeilen(kennung, zugang: zugang) }
@@ -210,12 +230,87 @@ final class KontoDienst {
             if let neu = ServerConfig.zusammen(stand.config, antwort: c.daten) { stand.config = neu; sichere() }
         }
         if let f = await sende(anfrage("/lovea/freigabe", kennung: kennung)), f.status == 200 {
-            struct Antwort: Decodable { var erlaubt: Bool? }
+            struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool? }
             if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten) {
                 stand.loveaErlaubt = a.erlaubt == true   // nur ein klares true gibt frei
+                if a.importErledigt == true { stand.loveaImportErledigt = true }   // der Server vergisst das nicht (Neuinstallation)
                 freigabeAktuell = true
                 sichere()
             }
+        }
+        if stand.importMeldungOffen { await meldeImportAnServer(kennung) }
+        if stand.loveaErlaubt { await partnerAbgleichen(kennung) }
+        await nutzungUebertragen(kennung)
+    }
+
+    /// Eine Anfrage mit den Kopfzeilen des Kontos. nil bei Netzfehler.
+    private func sendeMitKonto(_ pfad: String, methode: String, body: Data? = nil, kennung: KontoKennung) async -> (status: Int, daten: Data)? {
+        await sende(anfrage(pfad, methode: methode, post: body, kennung: kennung))
+    }
+
+    // MARK: - Einmal-Import
+
+    /// Der Import ist durch: lokal merken und dem Server melden (bei Netzfehler später nochmal).
+    func loveaImportAbgeschlossen() async {
+        stand.loveaImportErledigt = true
+        stand.importMeldungOffen = true
+        sichere()
+        if case .da(let k) = liesKennung(), k.registriert { await meldeImportAnServer(k) }
+    }
+
+    private func meldeImportAnServer(_ kennung: KontoKennung) async {
+        guard let r = await sendeMitKonto("/lovea/import-erledigt", methode: "POST", kennung: kennung) else { return }
+        // 200: gemerkt. 403: der Server gibt das Konto nicht (mehr) frei, dann gibt es nichts zu melden.
+        if r.status == 200 || r.status == 403 { stand.importMeldungOffen = false; sichere() }
+    }
+
+    // MARK: - Partner über den Server
+
+    /// Die Zusammenfassung für den Partner (`zusammenfassung.json`-Form) wird gemerkt und beim nächsten Gelegenheit hochgeladen (höchstens alle 2 Minuten).
+    func partnerHochladen(_ daten: Data) {
+        partnerAusstehend = daten
+        guard stand.loveaErlaubt, case .da(let k) = liesKennung(), k.registriert else { return }
+        Task { await partnerSenden(k) }
+    }
+
+    private func partnerSenden(_ kennung: KontoKennung, erzwingen: Bool = false) async {
+        guard let daten = partnerAusstehend else { return }
+        let jetzt = uhr()
+        if !erzwingen, let letzter = letzterPartnerUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.partnerPause { return }
+        letzterPartnerUpload = jetzt
+        if let r = await sendeMitKonto("/partner", methode: "PUT", body: daten, kennung: kennung), r.status == 200 || r.status == 400 {
+            partnerAusstehend = nil   // 400: der Server mag diese Form nie; nicht endlos wiederholen
+        }
+    }
+
+    /// Lädt Eigenes hoch und holt den Partner. Ergebnis liegt als Datei neben den Profilen (`partner-server.json`); kein Partner = Datei weg.
+    private func partnerAbgleichen(_ kennung: KontoKennung) async {
+        await partnerSenden(kennung, erzwingen: true)
+        guard let r = await sendeMitKonto("/partner", methode: "GET", kennung: kennung), r.status == 200 else { return }
+        struct Antwort: Decodable { var partner: ZusammenfassungDatei? }
+        let datei = ordner.appendingPathComponent(Self.partnerDatei)
+        guard let a = try? LoveaVertrag.decoder().decode(Antwort.self, from: r.daten) else { return }
+        if let p = a.partner, let daten = try? LoveaVertrag.encoder().encode(p) {
+            try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
+            try? daten.write(to: datei, options: .atomic)
+        } else {
+            try? FileManager.default.removeItem(at: datei)
+        }
+    }
+
+    // MARK: - Nutzung
+
+    /// Sendet die gesammelten Zähler: einmal je Start (auch leer, das ist der "aktive Tag") und ältere Tage, die noch offen sind.
+    private func nutzungUebertragen(_ kennung: KontoKennung) async {
+        let heute = Datum.text(uhr())
+        let tage = nutzung.faellig(heute: heute, ersterInSitzung: !nutzungGesendetInSitzung)
+        guard !tage.isEmpty else { return }
+        for (tag, zaehler) in tage {
+            let koerper = try? JSONEncoder().encode(NutzungMeldung(tag: tag, bereiche: zaehler.bereiche, funktionen: zaehler.funktionen))
+            guard let r = await sendeMitKonto("/nutzung", methode: "POST", body: koerper, kennung: kennung) else { continue }
+            // 200 gesendet; 400: der Server nimmt den Tag nicht (zu alt): verwerfen, nicht endlos wiederholen.
+            if r.status == 200 || r.status == 400 { nutzung.abgeschickt(tag: tag) }
+            if r.status == 200 { nutzungGesendetInSitzung = true }
         }
     }
 

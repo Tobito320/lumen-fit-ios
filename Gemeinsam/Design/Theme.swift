@@ -8,6 +8,7 @@ extension ThemaID {
         case .stahl: "Stahl"
         case .glut: "Glut"
         case .wald: "Wald"
+        case .lovea: "Lovea"
         }
     }
 }

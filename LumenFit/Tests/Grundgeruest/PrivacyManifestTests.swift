@@ -14,7 +14,8 @@ final class PrivacyManifestTests: XCTestCase {
         XCTAssertEqual(m["NSPrivacyTracking"] as? Bool, false)
         XCTAssertEqual((m["NSPrivacyTrackingDomains"] as? [Any])?.count, 0)
         let erhoben = (m["NSPrivacyCollectedDataTypes"] as? [[String: Any]]) ?? []
-        XCTAssertEqual(Set(erhoben.compactMap { $0["NSPrivacyCollectedDataType"] as? String }), ["NSPrivacyCollectedDataTypeName", "NSPrivacyCollectedDataTypeDeviceID"], "Konto beim Server: nur Name und Gerätekennung")
+        XCTAssertEqual(Set(erhoben.compactMap { $0["NSPrivacyCollectedDataType"] as? String }), ["NSPrivacyCollectedDataTypeName", "NSPrivacyCollectedDataTypeDeviceID", "NSPrivacyCollectedDataTypeProductInteraction", "NSPrivacyCollectedDataTypeFitness"],
+                       "Konto beim Server: Name, Gerätekennung, Nutzungszähler (Analytics) und die freigegebene Partner-Zusammenfassung (Fitness)")
         for e in erhoben { XCTAssertEqual(e["NSPrivacyCollectedDataTypeTracking"] as? Bool, false) }
     }
 

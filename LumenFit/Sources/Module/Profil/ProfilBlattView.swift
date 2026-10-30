@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Oben der Kopf und eine Zeile "Konto" (Name, Passwort, Profile), darunter
 /// klare Gruppen: Aussehen und Gefühl, Ziele und Gesundheit, Fortschritt, Verbindungen, Deine Daten, Über Lumen Fit; ganz unten "Alles löschen".
-/// Lovea erscheint nur, wenn der Server das Konto freigibt (`KontoDienst.loveaErlaubt`), sonst nirgends, auch nicht ausgegraut.
+/// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -10,7 +10,6 @@ struct ProfilBlattView: View {
 
     var body: some View {
         let aktiv = umgebung.profil.aktiv
-        let lovea = umgebung.konto.loveaErlaubt
         ScrollView {
             VStack(spacing: Abstand.xl) {
                 kopf(aktiv)
@@ -43,17 +42,13 @@ struct ProfilBlattView: View {
                 }
 
                 gruppe("Verbindungen") {
-                    link(symbol: "link", titel: lovea ? "Freunde, Band und Lovea" : "Freunde und Band") { VerbindungenView() }
+                    link(symbol: "link", titel: "Freunde und Band") { VerbindungenView() }
                 }
 
                 gruppe("Deine Daten") {
                     link(symbol: "externaldrive.fill", titel: "Datensicherung", zeile: sicherungZeile) { DatensicherungView() }
                     Haarlinie()
                     link(symbol: "tablecells", titel: "Als Tabelle teilen") { ProfilExportView() }
-                    if lovea {
-                        Haarlinie()
-                        link(symbol: "arrow.down.circle", titel: "Aus Lovea übernehmen") { ProfilLoveaImportSeite() }
-                    }
                 }
 
                 gruppe("Über Lumen Fit") {
