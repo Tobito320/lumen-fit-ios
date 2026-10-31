@@ -421,7 +421,7 @@ struct TageLoveaSaetzeView: View {
     private func kopf(_ u: WorkoutUebung) -> some View {
         Button { detail = u.planUebung.uebung } label: {
             HStack(spacing: 12) {
-                UebungsBild(id: u.planUebung.uebung, koerper: GymSitzung.von(umgebung).katalog(u.planUebung)?.koerper)
+                UebungsBild(id: u.planUebung.uebung, koerper: (umgebung.trainingSteuerung as? GymSitzung).flatMap { $0.katalog(u.planUebung) }?.koerper)   // nur lesen: `von` setzt beim Zeichnen den Port
                     .frame(width: 56, height: 56)
                     .clipShape(.circle)
                 Text(u.planUebung.anzeigeName)
