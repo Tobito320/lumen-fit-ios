@@ -27,6 +27,12 @@ enum PlanEditor {
         return t
     }
 
+    /// Die Übung `id` um `schritt` Stellen verschieben (-1 = eine nach oben). Am Rand oder bei unbekannter Id bleibt der Tag, wie er ist.
+    static func schieben(_ tag: TrainingsTag, id: String, um schritt: Int) -> TrainingsTag {
+        guard let i = tag.uebungen.firstIndex(where: { $0.id == id }) else { return tag }
+        return verschieben(tag, von: i, nach: i + schritt)
+    }
+
     /// Eine Übung aus dem Tag nehmen; die Kopplung davor löst sich mit.
     static func weg(_ tag: TrainingsTag, id: String) -> TrainingsTag {
         var t = tag
