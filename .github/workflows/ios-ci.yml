@@ -48,8 +48,8 @@ jobs:
 
   test-iphone:
     runs-on: macos-26
-    # Tests rund 10 bis 17 Minuten, Screenshots (bis 24), Lovea-Aufbau-Bilder (bis 14) und Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit, die Summe passt in 80.
-    timeout-minutes: 80
+    # Tests rund 10 bis 17 Minuten, Screenshots (bis 24), Lovea-Aufbau-Bilder (bis 14) und Release-Bau (bis 40, rund 20 Minuten Bauzeit bei kaltem Cache): jeder Schritt hat sein eigenes Limit, die Summe passt in 100.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v5
         with:
@@ -260,7 +260,7 @@ jobs:
       # (Demo, Lumi-Probe), ohne Signatur: so wird die Release-Konfiguration schon vor dem ersten TestFlight-Lauf kompiliert.
       - name: Release-Bau ohne Signatur
         if: ${{ !cancelled() }}
-        timeout-minutes: 20
+        timeout-minutes: 40
         run: |
           set -euo pipefail
           xcodebuild build \
