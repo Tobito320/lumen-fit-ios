@@ -69,7 +69,6 @@ final class VerbindenDienste {
                                                     profilName: { [weak umgebung] in umgebung?.profil.aktiv?.name }),
                                      uhr: umgebung.uhr)
         bruecke.hochladen = { [weak umgebung] in VerbindungenLogik.hochladen(umgebung?.konto.verbindungen.antwort) }
-        umgebung.konto.beiVerbindungenGeaendert = { [weak self] in self?.verbindungenGeaendert() }
         let uhr = umgebung.uhr
         band = BandDienstImpl(aktiv: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.bandAktiv ?? false },
                               bruecke: umgebung.bruecke, uhr: uhr,
@@ -80,6 +79,7 @@ final class VerbindenDienste {
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
                               })
         umgebung.band = band
+        umgebung.konto.beiVerbindungenGeaendert = { [weak self] in self?.verbindungenGeaendert() }
         band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren(); self?.alarmWuenscheAusfuehren() }
         band.beiPauseEnde = { [weak self] in self?.kopfhoerer.pauseEnde() }
         band.beiAkkuWarnung = { [weak umgebung] prozent in
