@@ -2,8 +2,9 @@
 // App-Wege: X-App-Key + X-Konto + X-Geheimnis. Verwaltung (/admin/*): nur X-Admin-Key.
 // Reine fetch(request, env, holen)-Funktion ohne cloudflare:workers-Import -> unter Node testbar.
 import { kiFoto } from "./ki-foto.js";
+import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 
-const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7 };
+const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false };
 const PERSONEN = ["ahmed", "annika"];
 // shortcut: harte Obergrenze statt Ratenbegrenzung gegen Massen-Registrierung; bei mehr Geräten Grenze anheben oder Cloudflare-Regel davor.
 const MAX_KONTEN = 200;
@@ -17,6 +18,8 @@ const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
 const MAX_NAMEN = 60;
 const NUTZUNG_TAGE = 90;
 const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper"];
+// Bereiche je Verbindung: die acht Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den Zyklus-Einstellungen selbst erlaubt hat).
+export const BEREICHE = [...FREIGABEN, "zyklus"];
 // Partner-Daten: rohe Obergrenze, bevor etwas geparst wird. Gesäubert bleibt es weit darunter (Plan, Tagebuch, Messreihen sind einzeln begrenzt).
 const MAX_PARTNER_BYTES = 262144;
 const KOERPER_ARTEN = ["gewicht", "taille", "brust", "schulter", "bizeps", "oberschenkel", "koerperfett"];
@@ -76,6 +79,8 @@ function zusammen(konto, global) {
   const eigen = lesen(konto.einstellungen);
   const cfg = { ...STANDARD, ...global, ...eigen };
   cfg.loveaVerbinden = eigen.loveaVerbinden === true && PERSONEN.includes(konto.lovea_person);
+  // Band in Lumen Fit: Standard an für ahmed (ein bewusstes Aus in der App gewinnt dort), für alle anderen aus; ein Wert am Konto gewinnt.
+  cfg.bandStandard = typeof eigen.bandStandard === "boolean" ? eigen.bandStandard : konto.lovea_person === "ahmed" || global.bandStandard === true;
   return cfg;
 }
 const globaleConfig = async (env) => lesen((await env.DB.prepare("SELECT einstellungen FROM globale_config WHERE id = 1").first())?.einstellungen);
@@ -379,13 +384,26 @@ function zusammenfassungSauber(b) {
   return { version: 1, geschrieben: b.geschrieben, profilName: b.profilName.trim().slice(0, 40), freigaben, heute, ereignisse };
 }
 
-// Der andere der zwei freigegebenen Konten (ahmed <-> annika), das zuletzt aktive ungesperrte.
+// Der andere der zwei Lovea-Personen (ahmed <-> annika).
 const andere = (person) => PERSONEN.find((p) => p !== person);
+
+// Welcher Bereich gehört zu welchem Ereignis (Mitteilungen laufen nur über Bereiche, die die Verbindung freigibt).
+const EREIGNIS_BEREICH = { gymStart: "gym", gymEnde: "gym", rekord: "gym", ziel: "schritte", schlafGut: "schlaf" };
+
+// Die gespeicherte (gesäuberte) Zusammenfassung des Besitzers, auf die Bereiche begrenzt, die DIESE Verbindung für DIESEN Leser erlaubt.
+// Läuft immer auf dem Server, bevor etwas ausgeliefert wird; die App filtert nur zusätzlich.
+export function filtern(stand, erlaubt, mitteilungen = true) {
+  const frei = erlaubt.filter((b) => FREIGABEN.includes(b));
+  const s = zusammenfassungSauber({ ...stand, freigaben: (stand.freigaben ?? []).filter((f) => frei.includes(f)) });
+  if (!s) return null;
+  if (!erlaubt.includes("zyklus")) delete s.heute.zyklus;
+  s.ereignisse = mitteilungen ? s.ereignisse.filter((e) => frei.includes(EREIGNIS_BEREICH[e.art])) : [];
+  return s;
+}
 
 async function partnerLegen(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
-  if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
   const roh = await request.text();
   if (roh.length > MAX_PARTNER_BYTES) return nein(413, "zu groß");
   let eingang = null;
@@ -397,14 +415,14 @@ async function partnerLegen(request, env) {
   return json({ ok: true });
 }
 
+// Alter Weg (App-Stände vor den Verbindungen): nur für die zwei Lovea-Konten, liefert deren Verbindung, gefiltert wie der neue Weg.
 async function partnerLesen(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
   if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
-  const zeile = await env.DB.prepare(
-    "SELECT p.daten, p.aktualisiert FROM partner_stand p JOIN konten k ON k.id = p.konto WHERE k.lovea_person = ? AND k.gesperrt = 0 ORDER BY p.aktualisiert DESC")
-    .bind(andere(konto.lovea_person)).first();
-  return json({ partner: zeile ? lesen(zeile.daten) : null, aktualisiert: zeile?.aktualisiert ?? null });
+  await autoVerbinden(env, konto, { freigegeben, PERSONEN, andere });
+  const r = await partnerFuerLovea(env, konto, { andere, filtern, lesen });
+  return json({ partner: r?.partner ?? null, aktualisiert: r?.aktualisiert ?? null });
 }
 
 // Proxy statt Schlüssel: nur GET /agent/ops, Person und Key setzt der Server, die App bekommt den Key nie.
@@ -523,6 +541,9 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/nutzung" && m === "POST") return nutzungMelden(request, env);
   if (url.pathname === "/partner" && m === "PUT") return partnerLegen(request, env);
   if (url.pathname === "/partner" && m === "GET") return partnerLesen(request, env);
+  if (url.pathname === "/verbindungen" || url.pathname.startsWith("/verbindungen/")) {
+    return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
+  }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
