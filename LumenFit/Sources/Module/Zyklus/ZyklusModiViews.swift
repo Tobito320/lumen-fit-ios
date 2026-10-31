@@ -123,7 +123,7 @@ struct ZyklusKinderwunschView: View {
                         heutigerTag(store) { $0.notiz = text.isEmpty ? nil : text }
                         gespeichert += 1
                     } label: { Label("Speichern", systemImage: "checkmark") }
-                        .buttonStyle(.lumenHauptknopf)
+                        .zyklusHauptknopf()
                 }
             }
             .padding(Abstand.l)
@@ -198,7 +198,7 @@ struct ZyklusPilleView: View {
                         } label: {
                             Label(genommen ? "Zurücknehmen" : "Genommen", systemImage: genommen ? "arrow.uturn.backward" : "checkmark")
                         }
-                        .buttonStyle(.lumenHauptknopf)
+                        .zyklusHauptknopf()
                         .haptik(genommen ? .auswahl : .erfolg, bei: genommen)
                     }
                     let serie = ZyklusModiLogik.pillenSerie(tage: store.tage, heute: store.heute)

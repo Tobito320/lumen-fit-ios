@@ -56,7 +56,7 @@ struct ZyklusHeuteView: View {
                     if let notiz = store.tage[heute]?.notiz, !notiz.isEmpty { ZyklusLeise(notiz) }
                 }
                 Button { blatt = ZyklusAuswahl(id: heute) } label: { Label("Heute eintragen", systemImage: "plus") }
-                    .buttonStyle(.lumenHauptknopf)
+                    .zyklusHauptknopf()
                 if store.tage[heute]?.blutung == nil {
                     Button {
                         if let t = ZyklusHeuteLogik.periodeStart(heute, tage: store.tage) {

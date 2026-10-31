@@ -35,4 +35,22 @@ final class LumenAufbauTests: XCTestCase {
         router.oeffne(.gym(.training))
         XCTAssertEqual(router.tab, .gym)
     }
+
+    func testStufenfarbeFolgtDenSchwellen70Und45() {
+        XCTAssertEqual(LoveaDaten.stufe(70), .green)
+        XCTAssertEqual(LoveaDaten.stufe(69.9), .orange)
+        XCTAssertEqual(LoveaDaten.stufe(45), .orange)
+        XCTAssertEqual(LoveaDaten.stufe(44.9), .red)
+    }
+
+    func testDatenfarbeNurImLoveaAufbau() {
+        XCTAssertEqual(LumenAufbau.lovea.farbe(.pink, sonst: .gray), .pink)
+        XCTAssertEqual(LumenAufbau.lumen.farbe(.pink, sonst: .gray), .gray)
+    }
+
+    func testJedeSchlafphaseHatEineLoveaFarbe() {
+        XCTAssertEqual(LoveaDaten.schlaf(.wach), .orange)
+        XCTAssertEqual(LoveaDaten.schlaf(.kern), .indigo)
+        for phase in SchlafPhase.allCases { _ = LoveaDaten.schlaf(phase) }
+    }
 }
