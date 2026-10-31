@@ -23,6 +23,8 @@ enum ZusammenfassungBauer {
         var energieGym: String? = nil
         /// Eingebaute Gewohnheiten, die heute erledigt sind (`gym`, `wasser`); der Bauer gibt nur frei, was die Freigabe erlaubt.
         var habitsFertig: Set<String> = []
+        /// Wassergläser heute; nur mit Freigabe essen in der Datei.
+        var wasserGlaeser: Int? = nil
         /// Zyklus-Hinweise für den Partner; schon von der Quelle nur gesetzt, wenn die Person es erlaubt hat.
         var zyklus: ZyklusZusammenfassung? = nil
         // Ansichten des Partners (Plan, Verlauf, Tagebuch, Körper): nil oder leer heißt "nichts zu sagen". Jedes Feld hat genau seine Freigabe.
@@ -70,6 +72,7 @@ enum ZusammenfassungBauer {
         if e.freigaben.contains(.gym), e.habitsFertig.contains("gym") { fertig.insert("gym") }
         if e.freigaben.contains(.essen), e.habitsFertig.contains("wasser") { fertig.insert("wasser") }
         heute.habitsFertig = fertig.isEmpty ? nil : fertig.sorted()
+        if e.freigaben.contains(.essen) { heute.wasserGlaeser = e.wasserGlaeser }
         ansichten(&heute, e)
     }
 

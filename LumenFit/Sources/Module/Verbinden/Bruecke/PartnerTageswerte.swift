@@ -10,6 +10,7 @@ enum PartnerTageswerte {
         var schlafWoche: [String: Int] = [:]
         var energie: EnergieRat?
         var habitsFertig: Set<String> = []
+        var wasserGlaeser = 0
         var stimmung: Int?
         var stimmungWoche: [String: Int] = [:]
         var gewohnheiten: [GewohnheitStand] = []
@@ -30,6 +31,7 @@ enum PartnerTageswerte {
         if trainiert { w.habitsFertig.insert(Habit.gym.id) }
         let wasser = daten.habits.wert(Habit.wasser.id, heute)
         let wasserZiel = daten.habits.habitZiel(Habit.wasser.id)
+        w.wasserGlaeser = wasser
         if HabitLogik.erledigt(Habit.wasser, wert: wasser, ziel: wasserZiel) { w.habitsFertig.insert(Habit.wasser.id) }
 
         // Morgen-Check: der letzte Eintrag je Tag, heute und die Tage der Woche.

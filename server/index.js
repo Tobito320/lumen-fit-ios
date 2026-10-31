@@ -362,6 +362,7 @@ function erweiterungSauber(h, freigaben, heute) {
     if (ENERGIE.includes(h.energieStufe)) heute.energieStufe = h.energieStufe;
     if (freigaben.includes("gym") && ENERGIE.includes(h.energieGym)) heute.energieGym = h.energieGym;
   }
+  if (freigaben.includes("essen") && ganz(h.wasserGlaeser) !== undefined && h.wasserGlaeser <= 99) heute.wasserGlaeser = h.wasserGlaeser;
   if (Array.isArray(h.habitsFertig)) {
     const erlaubt = [freigaben.includes("gym") ? "gym" : null, freigaben.includes("essen") ? "wasser" : null];
     const fertig = [...new Set(h.habitsFertig.filter((k) => typeof k === "string" && erlaubt.includes(k)))];

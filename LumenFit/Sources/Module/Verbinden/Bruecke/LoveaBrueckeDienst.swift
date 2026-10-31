@@ -124,7 +124,7 @@ final class LoveaBrueckeDienst {
             kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse,
             schritteZiel: ziele.schritte, schritteWoche: zusatz.schritteWoche, gymTage: zusatz.gymTage, gymZiel: ziele.gymTageProWoche,
             schlafWoche: zusatz.schlafWoche, schlafZiel: ziele.schlafMinuten, energieStufe: zusatz.energie?.stufe.rawValue,
-            energieGym: zusatz.energie?.gym, habitsFertig: zusatz.habitsFertig,
+            energieGym: zusatz.energie?.gym, habitsFertig: zusatz.habitsFertig, wasserGlaeser: zusatz.wasserGlaeser,
             zyklus: daten.zyklus.partnerZusammenfassung(),
             plan: ansichten.plan, verlauf: ansichten.verlauf, tagebuch: ansichten.tagebuch, tagebuchZiele: ansichten.tagebuchZiele, koerper: ansichten.koerper,
             stimmung: zusatz.stimmung, stimmungWoche: zusatz.stimmungWoche, gewohnheiten: zusatz.gewohnheiten)
