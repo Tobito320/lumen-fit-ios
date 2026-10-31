@@ -9,24 +9,40 @@ Stand 31.10.2026. Ahmed: "Mach Health aus Lovera raus, aber dafür muss diese He
 - Die Wahl fällt einmal an der Wurzel (`AppRootView`, Umgebungswert `lumenAufbau`). Nur die Tab-Wurzeln lesen sie (Heute, Gym-Start); Karten kennen sie nicht.
 - Tab-Leiste bleibt (5 Tabs). Sicherheitsgrund: Deep-Links und `Router.oeffne`. Im Lovea-Aufbau öffnen Kacheln auf Heute Schlaf und Essen als Push im Heute-Stapel (`Router.schiebe`), wie in Lovea. Alternative (Tab-Leiste weg) steht unten unter "Offen".
 
-## Was gebaut ist (Heute, Wurzel)
+## Stand nach dem Bau (PR 13)
 
-Reihenfolge wie Lovea `HeuteView`: Kopf (Datum, "Health") · Plantag-Zeile · Tagesform (Tageswahl, Wochenleiste, Tagesform-Karte mit Ring, Gründen, "Für heute", Gefühl-Leiste) · Zyklus-Hinweis · "Dein Tag" (Kachelraster: Schritte, Wasser, Schlaf, Habits, Coach, Food, Gewicht, Gym/Pause, Creatin, danach Lumen-Extras Koffein, Protein, Stimmung) + Schreib-Karte · Einsichten · Coach-Sicherheitszeile · "Körper" (Bilanz, Ziel, Sätze/Felder, Körper-Blatt) · Verlauf-Zeile · "Mehr aus Lumen Fit" (Score, Hinweise, Energie-Verlauf, Plan, Schritte, Gewicht, Wochenstreifen, Partner). Kein Lumen-Extra geht verloren, es steht am Ende.
-Dazu: Gym-Start im Lovea-Aufbau mit "Auschecken vergessen" vor Kopf/Start. Serie-Feier (Herzen, Hüpfer) an der Habit-Flamme, nur Theme Lovea.
+Jede Zeile: gleich, bleibt in Lovea, oder ein konkreter Grund. Die langen Tabellen unten sind das Inventar vor dem Bau (Datei:Zeile in Lovea und Lumen); ihr Urteil gilt, außer der Bereich steht hier als gebaut.
 
-## Bleibt in Lovea (nicht nachgebaut)
+| Bereich | Stand | Wo im Code |
+|---|---|---|
+| Heute-Wurzel (Kopf, Plantag, Tagesform, Zyklus-Hinweis, Dein Tag, Einsichten, Körper, Verlauf, Mehr) | gleich (Reihenfolge, Karten, Wege) | `Heute/HeuteLoveaAufbau.swift`, `HeuteTabView.swift` |
+| Kachelraster "Dein Tag" (Reihenfolge, Ziele, Wege) | gleich; Lumen-Extras (Koffein, Protein, Stimmung) am Ende | `Heute/TagesFormen.swift` |
+| Tagesform-Karte: Ring, Gründe, Gefühl, Obergrenze, Rat der Person | gleich | `HeuteLoveaAufbau.swift` (`TagesformLoveaKarte`) |
+| Energie-Detail: Faktoren mit Stufenfarbe (70 grün, 45 orange, sonst rot), Obergrenze-Zeile | gleich | `Heute/EnergieBank.swift`, `Design/LoveaDatenFarben.swift` |
+| Habit-Karten (jede Gewohnheit eine Karte in ihrer Farbe), Serie-Feier | gleich | `Heute/HabitsKarte.swift`, `Design/LoveaFeier.swift` |
+| Habit "Vergangene Tage" | gleich in der Wirkung: Lumen hakt vergangene Tage im Monat der Habit-Seite ab (`HabitDetailView.swift:117`), Lovea in einem Blatt | `Heute/HabitDetailView.swift` |
+| Habit "Vergleich" (Serie und Quote 30 Tage beider Personen) | nicht gebaut. Grund: die Zusammenfassungsdatei der Person enthält nur `habitsFertig` (heute erledigt), keine Serie und keine Quote. Braucht zwei neue Felder in `ZusammenfassungDatei` (Verbinden, Server) und die Freigabe-Art. Aufwand etwa 0,5 Tag, gehört zum Verbinden-Arbeiter | `Verbinden/Bruecke/PartnerTageswerte.swift` |
+| Schlaf-Wurzel (Letzte Nacht, Ihr beide, Schlafziel, Nächte, Schlaf und Training; Lumen-Karten danach) | gleich in der Reihenfolge; Schlafziel und Verlauf bleiben Zeilen, die Seiten öffnen (Lovea: Karte bzw. Liste auf der Seite) | `Schlaf/SchlafTabView.swift` |
+| Schlaf-Diagramme: Phasenfarben (Wach orange, REM himmel, Kern indigo, Tief dunkelindigo), Wochensäulen indigo, Leistung mit Fläche unter 6 h und gestrichelter Linie | gleich; Muster und Beschriftung bleiben zusätzlich (nie nur Farbe) | `Schlaf/PhasenBalken.swift`, `SchlafNachtDiagramm.swift`, `SchlafWochenKarte.swift`, `SchlafLeistung.swift` |
+| Essen-Wurzel (KI-Aufträge, Kopf, Übersicht, Ernährung, Wasser, Körperwerte; Lumen-Karten danach) | gleich | `Essen/EssenTabView.swift` |
+| Essen-Übersicht als Türkis-Karte, Ring türkis, Drüber orange, Wasser blau, Diagramme und Fasten türkis | gleich | `Essen/EssenUebersichtKarte.swift` und Diagramme |
+| Essen: Ziele als Blatt (Lovea) gegen Push (Lumen) | bewusst Push: der Navigationsstapel des Tabs trägt die Seite, das Blatt würde Deep-Links brechen | `EssenTabView.swift:66` |
+| Coach-Chat: Hintergrund (Mint oben, Himmel unten), Fortschritt und Diagramm mint, Menü mit "Verlauf teilen" und "Name ändern" | gleich | `Coach/CoachChatView.swift`, `CoachAntwortKarten.swift` |
+| Coach: Verlauf als Push (Lovea) gegen Blatt (Lumen) | bewusst Blatt, siehe Essen-Ziele | `CoachBlaetter.swift:27` |
+| Gym-Start (Wochenleiste grün, vergessen vor Start, Übungsliste, Split-Zeile) | gleich | `Gym/GymStartView.swift` |
+| Gym: laufendes Training, Plan und Splits, Trainingstage, Verlauf-Seite, Körper-Seite | nicht angeglichen. Grund: Lumen hat diese Seiten als eigenes Design mit anderem Aufbau (Segmente Training/Plan/Fortschritt, Hero-Karte, Studio-Karte); 1:1 heißt dort Seiten neu schreiben. Aufwand etwa 4 bis 6 Tage | Tabellen unten, Teil A Abschnitte 3 bis 7 |
+| Zyklus: Himbeer-Knopf mit Verlauf und Schatten, Chip mit Perlmutt und Rand, schwebende Deko | gleich (Chip behält das Häkchen, 44 pt Tippfläche) | `Zyklus/ZyklusLoveaStil.swift`, `ZyklusBausteine.swift` |
+| Tab-Leiste (5 Tabs) gegen Health als ein Stapel | bewusst: Tabs bleiben; Heute schiebt Schlaf und Essen als Seite in den Heute-Stapel (`Router.schiebe`). Wegfall der Leiste wäre eine Änderung der ganzen App, Aufwand etwa 2 Tage | `App/Router.swift` |
+| Punkte und Challenges, Shop, Partner-Chat | bleibt in Lovea | – |
+| Wecker und Erinnerungen | bleibt in Lovea (Lumen: Alarm nicht erlaubt, Umfang-Gate) | – |
+| Partner-Ansichten für Gym, Essen, Messungen, Plan | bleibt in Lovea; Lumen zeigt die Partner-Karte | `Verbinden/PartnerKarte.swift` |
+| Symbolgewichte und Bewegungen | gleich, soweit die Inventare sie als "gleich" führen (Essen Tageswechsel, Zahlen); Schlaf: Lumen hat mehr Bewegung (Säulen wachsen), bleibt; Hero-Zahl Schlaf 56 pt statt Lovea large title: Lumen-Karte bleibt | Tabellen 1c, 2c |
 
-- Punkte und Challenges, Shop, Partner-Chat: Lovea-eigene Funktionen.
-- Wecker und Erinnerungen: Lumen hat eigene Wege (Umfang-Gate, Alarm nicht erlaubt).
-- Partner-spezifische Gym-/Essen-/Messungs-/Plan-Ansichten: bewusst nicht, Lumen zeigt nur die Partner-Karte.
+## Nicht geprüft
 
-## Offen (klar benannt)
-
-1. Zyklus: `ZyklusKnopf`, `ZyklusChip`, schwebende Zyklus-Deko (Lovea `Zyklus/ZyklusStil.swift:112,146`, `ZyklusDeko.swift:91-113`) nicht angeglichen. Aufwand etwa 0,5 Tag.
-2. Diagramm-Farben, Symbolgewichte, Bewegungen je Ansicht in Gym, Schlaf, Essen, Coach: Lumen nimmt Farben aus `LumenFarben.tief` und Palette (themenunabhängig), Lovea feste Farben (Schlafphasen orange/himmel/indigo, Essen mint, Wasser blau). Nicht angeglichen. Aufwand etwa 1 Tag (zentraler Hebel in `LumenFarben.tief`, dann je Ansicht prüfen).
-3. Schlaf-, Essen-, Coach-, Gym-Wurzeln im Lovea-Aufbau umsortieren (Schlafziel als Karte, Übungsliste und Split-Zeile auf der Gym-Startseite): laut Tabellen unten "Aufbau anders" oder "fehlt". Aufwand etwa 2 Tage.
-4. Energie-Karte: Partner-Zeile, Stufenfarben der Faktoren im Detail, Kappe-Zeile fehlen. Habit-Karte: Tönung je Kachel, Vergangene Tage, Vergleichskarte fehlen.
-5. Nichts davon wurde kompiliert oder in der CI gelaufen (kein Swift-Compiler lokal). Screenshots 390/440 pt kommen aus dem CI-Schritt "Screenshots Lovea-Aufbau".
+- Nichts kompiliert, keine CI gelaufen (kein Swift-Compiler lokal). Geprüft nur mit `swift-syntax-check`, `typnamen-doppelt.sh`, `namen-gate.sh`.
+- Kein Bild gesehen: die Screenshots bei 390 und 440 pt kommen aus dem CI-Schritt "Screenshots Lovea-Aufbau".
+- Negativer Rand in der Rat-Zeile der Tagesform-Karte (`HeuteLoveaAufbau.swift`) ist geschätzt und braucht einen Blick auf das Bild.
 
 ## Tabellen aus dem Code (Datei:Zeile)
 
