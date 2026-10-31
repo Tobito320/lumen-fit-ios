@@ -36,6 +36,7 @@ private struct SchlafTabInhalt: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.openURL) private var openURL
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var band: [BandSchlafOp] = []
     @State private var position: String?
     @State private var version = 0
@@ -53,8 +54,10 @@ private struct SchlafTabInhalt: View {
                 } else {
                     leer(uebersicht)
                 }
-                SchlafDoppelKarte()
-                PartnerKarte(bereich: .schlaf)
+                if aufbau != .lovea || uebersicht.letzte == nil {
+                    SchlafDoppelKarte()
+                    PartnerKarte(bereich: .schlaf)
+                }
             }
             .scrollTargetLayout()
             .padding(.horizontal, Abstand.l)
@@ -96,12 +99,25 @@ private struct SchlafTabInhalt: View {
     @ViewBuilder
     private func inhalt(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
         SchlafCard(nacht: letzte, titel: u.titelLetzte, zielMinuten: u.ziel(fuer: letzte.nacht.tag), lumi: u.lumi(jetzt: umgebung.uhr()))
+        if aufbau == .lovea {
+            // Reihenfolge wie Lovea `SchlafDetailView`: Letzte Nacht, Ihr beide, Schlafziel, Nächte, Schlaf und Training; Lumen-Karten danach.
+            SchlafDoppelKarte()
+            PartnerKarte(bereich: .schlaf)
+            ListenKarte { zielZeile; Haarlinie(); verlaufZeile }.buttonStyle(.plain)
+            leistungsAbschnitt(u)
+            phasen(u, letzte)
+            wochenAbschnitt(u)
+            erholungsAbschnitt(u)
+            ruheAbschnitt(u)
+            ListenKarte { quelleZeile(u, letzte) }.buttonStyle(.plain)
+        } else {
         phasen(u, letzte)
         wochenAbschnitt(u)
         erholungsAbschnitt(u)
         ruheAbschnitt(u)
         leistungsAbschnitt(u)
         weiter(u, letzte)
+        }
     }
 
     @ViewBuilder
@@ -145,23 +161,35 @@ private struct SchlafTabInhalt: View {
     /// Quelle der Nacht (Detail) und Verlauf.
     private func weiter(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
         ListenKarte {
-            NavigationLink {
-                SchlafNachtDetailView(nacht: letzte, vergleich: u.vergleichLetzte, verlauf: u.vergleich)
-            } label: {
-                zeile(symbol: letzte.quelle.symbolName, titel: "Quelle: \(letzte.quelle.name)", text: "Details zur Nacht")
-            }
+            quelleZeile(u, letzte)
             Haarlinie()
-            NavigationLink {
-                SchlafZielView()
-            } label: {
-                zeile(symbol: "target", titel: "Schlafziel", text: "Extra-Tage, zum Beispiel vor dem Training")
-            }
+            zielZeile
             Haarlinie()
-            NavigationLink(value: Route.schlaf(.verlauf)) {
-                zeile(symbol: "chart.bar.fill", titel: "Verlauf", text: "Alle Nächte, übliche Zeiten")
-            }
+            verlaufZeile
         }
         .buttonStyle(.plain)
+    }
+
+    private func quelleZeile(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
+        NavigationLink {
+            SchlafNachtDetailView(nacht: letzte, vergleich: u.vergleichLetzte, verlauf: u.vergleich)
+        } label: {
+            zeile(symbol: letzte.quelle.symbolName, titel: "Quelle: \(letzte.quelle.name)", text: "Details zur Nacht")
+        }
+    }
+
+    private var zielZeile: some View {
+        NavigationLink {
+            SchlafZielView()
+        } label: {
+            zeile(symbol: "target", titel: "Schlafziel", text: "Extra-Tage, zum Beispiel vor dem Training")
+        }
+    }
+
+    private var verlaufZeile: some View {
+        NavigationLink(value: Route.schlaf(.verlauf)) {
+            zeile(symbol: "chart.bar.fill", titel: "Verlauf", text: "Alle Nächte, übliche Zeiten")
+        }
     }
 
     private func zeile(symbol: String, titel: String, text: String) -> some View {

@@ -5,6 +5,7 @@ import SwiftUI
 struct SchlafNachtDiagramm: View {
     let nacht: SchlafNacht
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
 
@@ -44,7 +45,7 @@ struct SchlafNachtDiagramm: View {
                         let x0 = groesse.width * a.von.timeIntervalSince(von) / spanne
                         let x1 = groesse.width * a.bis.timeIntervalSince(von) / spanne
                         let rect = CGRect(x: x0, y: CGFloat(zeile) * hoehe + 4, width: max(x1 - x0, 2), height: hoehe - 9)
-                        SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: linie, grund: grund, in: &kontext)
+                        SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: aufbau.farbe(LoveaDaten.schlaf(a.phase), sonst: linie), grund: grund, in: &kontext)
                     }
                 }
                 .frame(height: hoehe * CGFloat(zeilen.count))

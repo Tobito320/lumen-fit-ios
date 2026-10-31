@@ -42,13 +42,24 @@ enum SchlafLeistung {
 struct SchlafLeistungKarte: View {
     let punkte: [SchlafPunkt]
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         DiagrammKarte(aussage: "Schlaf und Training", kernzeile: SchlafLeistung.kernzeile(punkte)) {
-            Chart(punkte) { p in
-                PointMark(x: .value("Schlaf in Stunden", p.stunden), y: .value("Leistung in Prozent", p.leistung))
-                    .foregroundStyle(palette.text)
-                    .symbolSize(60)
+            Chart {
+                // Lovea `HeuteView.swift:339-364`: Fläche unter 6 h, gestrichelte Linie bei 6 h, indigo Punkte (70).
+                if aufbau == .lovea {
+                    RectangleMark(xStart: .value("ab", 3), xEnd: .value("bis", 6))
+                        .foregroundStyle(LoveaDaten.schlafKern.opacity(0.08))
+                    RuleMark(x: .value("6 Stunden", 6))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(palette.text2)
+                }
+                ForEach(punkte) { p in
+                    PointMark(x: .value("Schlaf in Stunden", p.stunden), y: .value("Leistung in Prozent", p.leistung))
+                        .foregroundStyle(aufbau.farbe(LoveaDaten.schlafKern, sonst: palette.text))
+                        .symbolSize(aufbau == .lovea ? 70 : 60)
+                }
             }
             .chartXScale(domain: 3...10)
             .chartYScale(domain: 40...105)
