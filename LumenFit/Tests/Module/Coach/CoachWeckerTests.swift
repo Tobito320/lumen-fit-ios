@@ -104,7 +104,7 @@ final class CoachWeckerTests: XCTestCase {
     }
 
     func testEintraegeNehmenWeckerBefehleNurMitStand() {
-        let art = CoachMarker.zerlegen("[[wecker: aus | wecker-a]][[wecker: aus | fremd]][[wasser: 2]]").marker
+        let art = CoachMarker.zerlegen("[[wecker: aus | wecker-a]][[wecker: aus | fremd]][[wasser: 250]]").marker
         XCTAssertEqual(CoachTracking.eintraege(art, stunde: 10).count, 1, "ohne Stand von Lumen Alarm nur das Wasser")
         let mit = CoachTracking.eintraege(art, stunde: 10, wecker: stand, heute: heute, jetztMinute: jetztMinute)
         XCTAssertEqual(mit.count, 2)

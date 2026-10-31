@@ -21,14 +21,18 @@ final class BeendenAblaufTests: XCTestCase {
         XCTAssertEqual(a.sitzung.ersterBeendenSchritt(), .beenden)
     }
 
-    func testUeberDreiStundenFragtErstNachDerZeit() throws {
+    /// Ab `langNach` (3 h) läuft eine Einheit nicht mehr (`TrainingLogik.laufend`): dann zeigt der Gym-Tab die Vergessen-Karte, die dieselbe Zeitfrage stellt
+    /// (`EinheitZeitenBlaetter`). Beim Beenden einer laufenden Einheit ist `zuLang` darum nie wahr; die Reihenfolge selbst prüft der erste Test.
+    func testEineEinheitUeberDreiStundenLaeuftNichtMehrUndFragtKurzVorherNichtNachDerZeit() throws {
         let a = try GymTestAufbau(ordner: try tempOrdner())
         a.daten.training.planSichern(GymTestAufbau.plan())
         a.sitzung.starte(planTag: "push")
         a.sitzung.satzDazu(0)
-        a.uhr.vor(sekunden: 3 * 3600 + 120)
-        XCTAssertEqual(a.sitzung.ersterBeendenSchritt(), .zeitFrage)
-        XCTAssertEqual(a.sitzung.naechsterBeendenSchritt(), .planFrage, "nach \"Ja, stimmt\" kommt die Plan-Frage")
+        a.uhr.vor(sekunden: 3 * 3600 - 120)
+        XCTAssertEqual(a.sitzung.ersterBeendenSchritt(), .planFrage, "knapp unter drei Stunden fragt nicht nach der Zeit")
+        XCTAssertEqual(a.sitzung.naechsterBeendenSchritt(), .planFrage)
+        a.uhr.vor(sekunden: 240)
+        XCTAssertNil(a.sitzung.laufende, "über drei Stunden läuft die Einheit nicht mehr")
     }
 
     func testGeaenderterAufbauFragtNachDemPlan() throws {
@@ -69,7 +73,7 @@ final class BeendenAblaufTests: XCTestCase {
         a.sitzung.starte(planTag: "push")
         a.sitzung.haken(0, 0)
         let start = a.uhr.lesen
-        a.uhr.vor(sekunden: 5 * 3600)
+        a.uhr.vor(sekunden: 2 * 3600)
         let neuerStart = start.addingTimeInterval(-600)
         let ende = start.addingTimeInterval(4200)
         a.sitzung.beendeMitZeiten(start: neuerStart, ende: ende)
