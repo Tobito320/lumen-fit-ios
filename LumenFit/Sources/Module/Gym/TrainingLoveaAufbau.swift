@@ -51,7 +51,6 @@ struct LoveaTrainingLeiste: View {
     let knopf: String
     let aktion: () -> Void
     @Environment(AppUmgebung.self) private var umgebung
-    @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
     @State private var mehr = 0
     @State private var weniger = 0
 
@@ -97,7 +96,8 @@ struct LoveaTrainingLeiste: View {
         .haptik(.weniger, bei: weniger)
     }
 
-    /// Pause mit Ziel zählt rückwärts, danach rot hoch; ohne Ziel zählt sie hoch. Ohne Pause zählt die Satzzeit, wenn der Schalter an ist.
+    /// Pause mit Ziel zählt rückwärts, danach rot hoch; ohne Ziel zählt sie hoch. Ohne Pause zählt ein gestarteter Satz hoch (Lovea `WorkoutLeiste.zeit`),
+    /// unabhängig vom Schalter "Satz-Zeit": der entscheidet nur, ob die Dauer am Satz gespeichert wird.
     @ViewBuilder
     private var zeit: some View {
         Group {
@@ -111,8 +111,8 @@ struct LoveaTrainingLeiste: View {
                 } else {
                     Text(pause.seit, style: .timer)
                 }
-            } else if satzzeit, let seit = sitzung.satzSeit {
-                Text(seit, style: .timer)
+            } else if let lauf = sitzung.satzLauf, lauf.session == sitzung.sessionId {
+                Text(lauf.seit, style: .timer)
             }
         }
         .font(.title2.bold().monospacedDigit())
@@ -501,6 +501,7 @@ struct TrainingLoveaUebungView: View {
         .sheet(isPresented: $tauschOffen) { AusweichBlatt(sitzung: sitzung, index: i) }
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
+        .haptik(.start, bei: sitzung.satzStartZaehler)
         .onAppear { laden(u) }
         .onDisappear { sichern() }
         .onChange(of: phase) { _, neu in if neu == .background { sichern() } }
@@ -553,14 +554,14 @@ struct TrainingLoveaUebungView: View {
 
     private func zeile(_ i: Int, _ u: WorkoutUebung, _ s: Int) -> some View {
         let satz = u.saetze[s]
-        let istDran = sitzung.dran.map { $0.uebung == i && $0.satz == s } ?? false
+        let istGestartet = sitzung.laufenderSatz(i) == s
         return LoveaSatzZeile(
             nummer: WorkoutLogik.nummer(u.saetze, s),
             satz: satz,
             vorher: LetztesMal.text(zeile: s, in: u.saetze, vorher: u.vorher),
             rpe: rpeAn,
             satzzeit: satzzeitAn,
-            laeuft: istDran,
+            laeuft: istGestartet,
             rekord: satz.ok == true ? sitzung.rekordLabel["\(u.id)|\(s)"] : nil,
             typ: { sitzung.typ(i, s, $0) },
             haken: { sitzung.haken(i, s) },
@@ -621,8 +622,14 @@ struct TrainingLoveaUebungView: View {
     @ViewBuilder
     private func leiste(_ i: Int, _ u: WorkoutUebung) -> some View {
         if let offener = u.saetze.firstIndex(where: { $0.ok != true }), !u.ausgelassen {
-            LoveaTrainingLeiste(sitzung: sitzung, titel: "Satz \(offener + 1) von \(u.saetze.count)", unter: WorkoutLogik.satzText(u.saetze[offener]), knopf: "Satz fertig") {
-                sitzung.haken(i, offener)
+            // Lovea `WorkoutView.swift:805`: ein gestarteter Satz zeigt "Satz fertig", sonst "Übung starten" (erster Satz) oder "Nächster Satz".
+            let laufend = sitzung.laufenderSatz(i)
+            let ziel = laufend ?? offener
+            LoveaTrainingLeiste(
+                sitzung: sitzung, titel: "Satz \(ziel + 1) von \(u.saetze.count)", unter: WorkoutLogik.satzText(u.saetze[ziel]),
+                knopf: SatzUhrLogik.knopfText(laeuft: laufend != nil, offener: offener)
+            ) {
+                if laufend != nil { sitzung.haken(i, ziel) } else { sitzung.satzStarten(i, offener) }
             }
         } else {
             let liste = sitzung.liste
