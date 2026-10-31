@@ -105,6 +105,8 @@ async function eintrag(env, zeile, k, andereKonto, h) {
   const ich = einstellung(zeile, seite, h);
   const e = {
     id: zeile.id, name: andereKonto.name, auto: zeile.auto === 1, erstellt: zeile.erstellt,
+    // Die zwei Lovea-Konten: die App legt diese Person in den bisherigen Partner-Platz (Heute, Schlaf, Ansichten).
+    lovea: !!(k.lovea_person && andereKonto.lovea_person && k.lovea_person !== andereKonto.lovea_person),
     status: zeile.status === "aktiv" ? "aktiv" : seite === "b" ? "anfrageEingehend" : "anfrageAusgehend",
   };
   if (zeile.status !== "aktiv") return e;
@@ -219,7 +221,12 @@ export async function verbindungen(request, url, env, h) {
   if (antwort) return antwort;
   const m = request.method;
   const teile = url.pathname.split("/").filter(Boolean).slice(1); // nach "verbindungen"
-  if (!teile.length && m === "GET") return h.json({ verbindungen: await liste(env, k, h) });
+  if (!teile.length && m === "GET") {
+    const eintraege = await liste(env, k, h);
+    // Was die App hochladen darf: die Bereiche, die mindestens eine aktive, nicht pausierte Verbindung von dir zeigt. Ohne Verbindung: nichts.
+    const teilen = ALLE_ZEIGT.filter((b) => eintraege.some((e) => e.status === "aktiv" && !e.ich.pause && e.ich.zeigt.includes(b)));
+    return h.json({ verbindungen: eintraege, teilen });
+  }
   if (teile[0] === "einladung" && teile.length === 1 && m === "POST") return einladungAnlegen(k, env, h);
   if (teile[0] === "ansehen" && teile.length === 1 && m === "POST") return ansehen(k, request, env, h);
   if (teile[0] === "anfrage" && teile.length === 1 && m === "POST") return anfragen(k, request, env, h);
@@ -254,7 +261,13 @@ export async function verbindungen(request, url, env, h) {
   if (!aktion && m === "DELETE") {
     // Sofort auf beiden Seiten weg. Eine Anfrage verschwindet ganz; eine Verbindung bleibt als Zeile "entfernt" (damit die Lovea-Verbindung nicht von selbst wiederkommt).
     if (zeile.status === "anfrage") await env.DB.prepare("DELETE FROM verbindungen WHERE id = ?").bind(zeile.id).run();
-    else await env.DB.prepare("UPDATE verbindungen SET status = 'entfernt', a_einst = '{}', b_einst = '{}', geaendert = ? WHERE id = ?").bind(t, zeile.id).run();
+    else {
+      await env.DB.prepare("UPDATE verbindungen SET status = 'entfernt', a_einst = '{}', b_einst = '{}', geaendert = ? WHERE id = ?").bind(t, zeile.id).run();
+      // Wer keine aktive Verbindung mehr hat, hinterlässt auch keine Zusammenfassung auf dem Server.
+      for (const id of [zeile.a, zeile.b]) {
+        await env.DB.prepare("DELETE FROM partner_stand WHERE konto = ? AND NOT EXISTS (SELECT 1 FROM verbindungen WHERE (a = ? OR b = ?) AND status = 'aktiv')").bind(id, id, id).run();
+      }
+    }
     return h.json({ ok: true });
   }
   return h.nein(404, "not found");

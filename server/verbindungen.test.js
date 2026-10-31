@@ -185,6 +185,7 @@ test("Entfernen: sofort auf beiden Seiten weg, nichts mehr lesbar, Rückfrage-Lo
   assert.equal((await ruf(env, "du", "DELETE", `/verbindungen/${id}`)).status, 200);
   assert.deepEqual(await meine(env, "du"), []);
   assert.deepEqual(await meine(env, "ich"), []);
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM partner_stand").get().n, 0, "ohne Verbindung bleibt keine Zusammenfassung auf dem Server");
   assert.equal((await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { pause: true })).status, 404);
   assert.equal((await ruf(env, "du", "DELETE", `/verbindungen/${id}`)).status, 404);
   const zeile = env.DB.roh.prepare("SELECT * FROM verbindungen WHERE id = ?").get(id);
@@ -358,4 +359,26 @@ test("Config: Band in Lumen Fit ist Standard an für ahmed, sonst aus; das Konto
   assert.equal(await lies("du"), false);
   await handleFetch(new Request(`https://x.test/admin/konto/${KONTEN.ich.id}`, { method: "PATCH", headers: admin, body: JSON.stringify({ einstellungen: { bandStandard: false } }) }), env);
   assert.equal(await lies("ich"), false);
+});
+
+test("Hochladen nur für die Bereiche, die eine aktive, nicht pausierte Verbindung zeigt (teilen)", async () => {
+  const env = await welt("ich", "du", "fremd");
+  assert.deepEqual((await ruf(env, "ich", "GET", "/verbindungen")).json.teilen, [], "ohne Verbindung nichts");
+  const id = await verbinden(env);
+  assert.deepEqual((await ruf(env, "ich", "GET", "/verbindungen")).json.teilen, ["schritte", "gym"]);
+  await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { zeigt: ["schlaf", "tagebuch"] });
+  assert.deepEqual((await ruf(env, "ich", "GET", "/verbindungen")).json.teilen, ["schlaf", "tagebuch"]);
+  await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { pause: true });
+  assert.deepEqual((await ruf(env, "ich", "GET", "/verbindungen")).json.teilen, []);
+  assert.deepEqual((await ruf(env, "fremd", "GET", "/verbindungen")).json.teilen, []);
+});
+
+test("Lovea-Einträge tragen lovea: true, QR-Verbindungen nicht", async () => {
+  const env = await welt("ich", "du", "fremd");
+  await lovea(env, KONTEN.ich.id, "ahmed");
+  await lovea(env, KONTEN.du.id, "annika");
+  assert.equal((await meine(env, "ich"))[0].lovea, true);
+  await verbinden(env, "fremd", "ich");
+  const alle = await meine(env, "ich");
+  assert.deepEqual(alle.map((e) => e.lovea).sort(), [false, true]);
 });
