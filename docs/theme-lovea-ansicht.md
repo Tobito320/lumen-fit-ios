@@ -30,7 +30,11 @@ Jede Zeile: gleich, bleibt in Lovea, oder ein konkreter Grund. Die langen Tabell
 | Coach-Chat: Hintergrund (Mint oben, Himmel unten), Fortschritt und Diagramm mint, Menü mit "Verlauf teilen" und "Name ändern" | gleich | `Coach/CoachChatView.swift`, `CoachAntwortKarten.swift` |
 | Coach: Verlauf als Push (Lovea) gegen Blatt (Lumen) | bewusst Blatt, siehe Essen-Ziele | `CoachBlaetter.swift:27` |
 | Gym-Start (Wochenleiste grün, vergessen vor Start, Übungsliste, Split-Zeile) | gleich | `Gym/GymStartView.swift` |
-| Gym: laufendes Training, Plan und Splits, Trainingstage, Verlauf-Seite, Körper-Seite | nicht angeglichen. Grund: Lumen hat diese Seiten als eigenes Design mit anderem Aufbau (Segmente Training/Plan/Fortschritt, Hero-Karte, Studio-Karte); 1:1 heißt dort Seiten neu schreiben. Aufwand etwa 4 bis 6 Tage | Tabellen unten, Teil A Abschnitte 3 bis 7 |
+| Gym: laufendes Training (Übersicht, Übung mit Tabelle, Leiste, Pause, Rückgängig, Rekord) | gleich im Aufbau; Abweichungen siehe "Gym-Inneres" unten | `Gym/TrainingLoveaAufbau.swift`, Wahl in `Gym/GymSeite.swift` |
+| Gym: Plan und Splits | gleich im Aufbau (Plan-Segment zeigt die Lovea-Seite "Splits"); Abweichungen unten | `Gym/PlanLoveaAufbau.swift`, `PlanLoveaSplits.swift`, `PlanLoveaEditor.swift` |
+| Gym: Trainingstage und Einheit nachlesen | gleich im Aufbau; Abweichungen unten | `Gym/TageLoveaAufbau.swift` |
+| Verlauf-Seite (Woche, Verlauf, Plan, Gruppe, Übung) | gleich im Aufbau; Abweichungen unten | `Fortschritt/VerlaufLoveaAufbau.swift` und Zweige in `VerlaufView`, `VerlaufWocheAnsichten`, `KonsistenzKarte` |
+| Körper-Seite (Streifen, Bilanz, Figur, Ziel, Felder, Nächstes, Messungen) | gleich im Aufbau; Figur nicht gleich (eigene Zeichnung, Lizenz); Abweichungen unten | `Fortschritt/KoerperLoveaAufbau.swift`, Zweige in `FortschrittSegmentView`, `MessungenView` | 
 | Zyklus: Himbeer-Knopf mit Verlauf und Schatten, Chip mit Perlmutt und Rand, schwebende Deko | gleich (Chip behält das Häkchen, 44 pt Tippfläche) | `Zyklus/ZyklusLoveaStil.swift`, `ZyklusBausteine.swift` |
 | Tab-Leiste (5 Tabs) gegen Health als ein Stapel | bewusst: Tabs bleiben; Heute schiebt Schlaf und Essen als Seite in den Heute-Stapel (`Router.schiebe`). Wegfall der Leiste wäre eine Änderung der ganzen App, Aufwand etwa 2 Tage | `App/Router.swift` |
 | Punkte und Challenges, Shop, Partner-Chat | bleibt in Lovea | – |
@@ -38,9 +42,85 @@ Jede Zeile: gleich, bleibt in Lovea, oder ein konkreter Grund. Die langen Tabell
 | Partner-Ansichten für Gym, Essen, Messungen, Plan | bleibt in Lovea; Lumen zeigt die Partner-Karte | `Verbinden/PartnerKarte.swift` |
 | Symbolgewichte und Bewegungen | gleich, soweit die Inventare sie als "gleich" führen (Essen Tageswechsel, Zahlen); Schlaf: Lumen hat mehr Bewegung (Säulen wachsen), bleibt; Hero-Zahl Schlaf 56 pt statt Lovea large title: Lumen-Karte bleibt | Tabellen 1c, 2c |
 
+## Gym-Inneres im Lovea-Aufbau (31.10.2026)
+
+Kürzel: L = `~/code/lovea-app-ios/Lovea/Sources/Health/`, F = `LumenFit/Sources/Module/`. Wahl der Seite: `Gym/GymSeite.swift` (reine Logik, getestet in `GymSeiteTests`), umgesetzt in `GymTabView`. Beide Aufbauten lesen dieselben Stores (`GymSitzung`, `TrainingStore`): ein Theme-Wechsel tauscht die Darstellung, nie den Stand; Live-Aktivität, Widgets, Kurzbefehle und Deep-Links rufen weiter `GymSitzung` auf und kennen den Aufbau nicht. Weder `TrainingLoveaView` noch `TrainingLoveaUebungView` ruft beim Erscheinen oder Verschwinden `starte`, `beende` oder `verwerfen` auf (nur auf Knopfdruck mit Rückfrage).
+
+### 1. Laufendes Training (`F/Gym/TrainingLoveaAufbau.swift`)
+
+| Bereich | Stand | Lumen (Datei:Zeile) | Lovea-Quelle (Datei:Zeile) |
+|---|---|---|---|
+| Übersicht: Titel groß `.largeTitle.bold` mit Menü zum Tagwechsel (`chevron.down.circle.fill`), Werte Dauer (blau) / Volumen / Sätze / Puls (rot) / kcal, Linie | gleich; Dauer ist zusätzlich antippbar (Startzeit, Lumen-Funktion) | `TrainingLoveaAufbau.swift:211-262` | `L/WorkoutView.swift:357-421` |
+| Übungszeilen: rundes Bild 48 pt, "Jetzt dran" blau, Zähler "2/3" grün mit Haken, Hinweis "Halte eine Übung gedrückt", Kontextmenü Auslassen / Wieder aufnehmen | gleich; "dran" folgt Lumens Supersatz-Logik (`SupersatzLogik.dran`) | `TrainingLoveaAufbau.swift:276-340` | `L/WorkoutView.swift:425-495` |
+| Cardio-Zeile: Tipp öffnet Eingabe, zweiter Tipp nimmt zurück | gleich (Eingabe ist Lumens `CardioAbschlussBlatt`) | `TrainingLoveaAufbau.swift:322-332` | `L/WorkoutView.swift:289-301` |
+| Leer: "Welcher Trainingstag?" als Gruppe, "Noch keine Übung" | gleich | `TrainingLoveaAufbau.swift:352-362` | `L/WorkoutView.swift:497-505` |
+| Abschnitt "Hinzufügen": Übung hinzufügen, Laufband, Stairmaster (gleiche Katalog-ids `rjiM4L3`, `j9Q5crt`) | gleich | `TrainingLoveaAufbau.swift:376-392` | `L/WorkoutView.swift:539-548` |
+| Untere Leiste: Titel, Unterzeile, Zeit (Pause rückwärts, danach rot hoch; Satzzeit nur mit Schalter), blauer Knopf, ±15 s und Überspringen | gleich; Tippflächen der Pausenknöpfe 44 pt statt 30 pt (Barrierefreiheit der Lumen-Regeln) | `TrainingLoveaAufbau.swift:47-124`, Leiste der Übersicht `:392` | `L/WorkoutView.swift:31-109`, `:228-239` |
+| Toolbar: Menü ⋯ (Startzeit ändern, Training verwerfen mit Dialog), "Beenden" | gleich; im Menü zusätzlich "Einstellungen fürs Training" (Lumen-Funktion) | `TrainingLoveaAufbau.swift:140-163` | `L/WorkoutView.swift:197-214` |
+| Einzelne Übung: Kopf mit Bild 56 pt und blauem Namen, Notiz, Pausentimer-Menü, Schalter "Satz-Zeit" | gleich | `TrainingLoveaAufbau.swift:509-538` | `L/WorkoutView.swift:595-690` |
+| Einzelne Übung: Defekt, "Meine Einstellung"/"So geht's", Ausweichen ("Getauscht, statt …") | gleich im Aufbau, Karten sind die Lumen-Karten (`DefektAbschnitt`, `GeraeteAbschnitt`, Farben aus der Palette statt Orange) | `TrainingLoveaAufbau.swift:476-482` | `L/WorkoutView.swift:608-610` |
+| Tabelle SATZ / VORHER / KG / WDH / RPE / Haken mit Zahlenfeldern, Zeilenfarbe grün 20 % bei fertig, blauer Rahmen am Satz, der dran ist, Swipe Kopieren (blau) / Löschen, Satztyp-Menü, Rekord-Zeile orange, Satz-/Pausenzeit | gleich; Tipp auf VORHER übernimmt den Wert (Lumen-Funktion "Letztes Mal"); ab Accessibility-Größe stehen die Felder untereinander | `TrainingLoveaAufbau.swift:539-600`, `:701-816` | `L/WorkoutView.swift:698-770`, `:973-1100` |
+| RPE-Blatt mit Lovea-Farben (lila, rot, orange, gelb, grün, grau) | gleich (nur im Lovea-Aufbau, `AnstrengungBlatt`) | `AnstrengungBlatt.swift:47`, `TrainingLoveaAufbau.swift:20` | `L/WorkoutView.swift:387-446` |
+| Menü ⋯ der Übung: Übung ansehen, Aufwärmsätze, Scheiben, RPE-Spalte, auslassen / aufnehmen / entfernen | gleich; zusätzlich Supersatz, "Gerät besetzt: tauschen", "Rekorde und Verlauf" (Lumen) | `TrainingLoveaAufbau.swift:589-640` | `L/WorkoutView.swift:764-787` |
+| Toast "Satz gelöscht / kopiert" mit Rückgängig, 5 s, `.move(edge: .bottom)+.opacity`, `.snappy` | gleich | `TrainingLoveaAufbau.swift:647-670` | `L/WorkoutView.swift:636-639`, `:212-226` |
+| Pausen, Haken, Rekorde, Live-Aktivität, Puls | unverändert (`GymSitzung`) | `Gym/GymSitzung.swift` | – |
+
+Nicht gleich, mit Grund:
+- Abschluss: "Beenden" öffnet weiter Lumens Blatt `TrainingBeendenView` statt Loveas Alerts ("Plan aktualisieren?", "Als Trainingstag speichern?"). Grund: Notiz zum Training, Rekord-Zähler und Plan-Schalter sind Lumen-Funktionen, die in Alerts keinen Platz haben; die zwei Fragen stecken im Blatt (`TrainingBeendenView.swift:93`). Lovea fragt zusätzlich "Warst du wirklich so lange im Gym?": Lumen hat diese Rückfrage nur in den Zeiten-Blättern, nicht beim Beenden.
+- "Satz starten": Lovea hat die Knöpfe "Übung starten" / "Nächster Satz" (Satzuhr läuft ab Tipp). Lumen misst die Satzzeit ab Pausenende (`SatzUhrLogik`); die Leiste zeigt deshalb "Satz fertig" statt des Startknopfs. Angleichen hieße, die Satzuhr der Live-Aktivität umzubauen.
+- Lumens `NaechsterSatzKarte` (schwarze Platte) und `UebungsKarte` erscheinen im Lovea-Aufbau nicht; ihre Funktionen (Pause ±15 s, Überspringen, Letztes Mal, Satz-Menü, Notiz, Pause je Übung) sind in Leiste, Tabelle und Menü.
+- Tipps (`gymTipp`) fehlen im Lovea-Aufbau (Lovea hat eigene TipKit-Hinweise, andere Texte); Lumen-Hinweise bleiben im Lumen-Aufbau.
+- Übungsbild: bei Lovea die Animation im Blatt, in Lumen `UebungDetailView` (Reiter Übersicht / Historie / So geht's).
+
+### 2. Plan und Splits (`F/Gym/PlanLoveaAufbau.swift`, `PlanLoveaSplits.swift`, `PlanLoveaEditor.swift`)
+
+| Bereich | Stand | Lovea-Quelle |
+|---|---|---|
+| Plan-Segment zeigt "Splits": Geführt erstellen, Eigenen Split, Meinen Plan anpassen, FERTIGE SPLITS, Filter-Chips, Liste mit Wochenbild | gleich; `lumenBody` bleibt für das Lumen-Theme | `L/GymNeu/SplitAnsichten.swift:66`, `:163`, Chip `:8`, Wochenbild `:25`, Pfeilzeile `:40` |
+| Vorschau eines Splits, Wählen schreibt den Plan über `TrainingStore.planSichern` | gleich | `SplitAnsichten.swift:217`, `:269` |
+| Geführtes Erstellen, eigener Split | gleich | `SplitAnsichten.swift:348`, `GymNeu/SplitFreiAnsichten.swift:43`, `:73` |
+| Editor: Tagesleiste mit Plus, Wochentage, Übungen zum Aufklappen, Menü ⋯, Sätze-Blatt | gleich; jede Änderung sichert sofort den ganzen Plan (`gym.plan`) | `GymNeu/SplitEditorView.swift:9`, `:21`, `:157`, `Health/TrainingsPlanView.swift:462` |
+| Wochenleiste, Hinweiszeile, Tageszeile | gleich | `TrainingsPlanView.swift:177`, `:263`, `:288` |
+| Lumen-Mehr bleibt: Woche und Ruhetage, Übungskatalog, Doppeln, Reihenfolge (auf/ab), Notiz, Supersatz, Variante, Kopieren von anderem Tag | Kapseln unter der Übung, im Sätze-Blatt und im Menü ⋯ | – |
+
+Nicht gleich: Partner-Auswahl der Bibliothek fehlt (Lumen ist eine Person; Partner-Ansichten gehören zum Verbinden-Strang).
+
+### 3. Trainingstage (`F/Gym/TageLoveaAufbau.swift`)
+
+| Bereich | Stand | Lovea-Quelle |
+|---|---|---|
+| Kennzahlen, Monat zum Wischen, Einheiten, Plus für "Training nachtragen" | gleich; Daten und Blätter wie im Lumen-Aufbau (`TrainingStore`, `EinheitNachtragenBlatt`) | `L/GymSession.swift:261`, `:362` |
+| Rückblick und Einheit nachlesen (Sätze als `LoveaSatzZeile`, nur lesen bzw. nachtragen) | gleich | `GymSession.swift:406`, `:560`, `WorkoutView.swift:562` |
+
+Nicht gleich: keine Partner-Auswahl.
+
+### 4. Verlauf-Seite (`F/Fortschritt/VerlaufLoveaAufbau.swift`)
+
+| Bereich | Stand | Lovea-Quelle |
+|---|---|---|
+| Woche, Verlauf, Plan, Gruppe, Übung: Reihenfolge der Blöcke, Farben, Leer-Zustand, Zeilen | gleich; Erholungsform (Zeichen) bleibt neben der Farbe, Zustand nie nur in der Farbe | `L/Verlauf/VerlaufView.swift:401`, `:456`, `:545`, `:586`, `:603` |
+| Lumen-Mehr (Konstanz-Raster, Gewicht, Stimmung, Rückblick) | kommt nach den Lovea-Karten | – |
+
+### 5. Körper-Seite (`F/Fortschritt/KoerperLoveaAufbau.swift`)
+
+| Bereich | Stand | Lovea-Quelle |
+|---|---|---|
+| Streifen, Bilanz, Ziel-Karte, "Sätze diese Woche", Felder, Nächstes, Messungen | gleich | `L/Koerper/KoerperView.swift:431`, `:500`, `:594` |
+| Figur vorne und hinten | NICHT gleich: eigene Lumen-Zeichnung (Lizenz der Lovea-Muskelpfade ungeklärt); Muster statt nur Farbe | `KoerperKarte.swift:3-173` |
+| Push-Karte | im Hellmodus nicht identisch | `KoerperView.swift:666` |
+
+### Fehlt bewusst oder ungeprüft (Gym-Inneres gesamt)
+
+- Nichts kompiliert. Die CI läuft nicht: GitHub meldet "recent account payments have failed or your spending limit needs to be increased". Ersatz: drei Prüf-Durchgänge "Compiler im Kopf" über alle neuen Dateien plus `swift-syntax-check`, Typnamen- und Namens-Gate.
+- Der Test "Theme-Wechsel bricht kein Training ab" prüft nur die reine Funktion `GymSeite.wahl` und dass dieselbe `GymSitzung` bleibt; der echte Wechsel der Ansicht im laufenden Training ist ungeprüft.
+- Kein CI-Bild für Übungsseite, Trainingstage, Split-Bibliothek, Plan-Editor: dafür gibt es keine Deep-Link-Route. Es gibt nur `gym-training` (Übersicht des laufenden Trainings).
+- Tippflächen 44 pt statt Lovea 36/30.
+- Partner-Auswahl nirgends gebaut (Verbinden-Strang).
+- Habit-Vergleich kommt später.
+
 ## Nicht geprüft
 
-- Nichts kompiliert, keine CI gelaufen (kein Swift-Compiler lokal). Geprüft nur mit `swift-syntax-check`, `typnamen-doppelt.sh`, `namen-gate.sh`.
+- Nichts kompiliert, keine CI gelaufen (CI blockiert: GitHub-Konto, Zahlung/Limit) (kein Swift-Compiler lokal). Geprüft nur mit `swift-syntax-check`, `typnamen-doppelt.sh`, `namen-gate.sh`.
 - Kein Bild gesehen: die Screenshots bei 390 und 440 pt kommen aus dem CI-Schritt "Screenshots Lovea-Aufbau".
 - Negativer Rand in der Rat-Zeile der Tagesform-Karte (`HeuteLoveaAufbau.swift`) ist geschätzt und braucht einen Blick auf das Bild.
 
