@@ -58,6 +58,8 @@ enum GymGifLogik {
 struct GymUebungGif: View {
     let id: String
     var koerper: String?
+    /// Lovea-Aufbau: weiße Kachel wie in Lovea (`UebungGif`), ohne Anpassung an Hell und Dunkel.
+    var weisserGrund = false
     @State private var folge: GymGifFolge?
     @State private var erschienen = false
     @State private var imBild = true
@@ -85,9 +87,11 @@ struct GymUebungGif: View {
             if let folge {
                 Button { angehalten.toggle() } label: {
                     ZStack {
-                        palette.grund
+                        if weisserGrund { Color.white } else { palette.grund }
                         // Wie das Standbild: die Bilder haben weißen Grund, hell mit multiply, dunkel invertiert mit screen.
-                        if schema == .dark {
+                        if weisserGrund {
+                            GymGifAnsicht(folge: folge, spielt: spielt)
+                        } else if schema == .dark {
                             GymGifAnsicht(folge: folge, spielt: spielt).colorInvert().hueRotation(.degrees(180)).blendMode(.screen)
                         } else {
                             GymGifAnsicht(folge: folge, spielt: spielt).blendMode(.multiply)

@@ -74,7 +74,7 @@ Nicht gleich, mit Grund:
 - `satzFertig()` (Live-Aktivität, Kurzbefehl) startet keinen Satz, es schließt nur den laufenden ab. Wurde kein Satz gestartet, misst die Satzzeit weiter ab Pausenende (Lumen-Verhalten).
 - Die Pause wird beim Verschieben von Zeilen nicht gelöscht (Lovea löscht sie).
 - Lumens `NaechsterSatzKarte` (schwarze Platte) und `UebungsKarte` erscheinen im Lovea-Aufbau nicht; ihre Funktionen (Pause ±15 s, Überspringen, Letztes Mal, Satz-Menü, Notiz, Pause je Übung) sind in Leiste, Tabelle und Menü.
-- Übungsbild: bei Lovea die Animation im Blatt, in Lumen `UebungDetailView` (Reiter Übersicht / Historie / So geht's). Offen.
+- Übungsbild: im Lovea-Aufbau wie `UebungGif`: weiße Kachel, Ecken 20, Seitenverhältnis 1,4, Schleife, Texte "Kein Video für diese Übung" und "Video lädt, sobald du Netz hast" (`UebungLoveaGif.swift:9`, in `UebungDetailView.swift`). Die Schleife (`GymUebungGif`) steht bei "Bewegung reduzieren" und im Stromsparmodus als Standbild und hält per Tipp an (Lumen-Barrierefreiheit). Platzhalter beim Laden ist ein Rad statt Loveas `LadeSchimmer`. GIF-Lizenz: nichts gebündelt, die Dateien kommen wie in Lovea vom CDN von ExerciseDB in den Cache (`UebungsMedien`); ob diese Nutzung in Lumen Fit erlaubt ist, ist ungeklärt und bleibt offen.
 
 ### 2. Plan und Splits (`F/Gym/PlanLoveaAufbau.swift`, `PlanLoveaSplits.swift`, `PlanLoveaEditor.swift`)
 
@@ -96,7 +96,7 @@ Partner: Lovea hat in der Bibliothek keinen Partner-Wechsel (nur `SplitBibliothe
 | Kennzahlen, Monat zum Wischen, Einheiten, Plus für "Training nachtragen" | gleich; Daten und Blätter wie im Lumen-Aufbau (`TrainingStore`, `EinheitNachtragenBlatt`) | `L/GymSession.swift:261`, `:362` |
 | Rückblick und Einheit nachlesen (Sätze als `LoveaSatzZeile`, nur lesen bzw. nachtragen) | gleich | `GymSession.swift:406`, `:560`, `WorkoutView.swift:562` |
 
-Partner-Wechsel "Ich / <Name>" (Lovea `GymSession.swift:277`): `TageLoveaAufbau.swift:36`, `:48`, Inhalt `:103`. Nicht gleich, mit Grund: von der Person kennt Lumen nur die Zusammenfassung (Dauer, Sätze, Übungen der letzten zehn Einheiten, Wochen, Serie, Gesamt, nie Sätze oder Gewichte). Monatsraster daher nur mit diesen zehn Tagen, die Einheiten lassen sich nicht öffnen (Lovea: `WorkoutRueckblick` mit allen Sätzen). Ohne verbundenen Partner gibt es den Wechsel nicht; ohne Freigabe steht "<Name> hat das nicht freigegeben."
+Partner-Wechsel "Ich / <Name>" (Lovea `GymSession.swift:277`): `TageLoveaAufbau.swift:36`, `:48`, Inhalt `:103`. Mit den Freigaben verlauf UND gym schickt die Person zusätzlich alle Trainingstage (bis 400, volles Monatsraster) und die letzten 30 Einheiten mit Übungen, Gewicht und Wiederholungen; Tipp auf Tag oder Zeile öffnet sie zum Nachlesen (`GymPartnerEinheitView.swift`, Daten `PartnerAnsichtsDaten.einheit`, Server `server/index.js` `einheitenSauber`). Nicht gleich: ohne Puls, RPE und Satzzeiten, ältere Einheiten als 30 und Tage ohne Detail lassen sich nicht öffnen. Server vor App ausrollen. Ohne verbundenen Partner gibt es den Wechsel nicht; ohne Freigabe steht "<Name> hat das nicht freigegeben."
 
 ### 4. Verlauf-Seite (`F/Fortschritt/VerlaufLoveaAufbau.swift`)
 
@@ -119,7 +119,7 @@ Partner-Wechsel "Ich / <Name>" (Lovea `GymSession.swift:277`): `TageLoveaAufbau.
 - Der Test "Theme-Wechsel bricht kein Training ab" prüft nur die reine Funktion `GymSeite.wahl` und dass dieselbe `GymSitzung` bleibt; der echte Wechsel der Ansicht im laufenden Training ist ungeprüft.
 - Kein CI-Bild für Übungsseite, Trainingstage, Split-Bibliothek, Plan-Editor: dafür gibt es keine Deep-Link-Route. Es gibt nur `gym-training` (Übersicht des laufenden Trainings).
 - Tippflächen 44 pt statt Lovea 36/30. Tab-Leiste bleibt. Körper-Figur bleibt eigene Zeichnung (Lizenz).
-- Partner: Einheit des Partners nachlesen und volles Monatsraster gehen nicht, die Zusammenfassung enthält keine Sätze und nur zehn Einheiten (siehe Trainingstage). Ändern müsste die Datei und den Server (Verbinden).
+- Partner: nachlesen und volles Raster sind gebaut (Server additiv, nur mit verlauf und gym). Grenzen: 30 Einheiten, 15 Übungen, 12 Sätze je Übung, 400 Tage.
 - Habit-Vergleich kommt später.
 
 ## Nicht geprüft
@@ -263,7 +263,7 @@ Urteil: gleich / AUFBAU ANDERS / FEHLT. Die Tabellen sind der Stand vor dem Bau;
 
 | Funktion | Datei:Zeile (Lovea) | Urteil |
 |---|---|---|
-| Partner-Plan, Partner-Verlauf, Partner-Messungen, Zeile "Du/Partner" | TrainingsPlanView.swift:35, GymSession.swift:276, Messungen.swift:61, GymStartView.swift:110 | gebaut im Lovea-Aufbau; Grenze: Partner-Einheit nachlesen und volles Raster gehen nicht (Zusammenfassung ohne Sätze, nur zehn Einheiten) |
+| Partner-Plan, Partner-Verlauf, Partner-Messungen, Zeile "Du/Partner" | TrainingsPlanView.swift:35, GymSession.swift:276, Messungen.swift:61, GymStartView.swift:110 | gebaut im Lovea-Aufbau, auch Einheit nachlesen und volles Raster (Grenzen siehe Abschnitt 3) |
 | "Meinen Plan anpassen" in der Bibliothek, Wochenbild je Split | SplitAnsichten.swift:77, :25 | gebaut im Lovea-Aufbau |
 | Übungsliste und Split-Zeile direkt auf der Startseite | GymStartView.swift:97-105 | gebaut im Lovea-Aufbau (`GymStartView.swift:119-175`) |
 | Körper-Kasten in Heute, Verlauf-Kasten, PlantagKarte oben | HeuteView.swift:472, :499-500 | FEHLT (nicht gelesen, ob Lumen ähnliches anders hat) |
