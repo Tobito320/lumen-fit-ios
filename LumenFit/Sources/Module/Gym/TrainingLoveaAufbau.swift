@@ -161,6 +161,7 @@ struct TrainingLoveaView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     // Auch mit offenen Übungen: was fertig ist, zählt, der Rest bleibt im Plan.
                     Button("Beenden") { beenden = true }.fontWeight(.semibold)
+                        .loveaTipp(.trainingBeenden)
                 }
             }
             .loveaBeendenFragen(sitzung: sitzung, ausloeser: $beenden)
@@ -214,7 +215,7 @@ struct TrainingLoveaView: View {
             TimelineView(.periodic(from: .now, by: 10)) { _ in
                 HStack(alignment: .top, spacing: 22) {
                     wert("Dauer") { dauer.foregroundStyle(Color.blue) }
-                    wert("Volumen") { Text("\(TrainingLogik.kgText(sitzung.volumen.rounded())) kg") }
+                    wert("Volumen") { Text("\(TrainingLogik.kgText(sitzung.volumen.rounded())) kg") }.loveaTipp(.volumen)
                     wert("Sätze") { Text("\(sitzung.saetzeZahl)") }
                     if let puls = sitzung.puls.puls { wert("Puls") { Text("\(puls)").foregroundStyle(Color.red) } }
                     if let kcal = sitzung.puls.kcal { wert("kcal") { Text("\(kcal)") } }
@@ -247,6 +248,7 @@ struct TrainingLoveaView: View {
                 .foregroundStyle(Color.primary)
             }
             .accessibilityHint("Anderen Trainingstag wählen")
+            .loveaTipp(.loveaTrainingstagWechseln)
         } else {
             Text(name).font(.largeTitle.bold())
         }
@@ -379,7 +381,7 @@ struct TrainingLoveaView: View {
         let neu: ListenZeile = (id: "neu", titel: leerStart ? "Leeres Training" : "Übung hinzufügen", bild: "plus", aktion: { suche = true })
         let laufband: ListenZeile = (id: "laufband", titel: "Laufband", bild: "figure.run", aktion: { cardioDazu("laufband") })
         let stairmaster: ListenZeile = (id: "stairmaster", titel: "Stairmaster", bild: "figure.stair.stepper", aktion: { cardioDazu("stairmaster") })
-        gruppe([neu, laufband, stairmaster])
+        gruppe([neu, laufband, stairmaster]).loveaTipp(.cardioSchnell)
     }
 
     private func cardioDazu(_ geraet: String) {
@@ -463,6 +465,10 @@ struct TrainingLoveaUebungView: View {
                     }
                     .listRowSeparator(.hidden)
                 } else {
+                    // Lovea `WorkoutView.swift:612`: der Hinweis "Satz kopieren oder löschen" steht als Zeile über der Tabelle, sobald es Sätze gibt.
+                    if GymTipps.an, !u.saetze.isEmpty {
+                        GymTippZeile(art: .satzWischen, kontext: GymTippKontext(trainingLaeuft: true, saetze: u.saetze.count)).listRowSeparator(.hidden)
+                    }
                     tabellenKopf.listRowSeparator(.hidden)
                     ForEach(u.saetze.indices, id: \.self) { s in zeile(i, u, s) }
                     Button { sitzung.satzDazu(i) } label: {
@@ -615,6 +621,7 @@ struct TrainingLoveaUebungView: View {
             Image(systemName: "ellipsis.circle")
         }
         .accessibilityLabel("Mehr")
+        .loveaTipp(.loveaUebungMehr)
     }
 
     // MARK: Leiste
