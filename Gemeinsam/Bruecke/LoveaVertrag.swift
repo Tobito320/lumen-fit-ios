@@ -10,6 +10,7 @@ enum LoveaVertrag {
     nonisolated static let wuenscheDatei = "band-wuensche.json"
     nonisolated static let erledigtDatei = "band-erledigt.json"
     nonisolated static let statusDatei = "band-status.json"
+    nonisolated static let schritteDatei = "band-schritte.json"
     nonisolated static let widgetStandDatei = "widget-stand.json"
     /// Nach so langer Zeit ohne neue Datei gilt der Partner als veraltet (nichts wird angezeigt).
     nonisolated static let frist: TimeInterval = 48 * 3600
@@ -65,18 +66,73 @@ protocol PartnerAustausch: Sendable {
     /// Löscht die eigenen Dateien im Lovea-Ordner (nach dem Löschen des letzten Profils). Der Standard tut nichts (Fakes, `KeinePartnerBruecke`).
     func loescheEigeneDateien()
     func schreibe(serverStand: ZusammenfassungDatei)
+    /// Die Weckzeiten mit Schritte-Pflicht aus `band-wuensche.json` (Feld `wecker`, nur Lumen Alarm schreibt es). Der Standard liefert nichts.
+    func weckFenster() -> [WeckFenster]
+    /// `band-schritte.json` (Lumen Fit schreibt, nur im Ordner von Lumen Alarm). Der Standard tut nichts.
+    func schreibe(schritte: BandSchritteDatei)
+    func schritte() -> BandSchritteDatei?
 }
 
 extension PartnerAustausch {
     func loescheEigeneDateien() {}
     /// Die Zusammenfassung für den Lumen-Server (alle Bereiche, die eine Verbindung zeigt). Nur die Brücke mit Server tut etwas.
     func schreibe(serverStand: ZusammenfassungDatei) {}
+    func weckFenster() -> [WeckFenster] { [] }
+    func schreibe(schritte: BandSchritteDatei) {}
+    func schritte() -> BandSchritteDatei? { nil }
 }
 
 /// `band-wuensche.json` (Lovea schreibt).
 struct BandWuenscheDatei: Codable, Equatable, Sendable {
     var version: Int
     var wuensche: [BandWunsch]
+    /// Nur von Lumen Alarm: je Weckzeit mit Wünschen die Schritte-Pflicht. Fehlt bei Lovea.
+    var wecker: [WeckFenster]?
+}
+
+extension BandWuenscheDatei {
+    /// Tolerant: ein kaputtes oder fremdes `wecker` ist nil, die Wünsche bleiben lesbar.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decode(Int.self, forKey: .version)
+        wuensche = try c.decode([BandWunsch].self, forKey: .wuensche)
+        wecker = (try? c.decodeIfPresent([WeckFenster].self, forKey: .wecker)) ?? nil
+    }
+}
+
+/// Eine Weckzeit mit Wünschen (`wecker` in `band-wuensche.json`). `schritteNoetig` 0 = keine Pflicht; `bisAufgewacht`: die Wünsche laufen, bis jemand aufsteht.
+struct WeckFenster: Codable, Equatable, Hashable, Sendable {
+    var weckzeit: Date
+    var schritteNoetig: Int
+    var bisAufgewacht: Bool
+
+    enum CodingKeys: String, CodingKey { case weckzeit, schritteNoetig, bisAufgewacht }
+
+    init(weckzeit: Date, schritteNoetig: Int, bisAufgewacht: Bool = false) {
+        self.weckzeit = weckzeit
+        self.schritteNoetig = schritteNoetig
+        self.bisAufgewacht = bisAufgewacht
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        weckzeit = try c.decode(Date.self, forKey: .weckzeit)
+        schritteNoetig = (try? c.decodeIfPresent(Int.self, forKey: .schritteNoetig)) ?? 0
+        bisAufgewacht = (try? c.decodeIfPresent(Bool.self, forKey: .bisAufgewacht)) ?? false
+    }
+
+    /// Die Zeit in Sekunden, wie sie in den Ids `wecker-<Sekunden>-<Nr>` steht.
+    var sekunden: Int { Int(weckzeit.timeIntervalSince1970.rounded(.down)) }
+    var idPraefix: String { "wecker-\(sekunden)-" }
+}
+
+/// `band-schritte.json` (Lumen Fit schreibt, Ordner `LumenAlarm`): die Armband-Schritte seit der Weckzeit.
+struct BandSchritteDatei: Codable, Equatable, Sendable {
+    var version: Int
+    var geschrieben: Date
+    var weckzeit: Date
+    var schritte: Int
+    var aufgestanden: Bool
 }
 
 /// `band-erledigt.json` (Lumen Fit schreibt): die letzten ausgeführten Wunsch-Ids.

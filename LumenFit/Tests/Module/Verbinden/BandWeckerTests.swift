@@ -2,7 +2,7 @@ import XCTest
 @testable import LumenFit
 
 /// Der Band-Wecker von Lumen Alarm: künftige Wünsche bleiben liegen, Weck-Wünsche ignorieren Ruhezeit und Mindestpause, `lang` läuft einzeln,
-/// die Merkliste reicht für 300 Wünsche je Weckzeit, die Brücke im Ordner `LumenAlarm` löscht nur die eigenen Dateien, der Schalter greift.
+/// die Stöße im Abstand von 0,7 Sekunden laufen einzeln und nur ein alter Rückstau wird zu einem, die Merkliste reicht für 1000 Wünsche je Weckzeit, die Brücke im Ordner `LumenAlarm` löscht nur die eigenen Dateien, der Schalter greift.
 @MainActor
 final class BandWeckerTests: XCTestCase {
     private var defaults: UserDefaults!
@@ -85,6 +85,99 @@ final class BandWeckerTests: XCTestCase {
         _ = schlange(bruecke).verarbeite()
         XCTAssertNil(defaults.stringArray(forKey: BandWunschSchlange.schluessel))
         XCTAssertEqual(defaults.stringArray(forKey: BandWunschSchlange.alarmSchluessel), ["x"])
+    }
+
+    func testStoesseImAbstandVonNullKommaSiebenLaufenEinzeln() {
+        let alle = (0..<8).map { wunsch("wecker-1-\($0)", in: -Double(8 - $0) * 0.7) }
+        let gelaufen = Sammler()
+        XCTAssertEqual(schlange(FakePartnerAustausch(wuensche: alle), zusammen: true, ausgefuehrt: gelaufen).verarbeite().count, 8)
+        XCTAssertEqual(gelaufen.ids, alle.map(\.id), "jeder Stoß läuft, keiner wird verschluckt")
+    }
+
+    func testNurEinAlterRueckstauWirdZuEinemWunsch() {
+        let bruecke = FakePartnerAustausch(wuensche: [wunsch("a", in: -300), wunsch("b", in: -200), wunsch("c", in: -100)])
+        let gelaufen = Sammler()
+        XCTAssertEqual(schlange(bruecke, zusammen: true, ausgefuehrt: gelaufen).verarbeite(), ["a", "b", "c"])
+        XCTAssertEqual(gelaufen.ids, ["c"])
+    }
+
+    func testFrischeStoesseLaufenEinzelnDerAlteRueckstauDavorNicht() {
+        let bruecke = FakePartnerAustausch(wuensche: [wunsch("alt-1", in: -300), wunsch("alt-2", in: -299), wunsch("neu-1", in: -2), wunsch("neu-2", in: -1.3)])
+        let gelaufen = Sammler()
+        let fertig = schlange(bruecke, zusammen: true, ausgefuehrt: gelaufen).verarbeite()
+        XCTAssertEqual(Set(fertig), ["alt-1", "alt-2", "neu-1", "neu-2"])
+        XCTAssertEqual(gelaufen.ids, ["neu-1", "neu-2"])
+    }
+
+    func testFuehlenIdsUndWeckerAbsenderIgnorierenRuhezeitUndPause() {
+        XCTAssertTrue(BandWunschSchlange.istWecker(wunsch("fuehlen-3", in: 0, von: "kennung-b")))
+        XCTAssertTrue(BandWunschSchlange.istWecker(wunsch("x", in: 0, von: "wecker")))
+        XCTAssertFalse(BandWunschSchlange.istWecker(wunsch("wecker-1-0", in: 0, von: "kennung-b")), "die Id allein macht keinen Weck-Wunsch")
+    }
+
+    func testFuehlenWunschLaeuftTrotzAusgeschalteterWunschRegel() async {
+        let a = dienst()
+        await a.dienst.verbinde()
+        a.fabrik.melde(.verbunden(name: "H59 Test"))
+        await warte { a.dienst.modell?.zustand == .verbunden }
+        defaults.set(false, forKey: BandQuelle.wunsch.anSchluessel)
+        XCTAssertEqual(a.dienst.wunschAusfuehren(wunsch("fuehlen-1", .kurz, in: 0, von: "kennung-b")), .ausgefuehrt)
+        XCTAssertEqual(a.dienst.wunschAusfuehren(wunsch("normal", .kurz, in: 0, von: "kennung-b")), .verworfen)
+    }
+
+    func testErledigeAlleMeldetNurDieOffenenWuenscheDerWeckzeit() {
+        let alle = [wunsch("wecker-100-0", in: -1), wunsch("wecker-100-1", in: 30), wunsch("wecker-100-2", in: 60), wunsch("wecker-200-0", in: 90)]
+        let bruecke = FakePartnerAustausch(wuensche: alle)
+        let s = schlange(bruecke)
+        XCTAssertEqual(s.verarbeite(), ["wecker-100-0"])
+        XCTAssertEqual(Set(s.erledigeAlle(praefix: "wecker-100-")), ["wecker-100-1", "wecker-100-2"])
+        XCTAssertEqual(s.offene().map(\.id), ["wecker-200-0"])
+        XCTAssertEqual(Set(bruecke.erledigt.last ?? []), ["wecker-100-1", "wecker-100-2"])
+        XCTAssertEqual(s.erledigeAlle(praefix: "wecker-100-"), [], "nichts mehr offen, nichts mehr gemeldet")
+        XCTAssertEqual(bruecke.erledigt.count, 2)
+    }
+
+    func testDieMerklisteBehaeltDieLetztenVierTausendUndNichtMehr() {
+        XCTAssertEqual(BandWunschSchlange.alarmMerkMaximal, 4000)
+        let bruecke = FakePartnerAustausch(wuensche: (0..<8).map { wunsch("w-\($0)", in: -1) })
+        _ = schlange(bruecke, maximal: 5).verarbeite()
+        XCTAssertEqual(defaults.stringArray(forKey: BandWunschSchlange.alarmSchluessel)?.count, 5)
+    }
+
+    func testTausendWuenscheJeWeckzeitUndZweiWeckzeitenLaufenOhneRueckstauUndEinmal() {
+        // Zwei Weckzeiten mit je 1000 Wünschen im Abstand von 0,3 Sekunden: gerade vorbei, die ältesten sind schon Rückstau.
+        let alle = (0..<2000).map { wunsch("wecker-\($0 < 1000 ? 100 : 200)-\($0)", in: -Double(2000 - $0) * 0.3) }
+        let bruecke = FakePartnerAustausch(wuensche: alle)
+        let gelaufen = Sammler()
+        let s = schlange(bruecke, zusammen: true, ausgefuehrt: gelaufen)
+        XCTAssertEqual(s.verarbeite().count, 2000)
+        XCTAssertLessThanOrEqual(gelaufen.ids.count, 40, "nur die Stöße der letzten zehn Sekunden laufen")
+        XCTAssertGreaterThan(gelaufen.ids.count, 20)
+        XCTAssertTrue(s.offene().isEmpty)
+        XCTAssertEqual(s.verarbeite(), [])
+        XCTAssertEqual(defaults.stringArray(forKey: BandWunschSchlange.alarmSchluessel)?.count, 2000)
+    }
+
+    // MARK: Status für Lumen Alarm
+
+    func testDerStatusTraegtBluetoothUndZuletztGesehenUndKennStaerkeNicht() async {
+        let alarm = FakePartnerAustausch()
+        let a = dienst(alarm: alarm)
+        await a.dienst.verbinde()
+        a.fabrik.melde(.verbunden(name: "H59 Test"))
+        await warte { a.dienst.modell?.zustand == .verbunden }
+        a.dienst.statusSchreiben()
+        let status = alarm.status.last
+        XCTAssertEqual(status?.bluetoothAn, true)
+        XCTAssertEqual(status?.zuletztGesehen, VerbindenTest.jetzt)
+        XCTAssertNil(status?.staerke, "Lumen Fit hat keine Stärke für Lumen Alarm")
+    }
+
+    func testBluetoothAnAusUnbekannt() {
+        XCTAssertEqual(BandDienstImpl.bluetoothAn(.verbunden), true)
+        XCTAssertEqual(BandDienstImpl.bluetoothAn(.bluetoothAus), false)
+        XCTAssertNil(BandDienstImpl.bluetoothAn(.nichtErlaubt))
+        XCTAssertNil(BandDienstImpl.bluetoothAn(.nichtVerfuegbar))
     }
 
     // MARK: Pulse

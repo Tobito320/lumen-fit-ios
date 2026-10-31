@@ -187,6 +187,30 @@ struct BandStatusDatei: Codable, Equatable, Sendable {
     var verbunden: Bool
     var akkuProzent: Int?
     var name: String?
+    /// Zusatzfelder für Lumen Alarm (alle optional, Lovea ignoriert sie): Bluetooth am iPhone an, Band lädt, wann das Band zuletzt verbunden war,
+    /// Vibrationsstärke der Quelle "Wunsch" (1 bis 3) und die Band-Schritte von heute.
+    var bluetoothAn: Bool?
+    var laedt: Bool?
+    var zuletztGesehen: Date?
+    var staerke: Int?
+    var schritteHeute: Int?
+}
+
+extension BandStatusDatei {
+    /// Tolerant: ein falsch getyptes Zusatzfeld ist nil, die Datei bleibt lesbar.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        version = try c.decode(Int.self, forKey: .version)
+        geschrieben = try c.decode(Date.self, forKey: .geschrieben)
+        verbunden = try c.decode(Bool.self, forKey: .verbunden)
+        akkuProzent = (try? c.decodeIfPresent(Int.self, forKey: .akkuProzent)) ?? nil
+        name = (try? c.decodeIfPresent(String.self, forKey: .name)) ?? nil
+        bluetoothAn = (try? c.decodeIfPresent(Bool.self, forKey: .bluetoothAn)) ?? nil
+        laedt = (try? c.decodeIfPresent(Bool.self, forKey: .laedt)) ?? nil
+        zuletztGesehen = (try? c.decodeIfPresent(Date.self, forKey: .zuletztGesehen)) ?? nil
+        staerke = (try? c.decodeIfPresent(Int.self, forKey: .staerke)) ?? nil
+        schritteHeute = (try? c.decodeIfPresent(Int.self, forKey: .schritteHeute)) ?? nil
+    }
 }
 
 enum PartnerStand: Equatable, Sendable {

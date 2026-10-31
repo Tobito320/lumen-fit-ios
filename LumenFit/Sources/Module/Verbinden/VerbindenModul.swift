@@ -52,6 +52,10 @@ final class VerbindenDienste {
     /// Die Weck-Wünsche von Lumen Alarm (zweite Brücke) und der eine Wartetakt bis zum nächsten künftigen Wunsch.
     private var alarmWuensche: BandWunschSchlange?
     private var alarmTakt: Task<Void, Never>?
+    /// Zählt im Weckfenster die Schritte am Band (Vertrag mit Lumen Alarm, Abschnitt 3); startet nur, solange Wünsche einer Weckzeit offen sind.
+    private var aufsteher: AufstehWaechter?
+    /// Reicht Loveas Wecker, Töne und Erinnerungen an Lumen Alarm weiter (Nr. 45).
+    let uebernahme: AlarmUebernahme
     private let schlafe: @Sendable (TimeInterval) async -> Void
     private var beobachter: [DarwinBeobachter] = []
     private var strom: Task<Void, Never>?
@@ -61,8 +65,10 @@ final class VerbindenDienste {
 
     /// `startAbruf: false` lässt die erste Runde aus (Tests rufen `abruf()` selbst und warten darauf). `schlafe`: der Wartetakt der Weck-Wünsche (Tests geben einen eigenen).
     init(_ umgebung: AppUmgebung, startAbruf: Bool = true,
+         uebernahme: AlarmUebernahme = AlarmUebernahme(loveaGruppe: AppGruppe.loveaOrdner(), alarmOrdner: AppGruppe.alarmOrdner()),
          schlafe: @escaping @Sendable (TimeInterval) async -> Void = { _ = try? await Task.sleep(for: .seconds($0)) }) {
         self.umgebung = umgebung
+        self.uebernahme = uebernahme
         self.schlafe = schlafe
         bruecke = LoveaBrueckeDienst(bruecke: umgebung.bruecke,
                                      quellen: .init(daten: { [weak umgebung] in umgebung?.daten }, gesundheit: umgebung.gesundheit,
@@ -79,6 +85,20 @@ final class VerbindenDienste {
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
                               })
         umgebung.band = band
+        umgebung.alarmWecker.beobachte()
+        aufsteher = AufstehWaechter(
+            uhr: uhr,
+            fenster: { [weak umgebung] in umgebung?.alarmBruecke.weckFenster() ?? [] },
+            offen: { [weak self] praefix in self?.alarmWuensche?.offene().contains { $0.id.hasPrefix(praefix) } ?? false },
+            lesen: { [weak self] in self?.band.schritteLesen() ?? false },
+            stand: { [weak self] in self?.band.schritteStand() },
+            bisher: { [weak umgebung] in umgebung?.alarmBruecke.schritte() },
+            schreibe: { [weak umgebung] in umgebung?.alarmBruecke.schreibe(schritte: $0) },
+            aufgestanden: { [weak self] fenster in
+                self?.alarmWuensche?.erledigeAlle(praefix: fenster.idPraefix)
+                DarwinKanal.sende(DarwinKanal.bandAufgestanden)
+                self?.alarmWuenscheAusfuehren()
+            })
         umgebung.konto.beiVerbindungenGeaendert = { [weak self] in self?.verbindungenGeaendert() }
         band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren(); self?.alarmWuenscheAusfuehren() }
         band.beiPauseEnde = { [weak self] in self?.kopfhoerer.pauseEnde() }
@@ -102,10 +122,15 @@ final class VerbindenDienste {
         if startAbruf { Task { await abruf() } }
     }
 
+    /// Die kleine Zeile in Profil > Geräte (nur Zahlen), nil solange nichts weitergereicht wurde.
+    var uebernahmeZeile: String? { uebernahme.zeile() }
+
     // MARK: Abruf
 
     /// Eine Runde: Partner-Stand lesen, Mitteilungen, Band fortsetzen, Wünsche, Datei für Lovea. Läuft bei Start, Vordergrund, Hintergrund-Abruf und Darwin-Anstoß.
     func abruf() async {
+        uebernahme.weitergeben(person: umgebung.konto.loveaPerson, jetzt: umgebung.uhr())
+        umgebung.alarmWecker.aktualisieren()
         guard let daten = umgebung.daten else { return }
         let jetzt = umgebung.uhr()
         let werte = daten.einstellungen.werte
@@ -168,7 +193,7 @@ final class VerbindenDienste {
     func alarmWuenscheAusfuehren() {
         alarmTakt?.cancel()
         alarmTakt = nil
-        guard let werte = umgebung.daten?.einstellungen.werte, werte.bandAktiv, werte.alarmWeckt else { return }
+        guard let werte = umgebung.daten?.einstellungen.werte, werte.bandAktiv, werte.alarmWeckt else { aufsteher?.stoppe(); return }
         if alarmWuensche == nil {
             alarmWuensche = BandWunschSchlange(bruecke: umgebung.alarmBruecke, uhr: umgebung.uhr, schluessel: BandWunschSchlange.alarmSchluessel,
                                                merkMaximal: BandWunschSchlange.alarmMerkMaximal, zusammenfassen: true) { [weak self] in
@@ -177,6 +202,7 @@ final class VerbindenDienste {
         }
         guard let schlange = alarmWuensche else { return }
         schlange.verarbeite()
+        aufsteher?.anstossen()
         guard let zeit = schlange.naechsteZeit() else { return }
         let warte = max(0, zeit.timeIntervalSince(umgebung.uhr()))
         let schlafe = self.schlafe
@@ -211,6 +237,8 @@ final class VerbindenDienste {
             alarmTakt?.cancel()
             alarmTakt = nil
             alarmWuensche = nil
+            aufsteher?.stoppe()
+            uebernahme.entferne()
             umgebung.alarmBruecke.loescheEigeneDateien()
             bandWarAn = false
             loveaWarAn = false
@@ -233,7 +261,7 @@ final class VerbindenDienste {
             loveaWarAn = werte.loveaVerbunden
             bandWarAn = werte.bandAktiv
             alarmWarAn = werte.alarmWeckt
-            if !werte.alarmWeckt { alarmTakt?.cancel(); alarmTakt = nil }
+            if !werte.alarmWeckt { alarmTakt?.cancel(); alarmTakt = nil; aufsteher?.stoppe() }
             if bandAus { band.ausschalten() }
             await abruf()
         } else if werte.loveaVerbunden {
