@@ -270,6 +270,7 @@ struct TagesformLoveaKarte: View {
     let detail: () -> Void
     let gefuehl: (Int) -> Void
     @Environment(\.palette) private var palette
+    @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
         VStack(spacing: 0) {
@@ -278,6 +279,15 @@ struct TagesformLoveaKarte: View {
                     Text("Tagesform").font(.headline).foregroundStyle(palette.text)
                     TagesformRing(akku: energie.ergebnis.akku, urteil: energie.ergebnis.urteil)
                     if energie.ergebnis.akku == nil { Text(energie.ergebnis.satz).font(.subheadline).foregroundStyle(palette.text2) }
+                    if let datei = PartnerAnzeige.zusammenfassung(VerbindenDemo.partner ?? umgebung.daten?.verbindung.partner ?? .nichtVerbunden),
+                       PartnerAnzeige.energie(datei) != nil {
+                        // Lovea `EnergieKarte.swift` partnerZeile: der Rat der Person steht in der Tagesform-Karte.
+                        PartnerEnergieZeile(datei: datei).padding(.horizontal, -Abstand.l)
+                    }
+                    if let kappe = energie.ergebnis.kappe {
+                        Label("Obergrenze: \(kappe.text)", systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(LoveaDaten.ueber)
+                    }
                     if !energie.klartext.gruende.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(Array(energie.klartext.gruende.enumerated()), id: \.offset) { _, zeile in grund(zeile) }

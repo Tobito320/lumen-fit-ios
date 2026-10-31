@@ -14,6 +14,9 @@ enum LoveaDaten {
     static var coachMint: Color { HabitFarbe.mint.farbe }
     static let gymGruen = Color(red: 0x30 / 255, green: 0xD1 / 255, blue: 0x58 / 255)
 
+    /// Stufenfarbe eines Teils der Tagesform (Lovea `TagesformBlock.swift:189-193`): ab 70 grün, ab 45 orange, sonst rot.
+    static func stufe(_ wert: Double) -> Color { wert >= 70 ? .green : (wert >= 45 ? .orange : .red) }
+
     static func schlaf(_ phase: SchlafPhase) -> Color {
         switch phase {
         case .wach: schlafWach
