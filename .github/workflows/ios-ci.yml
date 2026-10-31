@@ -48,8 +48,8 @@ jobs:
 
   test-iphone:
     runs-on: macos-26
-    # Tests rund 17 Minuten, danach Screenshots (bis 24) und der Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit.
-    timeout-minutes: 55
+    # Tests rund 10 bis 17 Minuten, Screenshots (bis 24), Lovea-Aufbau-Bilder (bis 14) und Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit, die Summe passt in 80.
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v5
         with:
