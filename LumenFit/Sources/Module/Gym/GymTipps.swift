@@ -53,9 +53,40 @@ struct GymTipSplitFuerDich: GymTipErklaerung {
     var message: Text? { Text("Zeigt die Splits, die wir für dich empfehlen.") }
 }
 
+// Hinweise im Lovea-Aufbau (`LumenAufbau.lovea`): Loveas Wortlaut (`App/AppErklaerungen.swift`), wo er sich vom Lumen-Text unterscheidet. Eigene Typen
+// mit eigener Kennung, damit der Lumen-Text und TipKits "einmal"-Zähler der Lumen-Hinweise unberührt bleiben. Gleiche Texte (Beenden, Volumen,
+// Cardio, Satz wischen) teilen sich die Lumen-Typen.
+
+struct GymTipLoveaTrainingstagWechseln: GymTipErklaerung {
+    var title: Text { Text("Anderer Trainingstag") }
+    var message: Text? { Text("Tippen wechselt zu einem anderen Trainingstag.") }
+}
+
+struct GymTipLoveaUebungMehr: GymTipErklaerung {
+    var title: Text { Text("Mehr zur Übung") }
+    var message: Text? { Text("Animation, Aufwärmsätze, Scheibenrechner, auslassen oder entfernen.") }
+}
+
+struct GymTipLoveaSplitFuerDich: GymTipErklaerung {
+    var title: Text { Text("Für dich") }
+    var message: Text? { Text("Zeigt nur deine eigenen gespeicherten Splits.") }
+}
+
+struct GymTipLoveaStartMehr: GymTipErklaerung {
+    var title: Text { Text("Mehr im Gym") }
+    var message: Text? { Text("Plan vom Partner, Verlauf, Messungen, Übungen, Split wechseln oder frei trainieren ohne Plan.") }
+}
+
+struct GymTipLoveaSplitTagMehr: GymTipErklaerung {
+    var title: Text { Text("Mehr zum Tag") }
+    var message: Text? { Text("Tag umbenennen oder löschen.") }
+}
+
 /// Die Hinweise des Gym-Moduls.
 enum GymTippArt: String, CaseIterable, Sendable {
     case trainingBeenden, trainingstagWechseln, uebungMehr, cardioSchnell, volumen, satzWischen, planZeile, splitFuerDich
+    // Lovea-Aufbau, Loveas Wortlaut
+    case loveaTrainingstagWechseln, loveaUebungMehr, loveaSplitFuerDich, loveaStartMehr, loveaSplitTagMehr
 
     var tipp: any Tip {
         switch self {
@@ -67,6 +98,11 @@ enum GymTippArt: String, CaseIterable, Sendable {
         case .satzWischen: GymTipSatzWischen()
         case .planZeile: GymTipPlanZeile()
         case .splitFuerDich: GymTipSplitFuerDich()
+        case .loveaTrainingstagWechseln: GymTipLoveaTrainingstagWechseln()
+        case .loveaUebungMehr: GymTipLoveaUebungMehr()
+        case .loveaSplitFuerDich: GymTipLoveaSplitFuerDich()
+        case .loveaStartMehr: GymTipLoveaStartMehr()
+        case .loveaSplitTagMehr: GymTipLoveaSplitTagMehr()
         }
     }
 }
@@ -101,6 +137,9 @@ enum GymTippRegeln {
         case .satzWischen: return k.trainingLaeuft && k.kartenIndex == 0 && k.saetze > 0
         case .planZeile: return k.planUebungen > 0
         case .splitFuerDich: return true
+        case .loveaTrainingstagWechseln: return k.trainingLaeuft && k.tagWechselbar
+        case .loveaUebungMehr: return k.trainingLaeuft
+        case .loveaSplitFuerDich, .loveaStartMehr, .loveaSplitTagMehr: return true
         }
     }
 }
@@ -146,9 +185,18 @@ enum GymTipps {
 extension View {
     /// Sprechblase am Element, nur wenn die Regel es erlaubt (`GymTippRegeln`).
     func gymTipp(_ art: GymTippArt, _ kontext: GymTippKontext) -> some View {
-        // Jede Art mit ihrem eigenen Typ und nil, wenn sie nicht gemeint ist: so bleibt die Ansicht dieselbe, wenn die Regel wechselt.
-        let an = GymTipps.an && GymTippRegeln.zeigen(art, kontext)
-        return self
+        tippKette(art, an: GymTipps.an && GymTippRegeln.zeigen(art, kontext))
+    }
+
+    /// Sprechblase im Lovea-Aufbau: Lovea kennt keine Zusatzregeln, der Hinweis hängt am Element und kommt, wo es zu sehen ist (einmal, höchstens einer pro
+    /// Stunde, das regelt TipKit). Texte wie in Lovea, siehe oben.
+    func loveaTipp(_ art: GymTippArt) -> some View {
+        tippKette(art, an: GymTipps.an)
+    }
+
+    // Jede Art mit ihrem eigenen Typ und nil, wenn sie nicht gemeint ist: so bleibt die Ansicht dieselbe, wenn die Regel wechselt.
+    private func tippKette(_ art: GymTippArt, an: Bool) -> some View {
+        self
             .popoverTip(an && art == .trainingBeenden ? GymTipTrainingBeenden() : nil)
             .popoverTip(an && art == .trainingstagWechseln ? GymTipTrainingstagWechseln() : nil)
             .popoverTip(an && art == .uebungMehr ? GymTipUebungMehr() : nil)
@@ -156,6 +204,11 @@ extension View {
             .popoverTip(an && art == .volumen ? GymTipVolumen() : nil)
             .popoverTip(an && art == .planZeile ? GymTipPlanZeile() : nil)
             .popoverTip(an && art == .splitFuerDich ? GymTipSplitFuerDich() : nil)
+            .popoverTip(an && art == .loveaTrainingstagWechseln ? GymTipLoveaTrainingstagWechseln() : nil)
+            .popoverTip(an && art == .loveaUebungMehr ? GymTipLoveaUebungMehr() : nil)
+            .popoverTip(an && art == .loveaSplitFuerDich ? GymTipLoveaSplitFuerDich() : nil)
+            .popoverTip(an && art == .loveaStartMehr ? GymTipLoveaStartMehr() : nil)
+            .popoverTip(an && art == .loveaSplitTagMehr ? GymTipLoveaSplitTagMehr() : nil)
     }
 }
 

@@ -204,7 +204,7 @@ struct PlanLoveaBibliothekInhalt: View {
             .buttonStyle(.plain)
             .accessibilityAddTraits(art == a.id ? .isSelected : [])
         if a.id == "fuerdich" {
-            knopf.gymTipp(.splitFuerDich, GymTippKontext())
+            knopf.loveaTipp(.loveaSplitFuerDich)
         } else {
             knopf
         }

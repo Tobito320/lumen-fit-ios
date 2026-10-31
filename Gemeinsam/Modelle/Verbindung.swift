@@ -102,6 +102,31 @@ struct PartnerVerlauf: Codable, Equatable, Sendable {
     var woche: Int?
     var serieWochen: Int?
     var gesamt: Int?
+    /// Erweiterung (nur mit Freigabe verlauf UND gym, ältere Apps lesen sie nicht): alle Trainingstage für das Monatsraster, neueste zuerst, und die letzten
+    /// Einheiten mit Übungen, Gewicht und Wiederholungen zum Nachlesen.
+    var tage: [String]? = nil
+    var einheiten: [PartnerEinheit]? = nil
+}
+
+/// Eine Einheit zum Nachlesen: Übungen mit ihren Sätzen. Gewicht in Zehnteln kg (800 = 80 kg).
+struct PartnerEinheit: Codable, Equatable, Hashable, Sendable {
+    var tag: String
+    var name: String?
+    var minuten: Int?
+    var kcal: Int?
+    var uebungen: [PartnerUebungKurz]
+}
+
+struct PartnerUebungKurz: Codable, Equatable, Hashable, Sendable {
+    var name: String
+    var saetze: [PartnerSatzKurz]
+}
+
+struct PartnerSatzKurz: Codable, Equatable, Hashable, Sendable {
+    var wdh: Int
+    var kg: Int?
+    /// "w" Aufwärmen, "d" Dropsatz, "f" Versagen; nil normal.
+    var typ: String?
 }
 
 /// Kalorien und Makros in ganzen Zahlen (für einen Tag oder als Tagesziel).

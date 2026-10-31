@@ -22,8 +22,10 @@ enum TageLoveaLogik {
 
 // MARK: - Trainingstage
 
-/// Die Trainingstage wie Lovea (`GymVerlaufView`): Kennzahlen, Monat zum Wischen, die Einheiten, Plus für "Training nachtragen". Ohne
-/// Partner-Auswahl (Lumen ist eine Person). Daten und Blätter sind dieselben wie im Lumen-Aufbau (`TrainingStore`, `EinheitNachtragenBlatt`).
+/// Die Trainingstage wie Lovea (`GymVerlaufView`): Wechsel Ich / Partner, Kennzahlen, Monat zum Wischen, die Einheiten, Plus für "Training nachtragen".
+/// Daten und Blätter sind dieselben wie im Lumen-Aufbau (`TrainingStore`, `EinheitNachtragenBlatt`). Der Partner erscheint nur, wenn er verbunden ist; von
+/// ihm kennt Lumen die Zusammenfassung: mit den Freigaben verlauf und gym alle Trainingstage (Raster) und die letzten 30 Einheiten mit Sätzen zum Nachlesen
+/// (`GymPartnerEinheitView`), sonst nur Dauer, Sätze und Übungen der letzten zehn. Ältere Apps des Partners schicken nur die zehn.
 struct TageLoveaVerlauf: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var offen: String?
@@ -31,38 +33,55 @@ struct TageLoveaVerlauf: View {
     /// Der Tag, für den das Blatt geöffnet wurde; nil beim Plus (freie Wahl).
     @State private var nachtragenDatum: String?
     @State private var tipp = 0
+    /// Wessen Verlauf: false = Ich, true = der Partner (Lovea `person`).
+    @State private var partnerWahl = false
+    /// Die Einheit des Partners, die gerade zum Nachlesen offen ist.
+    @State private var partnerOffen: PartnerEinheit?
 
     var body: some View {
         let jetzt = umgebung.uhr()
         let heute = Datum.text(jetzt)
+        let partner = GymPartnerLogik.partner(PartnerAnsichtLogik.aktuellerStand(umgebung))
         let sessions = umgebung.daten?.training.sessions ?? []
         let gym = umgebung.daten?.habits.werte(Habit.gym.id) ?? [:]
         // Häkchen ohne Einheit: ein Ring im Monat, Tipp trägt für diesen Tag nach.
         let nurAbgehakt = GymTageLogik.nurAbgehakt(sessions: sessions, gym: gym)
         List {
-            if !sessions.isEmpty || !nurAbgehakt.isEmpty {
-                kennzahlen(sessions, heute: heute)
-                    .listRowSeparator(.hidden)
-                let trainingstage = Set(sessions.map { Datum.text($0.start) })
-                let aeltester = trainingstage.union(nurAbgehakt).min()
-                EinheitMonatsPager(anzahl: TageLoveaLogik.monate(aeltesterTag: aeltester, heute: heute)) { zurueck in
-                    TageLoveaMonat(tage: trainingstage, heute: heute, monateZurueck: zurueck, nurAbgehakt: nurAbgehakt) { tag in
-                        tipp += 1
-                        tagTippen(tag, sessions)
-                    }
-                    .padding(.horizontal, 4)
+            if let partner {
+                Picker("Wessen Verlauf", selection: $partnerWahl) {
+                    Text("Ich").tag(false)
+                    Text(partner.profilName).tag(true)
                 }
+                .pickerStyle(.segmented)
                 .listRowSeparator(.hidden)
             }
-            if sessions.isEmpty {
-                Text("Noch keine Einheit. Starte ein Training, dann steht es hier.")
-                    .foregroundStyle(.secondary)
-                Button("Training starten") { umgebung.router.oeffne(.gym(.training)) }
-                    .frame(minHeight: Abstand.tippflaeche)
-            }
-            ForEach(sessions) { s in
-                Button { offen = s.id } label: { zeile(s) }
-                    .buttonStyle(.plain)
+            if partnerWahl, let partner {
+                partnerInhalt(partner, heute: heute)
+            } else {
+                if !sessions.isEmpty || !nurAbgehakt.isEmpty {
+                    kennzahlen(sessions, heute: heute)
+                        .listRowSeparator(.hidden)
+                    let trainingstage = Set(sessions.map { Datum.text($0.start) })
+                    let aeltester = trainingstage.union(nurAbgehakt).min()
+                    EinheitMonatsPager(anzahl: TageLoveaLogik.monate(aeltesterTag: aeltester, heute: heute)) { zurueck in
+                        TageLoveaMonat(tage: trainingstage, heute: heute, monateZurueck: zurueck, nurAbgehakt: nurAbgehakt) { tag in
+                            tipp += 1
+                            tagTippen(tag, sessions)
+                        }
+                        .padding(.horizontal, 4)
+                    }
+                    .listRowSeparator(.hidden)
+                }
+                if sessions.isEmpty {
+                    Text("Noch keine Einheit. Starte ein Training, dann steht es hier.")
+                        .foregroundStyle(.secondary)
+                    Button("Training starten") { umgebung.router.oeffne(.gym(.training)) }
+                        .frame(minHeight: Abstand.tippflaeche)
+                }
+                ForEach(sessions) { s in
+                    Button { offen = s.id } label: { zeile(s) }
+                        .buttonStyle(.plain)
+                }
             }
         }
         .navigationTitle("Verlauf")
@@ -78,8 +97,60 @@ struct TageLoveaVerlauf: View {
             }
         }
         .navigationDestination(item: $offen) { EinheitNachlesenView(sessionId: $0) }
+        .navigationDestination(item: $partnerOffen) { GymPartnerEinheitView(name: partner?.profilName ?? "", einheit: $0) }
         .sheet(isPresented: $nachtragenOffen) { EinheitNachtragenBlatt(datum: nachtragenDatum, jetzt: umgebung.uhr()) }
         .haptik(.auswahl, bei: tipp)
+    }
+
+    /// Der Verlauf des Partners (Lovea: dieselbe Seite mit seinen Einheiten): Kennzahlen, Monat, Liste, aus der Zusammenfassung.
+    @ViewBuilder
+    private func partnerInhalt(_ datei: ZusammenfassungDatei, heute: String) -> some View {
+        let einheiten = GymPartnerLogik.einheiten(datei)
+        if let v = datei.heute.verlauf, datei.freigaben.contains(.verlauf) {
+            HStack(spacing: 28) {
+                kennzahl("Diese Woche") { RollZahl(wert: Double(v.woche ?? 0), format: .number.precision(.fractionLength(0))) }
+                kennzahl("Serie") {
+                    HStack(spacing: 4) {
+                        RollZahl(wert: Double(v.serieWochen ?? 0), format: .number.precision(.fractionLength(0)))
+                        Text(TageLoveaLogik.serieEinheit(v.serieWochen ?? 0))
+                    }
+                }
+                kennzahl("Gesamt") { RollZahl(wert: Double(v.gesamt ?? einheiten.count), format: .number.precision(.fractionLength(0))) }
+            }
+            .listRowSeparator(.hidden)
+            let tage = GymPartnerLogik.trainingstage(datei)
+            if let aeltester = tage.min() {
+                EinheitMonatsPager(anzahl: TageLoveaLogik.monate(aeltesterTag: aeltester, heute: heute)) { zurueck in
+                    TageLoveaMonat(tage: tage, heute: heute, monateZurueck: zurueck) { tag in
+                        tipp += 1
+                        partnerOffen = GymPartnerLogik.einheit(am: tag, in: datei)
+                    }
+                    .padding(.horizontal, 4)
+                }
+                .listRowSeparator(.hidden)
+            }
+            if einheiten.isEmpty { Text("\(datei.profilName) hat noch kein Training.").foregroundStyle(.secondary) }
+            ForEach(einheiten, id: \.self) { t in
+                let z = PartnerAnsichtLogik.trainingZeile(t)
+                let detail = GymPartnerLogik.einheit(am: t.tag, in: datei)
+                let zeile = VStack(alignment: .leading, spacing: 4) {
+                    Text(z.titel).font(.headline)
+                    Text(z.detail).font(.subheadline).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+                .contentShape(.rect)
+                if let detail {
+                    Button { partnerOffen = detail } label: { zeile }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Öffnet die Einheit")
+                } else {
+                    zeile.accessibilityElement(children: .combine)
+                }
+            }
+        } else {
+            Text("\(datei.profilName) hat das nicht freigegeben.").foregroundStyle(.secondary)
+        }
     }
 
     private func kennzahlen(_ sessions: [GymSession], heute: String) -> some View {

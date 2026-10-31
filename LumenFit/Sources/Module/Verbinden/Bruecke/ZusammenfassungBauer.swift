@@ -79,7 +79,12 @@ enum ZusammenfassungBauer {
     /// Plan, Verlauf, Tagebuch und Körperwerte: je nur mit der eigenen Freigabe (Standard aus), leere Listen werden zu "nicht da".
     private static func ansichten(_ heute: inout TagesZusammenfassung, _ e: Eingabe) {
         if e.freigaben.contains(.plan) { heute.plan = e.plan }
-        if e.freigaben.contains(.verlauf) { heute.verlauf = e.verlauf }
+        if e.freigaben.contains(.verlauf) {
+            var v = e.verlauf
+            // Sätze und Trainingstage nur mit der zusätzlichen Freigabe gym (der Server prüft es noch einmal).
+            if !e.freigaben.contains(.gym) { v?.tage = nil; v?.einheiten = nil }
+            heute.verlauf = v
+        }
         if e.freigaben.contains(.tagebuch) {
             heute.tagebuch = e.tagebuch.isEmpty ? nil : e.tagebuch
             heute.tagebuchZiele = e.tagebuch.isEmpty ? nil : e.tagebuchZiele

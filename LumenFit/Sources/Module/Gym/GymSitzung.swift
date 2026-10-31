@@ -37,6 +37,10 @@ final class GymSitzung: TrainingSteuerung {
     private(set) var hakenZaehler = 0
     /// Zählt hoch, wenn ein Haken zurückgenommen wird: leichte Haptik (`.haptik(.auswahl, bei:)`).
     private(set) var hakenZurueckZaehler = 0
+    /// Der Satz, den jemand im Lovea-Aufbau mit "Übung starten" oder "Nächster Satz" gestartet hat; nil ohne. Im Lumen-Aufbau bleibt er immer nil.
+    private(set) var satzLauf: SatzLauf?
+    /// Zählt hoch, wenn ein Satz gestartet wird: Haptik `.start` (Lovea `Haptik.mittel`).
+    private(set) var satzStartZaehler = 0
     /// Wann der nächste Satz begann (Ende der Pause oder Haken davor); nil = unbekannt. Aus der Zeit wird beim Haken die Satzdauer (`SatzUhrLogik`).
     private(set) var satzSeit: Date?
     /// Letztes Löschen oder Kopieren eines Satzes: die Leiste "Rückgängig" (5 s).
@@ -149,6 +153,7 @@ final class GymSitzung: TrainingSteuerung {
         liste = WorkoutLogik.uebungen(s, tag: training?.tag(id: s.tag), frueher: fruehere(s))
         gemeldet = []
         pause = ladePause(s.id)
+        satzLauf = ladeSatzLauf(s.id)
         planePause()
         liveSenden()
     }
@@ -158,20 +163,25 @@ final class GymSitzung: TrainingSteuerung {
         liste = []
         pauseAufgabe?.cancel()
         pause = nil
+        satzLauf = nil
         gemeldet = []
     }
 
     // MARK: - Starten und Beenden
 
     /// Checkt ein (oder nimmt das laufende Training wieder auf): Gym-Häkchen, Plantag von heute, Studio-Hinweis, Puls.
-    func starte(planTag: String?) {
+    func starte(planTag: String?) { einchecken(planTag ?? daten?.training.heutigerTag()?.id) }
+
+    /// Freies Training (Lovea ⋯ "Freies Training"): ohne Plantag, die Übungen kommen im Training dazu. `starte(planTag: nil)` nimmt dagegen den Tag von heute.
+    func starteFrei() { einchecken(nil) }
+
+    private func einchecken(_ gewaehlt: String?) {
         guard let d = daten else { return }
         if d.training.laufende() != nil {
             ladeWennNoetig()
             return
         }
         let jetzt = umgebung.uhr()
-        let gewaehlt = planTag ?? d.training.heutigerTag()?.id
         _ = d.training.einchecken(tag: gewaehlt)
         d.habits.setzeGym(datum: Datum.text(jetzt), an: true)
         studioHinweis = studio.flatMap { GymOeffnung.hinweis($0.profil.oeffnung, jetzt: jetzt) }
@@ -193,13 +203,13 @@ final class GymSitzung: TrainingSteuerung {
     /// Beendet das Training: Sätze, Rekorde, Energie und Puls (nur mit Sensor) gehen an `auschecken`; Health bekommt es nur mit dem Schalter.
     func beende() { beende(notiz: nil) }
 
-    /// Wie `beende()`, mit einer Notiz zum ganzen Training (leer wird nicht gespeichert).
-    func beende(notiz: String?) {
+    /// Wie `beende()`, mit einer Notiz zum ganzen Training (leer wird nicht gespeichert) und, wenn gewählt, einer eigenen Endzeit (Lovea-Aufbau "Endzeit ändern").
+    func beende(notiz: String?, ende: Date? = nil) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }
         let rekorde = RekordLogik.anzahl(liste, frueher: fruehere(s))
-        d.training.auschecken(sid, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
+        d.training.auschecken(sid, ende: ende, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
         let schreiben = d.einstellungen.werte.healthSchreiben
         let beendet = d.training.sessions.first { $0.id == sid }
         let schreiber = umgebung.healthSchreiber
@@ -209,8 +219,18 @@ final class GymSitzung: TrainingSteuerung {
             if schreiben, !selbstGeschrieben, let beendet { _ = await schreiber.speichere(training: beendet) }
         }
         setzePause(nil)
+        setzeSatzLauf(nil)
         zuruecksetzen()
         liveSenden()
+    }
+
+    /// Lovea-Aufbau "Endzeit ändern": Start und Ende von Hand setzen und das Training damit beenden (Lovea `ZeitenBlatt` auf dem laufenden Training).
+    /// Läuft über `beende`, damit Sätze, Rekorde, Puls, Pause und Live-Anzeige wie sonst abgeschlossen werden.
+    func beendeMitZeiten(start: Date, ende: Date) {
+        ladeWennNoetig()
+        guard let s = laufende else { return }
+        if start != s.start { training?.zeitenAendern(s, start: start, ende: nil) }
+        beende(notiz: nil, ende: max(ende, start))
     }
 
     /// Verwirft das laufende Training ganz (nichts wird gespeichert).
@@ -220,6 +240,7 @@ final class GymSitzung: TrainingSteuerung {
         let quelle = puls
         endeAufgabe = Task { _ = await quelle.beenden(speichern: false) }
         setzePause(nil)
+        setzeSatzLauf(nil)
         zuruecksetzen()
         liveSenden()
     }
@@ -242,8 +263,11 @@ final class GymSitzung: TrainingSteuerung {
             hakenZurueckZaehler += 1
         } else {
             let andere = pauseAbschliessen(jetzt)
-            liste[u].saetze[i].sek = SatzUhrLogik.dauer(seit: satzSeit, jetzt: jetzt, an: UserDefaults.standard.bool(forKey: GymAnzeige.satzzeitSchluessel))
+            // Ein gestarteter Satz misst ab dem Start, sonst (Lumen-Aufbau) ab dem Ende der Pause.
+            let gestartet = satzLauf.flatMap { $0.plan == liste[u].id && $0.satz == i ? $0.seit : nil }
+            liste[u].saetze[i].sek = SatzUhrLogik.dauer(seit: gestartet ?? satzSeit, jetzt: jetzt, an: UserDefaults.standard.bool(forKey: GymAnzeige.satzzeitSchluessel))
             satzSeit = nil
+            setzeSatzLauf(nil)
             liste[u].saetze[i].ok = true
             let rekord = rekordPruefen(u, i)
             let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung))
@@ -254,6 +278,45 @@ final class GymSitzung: TrainingSteuerung {
             umgebung.ereignisse.senden(.satzFertig(session: sid, rekord: rekord))
         }
         liveSenden()
+    }
+
+    /// Lovea-Aufbau "Übung starten" / "Nächster Satz": die Pause davor endet (ihre Länge geht an ihren Satz), die Zeilen gehen raus (auch ohne
+    /// Pause, Lovea `satzStarten`), und die Uhr des Satzes `i` läuft ab jetzt.
+    func satzStarten(_ u: Int, _ i: Int) {
+        ladeWennNoetig()
+        guard let sid = sessionId, liste.indices.contains(u), liste[u].saetze.indices.contains(i), !liste[u].planUebung.istCardio else { return }
+        let jetzt = umgebung.uhr()
+        if let andere = pauseAbschliessen(jetzt), andere != u { sende(andere) }
+        sende(u)
+        setzeSatzLauf(SatzLauf(session: sid, plan: liste[u].id, satz: i, seit: jetzt))
+        satzStartZaehler += 1
+        liveSenden()
+    }
+
+    /// Der gestartete Satz dieser Übung, wenn seine Uhr läuft und er noch nicht abgehakt ist (Lovea `laufenderSatz`).
+    func laufenderSatz(_ u: Int) -> Int? {
+        guard let l = satzLauf, liste.indices.contains(u), liste[u].id == l.plan, liste[u].saetze.indices.contains(l.satz), liste[u].saetze[l.satz].ok != true else { return nil }
+        return l.satz
+    }
+
+    /// Verschieben sich die Zeilen einer Übung (löschen, kopieren, Aufwärmsätze, auslassen, entfernen, rückgängig), hört die Satz-Uhr auf: sie merkt
+    /// sich Satznummern (Lovea `uhrAus`).
+    private func satzLaufEnde(_ u: Int) {
+        if liste.indices.contains(u), satzLauf?.plan == liste[u].id { setzeSatzLauf(nil) }
+    }
+
+    private func setzeSatzLauf(_ neu: SatzLauf?) {
+        guard satzLauf != nil || neu != nil else { return }
+        satzLauf = neu
+        if let d = daten {
+            let datei = JSONDatei<SatzLauf>(d.ordner.appendingPathComponent("gym-satz.json"))
+            if let neu { datei.speichere(neu) } else { datei.loesche() }
+        }
+    }
+
+    private func ladeSatzLauf(_ session: String) -> SatzLauf? {
+        guard let d = daten, let l = JSONDatei<SatzLauf>(d.ordner.appendingPathComponent("gym-satz.json")).lade(), l.session == session else { return nil }
+        return l
     }
 
     /// Der Knopf der Live Activity und der Kurzbefehl: der Satz, der dran ist, ist fertig. Ohne laufendes Training passiert nichts.
@@ -346,6 +409,7 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     func satzKopieren(_ u: Int, _ i: Int) {
+        satzLaufEnde(u)
         merkeRueckgaengig(u, i, .kopiert)
         aendere(u, senden: true) { WorkoutLogik.kopieren($0, i) }
     }
@@ -362,6 +426,7 @@ final class GymSitzung: TrainingSteuerung {
     func satzRueckgaengigMachen() {
         guard let r = rueckgaengig, let ziel = SatzRueckgaengigLogik.wiederherstellen(r, in: liste) else { rueckgaengig = nil; return }
         rueckgaengig = nil
+        satzLaufEnde(ziel.index)
         aendere(ziel.index, senden: true) { _ in ziel.saetze }
         liveSenden()
     }
@@ -377,6 +442,7 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     func satzLoeschen(_ u: Int, _ i: Int) {
+        satzLaufEnde(u)
         if liste.indices.contains(u), liste[u].saetze.count > 1 { merkeRueckgaengig(u, i, .geloescht) }
         aendere(u, senden: true) { saetze in
             guard saetze.indices.contains(i), saetze.count > 1 else { return saetze }
@@ -388,6 +454,7 @@ final class GymSitzung: TrainingSteuerung {
 
     /// Aufwärmsätze aus dem Arbeitsgewicht der Übung (`AufwaermRechner`), vor die Arbeitssätze.
     func aufwaermen(_ u: Int, arbeit: Double, stufen: [AufwaermRechner.Stufe] = AufwaermRechner.standard) {
+        satzLaufEnde(u)
         aendere(u, senden: true) { AufwaermRechner.einfuegen(in: $0, arbeit: arbeit, stufen: stufen) }
     }
 
@@ -471,6 +538,7 @@ final class GymSitzung: TrainingSteuerung {
     func uebungWeg(_ u: Int) {
         ladeWennNoetig()
         guard let sid = sessionId, let t = training, liste.indices.contains(u), liste[u].extra else { return }
+        satzLaufEnde(u)
         t.entfernen(sid, liste[u].planUebung)
         liste.remove(at: u)
         liveSenden()
@@ -480,6 +548,7 @@ final class GymSitzung: TrainingSteuerung {
     func auslassen(_ u: Int) {
         ladeWennNoetig()
         guard let sid = sessionId, let t = training, liste.indices.contains(u) else { return }
+        satzLaufEnde(u)
         t.auslassen(sid, liste[u].planUebung)
         liste[u].ausgelassen = true
         liste[u].saetze = []
@@ -563,10 +632,30 @@ final class GymSitzung: TrainingSteuerung {
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
     }
 
-    /// Ein Training ohne Plantag als neuen, flexiblen Tag speichern (`WorkoutLogik.alsTag`).
-    func alsTagSpeichern(name: String) {
+    /// Ein Training ohne Plantag als neuen, flexiblen Tag speichern (`WorkoutLogik.alsTag`). Mit `einheitZuordnen` gehört die Einheit danach zu
+    /// diesem Tag (Lovea `alsTagSpeichern`, `WorkoutView.swift:369`).
+    func alsTagSpeichern(name: String, einheitZuordnen: Bool = false) {
         guard let t = training, let neu = WorkoutLogik.alsTag(liste, name: name) else { return }
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
+        if einheitZuordnen, let s = laufende { t.tagSetzen(s, neu.id) }
+    }
+
+    // MARK: - Beenden mit Rückfragen (Lovea-Aufbau)
+
+    /// Ob "Plan aktualisieren?" gefragt wird: Tag da und der Aufbau hat sich geändert.
+    var planFrageNoetig: Bool { tag != nil && neuerTag != nil }
+    /// Ob "Als Trainingstag speichern?" gefragt wird: kein Tag, aber etwas Abgehaktes.
+    var freiFrageNoetig: Bool { tag == nil && WorkoutLogik.alsTag(liste, name: "") != nil }
+
+    /// Der erste Schritt nach "Beenden" (Lovea `beenden`): erst "so lange im Gym?", sonst gleich die Plan-Frage.
+    func ersterBeendenSchritt() -> BeendenSchritt {
+        let zuLang = laufende.map { TrainingLogik.zuLang(start: $0.start, ende: umgebung.uhr()) } ?? false
+        return BeendenAblauf.ersterSchritt(zuLang: zuLang, planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
+    }
+
+    /// Der Schritt nach "Ja, stimmt" (Lovea `abschliessen`).
+    func naechsterBeendenSchritt() -> BeendenSchritt {
+        BeendenAblauf.weiter(planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
     }
 
     // MARK: - Cardio

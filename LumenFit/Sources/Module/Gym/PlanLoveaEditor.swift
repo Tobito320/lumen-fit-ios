@@ -288,6 +288,7 @@ struct PlanLoveaEditorView: View {
         }
         .disabled(tag == nil)
         .accessibilityLabel("Mehr")
+        .loveaTipp(.loveaSplitTagMehr)
     }
 
     private func quellen(_ tag: TrainingsTag) -> [TrainingsTag] {

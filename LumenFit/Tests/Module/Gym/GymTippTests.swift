@@ -56,7 +56,22 @@ final class GymTippTests: XCTestCase {
     func testJederHinweisHatEineEigeneKennungUndText() {
         let kennungen = GymTippArt.allCases.map { $0.tipp.id }
         XCTAssertEqual(Set(kennungen).count, GymTippArt.allCases.count)
-        XCTAssertEqual(GymTippArt.allCases.count, 8)
+        XCTAssertEqual(GymTippArt.allCases.count, 13)
+    }
+
+    // MARK: Lovea-Aufbau
+
+    func testLoveaHinweiseHabenEigeneTypenNebenDenLumenHinweisen() {
+        XCTAssertEqual(GymTippArt.allCases.filter { $0.rawValue.hasPrefix("lovea") }.count, 5)
+        XCTAssertNotEqual(GymTippArt.loveaUebungMehr.tipp.id, GymTippArt.uebungMehr.tipp.id, "der Lumen-Text und sein Zähler bleiben unberührt")
+    }
+
+    func testLoveaHinweiseKommenWoDasElementZuSehenIst() {
+        XCTAssertTrue(zeigen(.loveaUebungMehr, index: 3))
+        XCTAssertFalse(zeigen(.loveaUebungMehr, laeuft: false))
+        XCTAssertTrue(zeigen(.loveaTrainingstagWechseln, wechselbar: true))
+        XCTAssertFalse(zeigen(.loveaTrainingstagWechseln, wechselbar: false))
+        for art in [GymTippArt.loveaSplitFuerDich, .loveaStartMehr, .loveaSplitTagMehr] { XCTAssertTrue(zeigen(art, laeuft: false)) }
     }
 
     // MARK: Ein- und ausschalten

@@ -1,8 +1,24 @@
-// Quelle: Lovea Health/Workout.swift (WorkoutUhr.satzStarten, satzDauer; hier ohne Satz-Start-Knopf: der Satz beginnt, wenn die Pause endet)
+// Quelle: Lovea Health/Workout.swift (WorkoutUhr.satzStarten, satzDauer), WorkoutView.swift :805 (Knopf "Übung starten" / "Nächster Satz" / "Satz fertig")
 import Foundation
 
-/// Die Satz-Uhr: Nach einer Pause läuft die Uhr des nächsten Satzes hoch. Beim Haken wird die Dauer gemerkt, wenn "Satz-Zeit" an ist.
+/// Ein Satz, dessen Uhr läuft, weil jemand im Lovea-Aufbau "Übung starten" oder "Nächster Satz" getippt hat (Lovea `WorkoutUhr.Stand` ohne Pause).
+/// Wird wie die Pause in `gym-satz.json` gemerkt, damit die Uhr einen App-Neustart übersteht. Ein Haken (und damit die nächste Pause) beendet ihn.
+struct SatzLauf: Codable, Equatable, Sendable {
+    var session: String
+    var plan: String
+    var satz: Int
+    var seit: Date
+}
+
+/// Die Satz-Uhr: Nach einer Pause läuft die Uhr des nächsten Satzes hoch (Lumen-Aufbau) oder ab dem Tipp auf "Übung starten" / "Nächster Satz"
+/// (Lovea-Aufbau, `SatzLauf`). Beim Haken wird die Dauer gemerkt, wenn "Satz-Zeit" an ist.
 enum SatzUhrLogik {
+    /// Beschriftung des großen Knopfs in der Leiste der Übung (Lovea `WorkoutView.swift:807`): läuft ein Satz, "Satz fertig"; sonst
+    /// "Übung starten" für den ersten offenen Satz und "Nächster Satz" für jeden späteren.
+    static func knopfText(laeuft: Bool, offener: Int) -> String {
+        laeuft ? "Satz fertig" : offener == 0 ? "Übung starten" : "Nächster Satz"
+    }
+
     /// Eine Dauer über einer halben Stunde ist kein Satz (Telefon weggelegt): sie wird nicht gespeichert.
     static let hoechstens: TimeInterval = 30 * 60
 
