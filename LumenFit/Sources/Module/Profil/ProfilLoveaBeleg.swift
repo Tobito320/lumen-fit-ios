@@ -29,6 +29,8 @@ struct ProfilLoveaBeleg: Codable, Equatable, Sendable {
     var schonDa: Int
     var uebersprungen: Int
     var arten: [String: ProfilLoveaArtBeleg]
+    /// Gruppen ohne eigene Art: Loveas Abgabe (`abgabe.*`), Coach, Wecker, Vorräte. Pro Gruppe, was sichtbar wurde, was nur im Log liegt (`roh`) und was nicht ging.
+    var uebernahme: [String: ProfilLoveaUebernahmeBeleg] = [:]
 
     /// Der Server nimmt nur Namen in dieser Form (kleiner Anfangsbuchstabe, Buchstaben, Ziffern, `_`, `.`, höchstens 60) und höchstens 150 Arten.
     static func gueltigeArt(_ name: String) -> Bool {
@@ -56,14 +58,15 @@ struct ProfilLoveaBeleg: Codable, Equatable, Sendable {
         for (art, n) in e.wiedergefunden { arten[name(art), default: .init()].wiedergefunden += n }
         for (art, n) in e.uebersprungenArt { arten[name(art), default: .init()].uebersprungen += n }
         var beleg = ProfilLoveaBeleg(zeit: ISO8601DateFormatter().string(from: zeit), seqMax: a.hoechsteSeq, unlesbar: a.unlesbar,
-                                     neu: e.neu, schonDa: e.schonDa, uebersprungen: e.uebersprungen, arten: arten)
+                                     neu: e.neu, schonDa: e.schonDa, uebersprungen: e.uebersprungen, arten: arten,
+                                     uebernahme: e.uebernahme.filter { gueltigeArt($0.key) })
         beleg.vollstaendig = beleg.pruefeVollstaendig()
         return beleg
     }
 
     /// Vollständig heißt: nichts Unbekanntes, nichts Unlesbares, keine kaputte Zeit, und jede geplante Op steht nach dem Schreiben wirklich im Speicher.
     func pruefeVollstaendig() -> Bool {
-        guard unlesbar == 0, arten.count <= 150 else { return false }
+        guard unlesbar == 0, arten.count <= 150, uebernahme.count <= 60, uebernahme.values.allSatisfy(\.stimmt) else { return false }
         return arten.values.allSatisfy { a in
             a.unbekannt == 0 && a.zeitKaputt == 0
                 && a.geplant == a.uebernommen + a.roh

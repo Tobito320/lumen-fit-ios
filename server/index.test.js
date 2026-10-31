@@ -396,7 +396,7 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur m
   const tag = heute();
   const wert = {
     tag, schritteZiel: 9000, schritteWoche: { [tag]: 8000, kaputt: 5 }, gymTage: [tag, "x"], gymZiel: 4, schlafZiel: 480, schlafWoche: { [tag]: 450 },
-    energieStufe: "hoch", energieGym: "mittel", habitsFertig: ["gym", "wasser", "fremd"],
+    energieStufe: "hoch", energieGym: "mittel", habitsFertig: ["gym", "wasser", "fremd"], wasserGlaeser: 5,
     zyklus: { phase: "folikular", tag: 3, wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"] },
   };
   const lies = async (freigaben) => {
@@ -412,5 +412,10 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur m
   assert.deepEqual([gym.gymTage, gym.gymZiel, gym.habitsFertig, gym.energieGym], [[tag], 4, ["gym"], undefined]);
   const alle = await lies(["schlaf", "gym", "essen"]);
   assert.deepEqual([alle.schlafZiel, alle.schlafWoche, alle.energieStufe, alle.energieGym, alle.habitsFertig], [480, { [tag]: 450 }, "hoch", "mittel", ["gym", "wasser"]]);
+  assert.deepEqual([gym.wasserGlaeser, alle.wasserGlaeser], [undefined, 5], "Wassergläser nur mit Freigabe essen");
+  assert.equal((await lies(["essen"])).wasserGlaeser, 5);
+  wert.wasserGlaeser = 5000;
+  assert.equal((await lies(["essen"])).wasserGlaeser, undefined, "unsinnig große Zahl fällt weg");
+  wert.wasserGlaeser = 5;
   assert.deepEqual(alle.zyklus, { phase: "folikular", wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"], tag: 3 });
 });

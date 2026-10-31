@@ -153,6 +153,9 @@ const MAX_BELEG_BYTES = 40000;
 const BELEG_ART = /^[a-z][A-Za-z0-9_.]{0,59}$/;
 const BELEG_FEHLER = ["nicht_erlaubt", "profil_nicht_leer", "netz", "abgelehnt", "server", "antwort_kaputt", "speichern", "unvollstaendig", "keine_daten", "kein_zugang"];
 const BELEG_ZAHLEN = ["geholt", "uebernommen", "roh", "ausgeschlossen", "unbekannt", "geplant", "wiedergefunden", "uebersprungen", "zeitKaputt"];
+// Gruppen ohne eigene Op-Art (Abgabe aus Lovea, Coach, Wecker, Vorräte): Einheiten und Einträge, siehe ProfilLoveaUebernahmeBeleg.
+const BELEG_UEBERNAHME_ZAHLEN = ["geholt", "aelter", "uebernommen", "vorhanden", "roh", "unlesbar", "eintraege", "geschrieben"];
+const MAX_UEBERNAHME = 60;
 const zahl = (x) => Number.isInteger(x) && x >= 0 && x <= 1e7;
 
 // Gibt die gesäuberte Form zurück (nur bekannte Felder) oder null bei ungültiger Eingabe.
@@ -182,7 +185,20 @@ function belegPruefen(b) {
     }
     arten[name] = z;
   }
-  return { typ: "beleg", zeit: b.zeit, vollstaendig: b.vollstaendig, ...kopf, arten };
+  const uebernahme = {};
+  if (b.uebernahme !== undefined) {
+    if (!istObjekt(b.uebernahme) || Object.keys(b.uebernahme).length > MAX_UEBERNAHME) return null;
+    for (const [name, u] of Object.entries(b.uebernahme)) {
+      if (!BELEG_ART.test(name) || !istObjekt(u)) return null;
+      const z = {};
+      for (const k of BELEG_UEBERNAHME_ZAHLEN) {
+        if (!zahl(u[k] ?? 0)) return null;
+        z[k] = u[k] ?? 0;
+      }
+      uebernahme[name] = z;
+    }
+  }
+  return { typ: "beleg", zeit: b.zeit, vollstaendig: b.vollstaendig, ...kopf, arten, uebernahme };
 }
 
 async function importBeleg(request, env) {
@@ -346,6 +362,7 @@ function erweiterungSauber(h, freigaben, heute) {
     if (ENERGIE.includes(h.energieStufe)) heute.energieStufe = h.energieStufe;
     if (freigaben.includes("gym") && ENERGIE.includes(h.energieGym)) heute.energieGym = h.energieGym;
   }
+  if (freigaben.includes("essen") && ganz(h.wasserGlaeser) !== undefined && h.wasserGlaeser <= 99) heute.wasserGlaeser = h.wasserGlaeser;
   if (Array.isArray(h.habitsFertig)) {
     const erlaubt = [freigaben.includes("gym") ? "gym" : null, freigaben.includes("essen") ? "wasser" : null];
     const fertig = [...new Set(h.habitsFertig.filter((k) => typeof k === "string" && erlaubt.includes(k)))];

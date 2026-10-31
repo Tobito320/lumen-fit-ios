@@ -11,7 +11,7 @@ final class PartnerGleichstandTests: XCTestCase {
         ZusammenfassungBauer.Eingabe(
             name: "Beispiel Profil", jetzt: jetzt, freigaben: frei, schritte: 8_000, gymTageWoche: 2, schlafMinuten: 450, kcal: 1_900, ereignisse: [],
             schritteZiel: 10_000, schritteWoche: ["2026-10-26": 7_000, "2026-10-29": 8_000], gymTage: ["2026-10-28", "2026-10-26"], gymZiel: 3,
-            schlafWoche: ["2026-10-29": 450], schlafZiel: 480, energieStufe: "mittel", energieGym: "Gym ja", habitsFertig: ["gym", "wasser"])
+            schlafWoche: ["2026-10-29": 450], schlafZiel: 480, energieStufe: "mittel", energieGym: "Gym ja", habitsFertig: ["gym", "wasser"], wasserGlaeser: 5)
     }
 
     private func datei(_ frei: [FreigabeArt], aendere: (inout TagesZusammenfassung) -> Void = { _ in }) -> ZusammenfassungDatei {
@@ -37,6 +37,8 @@ final class PartnerGleichstandTests: XCTestCase {
         XCTAssertNil(gym.energieStufe)
         let essen = ZusammenfassungBauer.baue(eingabe([.essen])).heute
         XCTAssertEqual(essen.habitsFertig, ["wasser"])
+        XCTAssertEqual(essen.wasserGlaeser, 5, "Wassergläser nur mit Freigabe essen")
+        XCTAssertNil(gym.wasserGlaeser)
     }
 
     func testEnergieHaengtAmSchlafUndIhrGymSatzZusaetzlichAmGym() {

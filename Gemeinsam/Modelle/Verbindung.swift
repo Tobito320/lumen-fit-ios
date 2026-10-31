@@ -29,6 +29,8 @@ struct TagesZusammenfassung: Codable, Equatable, Sendable {
     var energieGym: String?
     /// Kennungen eingebauter Gewohnheiten, die heute erledigt sind ("gym" mit Freigabe gym, "wasser" mit Freigabe essen).
     var habitsFertig: [String]?
+    /// Wassergläser von heute (Freigabe essen); Lovea braucht die Zahl für Punkte, `habitsFertig` sagt nur "Ziel erreicht".
+    var wasserGlaeser: Int?
     /// Phase und Tag des Zyklus in kurzen Hinweisen. Nur wenn die Person es in den Zyklus-Einstellungen erlaubt (kein Teil von `FreigabeArt`).
     var zyklus: ZyklusZusammenfassung?
     /// Trainingsplan: Name, Wochentage, Übungsnamen (Freigabe plan).

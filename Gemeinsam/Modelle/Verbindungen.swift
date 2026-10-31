@@ -232,7 +232,7 @@ enum VerbindungenLogik {
             h.schlafMinuten = alt.schlafMinuten; h.schlafWoche = alt.schlafWoche; h.schlafZiel = alt.schlafZiel; h.energieStufe = alt.energieStufe
             if d.freigaben.contains(.gym) { h.energieGym = alt.energieGym }
         }
-        if d.freigaben.contains(.essen) { h.kcal = alt.kcal }
+        if d.freigaben.contains(.essen) { h.kcal = alt.kcal; h.wasserGlaeser = alt.wasserGlaeser }
         let habits = (alt.habitsFertig ?? []).filter { ($0 == "gym" && d.freigaben.contains(.gym)) || ($0 == "wasser" && d.freigaben.contains(.essen)) }
         h.habitsFertig = habits.isEmpty ? nil : habits
         if d.freigaben.contains(.plan) { h.plan = alt.plan }

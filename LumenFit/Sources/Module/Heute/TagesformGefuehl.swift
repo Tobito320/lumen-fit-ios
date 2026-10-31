@@ -112,7 +112,7 @@ final class TagesformSpeicher {
     }
 
     func setzen(_ neu: TagesformEintrag) {
-        eintraege = TagesformGefuehl.einsetzen(eintraege, neu)
+        eintraege = TagesformGefuehl.einsetzen(TagesformGefuehl.laden(datei), neu)   // von der Platte: der Lovea-Import kann Tage dazugelegt haben
         TagesformGefuehl.speichern(eintraege, in: datei)
     }
 }
