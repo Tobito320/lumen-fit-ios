@@ -247,6 +247,7 @@ final class FakePartnerAustausch: PartnerAustausch, @unchecked Sendable {
     private var _partner: PartnerStand
     private var _wuensche: [BandWunsch]
     private var _zusammenfassungen: [ZusammenfassungDatei] = []
+    private var _serverStaende: [ZusammenfassungDatei] = []
     private var _erledigt: [[String]] = []
     private var _status: [BandStatusDatei] = []
 
@@ -256,11 +257,13 @@ final class FakePartnerAustausch: PartnerAustausch, @unchecked Sendable {
     }
 
     var zusammenfassungen: [ZusammenfassungDatei] { schloss.withLock { _zusammenfassungen } }
+    var serverStaende: [ZusammenfassungDatei] { schloss.withLock { _serverStaende } }
     var erledigt: [[String]] { schloss.withLock { _erledigt } }
     var status: [BandStatusDatei] { schloss.withLock { _status } }
 
     func partner(jetzt: Date) -> PartnerStand { schloss.withLock { _partner } }
     func schreibe(zusammenfassung: ZusammenfassungDatei) { schloss.withLock { _zusammenfassungen.append(zusammenfassung) } }
+    func schreibe(serverStand: ZusammenfassungDatei) { schloss.withLock { _serverStaende.append(serverStand) } }
     func wuensche() -> [BandWunsch] { schloss.withLock { _wuensche } }
     func melde(erledigt ids: [String]) { schloss.withLock { _erledigt.append(ids) } }
     func schreibe(status: BandStatusDatei) { schloss.withLock { _status.append(status) } }

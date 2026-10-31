@@ -91,13 +91,17 @@ final class KontoDienst {
     var loveaImportOffen: Bool { stand.loveaErlaubt && !stand.loveaImportErledigt }
     /// Zähler für den Nutzungs-Bündel (Bereiche und Funktionen, keine Inhalte); wird beim Abgleich einmal je Start gesendet.
     let nutzung: NutzungSpeicher
+    /// Die Verbindungen zu anderen Personen (QR-Einladung, Lovea-Partner) so, wie der Server sie zuletzt gemeldet hat.
+    let verbindungen: VerbindungenSpeicher
+    /// Der Stand der Verbindungen hat sich geändert (neu geholt, Einstellung, Entfernen): Partner-Stand, Lovea-Freigaben und Hochladen nachziehen.
+    @ObservationIgnored var beiVerbindungenGeaendert: (@MainActor () -> Void)?
 
     @ObservationIgnored private let zugang: KontoZugang?
     @ObservationIgnored private let schluesselbund: any Schluesselbund
     @ObservationIgnored private let http: any HTTPLader
     @ObservationIgnored private let uhr: Uhr
     @ObservationIgnored private let ablage: URL
-    @ObservationIgnored private let ordner: URL
+    @ObservationIgnored let ordner: URL
     /// Der Partner-Stand vom Server, so wie `ServerPartnerBruecke` ihn liest.
     nonisolated static let partnerDatei = "partner-server.json"
     /// So selten wird die Zusammenfassung für den Partner hochgeladen.
@@ -122,6 +126,7 @@ final class KontoDienst {
         self.ablage = datei
         self.ordner = ordner
         self.nutzung = NutzungSpeicher(ordner: ordner, uhr: uhr)
+        self.verbindungen = VerbindungenSpeicher(datei: ordner.appendingPathComponent(VerbindungenSpeicher.dateiName))
         let gelesen = (try? Data(contentsOf: datei)).flatMap { try? JSONDecoder().decode(KontoStand.self, from: $0) }
         self.stand = gelesen ?? KontoStand()
     }
@@ -241,12 +246,13 @@ final class KontoDienst {
             }
         }
         if stand.importMeldungOffen { await meldeImportAnServer(kennung) }
-        if stand.loveaErlaubt { await partnerAbgleichen(kennung) }
+        // Neuer Weg: Verbindungen vom Server (Antwort filtert er selbst). Kennt der Server ihn nicht (älterer Stand), bleibt der alte Partner-Weg.
+        if !(await verbindungenAbgleichen(kennung)), stand.loveaErlaubt { await partnerAbgleichen(kennung) }
         await nutzungUebertragen(kennung)
     }
 
     /// Eine Anfrage mit den Kopfzeilen des Kontos. nil bei Netzfehler.
-    private func sendeMitKonto(_ pfad: String, methode: String, body: Data? = nil, kennung: KontoKennung) async -> (status: Int, daten: Data)? {
+    func sendeMitKonto(_ pfad: String, methode: String, body: Data? = nil, kennung: KontoKennung) async -> (status: Int, daten: Data)? {
         await sende(anfrage(pfad, methode: methode, post: body, kennung: kennung))
     }
 
@@ -278,11 +284,23 @@ final class KontoDienst {
     /// Die Zusammenfassung für den Partner (`zusammenfassung.json`-Form) wird gemerkt und beim nächsten Gelegenheit hochgeladen (höchstens alle 2 Minuten).
     func partnerHochladen(_ daten: Data) {
         partnerAusstehend = daten
-        guard stand.loveaErlaubt, case .da(let k) = liesKennung(), k.registriert else { return }
+        guard case .da(let k) = liesKennung(), k.registriert else { return }
         Task { await partnerSenden(k) }
     }
 
-    private func partnerSenden(_ kennung: KontoKennung, erzwingen: Bool = false) async {
+    /// Die Kennung dieses Geräts, wenn der Server sie kennt (für die Wege der Verbindungen).
+    func registrierteKennung() -> KontoKennung? {
+        if case .da(let k) = liesKennung(), k.registriert { return k }
+        return nil
+    }
+
+    /// Die nächste Zusammenfassung geht sofort raus, ohne die 2 Minuten Pause (nach einer Änderung der Freigaben).
+    func hochladenFreigeben() { letzterPartnerUpload = nil }
+
+    /// Nichts mehr hochladen (keine Verbindung zeigt etwas): eine gemerkte, noch nicht gesendete Zusammenfassung verfällt.
+    func hochladenVerwerfen() { partnerAusstehend = nil }
+
+    func partnerSenden(_ kennung: KontoKennung, erzwingen: Bool = false) async {
         guard let daten = partnerAusstehend else { return }
         let jetzt = uhr()
         if !erzwingen, let letzter = letzterPartnerUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.partnerPause { return }

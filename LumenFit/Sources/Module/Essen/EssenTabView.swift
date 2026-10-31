@@ -124,6 +124,7 @@ struct EssenTabView: View {
                 }
                 .id(tag)
                 .transition(bewegungAus ? .opacity : .push(from: vorwaerts ? .trailing : .leading))
+                PartnerKarte(bereich: .essen)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.top, Abstand.s)

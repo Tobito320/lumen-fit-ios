@@ -10,6 +10,9 @@ enum PartnerTageswerte {
         var schlafWoche: [String: Int] = [:]
         var energie: EnergieRat?
         var habitsFertig: Set<String> = []
+        var stimmung: Int?
+        var stimmungWoche: [String: Int] = [:]
+        var gewohnheiten: [GewohnheitStand] = []
     }
 
     static func sammle(daten: DatenSatz, gesundheit: GesundheitsStand, jetzt: Date) -> Werte {
@@ -28,6 +31,23 @@ enum PartnerTageswerte {
         let wasser = daten.habits.wert(Habit.wasser.id, heute)
         let wasserZiel = daten.habits.habitZiel(Habit.wasser.id)
         if HabitLogik.erledigt(Habit.wasser, wert: wasser, ziel: wasserZiel) { w.habitsFertig.insert(Habit.wasser.id) }
+
+        // Morgen-Check: der letzte Eintrag je Tag, heute und die Tage der Woche.
+        for op in daten.raum.ops(arten: [CoachDaten.stimmungArt]) {
+            guard let s = op.daten(StimmungsEintrag.self), woche.contains(s.tag) else { continue }
+            w.stimmungWoche[s.tag] = min(max(s.wert, 1), 5)
+        }
+        w.stimmung = w.stimmungWoche[heute]
+        // Alle sichtbaren Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob heute erledigt. Gym zählt auch Einheiten, nicht nur den Haken.
+        w.gewohnheiten = daten.habits.sichtbar.prefix(30).map { habit in
+            var werte = daten.habits.werte(habit.id)
+            if habit.id == Habit.gym.id { for t in gymAlle { werte[t] = max(werte[t] ?? 0, 1) } }
+            let ziel = daten.habits.habitZiel(habit.id)
+            return GewohnheitStand(id: habit.id, name: habit.name, symbol: habit.symbol,
+                                   serie: HabitLogik.serie(habit, werte: werte, ziel: ziel, heute: heute),
+                                   quote: Int((HabitLogik.quote30(habit, werte: werte, ziel: ziel, heute: heute) * 100).rounded()),
+                                   heute: HabitLogik.erledigt(habit, wert: werte[heute] ?? 0, ziel: ziel))
+        }
 
         let plan = HeutePlanLogik.vorschlag(plan: daten.training.plan, heute: heute, trainiert: trainiert, locker: false, gymInFolge: folge)
         let eingabe = TagesformQuellen.eingabe(daten: daten, gesundheit: gesundheit, tag: heute, jetzt: jetzt)

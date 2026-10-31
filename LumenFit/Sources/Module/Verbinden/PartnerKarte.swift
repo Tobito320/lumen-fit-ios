@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Die Partner-Karte (Idee 82): Heute und Schlaf betten sie ein. Sie zeigt nur, was die verbundene Person freigibt und die Datei enthält.
+/// Die Partner-Karte (Idee 82): Heute, Schlaf, Essen und Gym betten sie ein. Sie zeigt nur, was die verbundene Person freigibt und die Datei enthält.
 /// Nicht verbunden, veraltet, falsche Version, nichts freigegeben: gar nichts, nicht einmal einen Platzhalter oder eine Fehlermeldung.
 struct PartnerKarte: View {
     let bereich: PartnerBereich
@@ -16,8 +16,8 @@ struct PartnerKarte: View {
     var body: some View {
         if let datei = PartnerAnzeige.zusammenfassung(stand) {
             let zeilen = PartnerAnzeige.zeilen(datei, bereich: bereich)
-            // Die Ansichten (Plan, Verlauf, Tagebuch, Körperwerte) hängen nur an der Karte auf Heute.
-            let einstiege = bereich == .heute ? PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()) : []
+            // Die Ansichten: Heute alle, Essen das Tagebuch, Gym Plan und Verlauf.
+            let einstiege = PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr(), bereich: bereich)
             if !zeilen.isEmpty || !einstiege.isEmpty { karte(datei, zeilen, einstiege) }
         }
     }

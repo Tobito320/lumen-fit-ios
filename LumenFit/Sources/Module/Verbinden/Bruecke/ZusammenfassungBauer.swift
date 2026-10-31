@@ -31,6 +31,10 @@ enum ZusammenfassungBauer {
         var tagebuch: [PartnerTagebuchTag] = []
         var tagebuchZiele: PartnerMakros? = nil
         var koerper: [String: [PartnerMesspunkt]] = [:]
+        // Stimmung (Morgen-Check) und alle Gewohnheiten mit Serie und Quote: je mit ihrer Freigabe.
+        var stimmung: Int? = nil
+        var stimmungWoche: [String: Int] = [:]
+        var gewohnheiten: [GewohnheitStand] = []
     }
 
     /// So lange bleiben eigene Ereignisse in der Datei; ältere sind erledigt.
@@ -78,6 +82,11 @@ enum ZusammenfassungBauer {
             heute.tagebuchZiele = e.tagebuch.isEmpty ? nil : e.tagebuchZiele
         }
         if e.freigaben.contains(.koerper) { heute.koerper = e.koerper.isEmpty ? nil : e.koerper }
+        if e.freigaben.contains(.stimmung) {
+            heute.stimmung = e.stimmung
+            heute.stimmungWoche = e.stimmungWoche.isEmpty ? nil : e.stimmungWoche
+        }
+        if e.freigaben.contains(.gewohnheiten) { heute.gewohnheiten = e.gewohnheiten.isEmpty ? nil : e.gewohnheiten }
     }
 
     static func baue(_ e: Eingabe) -> ZusammenfassungDatei {

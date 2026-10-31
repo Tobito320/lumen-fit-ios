@@ -15,7 +15,8 @@ struct RouteAnsicht: View {
         case .verlauf: VerlaufView()
         case .gewichtEintragen: GewichtEintragenView()
         case .uebung(let id): UebungDetailView(id: id)
-        case .freund(let daten): FreundeView(daten: daten)
+        case .freund(let daten):
+            if let t = VerbindungenLogik.token(aus: daten) { VerbindungScanBlatt(token: t) } else { FreundeView(daten: daten) }
         }
     }
 

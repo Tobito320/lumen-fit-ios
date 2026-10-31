@@ -44,6 +44,8 @@ enum FreigabenVorschau {
         case .verlauf: "Training und Verlauf"
         case .tagebuch: "Tagebuch"
         case .koerper: "Körperwerte"
+        case .stimmung: "Stimmung"
+        case .gewohnheiten: "Gewohnheiten"
         }
     }
 
@@ -57,6 +59,8 @@ enum FreigabenVorschau {
         case .verlauf: "Ob du gerade im Gym bist und eine Zusammenfassung deiner letzten zehn Trainings: Tag, Dauer, Zahl der Sätze. Keine Gewichte."
         case .tagebuch: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien und Makros. Keine Fotos, keine Mengen."
         case .koerper: "Dein Gewicht und deine Körpermaße mit dem Verlauf der letzten Monate."
+        case .stimmung: "Deine Antwort auf den Morgen-Check von heute und die Tage dieser Woche."
+        case .gewohnheiten: "Alle deine Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind."
         }
     }
 
@@ -70,6 +74,8 @@ enum FreigabenVorschau {
         case .verlauf: "figure.strengthtraining.traditional"
         case .tagebuch: "book.closed"
         case .koerper: "scalemass"
+        case .stimmung: "face.smiling"
+        case .gewohnheiten: "checkmark.circle"
         }
     }
 }

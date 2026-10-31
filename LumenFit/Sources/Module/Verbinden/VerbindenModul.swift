@@ -68,6 +68,7 @@ final class VerbindenDienste {
                                      quellen: .init(daten: { [weak umgebung] in umgebung?.daten }, gesundheit: umgebung.gesundheit,
                                                     profilName: { [weak umgebung] in umgebung?.profil.aktiv?.name }),
                                      uhr: umgebung.uhr)
+        bruecke.hochladen = { [weak umgebung] in VerbindungenLogik.hochladen(umgebung?.konto.verbindungen.antwort) }
         let uhr = umgebung.uhr
         band = BandDienstImpl(aktiv: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.bandAktiv ?? false },
                               bruecke: umgebung.bruecke, uhr: uhr,
@@ -78,6 +79,7 @@ final class VerbindenDienste {
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
                               })
         umgebung.band = band
+        umgebung.konto.beiVerbindungenGeaendert = { [weak self] in self?.verbindungenGeaendert() }
         band.beiVerbunden = { [weak self] in self?.wuenscheAusfuehren(); self?.alarmWuenscheAusfuehren() }
         band.beiPauseEnde = { [weak self] in self?.kopfhoerer.pauseEnde() }
         band.beiAkkuWarnung = { [weak umgebung] prozent in
@@ -108,16 +110,37 @@ final class VerbindenDienste {
         let jetzt = umgebung.uhr()
         let werte = daten.einstellungen.werte
         daten.verbindung.aktualisiere(jetzt: jetzt)
+        spiegleFreigaben(daten)
         if werte.loveaVerbunden {
             await regelnFuer(daten).verarbeite(daten.verbindung.partner, einstellungen: werte, jetzt: jetzt)
-            bruecke.schreibe()
         }
-        if werte.bandAktiv {
+        bruecke.schreibe()   // Datei für Lovea (mit Schalter) und Stand für den Server (nur mit aktiver Verbindung)
+        bandStandardAnwenden(daten)
+        if daten.einstellungen.werte.bandAktiv {
             band.starte()
             wuenscheAusfuehren()
             alarmWuenscheAusfuehren()
             band.statusSchreiben()
         }
+    }
+
+    /// Die Lovea-Datei zeigt nur, was die Lovea-Verbindung auf dem Server zeigt. Nach dem Entfernen oder der Pause ist sie leer. Ohne Stand vom Server bleibt alles beim Alten.
+    private func spiegleFreigaben(_ daten: DatenSatz) {
+        guard umgebung.konto.verbindungen.antwort != nil else { return }
+        let neu = VerbindungenLogik.freigaben(fuer: umgebung.konto.verbindungen.lovea)
+        if daten.verbindung.freigaben != neu { daten.verbindung.freigaben = neu }
+    }
+
+    /// Der Server stellt das Band für dieses Konto von selbst an (`bandStandard`), aber nur, solange es nie bewusst ausgeschaltet wurde.
+    private func bandStandardAnwenden(_ daten: DatenSatz) {
+        let werte = daten.einstellungen.werte
+        guard umgebung.konto.config.bandStandard, !werte.bandAktiv, !werte.bandBewusstAus else { return }
+        daten.einstellungen.aendere { $0.bandAktiv = true }
+    }
+
+    /// Der Stand der Verbindungen hat sich geändert (neu geholt, Einstellung, Entfernen): Partner-Stand lesen, Datei und Server-Stand nachziehen.
+    private func verbindungenGeaendert() {
+        Task { await abruf() }
     }
 
     private func regelnFuer(_ daten: DatenSatz) -> PartnerEreignisRegeln {
@@ -182,6 +205,7 @@ final class VerbindenDienste {
             // Letztes Profil weg: Band vergessen, die eigenen Dateien in Loveas Gruppe löschen (nichts schreiben, nichts abrufen).
             band.vergessen()
             umgebung.bruecke.loescheEigeneDateien()
+            umgebung.konto.verbindungen.vergiss()
             regeln = [:]
             wuensche = nil
             alarmTakt?.cancel()

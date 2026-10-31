@@ -76,8 +76,8 @@ final class PartnerAnsichtenBauerTests: XCTestCase {
         XCTAssertEqual(zurueck, original)
     }
 
-    func testAlleAchtArtenHabenNameErklaerungUndSymbol() {
-        XCTAssertEqual(FreigabeArt.allCases.count, 8)
+    func testAlleZehnArtenHabenNameErklaerungUndSymbol() {
+        XCTAssertEqual(FreigabeArt.allCases.count, 10)
         for art in FreigabeArt.allCases {
             XCTAssertFalse(FreigabenVorschau.name(art).isEmpty)
             XCTAssertFalse(FreigabenVorschau.erklaerung(art).isEmpty)

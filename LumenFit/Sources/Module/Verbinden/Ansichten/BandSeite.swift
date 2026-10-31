@@ -38,7 +38,7 @@ struct BandSeite: View {
         VerbindenAbschnitt(fuss: fuss) {
             Toggle("Band in Lumen Fit nutzen", isOn: Binding(
                 get: { an },
-                set: { neu in einstellungen?.aendere { $0.bandAktiv = neu } }))
+                set: { neu in einstellungen?.aendere { $0.bandAktiv = neu; $0.bandBewusstAus = !neu } }))
                 .frame(minHeight: Abstand.tippflaeche)
         }
     }
@@ -55,6 +55,9 @@ struct BandSeite: View {
 
     /// Ohne Freigabe steht hier kein Wort von Lovea.
     private var fuss: String {
+        if umgebung.konto.config.bandStandard {
+            return "Für dein Konto von selbst an, Aus bleibt aus. Nur eine App kann das Band halten: Solange Lovea es hält, findet Lumen Fit es nicht."
+        }
         let basis = "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth."
         return umgebung.konto.loveaErlaubt ? "Standard aus. Solange Lovea das Band selbst hält, lass es aus: nur eine App kann das Band halten. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
     }

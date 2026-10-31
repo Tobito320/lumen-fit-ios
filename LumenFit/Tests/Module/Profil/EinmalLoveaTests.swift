@@ -87,7 +87,7 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertTrue(d.nutzung.stand.tage["2026-09-23"] == nil, "gesendete Zähler sind weg")
         let vorher = lader.aufrufe
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
-        XCTAssertEqual(Array(pfade(lader).suffix(lader.aufrufe - vorher)), ["/config", "/lovea/freigabe"], "in derselben Sitzung geht nichts mehr raus")
+        XCTAssertEqual(Array(pfade(lader).suffix(lader.aufrufe - vorher)), ["/config", "/lovea/freigabe", "/verbindungen"], "in derselben Sitzung geht keine Nutzung mehr raus (der Abgleich der Verbindungen läuft bei jeder Runde)")
     }
 
     func testNutzungBleibtBeiNetzfehlerLiegen() async throws {
@@ -134,21 +134,21 @@ final class EinmalLoveaTests: XCTestCase {
     func testImportAbgeschlossenMerktLokalMeldetDemServerUndWiederholtBeiNetzfehler() async throws {
         let ordner = try tempOrdner()
         let bund = SpeicherSchluesselbund()
-        let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200),
+        let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(404), antwort(200),
                                  .init(status: 0, daten: Data(), fehler: .notConnectedToInternet), antwort(200)])
         let d = try dienst(lader, bund: bund, ordner: ordner)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         await d.loveaImportAbgeschlossen()   // Netzfehler beim Melden
         XCTAssertFalse(d.loveaImportOffen)
         // Neuer Start: der gemerkte Stand gilt sofort, die offene Meldung geht nach.
-        let danach = SkriptLader([antwort(200, configJson), antwort(200, freigabeJson), antwort(200), antwort(404), antwort(200)])
+        let danach = SkriptLader([antwort(200, configJson), antwort(200, freigabeJson), antwort(200), antwort(404), antwort(404), antwort(200)])
         let neu = try dienst(danach, bund: bund, ordner: ordner)
         XCTAssertFalse(neu.loveaImportOffen)
         await neu.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertTrue(pfade(danach).contains("/lovea/import-erledigt"))
         XCTAssertEqual(danach.anfragen.first { $0.url?.path == "/lovea/import-erledigt" }?.httpMethod, "POST")
         XCTAssertFalse(neu.loveaImportOffen)
-        let nochmal = SkriptLader([antwort(200, configJson), antwort(200, #"{"erlaubt":true,"person":"person-a","importErledigt":true}"#), antwort(404), antwort(200)])
+        let nochmal = SkriptLader([antwort(200, configJson), antwort(200, #"{"erlaubt":true,"person":"person-a","importErledigt":true}"#), antwort(404), antwort(404), antwort(200)])
         let drittes = try dienst(nochmal, bund: bund, ordner: ordner)
         await drittes.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertFalse(pfade(nochmal).contains("/lovea/import-erledigt"), "gemeldet ist gemeldet")
@@ -157,7 +157,7 @@ final class EinmalLoveaTests: XCTestCase {
     func testEinmalImportLaeuftVonSelbstEinmalUndMerktSich() async throws {
         let ordner = try tempOrdner()
         let bund = SpeicherSchluesselbund()
-        let konto = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200), antwort(200)])
+        let konto = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(404), antwort(200), antwort(200)])
         let d = try dienst(konto, bund: bund, ordner: ordner)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
 
@@ -259,7 +259,7 @@ final class EinmalLoveaTests: XCTestCase {
     func testPartnerVomServerLandetInDerDateiUndFaelltBeiNullWeg() async throws {
         let ordner = try tempOrdner()
         let bund = SpeicherSchluesselbund()
-        let mit = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(200, partnerJson(geschrieben: "2026-09-23T11:00:00.000Z")), antwort(200)])
+        let mit = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200, partnerJson(geschrieben: "2026-09-23T11:00:00.000Z")), antwort(200)])
         let d = try dienst(mit, bund: bund, ordner: ordner)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         let datei = ordner.appendingPathComponent(KontoDienst.partnerDatei)
@@ -268,14 +268,14 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertEqual(gelesen.heute.schritte, 4200)
         XCTAssertEqual(mit.anfragen.first { $0.url?.path == "/partner" }?.httpMethod, "GET")
 
-        let ohne = SkriptLader([antwort(200, configJson), antwort(200, freigabeJson), antwort(200, #"{"partner":null,"aktualisiert":null}"#), antwort(200)])
+        let ohne = SkriptLader([antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200, #"{"partner":null,"aktualisiert":null}"#), antwort(200)])
         let neu = try dienst(ohne, bund: bund, ordner: ordner)
         await neu.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertFalse(FileManager.default.fileExists(atPath: datei.path), "kein Partner mehr: nichts zeigen")
     }
 
     func testEigeneZusammenfassungGehtMitKontoKopfzeilenAnDenServer() async throws {
-        let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(200, #"{"partner":null}"#), antwort(200)])
+        let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200, #"{"partner":null}"#), antwort(200)])
         let d = try dienst(lader)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         let datei = ZusammenfassungDatei(version: 1, geschrieben: TestUhr().lesen, profilName: "Beispiel", freigaben: [.schritte],
@@ -289,13 +289,14 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertEqual(zurueck, datei)
     }
 
-    func testOhneFreigabeGehtNichtsAnDenPartnerWeg() async throws {
+    func testHochladenBrauchtKeineLoveaFreigabe() async throws {
+        // Jedes angemeldete Konto darf hochladen; die App ruft das nur auf, wenn eine Verbindung etwas zeigt (`LoveaBrueckeDienst.hochladen`).
         let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, #"{"erlaubt":false}"#), antwort(200)])
         let d = try dienst(lader)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         d.partnerHochladen(Data("{}".utf8))
-        try await Task.sleep(for: .milliseconds(100))
-        XCTAssertFalse(pfade(lader).contains("/partner"))
+        for _ in 0..<50 where !lader.anfragen.contains(where: { $0.httpMethod == "PUT" }) { try await Task.sleep(for: .milliseconds(20)) }
+        XCTAssertTrue(lader.anfragen.contains { $0.httpMethod == "PUT" && $0.url?.path == "/partner" })
     }
 
     func testBrueckeWaehltFrischenServerStandDannLoveaDateiDannVeraltet() {
@@ -312,7 +313,7 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertEqual(ServerPartnerBruecke.waehle(server: nil, innen: .unbekannteVersion, jetzt: jetzt), .unbekannteVersion)
     }
 
-    func testBrueckeSchreibtAnLoveaUndAnDenServerWegUndBandBleibtBeiLovea() throws {
+    func testBrueckeSchreibtAnLoveaUndNurAufWunschAnDenServerUndBandBleibtBeiLovea() throws {
         let ordner = try tempOrdner()
         let innen = LoveaBruecke(ordner: ordner)
         let kanal = PartnerHochlader()
@@ -322,6 +323,8 @@ final class EinmalLoveaTests: XCTestCase {
         let datei = ZusammenfassungDatei(version: 1, geschrieben: TestUhr().lesen, profilName: "Beispiel", freigaben: [.gym],
                                          heute: TagesZusammenfassung(tag: "2026-09-23", gymTageWoche: 2), ereignisse: [])
         b.schreibe(zusammenfassung: datei)
+        XCTAssertEqual(gesendet.anzahl, 0, "die Datei für Lovea geht nicht mehr von selbst zum Server")
+        b.schreibe(serverStand: datei)
         XCTAssertEqual(gesendet.anzahl, 1)
         let lovea = ordner.appendingPathComponent("LumenFit/zusammenfassung.json")
         XCTAssertTrue(FileManager.default.fileExists(atPath: lovea.path), "der Datei-Weg zu Lovea bleibt")

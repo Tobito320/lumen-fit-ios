@@ -1,5 +1,6 @@
 // Quelle: Lovea Health/Ernaehrung/BarcodeScanner.swift (Kamera und Ablauf; die Oberfläche ist neu im Lumen-Design)
 import SwiftUI
+import Vision
 import VisionKit
 
 /// Wohin ein Blatt im Essen-Bereich als Nächstes führt: ein Lebensmittel (Detail oder gespeichertes Gericht) oder die Eingabe von Hand.
@@ -210,12 +211,14 @@ struct ScanView: View {
 /// Die Kamera als `DataScannerViewController` (VisionKit). Nur wo sie verfügbar ist: nicht im Simulator, nicht ohne Erlaubnis.
 struct EssenBarcodeKamera: UIViewControllerRepresentable {
     let gefunden: @MainActor (String) -> Void
+    /// Standard: Barcodes auf Lebensmitteln. Die Verbindungen lesen damit QR-Codes (`[.qr]`).
+    var symbologien: [VNBarcodeSymbology] = [.ean13, .ean8, .upce, .code128]
 
     static var verfuegbar: Bool { DataScannerViewController.isSupported && DataScannerViewController.isAvailable }
 
     func makeUIViewController(context: Context) -> DataScannerViewController {
         let controller = DataScannerViewController(
-            recognizedDataTypes: [.barcode(symbologies: [.ean13, .ean8, .upce, .code128])],
+            recognizedDataTypes: [.barcode(symbologies: symbologien)],
             qualityLevel: .balanced, recognizesMultipleItems: false, isHighlightingEnabled: true)
         controller.delegate = context.coordinator
         return controller

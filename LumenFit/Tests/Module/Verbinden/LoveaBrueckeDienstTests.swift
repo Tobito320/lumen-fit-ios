@@ -193,6 +193,75 @@ final class LoveaBrueckeDienstTests: XCTestCase {
         let a = try await aufbau()
         XCTAssertEqual(FreigabenVorschau.zeilen(try XCTUnwrap(a.dienst.vorschau())), [])
     }
+
+    // MARK: Server-Upload für Verbindungen
+
+    func testOhneVerbindungGehtNichtsAnDenServer() async throws {
+        let a = try await aufbau(schalter: false, freigaben: Set(FreigabeArt.allCases))
+        a.dienst.schreibe()
+        XCTAssertTrue(a.fake.serverStaende.isEmpty)
+    }
+
+    func testServerStandEnthaeltNurDieBereicheDerVerbindungenAuchOhneLoveaSchalter() async throws {
+        let a = try await aufbau(schalter: false, freigaben: Set(FreigabeArt.allCases))
+        a.dienst.hochladen = { ([.schritte, .gym], false) }
+        XCTAssertFalse(a.dienst.schreibe(), "ohne Lovea-Schalter keine Datei für Lovea")
+        XCTAssertTrue(a.fake.zusammenfassungen.isEmpty)
+        let stand = try XCTUnwrap(a.fake.serverStaende.last)
+        XCTAssertEqual(Set(stand.freigaben), [.schritte, .gym])
+        XCTAssertEqual(stand.heute.schritte, 8_200)
+        XCTAssertNil(stand.heute.kcal, "Essen zeigt keine Verbindung")
+        XCTAssertNil(stand.heute.schlafMinuten)
+        XCTAssertNil(stand.heute.zyklus)
+    }
+
+    func testZyklusGehtNurHinausWennEineVerbindungIhnZeigtUndDieErlaubnisInDerAppAnIst() async throws {
+        let a = try await aufbau(schalter: false)
+        for i in 0..<2 {
+            var t = ZyklusTag(id: Datum.addTage("2026-10-29", -i))
+            t.blutung = .mittel
+            a.daten.zyklus.setze(t)
+        }
+        a.daten.zyklus.aendere { $0.aktiv = true; $0.partnerZeigen = true }
+        XCTAssertNotNil(a.daten.zyklus.partnerZusammenfassung(), "Vorbedingung: der Zyklus wäre teilbar")
+        a.dienst.hochladen = { ([.schritte], false) }
+        a.dienst.schreibe()
+        XCTAssertNil(a.fake.serverStaende.last?.heute.zyklus, "keine Verbindung zeigt ihn")
+        a.dienst.hochladen = { ([.schritte], true) }
+        a.dienst.schreibe()
+        XCTAssertNotNil(a.fake.serverStaende.last?.heute.zyklus, "eine Verbindung zeigt ihn und die Person hat ihn erlaubt")
+        a.daten.zyklus.aendere { $0.partnerZeigen = false }
+        a.dienst.schreibe()
+        XCTAssertNil(a.fake.serverStaende.last?.heute.zyklus, "ohne die Erlaubnis in der App geht er nie hinaus")
+    }
+
+    func testDateiFuerLoveaBleibtBeiDenFreigabenDesProfils() async throws {
+        let a = try await aufbau(freigaben: [.schlaf])
+        a.dienst.hochladen = { ([.schritte], false) }
+        XCTAssertTrue(a.dienst.schreibe())
+        XCTAssertEqual(a.fake.zusammenfassungen.last?.freigaben, [.schlaf])
+        XCTAssertEqual(a.fake.serverStaende.last?.freigaben, [.schritte])
+    }
+
+    func testStimmungUndGewohnheitenGehenNurMitIhrerFreigabeHinaus() async throws {
+        let a = try await aufbau(schalter: false)
+        a.daten.raum.einreihen(TestDaten.op("fit.lumi.stimmung", StimmungsEintrag(tag: "2026-10-29", wert: 4, stimmung: .bereit), zeit: jetzt))
+        a.daten.habits.setze(Habit.wasser.id, datum: "2026-10-29", wert: 8)
+        a.dienst.hochladen = { ([.schritte], false) }
+        a.dienst.schreibe()
+        XCTAssertNil(a.fake.serverStaende.last?.heute.stimmung)
+        XCTAssertNil(a.fake.serverStaende.last?.heute.gewohnheiten)
+        a.dienst.hochladen = { ([.schritte, .stimmung, .gewohnheiten], false) }
+        a.dienst.schreibe()
+        let heute = try XCTUnwrap(a.fake.serverStaende.last?.heute)
+        XCTAssertEqual(heute.stimmung, 4)
+        XCTAssertEqual(heute.stimmungWoche, ["2026-10-29": 4])
+        let wasser = try XCTUnwrap(heute.gewohnheiten?.first { $0.id == Habit.wasser.id })
+        XCTAssertTrue(wasser.heute)
+        XCTAssertEqual(wasser.serie, 1)
+        XCTAssertTrue((0...100).contains(wasser.quote))
+        XCTAssertEqual(heute.gewohnheiten?.first { $0.id == Habit.gym.id }?.heute, true, "das Training von heute zählt für Gym")
+    }
 }
 
 /// Zählt die gesendeten Darwin-Namen (ein Verweistyp statt einer erfassten Variable).
