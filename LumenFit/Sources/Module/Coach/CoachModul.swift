@@ -1,15 +1,19 @@
 import Foundation
 
-/// Modul coach: setzt den Motor-Port der Umgebung (`CoachWahlMotor`: Apple Intelligence auf dem Gerät, sonst der Regelcoach) und bringt für
+/// Modul coach: setzt den Motor-Port der Umgebung (`CoachWahlMotor`: echtes Modell am Server, wo freigegeben; sonst Apple Intelligence auf dem Gerät; Regeln nur für Fragen, die sie verstehen) und bringt für
 /// `-lumenFitDemo` einen kurzen Verlauf mit.
 enum CoachModul {
-    /// Idempotent: setzt nur den Port. Nichts läuft im Hintergrund, nichts wird gesendet; der Coach arbeitet erst, wenn jemand fragt.
+    /// Idempotent: setzt nur den Port. Nichts läuft im Hintergrund, nichts wird gesendet; der Coach arbeitet erst, wenn jemand fragt (nur mit Server-Freigabe geht dann eine Zusammenfassung an den Server).
     @MainActor static func start(_ umgebung: AppUmgebung) {
         let eingabe: @Sendable @MainActor () -> CoachEingabe? = { [weak umgebung] in
             guard let umgebung, let daten = umgebung.daten else { return nil }
             return CoachDaten.eingabe(umgebung, daten)
         }
-        umgebung.coachMotor = CoachWahlMotor(modell: ModellCoachMotor(nachladen: .live(umgebung)), regeln: RegelCoachMotor(eingabe: eingabe))
+        // Echtes Modell über den Server, nur wo der Server es für das Konto freigibt (Schalter `kiCoachErlaubt`, ohne Build änderbar).
+        let zugang = EssenKiKontoZugang(zugang: KontoZugang.lade(), schluesselbund: umgebung.schluesselbund, version: KontoDienst.appVersion)
+        let freigabe = EssenKiFreigabe(zugang: zugang, lader: umgebung.http, uhr: umgebung.uhr, schalter: "kiCoachErlaubt")
+        let server = CoachServerMotor(zugang: zugang, lader: umgebung.http, freigabe: freigabe, eingabe: eingabe)
+        umgebung.coachMotor = CoachWahlMotor(modell: ModellCoachMotor(nachladen: .live(umgebung)), regeln: RegelCoachMotor(eingabe: eingabe), server: server)
     }
 
     /// Füllt für `-lumenFitDemo` ein glaubwürdiges Bild (erfundene Werte): ein Gespräch von gestern und eins von heute. Nur in einem leeren Verlauf.

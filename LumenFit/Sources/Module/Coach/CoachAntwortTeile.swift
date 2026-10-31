@@ -229,7 +229,7 @@ struct CoachAntwortZeile: View {
         let n = CoachText.gesamtWoerter(CoachText.zeilen(CoachMarker.zerlegen(nachricht.text).text))
         gesamt = n
         var beginn: Date?
-        if letzte, nachricht.text != CoachPersona.fehlerText, CoachText.einblendenLohnt(gesamt: n),
+        if letzte, !CoachPersona.istFehler(nachricht.text), CoachText.einblendenLohnt(gesamt: n),
            let seit = modell.frischSeit(nachricht.id), modell.jetzt.timeIntervalSince(seit) < CoachText.einblendDauer(gesamt: n) {
             beginn = seit
         }
@@ -239,7 +239,7 @@ struct CoachAntwortZeile: View {
 
     var body: some View {
         let zerlegt = CoachMarker.zerlegen(nachricht.text)
-        let fehler = nachricht.text == CoachPersona.fehlerText
+        let fehler = CoachPersona.istFehler(nachricht.text)
         VStack(alignment: .leading, spacing: Abstand.s) {
             if fehler {
                 CoachFehlerZeile(text: nachricht.text)

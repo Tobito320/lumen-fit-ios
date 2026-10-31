@@ -30,6 +30,27 @@ enum CoachAbsicht: String, Equatable, Sendable {
     }
 }
 
+extension CoachAbsicht {
+    /// Die festen Fragen der App (Schnellfragen, Chips): nur bei diesen und bei sehr kurzen Stichwortfragen weiß der Regelcoach wirklich, was gemeint ist.
+    static let festeFragen: Set<String> = Set((CoachRegeln.schnellfragen + [CoachLokal.wochenrueckblick, CoachLokal.luecken, CoachLokal.gefuehl, CoachLokal.nochEssen])
+        .map { $0.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "?!. ")) })
+
+    /// Versteht der Regelcoach die Frage wirklich, statt nur ein Stichwort darin zu finden? Ja bei Gruß, Dank, Beschwerde (Arzthinweis), den festen Fragen
+    /// und kurzen Fragen (höchstens vier Wörter) zu Schlaf, Schritten, Training, Gewicht oder Tagesbericht. Eine lange Frage mit "Protein" darin: nein.
+    // shortcut: Stichwort plus Wortzahl statt echtem Verstehen, nur Rückfall; das Modell am Server antwortet auf alles andere.
+    static func versteht(_ frage: String) -> Bool {
+        let absicht = erkenne(frage)
+        switch absicht {
+        case .unbekannt: return false
+        case .gruss, .danke, .beschwerde: return true
+        default:
+            if festeFragen.contains(frage.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "?!. \n"))) { return true }
+            let woerter = frage.split(whereSeparator: { !$0.isLetter }).count
+            return woerter <= 4 && absicht != .essen && absicht != .nochEssen
+        }
+    }
+}
+
 /// Der Regelcoach als Motor. `eingabe` liefert die reichere Eingabe (Hauptakteur, siehe `CoachDaten`); ohne sie antwortet er nur auf dem Kontext.
 struct RegelCoachMotor: CoachMotor {
     let eingabe: @Sendable @MainActor () -> CoachEingabe?

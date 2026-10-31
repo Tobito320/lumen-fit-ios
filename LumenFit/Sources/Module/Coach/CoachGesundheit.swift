@@ -55,10 +55,18 @@ enum CoachDaten {
         daten.raum.ops(arten: [stimmungArt]).compactMap { $0.daten(StimmungsEintrag.self) }.last { $0.tag == tag }
     }
 
+    /// Schlafminuten je Aufwachtag der letzten 14 Tage, aus denselben Quellen wie der Schlaf-Tab (Health, Band, von Hand eingetragen).
+    /// Nur Health zu lesen ließ den Coach "Daten fehlen" sagen, obwohl der Tab die Nacht zeigte.
+    static func naechte(_ umgebung: AppUmgebung, heute: String) -> [String: Int] {
+        let ab = Datum.addTage(heute, -14)
+        let u = SchlafDaten.uebersicht(umgebung, band: SchlafDaten.bandOps(umgebung))
+        return Dictionary(u.naechte.filter { $0.nacht.tag >= ab }.map { ($0.nacht.tag, $0.nacht.schlafMinuten) }, uniquingKeysWith: { $1 })
+    }
+
     static func kontext(_ umgebung: AppUmgebung, _ daten: DatenSatz) -> CoachKontext {
         let jetzt = umgebung.uhr()
         let heute = Datum.text(jetzt)
-        let schlaf = umgebung.gesundheit.naechte[heute]?.schlafMinuten
+        let schlaf = naechte(umgebung, heute: heute)[heute]
         let ruhepuls = umgebung.gesundheit.vitale[.ruhepuls] ?? []
         let hrv = umgebung.gesundheit.vitale[.hrv] ?? []
         let bereit = CoachGesundheit.bereitschaft(
@@ -88,6 +96,7 @@ enum CoachDaten {
         }
         e.gewicht = daten.habits.werte(Habit.gewicht.id)
         e.schritte = umgebung.gesundheit.tage.mapValues(\.schritte)
+        e.schlaf = naechte(umgebung, heute: heute)
         let sessions = daten.training.sessions
         e.gruppen = CoachTraining.gruppen(sessions, heute: heute)
         e.uebungen = CoachTraining.uebungen(sessions)

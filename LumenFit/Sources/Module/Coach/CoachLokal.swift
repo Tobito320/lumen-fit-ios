@@ -55,6 +55,13 @@ enum CoachLokal {
         }
     }
 
+    // MARK: - Eintrags-Karte
+
+    /// Die Karte über dem Eingabefeld steht nur, wenn sie etwas zeigt (bestätigter Eintrag, "Nicht geklappt" oder ein Vorschlag). Sonst bliebe dort eine leere Leiste.
+    static func eintragsKarteSichtbar(bestaetigt: Int, nichtGeklappt: Bool, vorschlag: Int) -> Bool {
+        bestaetigt > 0 || nichtGeklappt || vorschlag > 0
+    }
+
     // MARK: - Schnellfragen
 
     static let wochenrueckblick = "Mach meinen Wochenrückblick"

@@ -14,16 +14,16 @@ const ALKOHOL = /bier|wein|sekt|vodka|wodka|rum|whisk|gin\b|likör|likoer|schnap
 const UNSICHERHEIT = { hoch: 0.1, mittel: 0.2, niedrig: 0.35 };
 
 // Fehlerart = Schlüssel `fehler`; die App ordnet sie nach Schlüssel, ersatzweise nach Status.
-const nein = (status, fehler, extra = {}) => Response.json({ fehler, ...extra }, { status });
+export const nein = (status, fehler, extra = {}) => Response.json({ fehler, ...extra }, { status });
 const r1 = (n) => Math.round(n * 10) / 10;
 
-function zahl(wert, min, max, fallback = 0) {
+export function zahl(wert, min, max, fallback = 0) {
   const n = Number(wert);
   if (wert === null || wert === undefined || wert === "" || !Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
 }
 
-function text(wert, max) {
+export function text(wert, max) {
   return String(wert ?? "").replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 }
 
@@ -122,7 +122,7 @@ export function gesamtBerechnen(items, versteckt) {
   };
 }
 
-function textAusAntwort(j) {
+export function textAusAntwort(j) {
   if (typeof j?.output_text === "string") return j.output_text;
   const teile = [];
   for (const item of j?.output ?? []) {
@@ -133,7 +133,7 @@ function textAusAntwort(j) {
 }
 
 // OpenAI-Fehler -> Fehlerart der App (Status wie in der Vorlage).
-async function fehlerAntwort(res) {
+export async function fehlerAntwort(res) {
   let j = null;
   try { j = await res.json(); } catch { /* kein JSON */ }
   const code = j?.error?.code ?? j?.error?.type;
@@ -145,13 +145,13 @@ async function fehlerAntwort(res) {
   return nein(502, "kiFehler");
 }
 
-const berlinTag = (jetzt) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(jetzt);
+export const berlinTag = (jetzt) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(jetzt);
 
 // Ein Foto zählt, sobald es angenommen ist; schlägt es danach fehl, wird es zurückgegeben. Ein Statement: kein Zählen über das Limit, auch parallel.
-const zaehlen = (env, konto, tag) => env.DB.prepare(
+export const zaehlen = (env, konto, tag, limit = TAGESLIMIT) => env.DB.prepare(
   "INSERT INTO ki_nutzung (konto, tag, n) VALUES (?, ?, 1) ON CONFLICT (konto, tag) DO UPDATE SET n = n + 1 WHERE n < ? RETURNING n",
-).bind(konto, tag, TAGESLIMIT).first();
-const zurueck = (env, konto, tag) => env.DB.prepare("UPDATE ki_nutzung SET n = MAX(0, n - 1) WHERE konto = ? AND tag = ?").bind(konto, tag).run();
+).bind(konto, tag, limit).first();
+export const zurueck = (env, konto, tag) => env.DB.prepare("UPDATE ki_nutzung SET n = MAX(0, n - 1) WHERE konto = ? AND tag = ?").bind(konto, tag).run();
 
 /**
  * hilfen: { kontoPruefen, zusammen, globaleConfig } aus index.js (kein Import von dort, sonst ein Kreis).

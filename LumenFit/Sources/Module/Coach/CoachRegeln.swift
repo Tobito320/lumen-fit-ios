@@ -79,6 +79,8 @@ struct CoachEingabe: Equatable, Sendable {
     /// Zehntel kg je Tag (`Habit.gewicht`).
     var gewicht: [String: Int] = [:]
     var schritte: [String: Int] = [:]
+    /// Schlafminuten je Aufwachtag (alle Quellen des Schlaf-Tabs).
+    var schlaf: [String: Int] = [:]
     var schrittZiel = 0
     var gruppen: [CoachGruppe] = []
     /// Neueste zuerst.
