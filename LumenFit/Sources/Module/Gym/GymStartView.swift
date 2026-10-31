@@ -19,6 +19,7 @@ struct GymStartView: View {
     /// Die vergessene Einheit, deren Endzeit gerade eingetragen wird.
     @State private var endzeitFuer: GymSession?
     @State private var nachtragen = false
+    @State private var uebungenTag: PlanView.IdentifiableText?
 
     var body: some View {
         ScrollView {
@@ -39,6 +40,7 @@ struct GymStartView: View {
         }
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
+        .sheet(item: $uebungenTag) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
         .task { sitzung.ladeWennNoetig() }
     }
 
@@ -56,6 +58,7 @@ struct GymStartView: View {
             tagesKarte(stand, training: training, anderer: anderer)
             if aufbau == .lumen, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             verlegenKarte(stand, training: training)
+            if aufbau == .lovea { uebungenUndSplit(stand, tag: anderer ?? stand.tag) }
             HStack(spacing: Abstand.s) {
                 Button { cardioGeraet = .laufband } label: {
                     Label("Laufband", systemImage: "figure.walk.treadmill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
@@ -79,7 +82,7 @@ struct GymStartView: View {
     // MARK: Wochenleiste
 
     private func wochenleiste(_ stand: GymStartStand) -> some View {
-        let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
+        let gruen = aufbau.farbe(LoveaDaten.gymGruen, sonst: GymFarbe.gruen(schema: schema, kontrast: kontrast))
         return VStack(alignment: .leading, spacing: Abstand.s) {
             Text(GymStartLogik.titel(datum: stand.gewaehlt, heute: stand.heute, tag: stand.tag))
                 .font(.title3.weight(.bold)).foregroundStyle(palette.text)
@@ -106,6 +109,46 @@ struct GymStartView: View {
                     .accessibilityAddTraits(t.gewaehlt ? .isSelected : [])
                 }
             }
+        }
+    }
+
+    // MARK: Übungsliste und Split (Lovea `GymStartView.swift:97-99`)
+
+    @ViewBuilder
+    private func uebungenUndSplit(_ stand: GymStartStand, tag: TrainingsTag?) -> some View {
+        if let tag, !tag.uebungen.isEmpty {
+            ListenKarte {
+                ForEach(Array(tag.uebungen.enumerated()), id: \.element.id) { i, u in
+                    if i > 0 { Haarlinie() }
+                    Button { uebungenTag = PlanView.IdentifiableText(id: tag.id) } label: {
+                        HStack {
+                            Text(u.anzeigeName).font(.headline).foregroundStyle(palette.text)
+                            Spacer(minLength: Abstand.s)
+                            Text(u.istCardio ? "\(u.minuten ?? 20) min" : "\(u.saetze.count) × \(u.saetze.first?.wdh ?? 10)")
+                                .font(.subheadline).monospacedDigit().foregroundStyle(palette.text2)
+                        }
+                        .padding(Abstand.l)
+                        .frame(minHeight: Abstand.tippflaeche)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        Text("Split").font(.footnote.weight(.semibold)).textCase(.uppercase).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
+        ListenKarte {
+            Button { umgebung.router.oeffne(.gym(.plaene)) } label: {
+                HStack {
+                    Text(stand.splitName ?? "Dein Plan").font(.headline).foregroundStyle(palette.text)
+                    Spacer(minLength: Abstand.s)
+                    Text("\(stand.planTage) Tage").font(.subheadline).foregroundStyle(palette.text2)
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                }
+                .padding(Abstand.l)
+                .frame(minHeight: Abstand.tippflaeche)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
         }
     }
 
