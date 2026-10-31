@@ -3,7 +3,7 @@ import Foundation
 /// Was der Nutzer seinem Partner zeigt. Jede Art ist einzeln und standardmäßig aus. `plan`, `verlauf`, `tagebuch` und `koerper` gehören zu den Ansichten des Partners
 /// (Trainingsplan, Statuszeile und Verlauf, Tagebuch, Körperwerte); `schritte`, `gym`, `schlaf` und `essen` zu den Zeilen der Partner-Karte.
 enum FreigabeArt: String, Codable, CaseIterable, Sendable { case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper }
-enum PartnerBereich: Sendable { case heute, schlaf }
+enum PartnerBereich: Sendable { case heute, schlaf, essen, gym }
 enum PartnerEreignisArt: String, Codable, Sendable { case gymStart, gymEnde, ziel, rekord, schlafGut }
 enum BandMuster: String, Codable, Sendable { case kurz, lang, doppelt, ruf, pauseEnde }
 

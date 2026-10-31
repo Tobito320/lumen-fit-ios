@@ -7,11 +7,13 @@ struct ServerConfig: Equatable, Codable, Sendable {
     var profilAnlegenErlaubt = false
     /// So viele Tage zwischen zwei Namensänderungen; 0 heißt keine Sperre.
     var nameAendernTage = 7
+    /// Der Server stellt "Band in Lumen Fit nutzen" für dieses Konto von selbst an (Standard nur dort, wo er es sagt). Ein bewusstes Aus in der App gewinnt.
+    var bandStandard = false
 
     nonisolated static let standard = ServerConfig()
     nonisolated static let tageBereich = 0...365
 
-    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage }
+    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage, bandStandard }
 
     init() {}
 
@@ -19,6 +21,7 @@ struct ServerConfig: Equatable, Codable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         profilAnlegenErlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .profilAnlegenErlaubt)) ?? false
         nameAendernTage = Self.tage(try? c.decodeIfPresent(Int.self, forKey: .nameAendernTage)) ?? 7
+        bandStandard = (try? c.decodeIfPresent(Bool.self, forKey: .bandStandard)) ?? false
     }
 
     private static func tage(_ wert: Int?) -> Int? { wert.map { min(max($0, tageBereich.lowerBound), tageBereich.upperBound) } }
@@ -30,6 +33,7 @@ struct ServerConfig: Equatable, Codable, Sendable {
         guard let werte = (try? JSONDecoder().decode(Huelle.self, from: antwort))?.config else { return nil }
         var neu = basis
         if case .bool(let b)? = werte["profilAnlegenErlaubt"] { neu.profilAnlegenErlaubt = b }
+        if case .bool(let b)? = werte["bandStandard"] { neu.bandStandard = b }
         if case .number(let d)? = werte["nameAendernTage"], d.isFinite, d == d.rounded(), let t = tage(Int(exactly: d)) { neu.nameAendernTage = t }
         return neu
     }

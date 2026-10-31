@@ -84,8 +84,15 @@ enum PartnerAnsichtLogik {
     nonisolated static let ansichtsArten: [FreigabeArt] = [.plan, .verlauf, .tagebuch, .koerper]
 
     /// Die Ansichten, die der Partner freigegeben hat und zu denen die Datei etwas enthält. Leer, wenn nichts davon freigegeben ist.
-    static func einstiege(_ datei: ZusammenfassungDatei, jetzt: Date) -> [Einstieg] {
-        ansichtsArten.compactMap { art -> Einstieg? in
+    static func einstiege(_ datei: ZusammenfassungDatei, jetzt: Date, bereich: PartnerBereich = .heute) -> [Einstieg] {
+        let arten: [FreigabeArt]
+        switch bereich {
+        case .heute: arten = ansichtsArten
+        case .essen: arten = [.tagebuch]
+        case .gym: arten = [.plan, .verlauf]
+        case .schlaf: arten = []
+        }
+        return arten.compactMap { art -> Einstieg? in
             guard datei.freigaben.contains(art), hatDaten(datei, art) else { return nil }
             return Einstieg(art: art, titel: titel(art), untertitel: untertitel(datei, art, jetzt: jetzt), symbol: symbol(art))
         }

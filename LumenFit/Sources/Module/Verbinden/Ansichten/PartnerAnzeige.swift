@@ -15,7 +15,7 @@ enum PartnerAnzeige {
         if case .verbunden(let datei) = stand { datei } else { nil }
     }
 
-    /// Die Zeilen für Heute (Schritte, Gym, Essen) oder Schlaf. Eine Zeile gibt es nur, wenn die Art freigegeben ist und der Wert in der Datei steht.
+    /// Die Zeilen für Heute (Schritte, Gym, Essen), Schlaf, Essen oder Gym. Eine Zeile gibt es nur, wenn die Art freigegeben ist und der Wert in der Datei steht.
     static func zeilen(_ datei: ZusammenfassungDatei, bereich: PartnerBereich) -> [Zeile] {
         let frei = Set(datei.freigaben)
         var liste: [Zeile] = []
@@ -29,6 +29,14 @@ enum PartnerAnzeige {
             }
             if frei.contains(.essen), let k = datei.heute.kcal {
                 liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
+            }
+        case .essen:
+            if frei.contains(.essen), let k = datei.heute.kcal {
+                liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
+            }
+        case .gym:
+            if frei.contains(.gym), let g = datei.heute.gymTageWoche {
+                liste.append(Zeile(titel: "Gym diese Woche", wert: g == 1 ? "1 Tag" : "\(g) Tage", symbol: "dumbbell.fill"))
             }
         case .schlaf:
             if frei.contains(.schlaf), let m = datei.heute.schlafMinuten {

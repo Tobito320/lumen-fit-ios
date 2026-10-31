@@ -20,6 +20,10 @@ final class LoveaBrueckeDienst {
     private let sende: (String) -> Void
     private var eigene: (profil: ProfilID, ereignisse: EigeneEreignisse)?
     private var letzte: ZusammenfassungDatei?
+    private var letzteServer: ZusammenfassungDatei?
+    /// Was die Verbindungen zu Personen erlauben hochzuladen (Bereiche, die mindestens eine aktive, nicht pausierte Verbindung zeigt). Ohne Verbindung: nichts,
+    /// dann geht auch nichts zum Server. Gesetzt von `VerbindenDienste` aus dem Stand des Servers.
+    var hochladen: @MainActor () -> (freigaben: Set<FreigabeArt>, zyklus: Bool) = { ([], false) }
 
     init(bruecke: any PartnerAustausch, quellen: Quellen, uhr: @escaping Uhr = { Date() }, sende: @escaping (String) -> Void = DarwinKanal.sende) {
         self.bruecke = bruecke
@@ -57,15 +61,21 @@ final class LoveaBrueckeDienst {
         let neu = EigeneEreignisse(ordner: daten.ordner)
         eigene = (daten.profil, neu)
         letzte = nil
+        letzteServer = nil
         return neu
     }
 
     // MARK: Datei
 
-    /// Baut die Zusammenfassung und schreibt sie. `true`, wenn geschrieben wurde. Ohne Änderung nur nach `auffrischen`.
+    /// Baut die Zusammenfassung und schreibt sie: für den Server (mit den Bereichen, die Verbindungen zeigen, dort je Verbindung begrenzt) und, mit dem Lovea-Schalter,
+    /// als Datei für Lovea (mit den Freigaben aus `verbindung.freigaben`). `true`, wenn die Datei für Lovea geschrieben wurde. Ohne Änderung nur nach `auffrischen`.
     @discardableResult
     func schreibe() -> Bool {
-        guard let daten = quellen.daten(), daten.einstellungen.werte.loveaVerbunden else { return false }
+        guard let daten = quellen.daten() else { return false }
+        let loveaAn = daten.einstellungen.werte.loveaVerbunden
+        let teilen = hochladen()
+        let zumServer = !teilen.freigaben.isEmpty || teilen.zyklus
+        guard loveaAn || zumServer else { return false }
         let jetzt = uhr()
         let heute = Datum.text(jetzt)
         let name = quellen.profilName() ?? "Profil"
@@ -79,6 +89,8 @@ final class LoveaBrueckeDienst {
         if let m = nacht?.schlafMinuten, m >= ziele.schlafMinuten, ziele.schlafMinuten > 0 {
             ereignisse.fuegeHinzu(PartnerEreignis(id: "schlafGut-\(heute)", art: .schlafGut, zeit: jetzt, text: "\(name) hat gut geschlafen"), jetzt: jetzt)
         }
+        if zumServer { serverStandSenden(daten, jetzt: jetzt, ereignisse: ereignisse.liste, teilen: teilen) }
+        guard loveaAn else { return false }
         let datei = ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: jetzt, ereignisse: ereignisse.liste))
         if let alt = letzte, Self.gleich(alt, datei), jetzt.timeIntervalSince(alt.geschrieben) < Self.auffrischen { return false }
         bruecke.schreibe(zusammenfassung: datei)
@@ -87,16 +99,27 @@ final class LoveaBrueckeDienst {
         return true
     }
 
+    /// Der Stand für den Server enthält nur Bereiche, die eine aktive Verbindung zeigt (ohne Verbindung geht nichts hinaus). Der Server filtert danach je Verbindung.
+    private func serverStandSenden(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis], teilen: (freigaben: Set<FreigabeArt>, zyklus: Bool)) {
+        var eingabe = eingabeBauen(daten, jetzt: jetzt, ereignisse: ereignisse, freigaben: teilen.freigaben)
+        if !teilen.zyklus { eingabe.zyklus = nil }
+        let datei = ZusammenfassungBauer.baue(eingabe)
+        if let alt = letzteServer, Self.gleich(alt, datei), jetzt.timeIntervalSince(alt.geschrieben) < Self.auffrischen { return }
+        bruecke.schreibe(serverStand: datei)
+        letzteServer = datei
+    }
+
     /// Die Eingabe aus den Stores: nur Zahlen von heute, die Freigaben begrenzt später der Bauer.
-    private func eingabeBauen(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis]) -> ZusammenfassungBauer.Eingabe {
+    private func eingabeBauen(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis], freigaben: Set<FreigabeArt>? = nil) -> ZusammenfassungBauer.Eingabe {
+        let freigaben = freigaben ?? daten.verbindung.freigaben
         let heute = Datum.text(jetzt)
         let tag = quellen.gesundheit.tage[heute]
         let nacht = quellen.gesundheit.naechte[heute]
         let zusatz = PartnerTageswerte.sammle(daten: daten, gesundheit: quellen.gesundheit, jetzt: jetzt)
         let ziele = daten.ziele.ziele
-        let ansichten = PartnerAnsichtsDaten.sammle(daten: daten, freigaben: daten.verbindung.freigaben, jetzt: jetzt)
+        let ansichten = PartnerAnsichtsDaten.sammle(daten: daten, freigaben: freigaben, jetzt: jetzt)
         return ZusammenfassungBauer.Eingabe(
-            name: quellen.profilName() ?? "Profil", jetzt: jetzt, freigaben: daten.verbindung.freigaben, schritte: tag?.schritte,
+            name: quellen.profilName() ?? "Profil", jetzt: jetzt, freigaben: freigaben, schritte: tag?.schritte,
             gymTageWoche: Self.gymTageDerWoche(daten.training.sessions, heute: heute), schlafMinuten: nacht?.schlafMinuten,
             kcal: Int(daten.essen.summe(heute).kcal.rounded()), ereignisse: ereignisse,
             schritteZiel: ziele.schritte, schritteWoche: zusatz.schritteWoche, gymTage: zusatz.gymTage, gymZiel: ziele.gymTageProWoche,
@@ -107,9 +130,12 @@ final class LoveaBrueckeDienst {
     }
 
     /// Die Datei, wie sie jetzt geschrieben würde (Vorschau "das sieht dein Partner", Idee 84). Schreibt und merkt nichts.
-    func vorschau() -> ZusammenfassungDatei? {
+    /// `freigaben` und `zyklus`: für eine Person ihre Auswahl ("das sieht diese Person"); ohne Angabe die Freigaben des Profils.
+    func vorschau(freigaben: Set<FreigabeArt>? = nil, zyklus: Bool = true) -> ZusammenfassungDatei? {
         guard let daten = quellen.daten() else { return nil }
-        return ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: uhr(), ereignisse: eigeneEreignisse(daten).liste))
+        var eingabe = eingabeBauen(daten, jetzt: uhr(), ereignisse: eigeneEreignisse(daten).liste, freigaben: freigaben)
+        if !zyklus { eingabe.zyklus = nil }
+        return ZusammenfassungBauer.baue(eingabe)
     }
 
     /// Alles außer dem Zeitstempel gleich?

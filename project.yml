@@ -39,7 +39,7 @@ targets:
         NSHealthUpdateUsageDescription: "Lumen Fit speichert dein Training und deine Mahlzeiten in Health, wenn du das einschaltest."
         NSFaceIDUsageDescription: "Lumen Fit schützt deinen Zyklus auf Wunsch mit Face ID. Die Prüfung läuft nur auf deinem Gerät."
         NSBluetoothAlwaysUsageDescription: "Lumen Fit verbindet sich auf deinen Wunsch mit deinem Fitness-Band, liest Schritte und Puls und zeigt den Akku."
-        NSCameraUsageDescription: "Lumen Fit nutzt die Kamera, um Barcodes von Lebensmitteln zu scannen und dein Essen zu fotografieren."
+        NSCameraUsageDescription: "Lumen Fit nutzt die Kamera, um Barcodes von Lebensmitteln und QR-Codes zum Verbinden mit Personen zu scannen und dein Essen zu fotografieren."
         NSMotionUsageDescription: "Lumen Fit zählt deine Schritte und erkennt Bewegung, damit dein Tag stimmt."
         UIBackgroundModes:
           - bluetooth-central
