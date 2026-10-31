@@ -10,6 +10,7 @@ struct EssenWasserKarte: View {
     let bearbeitbar: Bool
     let setzen: @MainActor (Int) -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var zaehler = 0
 
     var body: some View {
@@ -46,9 +47,9 @@ struct EssenWasserKarte: View {
         } label: {
             Group {
                 if naechstes && bearbeitbar {
-                    Image(systemName: "plus.circle.fill").foregroundStyle(palette.akzent)
+                    Image(systemName: "plus.circle.fill").foregroundStyle(aufbau.farbe(LoveaDaten.wasser, sonst: palette.akzent))
                 } else {
-                    Image(systemName: voll ? "waterbottle.fill" : "waterbottle").foregroundStyle(voll ? palette.akzent : palette.rand.opacity(0.5))
+                    Image(systemName: voll ? "waterbottle.fill" : "waterbottle").foregroundStyle(voll ? aufbau.farbe(LoveaDaten.wasser, sonst: palette.akzent) : palette.rand.opacity(0.5))
                 }
             }
             .font(.title).imageScale(.large)
