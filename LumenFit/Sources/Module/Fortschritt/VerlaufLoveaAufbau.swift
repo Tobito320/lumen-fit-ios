@@ -167,7 +167,7 @@ struct VerlaufLoveaGruppe: View {
     }
 
     /// Lovea :512: ab 90 % Erholung nur die Sätze, sonst mit Prozent.
-    static func teilText(_ saetze: Double, _ e: Int) -> String {
+    nonisolated static func teilText(_ saetze: Double, _ e: Int) -> String {
         e >= 90 ? VerlaufLogik.saetzeText(saetze) : "\(VerlaufLogik.saetzeText(saetze)) · \(e) %"
     }
 

@@ -1,6 +1,7 @@
 // Quelle: Lovea Health/GymNeu/SplitEditorView.swift (SplitEditorAktionen :9, SplitEditorInhalt :21, SplitEditorView :157),
 // Health/TrainingsPlanView.swift (SaetzeEditor :462, VariantenBlatt, SaetzeListe, SatzZeile), GymNeu/GymStartView.swift (GymUebungZeile :255)
 import SwiftUI
+import UIKit
 
 // Der Plan-Editor im Lovea-Aufbau: Tagesleiste mit Plus, Wochentage, Übungen zum Aufklappen, Menü ⋯. Jede Änderung sichert sofort den
 // ganzen Plan (`TrainingStore.planSichern`, `gym.plan`, der neueste gilt). Was Lumen Fit im Plantag mehr kann (Doppeln, Reihenfolge,

@@ -1,5 +1,6 @@
 // Quelle: Lovea Health/Verlauf/VerlaufWocheAnsichten.swift (neu im Lumen-Design)
 import SwiftUI
+import UIKit
 
 // Bausteine der ruhigen Verlauf-Seite: Zahlenzeile, Start-Knopf, Gruppenliste mit Balken und Erholungspunkt, Highlights, Plan. Ohne Timer und Hintergrundarbeit,
 // Ziele mindestens 44 pt, Bewegung nur bei Ereignissen und nie unter "Bewegung reduzieren".
