@@ -56,8 +56,10 @@ struct KontoStand: Codable, Equatable, Sendable {
     var loveaImportErledigt = false
     /// Der Server weiß noch nicht, dass der Import durch ist (Netzfehler beim Melden): beim nächsten Abgleich nochmal melden.
     var importMeldungOffen = false
+    /// Die Lovea-Person des Kontos laut Server (Text; nur gemerkt, solange `loveaErlaubt` gilt). Prüfung der Übernahme für Lumen Alarm: nur "nicht leer" und "gleich".
+    var loveaPerson: String?
 
-    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen }
+    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen, loveaPerson }
 
     init() {}
 
@@ -67,6 +69,7 @@ struct KontoStand: Codable, Equatable, Sendable {
         loveaErlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .loveaErlaubt)) ?? false
         loveaImportErledigt = (try? c.decodeIfPresent(Bool.self, forKey: .loveaImportErledigt)) ?? false
         importMeldungOffen = (try? c.decodeIfPresent(Bool.self, forKey: .importMeldungOffen)) ?? false
+        loveaPerson = (try? c.decodeIfPresent(String.self, forKey: .loveaPerson)) ?? nil
     }
 }
 
@@ -87,6 +90,8 @@ final class KontoDienst {
     var config: ServerConfig { stand.config }
     /// Lovea verbinden und der Import sind nur sichtbar, wenn der Server das Konto freigibt (nur Debug-Demo darf es erzwingen).
     var loveaErlaubt: Bool { LoveaFreigabe.erlaubt(freigegeben: stand.loveaErlaubt, demo: LoveaFreigabe.demoAktiv) }
+    /// Die Lovea-Person des Kontos, nur mit echter Server-Freigabe (nie in der Demo); sonst nil.
+    var loveaPerson: String? { stand.loveaErlaubt ? stand.loveaPerson : nil }
     /// Der Server gibt das Konto frei und der einmalige Import ist noch nicht gelaufen (nie in der Demo).
     var loveaImportOffen: Bool { stand.loveaErlaubt && !stand.loveaImportErledigt }
     /// Zähler für den Nutzungs-Bündel (Bereiche und Funktionen, keine Inhalte); wird beim Abgleich einmal je Start gesendet.
@@ -235,10 +240,11 @@ final class KontoDienst {
             if let neu = ServerConfig.zusammen(stand.config, antwort: c.daten) { stand.config = neu; sichere() }
         }
         if let f = await sende(anfrage("/lovea/freigabe", kennung: kennung)), f.status == 200 {
-            struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool? }
+            struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool?; var person: String? }
             // Nur ein vorhandenes `erlaubt` ändert den Stand: true gibt frei, false nimmt zurück, fehlend (`{}`) ändert nichts.
             if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten), let erlaubt = a.erlaubt {
                 stand.loveaErlaubt = erlaubt
+                stand.loveaPerson = erlaubt ? a.person : nil
                 // Der Server vergisst das nicht (Neuinstallation); ein ausdrückliches false (Merker zurückgesetzt) gilt, solange keine eigene Meldung aussteht.
                 if let erledigt = a.importErledigt, !stand.importMeldungOffen { stand.loveaImportErledigt = erledigt }
                 freigabeAktuell = true

@@ -141,22 +141,55 @@ final class BandDienstImpl: BandDienst {
     func wunschAusfuehren(_ wunsch: BandWunsch) -> BandWunschSchlange.Ergebnis {
         guard aktiv(), let m = modell, let geber = puls else { return .spaeter }
         guard m.zustand == .verbunden else { return .spaeter }
-        if wunsch.von == BandWunschSchlange.weckerAbsender { return geber.wecker(wunsch.muster, jetzt: uhr()) ? .ausgefuehrt : .spaeter }
+        if BandWunschSchlange.istWecker(wunsch) { return geber.wecker(wunsch.muster, jetzt: uhr()) ? .ausgefuehrt : .spaeter }
         return geber.muster(wunsch.muster, jetzt: uhr()) == nil ? .ausgefuehrt : .verworfen
     }
 
     // MARK: Status für Lovea
 
+    /// Wann das Band zuletzt verbunden war (Sekunden seit 1970), für `zuletztGesehen` in `band-status.json`.
+    nonisolated static let zuletztGesehenSchluessel = "fit.band.zuletztGesehen"
+
+    /// Bluetooth am iPhone: aus, wenn es abgeschaltet ist; unbekannt (nil), wenn die Erlaubnis fehlt oder es nicht verfügbar ist.
+    static func bluetoothAn(_ zustand: TrackerModell.Zustand) -> Bool? {
+        switch zustand {
+        case .bluetoothAus: false
+        case .nichtErlaubt, .nichtVerfuegbar: nil
+        default: true
+        }
+    }
+
+    // MARK: Schritte des Bands für den Aufsteh-Wecker
+
+    /// Fragt nur die Schritte von heute ab (`TrackerModell.schritteLesen`); false, wenn das Band nicht bereit ist.
+    @discardableResult
+    func schritteLesen() -> Bool {
+        guard aktiv(), let m = modell, m.zustand == .verbunden else { return false }
+        m.schritteLesen()
+        return true
+    }
+
+    /// Die Tagessumme der Schritte des Bands und wann sie gelesen wurde; nil ohne frische Antwort.
+    func schritteStand() -> (summe: Int, zeit: Date)? {
+        guard let m = modell, let zeit = m.bandTage.stand else { return nil }
+        return (m.heute?.schritte ?? 0, zeit)
+    }
+
     /// Schreibt `band-status.json` (verbunden, Akku, Name), wenn sich etwas geändert hat, und sendet die Darwin-Benachrichtigung.
     func statusSchreiben(erzwingen: Bool = false) {
         guard aktiv() || erzwingen, let m = modell else { return }
-        let datei = BandStatusDatei(version: LoveaVertrag.version, geschrieben: uhr(), verbunden: aktiv() && m.zustand == .verbunden,
-                                    akkuProzent: m.akku?.prozent, name: m.name)
+        let jetzt = uhr()
+        let verbunden = aktiv() && m.zustand == .verbunden
+        if verbunden { defaults.set(jetzt.timeIntervalSince1970, forKey: Self.zuletztGesehenSchluessel) }
+        let gesehen = (defaults.object(forKey: Self.zuletztGesehenSchluessel) as? Double).map(Date.init(timeIntervalSince1970:))
+        let datei = BandStatusDatei(version: LoveaVertrag.version, geschrieben: jetzt, verbunden: verbunden,
+                                    akkuProzent: m.akku?.prozent, name: m.name, bluetoothAn: Self.bluetoothAn(m.zustand), laedt: m.akku?.laedt,
+                                    zuletztGesehen: gesehen, staerke: nil, schritteHeute: m.heute?.schritte)
         let alarm = alarmAn()
         // Der Alarm-Schalter eben angelegt: die Datei fehlt dort noch, auch wenn sich am Band nichts geändert hat.
         let alarmNeu = alarm && !alarmStatusGeschrieben
         if !erzwingen, !alarmNeu, let alt = letzterStatus, alt.verbunden == datei.verbunden, alt.akkuProzent == datei.akkuProzent, alt.name == datei.name,
-           datei.geschrieben.timeIntervalSince(alt.geschrieben) < 3600 { return }
+           alt.bluetoothAn == datei.bluetoothAn, alt.laedt == datei.laedt, datei.geschrieben.timeIntervalSince(alt.geschrieben) < 3600 { return }
         letzterStatus = datei
         bruecke.schreibe(status: datei)
         if alarm { alarmBruecke.schreibe(status: datei) }

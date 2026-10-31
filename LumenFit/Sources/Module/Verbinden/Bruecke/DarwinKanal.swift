@@ -9,6 +9,12 @@ enum DarwinKanal {
     nonisolated static let bandWunsch = "com.onlyus.lovea.band-wunsch"
     /// Lumen Alarm hat Weck-Wünsche für das Band abgelegt oder gestrichen (`docs/BAND-VERTRAG.md` in Lumen Alarm).
     nonisolated static let alarmWunsch = "com.onlyus.lumen-alarm.band-wunsch"
+    /// Lumen Fit hat gezählt: genug Schritte am Band, der Wecker darf enden (`band-schritte.json`).
+    nonisolated static let bandAufgestanden = "com.onlyus.lumen-fit.band-aufgestanden"
+    /// Der Coach hat einen Auftrag für Wecker oder Erinnerung geschrieben (`wecker-auftraege.json`).
+    nonisolated static let weckerAuftrag = "com.onlyus.lumen-fit.wecker-auftrag"
+    /// Lumen Alarm hat Aufträge ausgeführt (`wecker-ergebnis.json`). Ergänzung von Lumen Fit; steht noch nicht im Vertrag, Lumen Alarm muss ihn senden.
+    nonisolated static let weckerErgebnis = "com.onlyus.lumen-alarm.wecker-ergebnis"
 
     /// Meldet `name` an alle Prozesse, die darauf hören.
     static func sende(_ name: String) {

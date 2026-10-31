@@ -19,6 +19,8 @@ final class AppUmgebung {
     let bruecke: any PartnerAustausch
     /// Die zweite Brücke, zu Lumen Alarm: Ordner `LumenAlarm` in der eigenen Gruppe (Weck-Wünsche lesen, erledigt und Status schreiben). Ohne Signierung leer.
     let alarmBruecke: any PartnerAustausch
+    /// Wecker und Erinnerungen des Coachs: Aufträge an Lumen Alarm schreiben, Stand und Ergebnis von dort lesen (`<Lumen-Fit-Gruppe>/LumenAlarm/`).
+    let alarmWecker: AlarmWeckerDienst
     /// Konto beim Lumen-Server: Einstellungen ohne Build und Lovea-Freigabe (SPEC 18). Ohne Zugang kein Netz, nur Standardwerte.
     let konto: KontoDienst
     /// Der einmalige Import aus Lovea (läuft von selbst, wenn der Server das Konto freigibt und er noch nicht war).
@@ -45,8 +47,10 @@ final class AppUmgebung {
 
     init(ordner: URL, schluesselbund: any Schluesselbund, http: any HTTPLader, mitteiler: any Mitteiler, leser: any HealthLeser,
          healthSchreiber: any HealthSchreiber, bruecke: any PartnerAustausch, uhr: @escaping Uhr, passwortRunden: Int = Passwort.standardRunden,
-         kontoZugang: KontoZugang? = nil, alarmBruecke: any PartnerAustausch = KeinePartnerBruecke()) {
+         kontoZugang: KontoZugang? = nil, alarmBruecke: any PartnerAustausch = KeinePartnerBruecke(),
+         alarmOrdner: URL? = nil) {
         self.alarmBruecke = alarmBruecke
+        self.alarmWecker = AlarmWeckerDienst(ordner: alarmOrdner)
         let kanal = EreignisKanal()
         self.ordner = ordner
         self.uhr = uhr
@@ -157,7 +161,8 @@ final class AppUmgebung {
         let umgebung = AppUmgebung(ordner: AppGruppe.ordner(), schluesselbund: RueckfallSchluesselbund(), http: URLSessionLader(), mitteiler: SystemMitteiler(),
                                    leser: HKHealthLeser(), healthSchreiber: HKHealthSchreiber(), bruecke: LoveaBruecke(ordner: AppGruppe.loveaOrdner()),
                                    uhr: { Date() }, kontoZugang: KontoZugang.lade(),
-                                   alarmBruecke: LoveaBruecke(ordner: AppGruppe.eigeneWurzel(), ordnerName: "LumenAlarm"))
+                                   alarmBruecke: LoveaBruecke(ordner: AppGruppe.eigeneWurzel(), ordnerName: AppGruppe.alarmOrdnerName),
+                                   alarmOrdner: AppGruppe.alarmOrdner())
         umgebung.sperreWeitereProfile()
         return umgebung
     }

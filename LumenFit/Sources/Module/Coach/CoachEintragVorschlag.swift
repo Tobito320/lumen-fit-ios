@@ -20,6 +20,8 @@ extension CoachTracking {
         case vergiss(id: String)
         /// Ein Training-Marker; was er bewirkt, plant `CoachTrainingMarker` erst beim Speichern gegen den Stand der Einheit.
         case training(CoachMarker.Art)
+        /// Ein Befehl für Wecker oder Erinnerung, schon gegen den Stand von Lumen Alarm geprüft. Beim Bestätigen wird daraus ein Auftrag an Lumen Alarm.
+        case wecker(WeckerBefehl)
     }
 
     /// Eine Zeile der Karte. Mit `route` ein Knopf in die Seite dazu, bei Gedächtnis-Zeilen öffnet ein Tipp die Liste.
@@ -68,13 +70,15 @@ extension CoachTracking {
     }
 
     /// Gleiche Marker einer Antwort werden zusammengezählt (zwei Gläser = ein Eintrag), Gefühl und Gewicht zählen einmal (das letzte gilt).
-    nonisolated static func eintraege(_ marker: [CoachMarker.Art], stunde: Int) -> [Eintrag] {
+    /// Wecker-Marker zählen nur mit dem Stand von Lumen Alarm (`wecker`): ohne ihn gibt es keine Ids und nichts, was den Auftrag ausführt.
+    nonisolated static func eintraege(_ marker: [CoachMarker.Art], stunde: Int, wecker: WeckerStandDatei? = nil, heute: String = "", jetztMinute: Int = 0) -> [Eintrag] {
         var ml = 0
         var gramm = 0.0
         var gefuehl: CoachMarker.Gefuehl?
         var kilo: Double?
         var mahlzeiten: [CoachMarker.MahlzeitDaten] = []
         var gedaechtnis: [Eintrag] = []
+        var befehle: [WeckerBefehl] = []
         for art in marker {
             switch art {
             case .wasser(let m): ml += m
@@ -86,6 +90,8 @@ extension CoachTracking {
             case .merke(let t): gedaechtnis.append(.merke(t))
             case .aendere(let id, let text): gedaechtnis.append(.aendere(id: id, text: text))
             case .vergiss(let id): gedaechtnis.append(.vergiss(id: id))
+            case .weckerSteuern(let befehl):
+                if let wecker, let geprueft = befehl.geprueft(gegen: wecker, heute: heute, jetztMinute: jetztMinute) { befehle.append(geprueft) }
             default: break
             }
         }
@@ -97,11 +103,12 @@ extension CoachTracking {
         liste.append(contentsOf: mahlzeiten.map { Eintrag.mahlzeit($0) })
         liste.append(contentsOf: gedaechtnis)
         liste.append(contentsOf: CoachTrainingMarker.geordnet(marker).map { Eintrag.training($0) })
+        liste.append(contentsOf: befehle.map { Eintrag.wecker($0) })
         return liste
     }
 
     /// Die Zeile eines Eintrags, vor dem Speichern (Vorschlag) und danach (Karte). Training: `stand` nennt die Übung beim Namen.
-    nonisolated static func zeile(_ e: Eintrag, stand: CoachTrainingMarker.Stand? = nil) -> Zeile {
+    nonisolated static func zeile(_ e: Eintrag, stand: CoachTrainingMarker.Stand? = nil, weckerStand: WeckerStandDatei? = nil) -> Zeile {
         switch e {
         case .wasser(let n):
             return Zeile(text: "Wasser +\(n) \(n == 1 ? "Glas" : "Gläser") (\(n * glasMl) ml)", symbol: "drop.fill", route: .heute)
@@ -123,6 +130,8 @@ extension CoachTracking {
             return Zeile(text: "Vergessen: \(kurz(id))", symbol: "brain.head.profile", oeffnetGedaechtnis: true)
         case .training(let art):
             return Zeile(text: CoachTrainingMarker.vorschlagText(art, stand: stand), symbol: "figure.strengthtraining.traditional", route: .gym(.training))
+        case .wecker(let befehl):
+            return Zeile(text: kurz(befehl.zeile(stand: weckerStand)), symbol: "alarm.fill")
         }
     }
 
@@ -136,12 +145,14 @@ extension CoachTracking {
         /// Eine Mahlzeit oder Wasser war dabei (für Hinweise, die sonst doppelt zählen würden).
         var wasserDabei = false
         var essenDabei = false
+        /// Die Ids der Aufträge an Lumen Alarm, die dabei entstanden sind. Sie stehen nicht in `zeilen`: "Eingetragen" wäre falsch, bis Lumen Alarm es meldet.
+        var auftragIds: [String] = []
     }
 
     /// Schreibt über die Stores des Profils (Wasser in Gläsern, Creatin in Klicks, Gewicht in Zehntel-Kilo, Mahlzeit ins Tagebuch,
     /// Gedächtnis, Training). Der Tag ist der von `jetzt`. Was nicht greift (Training ohne Einheit, unbekannter Eintrag), erzeugt keine Zeile.
     @MainActor
-    static func speichern(_ liste: [Eintrag], daten: DatenSatz, gedaechtnis: CoachGedaechtnis, jetzt: Date) -> Gespeichert {
+    static func speichern(_ liste: [Eintrag], daten: DatenSatz, gedaechtnis: CoachGedaechtnis, jetzt: Date, auftraege: AlarmWeckerDienst? = nil) -> Gespeichert {
         let heute = Datum.text(jetzt)
         var erg = Gespeichert()
         for e in liste {
@@ -183,6 +194,10 @@ extension CoachTracking {
                 gedaechtnis.loeschen(alt)
                 erg.zurueck.append { gedaechtnis.wiederherstellen(alt) }
                 erg.zeilen.append(Zeile(text: "Vergessen: \(kurz(alt))", symbol: "brain.head.profile", oeffnetGedaechtnis: true))
+                continue
+            case .wecker(let befehl):
+                // Nur ein Auftrag: gestellt ist nichts, bevor Lumen Alarm es meldet. Kein Rückgängig (Lumen Alarm kann schon gelaufen sein).
+                if let id = auftraege?.lege(befehl, jetzt: jetzt) { erg.auftragIds.append(id) }
                 continue
             case .training(let art):
                 // Passt der Marker nicht (keine Einheit, unbekannte Id, gegen die Regeln der App), geschieht nichts und es gibt keine Zeile.

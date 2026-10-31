@@ -4,7 +4,7 @@ import XCTest
 
 /// Health-Coach: Marker am Ende der Antwort trennen und prüfen (`CoachMarker.swift`). Reine Logik.
 /// Übernommen sind die Fälle für `weiter`, `gehe` und `merke` samt Grenzfällen; Wecker, Erinnerung, Termin, Tracking und Training
-/// gibt es in Lumen Fit nicht: ihre Marker verschwinden wie jeder unbekannte Marker.
+/// gibt es in Lumen Fit nicht: ihre Marker verschwinden wie jeder unbekannte Marker (die gültigen Wecker-Marker prüft `CoachWeckerTests`).
 final class CoachMarkerTests: XCTestCase {
 
     private func zerlegt(_ roh: String) -> CoachMarker.Zerlegt { CoachMarker.zerlegen(roh) }
@@ -142,11 +142,11 @@ final class CoachMarkerTests: XCTestCase {
         XCTAssertEqual(Set(z.chips.map(\.id)).count, 4, "Ids sind eindeutig")
     }
 
-    // MARK: - Umfang: keine Wecker, Erinnerungen oder Kalender
+    // MARK: - Umfang: keine Kalender, kaputte Wecker-Marker
 
     func testWeckerErinnerungTerminUndErinnernVerschwinden() {
         for roh in ["[[wecker: 2026-10-08 | 07:30]]", "[[erinnerung: 07:30 | Wasser trinken]]", "[[termin: 2026-10-08 | 10:00 | 11:00 | Zahnarzt]]",
-                    "[[erinnern: neu | 07:30 | x]]"] {
+                    "[[erinnern: neu | 7:3 | x]]", "[[wecker: neu | 25:00 | einmalig]]"] {
             let z = zerlegt("Okay. \(roh)")
             XCTAssertEqual(z.text, "Okay.", roh)
             XCTAssertTrue(z.marker.isEmpty, roh)

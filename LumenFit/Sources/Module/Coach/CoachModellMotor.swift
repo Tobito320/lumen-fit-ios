@@ -107,6 +107,7 @@ enum CoachModellPrompt {
         let hinweis = CoachLernen.stil(anfrage.verlauf).hinweis
         if !hinweis.isEmpty { zeilen.append("Vorliebe der Person: \(hinweis)") }
         zeilen.append(contentsOf: wunschZeilen(anfrage))
+        zeilen.append(contentsOf: anfrage.weckerZeilen)
         let bisher = anfrage.verlauf.suffix(verlaufNachrichten).map { n -> String in
             let text = String(CoachMarker.zerlegen(n.text).text.prefix(maxZeichenJeNachricht))
             return "\(n.rolle == .nutzer ? "Person" : "Coach"): \(text)"
@@ -165,7 +166,11 @@ enum CoachModellUebersetzer {
         guard !zerlegt.text.isEmpty else { throw CoachMotorFehler.leer }
         let eigene = chips(roh)
         let ausMarkern = zerlegt.chips.filter { marker in !eigene.contains { $0.id == marker.id } }
-        return CoachAntwort(text: zerlegt.text, chips: Array((eigene + ausMarkern).prefix(2)))
+        let befehle = zerlegt.marker.compactMap { art -> WeckerBefehl? in
+            if case .weckerSteuern(let befehl) = art { return befehl }
+            return nil
+        }
+        return CoachAntwort(text: zerlegt.text, chips: Array((eigene + ausMarkern).prefix(2)), weckerBefehle: befehle)
     }
 }
 

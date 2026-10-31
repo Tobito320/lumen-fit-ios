@@ -51,9 +51,13 @@ struct CoachAnfrage: Sendable {
     var ton: String = ""
     var ziel: String = ""
     var disziplin = false
+    /// Die Zeilen über Wecker und Erinnerungen aus dem Stand von Lumen Alarm (Ids, Zeiten, Regeln der Marker); leer, solange Lumen Alarm nichts gemeldet hat.
+    var weckerZeilen: [String] = []
 }
 
 struct CoachAntwort: Sendable {
     var text: String
     var chips: [CoachChip]
+    /// Wecker-Marker, die aus dem Text genommen wurden (der Text zeigt sie nie); der Chat macht daraus einen Vorschlag.
+    var weckerBefehle: [WeckerBefehl] = []
 }

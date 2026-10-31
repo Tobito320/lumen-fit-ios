@@ -126,6 +126,8 @@ final class TrackerModell {
     private var anfrageNr = 0
     private var planNr = 0
     private var schrittAntwort = false
+    /// Die laufende Abfrage ist nur die Schritte-Frage von heute (`schritteLesen`): kein Planen der nächsten Runde, kein Rundenende.
+    private var nurSchritte = false
     /// Die Einstellungen, deren Zurücklesen gerade läuft; `abschliessen` prüft sie gegen das, was der Tracker meldet.
     private var erwartet: [TrackerProtokoll.Aenderung] = []
     /// Die Einstellungen des Modus, die in dieser Verbindung schon versucht wurden (`TrackerModus.offene`).
@@ -237,6 +239,18 @@ final class TrackerModell {
         verlaufWartet = kandidaten.filter { TrackerVerlauf.verlaufFaellig(letzte: verlaufGelesen[$0], jetzt: jetzt) }
         verlaufPuffer = nil
         senden(TrackerProtokoll.akkuAnfrage)
+    }
+
+    /// Fragt nur die Schritte von heute ab (für den Aufsteh-Wecker, alle 30 Sekunden im Weckfenster). Läuft schon eine Abfrage, passiert nichts:
+    /// sie liest die Schritte ohnehin. Plant die nächste volle Runde nicht neu.
+    func schritteLesen() {
+        guard zustand == .verbunden, !abfrageLaeuft else { return }
+        abfrageLaeuft = true
+        nurSchritte = true
+        schrittAntwort = false
+        offeneAnfragen = []
+        verlaufWartet = []
+        senden(TrackerProtokoll.schritteHeuteAnfrage)
     }
 
     /// Nur bei stehender Verbindung und ohne laufende Abfrage; die Tracker-Seite sperrt sonst ihre Schalter.
@@ -637,6 +651,13 @@ final class TrackerModell {
     private func abschliessen() {
         anfrageNr += 1
         abfrageLaeuft = false
+        if nurSchritte {
+            nurSchritte = false
+            if schrittAntwort { bandTage.stand = uhr() }
+            bandTage.kuerzen(heute: Datum.text(uhr()))
+            bandMelden()
+            return
+        }
         // Ohne eine einzige Schritt-Antwort ist nichts gelesen worden: dann bleibt der Stand alt.
         if schrittAntwort { bandTage.stand = uhr() }
         if !erwartet.isEmpty {
@@ -658,6 +679,7 @@ final class TrackerModell {
         anfrageNr += 1
         planNr += 1
         abfrageLaeuft = false
+        nurSchritte = false
         offeneAnfragen = []
         pulsPuffer = nil
         verlaufWartet = []

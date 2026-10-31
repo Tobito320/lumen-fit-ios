@@ -27,6 +27,12 @@ struct GeraeteView: View {
                         ProfilZeile(symbol: "heart.text.square.fill", titel: "Apple Health", zeile: "Puls, Schritte und Schlaf von Watch und iPhone", wert: nil)
                     }
                 }
+                if let zeile = VerbindenDienste.geteilt?.uebernahmeZeile {
+                    Text(zeile)
+                        .font(.footnote)
+                        .foregroundStyle(palette.text2)
+                        .padding(.horizontal, Abstand.xs)
+                }
                 Text("Den Akku der AirPods gibt iOS Apps nicht frei. Was die Apple Watch misst, kommt über Apple Health.")
                     .font(.footnote)
                     .foregroundStyle(palette.text2)

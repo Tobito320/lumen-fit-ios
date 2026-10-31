@@ -3,8 +3,8 @@ import Foundation
 
 // Health-Coach, Marker: eine Antwort darf am Ende bis zu vier Zeilen der Form `[[name: a | b]]` tragen. Das Sprachmodell liefert Chips
 // strukturiert; die Marker sind der zweite Weg (Textbausteine, ältere Verläufe) und der Schutz, dass nie ein halber Marker im Chat steht.
-// Alles Unbekannte oder Kaputte verschwindet still. Marker für Wecker, Erinnerung und Kalender gibt es in Lumen Fit nicht: sie fallen
-// wie jeder unbekannte Marker weg. Reine Logik.
+// Alles Unbekannte oder Kaputte verschwindet still. Marker für Kalender gibt es in Lumen Fit nicht: sie fallen wie jeder unbekannte Marker weg.
+// Wecker und Erinnerungen (`wecker`, `erinnern`, `CoachWecker.swift`) werden Aufträge für Lumen Alarm, nie ein Wecker in Lumen Fit. Reine Logik.
 //
 // Übernommen: `weiter` (Folgefragen), `gehe` (Sprung), `chart` und `linie` (Diagramm), `fortschritt` (Ring), `ziel`, `schlaf` (Nacht),
 // die Eintrags-Marker `essen`, `mahlzeit`, `wasser`, `supplement` (Kreatin), `gefuehl` (Schlafgefühl), `gewicht`, die Gedächtnis-Marker
@@ -74,6 +74,8 @@ enum CoachMarker {
         case trainingEnde
         case satz(uebung: String, kg: Double, wdh: Int)
         case tausche(uebung: String, katalogId: String)
+        /// `[[wecker: ...]]` und `[[erinnern: ...]]`: ein Befehl für Lumen Alarm (nur die Form ist geprüft, die Ids prüft `WeckerBefehl.geprueft`).
+        case weckerSteuern(WeckerBefehl)
     }
 
     struct Punkt: Equatable, Sendable {
@@ -153,7 +155,7 @@ enum CoachMarker {
 
     private static let schluessel: Set<String> = ["weiter", "gehe", "gewohnheit", "plan", "merke", "chart", "linie", "fortschritt", "ziel", "schlaf",
                                                    "essen", "mahlzeit", "wasser", "supplement", "gefuehl", "gewicht", "aendere", "vergiss",
-                                                   "training", "satz", "tausche"]
+                                                   "training", "satz", "tausche", "wecker", "erinnern"]
     private static let verbotenImZiel = ["kg", "abnehm", "kcal", "kalor", "gewicht", "defizit", "körperfett"]
 
     /// `name: argument` mit einem Namen aus Buchstaben und Unterstrichen. Alles andere ist kein Marker und bleibt Text.
@@ -245,6 +247,8 @@ enum CoachMarker {
         case "satz":
             guard teile.count == 3, kennung(teile[0]), let kg = hantelKilo(teile[1]), let wdh = ganzzahl(teile[2], 1...100) else { return nil }
             return .satz(uebung: teile[0], kg: kg, wdh: wdh)
+        case "wecker", "erinnern":
+            return WeckerBefehl.aus(name, teile).map(Art.weckerSteuern)
         case "tausche":
             guard teile.count == 2, kennung(teile[0]), kennung(teile[1]) else { return nil }
             return .tausche(uebung: teile[0], katalogId: teile[1])

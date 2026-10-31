@@ -13,6 +13,8 @@ struct LoveaBruecke: PartnerAustausch {
         self.ordnerName = ordnerName
     }
 
+    private let zwischenspeicher = WuenscheZwischenspeicher()
+
     private var vertragsOrdner: URL? { ordner?.appendingPathComponent(ordnerName, isDirectory: true) }
 
     // MARK: - Partner lesen
@@ -91,10 +93,27 @@ struct LoveaBruecke: PartnerAustausch {
 
     func schreibe(status: BandStatusDatei) { schreibe(status, LoveaVertrag.statusDatei) }
 
-    func wuensche() -> [BandWunsch] {
-        guard let url = vertragsOrdner?.appendingPathComponent(LoveaVertrag.wuenscheDatei), let daten = try? Data(contentsOf: url),
-              let datei = try? LoveaVertrag.decoder().decode(BandWuenscheDatei.self, from: daten), datei.version == LoveaVertrag.version else { return [] }
-        return datei.wuensche
+    func wuensche() -> [BandWunsch] { wuenscheDatei()?.wuensche ?? [] }
+
+    func weckFenster() -> [WeckFenster] { wuenscheDatei()?.wecker ?? [] }
+
+    /// Die Datei der Wünsche, nur neu gelesen und dekodiert, wenn sich Änderungszeit oder Größe ändern (bis 2000 Wünsche: der Wecker-Takt liest sie alle 0,7 Sekunden).
+    private func wuenscheDatei() -> BandWuenscheDatei? {
+        guard let url = vertragsOrdner?.appendingPathComponent(LoveaVertrag.wuenscheDatei) else { return nil }
+        let attribute = try? FileManager.default.attributesOfItem(atPath: url.path)
+        let marke = WuenscheMarke(zeit: attribute?[.modificationDate] as? Date, groesse: (attribute?[.size] as? NSNumber)?.intValue ?? -1)
+        if marke.zeit != nil, let treffer = zwischenspeicher.wert(url.path, marke) { return treffer }
+        guard let daten = try? Data(contentsOf: url), let datei = try? LoveaVertrag.decoder().decode(BandWuenscheDatei.self, from: daten),
+              datei.version == LoveaVertrag.version else { return nil }
+        zwischenspeicher.merke(url.path, marke, datei)
+        return datei
+    }
+
+    func schreibe(schritte: BandSchritteDatei) { schreibe(schritte, LoveaVertrag.schritteDatei) }
+
+    func schritte() -> BandSchritteDatei? {
+        guard let url = vertragsOrdner?.appendingPathComponent(LoveaVertrag.schritteDatei), let daten = try? Data(contentsOf: url) else { return nil }
+        return try? LoveaVertrag.decoder().decode(BandSchritteDatei.self, from: daten)
     }
 
     /// Hängt die Ids an die zuletzt gemerkten und behält die letzten 200.
@@ -111,12 +130,39 @@ struct LoveaBruecke: PartnerAustausch {
     func loescheEigeneDateien() {
         guard let ordner = vertragsOrdner else { return }
         if ordnerName == LoveaVertrag.ordnerName { try? FileManager.default.removeItem(at: ordner); return }
-        for datei in [LoveaVertrag.erledigtDatei, LoveaVertrag.statusDatei] { try? FileManager.default.removeItem(at: ordner.appendingPathComponent(datei)) }
+        for datei in [LoveaVertrag.erledigtDatei, LoveaVertrag.statusDatei, LoveaVertrag.schritteDatei] { try? FileManager.default.removeItem(at: ordner.appendingPathComponent(datei)) }
     }
 
     private func schreibe<T: Encodable>(_ wert: T, _ dateiName: String) {
         guard let ordner = vertragsOrdner, let daten = try? LoveaVertrag.encoder().encode(wert) else { return }
         try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
         try? daten.write(to: ordner.appendingPathComponent(dateiName), options: .atomic)
+    }
+}
+
+/// Änderungszeit und Größe der Wunschdatei beim letzten Lesen.
+struct WuenscheMarke: Equatable, Sendable {
+    var zeit: Date?
+    var groesse: Int
+}
+
+/// Merkt die zuletzt dekodierte Wunschdatei. Die Brücke ist ein Wert, darum ein Verweis mit Sperre.
+final class WuenscheZwischenspeicher: @unchecked Sendable {
+    // @unchecked Sendable: jeder Zugriff auf die Felder läuft über `schloss`.
+    private let schloss = NSLock()
+    private var pfad: String?
+    private var marke: WuenscheMarke?
+    private var datei: BandWuenscheDatei?
+
+    func wert(_ pfad: String, _ marke: WuenscheMarke) -> BandWuenscheDatei? {
+        schloss.withLock { self.pfad == pfad && self.marke == marke ? datei : nil }
+    }
+
+    func merke(_ pfad: String, _ marke: WuenscheMarke, _ datei: BandWuenscheDatei) {
+        schloss.withLock {
+            self.pfad = pfad
+            self.marke = marke
+            self.datei = datei
+        }
     }
 }

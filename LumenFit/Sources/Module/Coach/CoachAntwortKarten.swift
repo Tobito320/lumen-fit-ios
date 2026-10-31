@@ -1,6 +1,7 @@
 // Quelle: Lovea Health/Coach/CoachAntwortTeile.swift (Diagramm, Fortschritt, Schlaf-Nacht, Aufgabe, Weg, Ziel, Karte "Eingetragen")
 import Charts
 import SwiftUI
+import UIKit
 
 // Bausteine unter einer Antwort des Coachs: Diagramm (Balken oder Linie, Tipp zeigt den Wert), Fortschrittsring mit "Mehr dazu", Schlaf-Nacht,
 // abhakbare Aufgabe, Weg in die App, Ziel merken und die Karte "Eintragen?" mit Bestätigen und Rückgängig. Alles hier zeichnet nur, was
@@ -297,6 +298,7 @@ struct CoachEintragsKarte: View {
     var body: some View {
         let bestaetigt = modell.bestaetigt
         let vorschlag = modell.vorschlagZeilen
+        let wecker = modell.weckerKarten
         VStack(alignment: .leading, spacing: Abstand.s) {
             if !bestaetigt.isEmpty || modell.nichtGeklappt {
                 Text(modell.nichtGeklappt ? "Nicht geklappt" : "Eingetragen").font(.footnote.weight(.semibold)).foregroundStyle(palette.text)
@@ -326,11 +328,49 @@ struct CoachEintragsKarte: View {
                 }
                 .frame(minHeight: Abstand.tippflaeche)
             }
+            if !wecker.isEmpty {
+                Text("Lumen Alarm").font(.footnote.weight(.semibold)).foregroundStyle(palette.text)
+                ForEach(wecker) { karte in
+                    Label(Self.weckerText(karte), systemImage: Self.weckerSymbol(karte)).font(.footnote).foregroundStyle(palette.text)
+                }
+                HStack {
+                    if wecker.contains(where: { $0.zustand == .wartet }) {
+                        Button("Lumen Alarm öffnen") { Self.alarmOeffnen() }
+                            .buttonStyle(.borderedProminent)
+                            .accessibilityHint("Öffnet Lumen Alarm, damit es den Auftrag ausführt")
+                    }
+                    Button("Schließen") { modell.weckerKarteSchliessen() }
+                        .buttonStyle(.borderless)
+                }
+                .frame(minHeight: Abstand.tippflaeche)
+            }
         }
         .padding(Abstand.m)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+
+    /// Gestellt heißt es erst, wenn Lumen Alarm `ok` gemeldet hat.
+    nonisolated static func weckerText(_ karte: WeckerKarte) -> String {
+        switch karte.zustand {
+        case .wartet: "Wartet auf Lumen Alarm: \(karte.text)"
+        case .ok: "In Lumen Alarm erledigt: \(karte.text)"
+        case .fehler(let grund): "Nicht geklappt (\(grund)): \(karte.text)"
+        }
+    }
+
+    nonisolated static func weckerSymbol(_ karte: WeckerKarte) -> String {
+        switch karte.zustand {
+        case .wartet: "hourglass"
+        case .ok: "checkmark.circle.fill"
+        case .fehler: "exclamationmark.triangle.fill"
+        }
+    }
+
+    @MainActor private static func alarmOeffnen() {
+        guard let url = URL(string: AlarmWeckerDienst.alarmAdresse) else { return }
+        UIApplication.shared.open(url)
     }
 
     @ViewBuilder
