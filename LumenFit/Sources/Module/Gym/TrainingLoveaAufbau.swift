@@ -163,7 +163,7 @@ struct TrainingLoveaView: View {
                     Button("Beenden") { beenden = true }.fontWeight(.semibold)
                 }
             }
-            .sheet(isPresented: $beenden) { TrainingBeendenView(sitzung: sitzung) }
+            .loveaBeendenFragen(sitzung: sitzung, ausloeser: $beenden)
             .sheet(isPresented: $suche) {
                 UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true)
             }

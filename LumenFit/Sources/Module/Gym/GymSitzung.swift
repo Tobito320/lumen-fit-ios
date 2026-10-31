@@ -186,13 +186,13 @@ final class GymSitzung: TrainingSteuerung {
     /// Beendet das Training: Sätze, Rekorde, Energie und Puls (nur mit Sensor) gehen an `auschecken`; Health bekommt es nur mit dem Schalter.
     func beende() { beende(notiz: nil) }
 
-    /// Wie `beende()`, mit einer Notiz zum ganzen Training (leer wird nicht gespeichert).
-    func beende(notiz: String?) {
+    /// Wie `beende()`, mit einer Notiz zum ganzen Training (leer wird nicht gespeichert) und, wenn gewählt, einer eigenen Endzeit (Lovea-Aufbau "Endzeit ändern").
+    func beende(notiz: String?, ende: Date? = nil) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }
         let rekorde = RekordLogik.anzahl(liste, frueher: fruehere(s))
-        d.training.auschecken(sid, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
+        d.training.auschecken(sid, ende: ende, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
         let schreiben = d.einstellungen.werte.healthSchreiben
         let beendet = d.training.sessions.first { $0.id == sid }
         let schreiber = umgebung.healthSchreiber
@@ -204,6 +204,15 @@ final class GymSitzung: TrainingSteuerung {
         setzePause(nil)
         zuruecksetzen()
         liveSenden()
+    }
+
+    /// Lovea-Aufbau "Endzeit ändern": Start und Ende von Hand setzen und das Training damit beenden (Lovea `ZeitenBlatt` auf dem laufenden Training).
+    /// Läuft über `beende`, damit Sätze, Rekorde, Puls, Pause und Live-Anzeige wie sonst abgeschlossen werden.
+    func beendeMitZeiten(start: Date, ende: Date) {
+        ladeWennNoetig()
+        guard let s = laufende else { return }
+        if start != s.start { training?.zeitenAendern(s, start: start, ende: nil) }
+        beende(notiz: nil, ende: max(ende, start))
     }
 
     /// Verwirft das laufende Training ganz (nichts wird gespeichert).
@@ -556,10 +565,30 @@ final class GymSitzung: TrainingSteuerung {
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
     }
 
-    /// Ein Training ohne Plantag als neuen, flexiblen Tag speichern (`WorkoutLogik.alsTag`).
-    func alsTagSpeichern(name: String) {
+    /// Ein Training ohne Plantag als neuen, flexiblen Tag speichern (`WorkoutLogik.alsTag`). Mit `einheitZuordnen` gehört die Einheit danach zu
+    /// diesem Tag (Lovea `alsTagSpeichern`, `WorkoutView.swift:369`).
+    func alsTagSpeichern(name: String, einheitZuordnen: Bool = false) {
         guard let t = training, let neu = WorkoutLogik.alsTag(liste, name: name) else { return }
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
+        if einheitZuordnen, let s = laufende { t.tagSetzen(s, neu.id) }
+    }
+
+    // MARK: - Beenden mit Rückfragen (Lovea-Aufbau)
+
+    /// Ob "Plan aktualisieren?" gefragt wird: Tag da und der Aufbau hat sich geändert.
+    var planFrageNoetig: Bool { tag != nil && neuerTag != nil }
+    /// Ob "Als Trainingstag speichern?" gefragt wird: kein Tag, aber etwas Abgehaktes.
+    var freiFrageNoetig: Bool { tag == nil && WorkoutLogik.alsTag(liste, name: "") != nil }
+
+    /// Der erste Schritt nach "Beenden" (Lovea `beenden`): erst "so lange im Gym?", sonst gleich die Plan-Frage.
+    func ersterBeendenSchritt() -> BeendenSchritt {
+        let zuLang = laufende.map { TrainingLogik.zuLang(start: $0.start, ende: umgebung.uhr()) } ?? false
+        return BeendenAblauf.ersterSchritt(zuLang: zuLang, planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
+    }
+
+    /// Der Schritt nach "Ja, stimmt" (Lovea `abschliessen`).
+    func naechsterBeendenSchritt() -> BeendenSchritt {
+        BeendenAblauf.weiter(planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
     }
 
     // MARK: - Cardio
