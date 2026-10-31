@@ -7,6 +7,8 @@ struct CoachChatView: View {
 
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
+    @Environment(\.colorScheme) private var schema
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var blatt: CoachBlatt?
     @State private var hervorgehoben: String?
@@ -17,6 +19,8 @@ struct CoachChatView: View {
     @State private var ausblendenFrage = false
     @State private var zielFrage = false
     @State private var zielText = ""
+    @State private var nameFrage = false
+    @State private var nameText = ""
     @FocusState private var fokus: Bool
 
     var body: some View {
@@ -63,6 +67,17 @@ struct CoachChatView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { eingabe }
         .navigationBarTitleDisplayMode(.inline)
+        .background {
+            // Lovea `CoachChatView.swift:243-247`: ein Hauch Mint von oben, Himmel von unten.
+            if aufbau == .lovea {
+                ZStack {
+                    RadialGradient(colors: [LoveaDaten.coachMint.opacity(schema == .dark ? 0.2 : 0.12), .clear], center: .top, startRadius: 0, endRadius: 460)
+                    RadialGradient(colors: [LoveaDaten.coach.opacity(schema == .dark ? 0.12 : 0.07), .clear], center: .bottomTrailing, startRadius: 0, endRadius: 380)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+        }
         .lumenHintergrund()
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -107,6 +122,13 @@ struct CoachChatView: View {
         } message: {
             Text("Der Chat und der Verlauf werden leer. Nichts wird gelöscht, der Coach kennt die letzten Nachrichten weiter.")
         }
+        .alert("Name ändern", isPresented: $nameFrage) {
+            TextField("Name des Coaches", text: $nameText)
+            Button("Sichern") { modell.einstellungen?.setzeName(nameText) }
+            Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Leer lassen setzt den Standardnamen.")
+        }
         .alert("Mein Ziel", isPresented: $zielFrage) {
             TextField("Zum Beispiel: 5 kg abnehmen bis Sommer", text: $zielText)
             Button("Sichern") { modell.setzeZiel(zielText) }
@@ -124,6 +146,14 @@ struct CoachChatView: View {
             Button("Verlauf", systemImage: "clock.arrow.circlepath") { blatt = .verlauf }
             Button("Gedächtnis", systemImage: "brain.head.profile") { blatt = .gedaechtnis }
             Button("Gemerkte Antworten", systemImage: "bookmark") { blatt = .merkliste }
+            if aufbau == .lovea {
+                // Lovea `CoachChatView.swift:265-310`: Verlauf teilen und Name ändern gleich im Menü.
+                ShareLink(item: CoachLokal.export(modell.sichtbarerVerlauf, ich: umgebung.profil.aktiv?.name ?? "Ich",
+                                                  coach: modell.einstellungen?.anzeigeName ?? CoachLokal.standardName) {
+                    "\(CoachAnzeige.tag($0)), \(CoachAnzeige.uhrzeit($0))"
+                }) { Label("Verlauf teilen", systemImage: "square.and.arrow.up") }
+                Button("Name ändern", systemImage: "pencil") { nameText = modell.einstellungen?.stand.name ?? ""; nameFrage = true }
+            }
             Divider()
             Button("Mein Ziel", systemImage: "target") { zielText = modell.ziel; zielFrage = true }
             Picker("Ton", selection: Binding(get: { modell.ton }, set: { modell.setzeTon($0) })) {
