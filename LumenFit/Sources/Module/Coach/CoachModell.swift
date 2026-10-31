@@ -29,6 +29,8 @@ final class CoachModell {
     /// Eintrags-Marker der letzten Antwort, die auf "Eintragen" warten (`CoachTracking.eintraege`), und die Karte danach mit Rückgängig.
     private(set) var vorschlag: [CoachTracking.Eintrag] = []
     private(set) var bestaetigt: [CoachTracking.Zeile] = []
+    /// Die Aufträge an Lumen Alarm aus bestätigten Wecker-Vorschlägen. Die Karte zeigt "Wartet auf Lumen Alarm", bis `wecker-ergebnis.json` etwas meldet.
+    private(set) var weckerIds: [String] = []
     /// Bestätigen hat nichts bewirkt (Training ohne Einheit, unbekannter Eintrag): die Karte sagt "Nicht geklappt".
     private(set) var nichtGeklappt = false
     /// Zähler für die Haptik der Oberfläche (`.haptik(art, bei:)`): jede Änderung ist ein Signal.
@@ -135,6 +137,7 @@ final class CoachModell {
         einstellungen?.blendeVerlaufAus(bis: bis)
         vorschlag = []
         bestaetigt = []
+        weckerIds = []
         rueckwege = []
         warnungSignal += 1
     }
@@ -167,14 +170,21 @@ final class CoachModell {
     /// Die Zeilen des Vorschlags für die Karte "Eintragen?".
     var vorschlagZeilen: [CoachTracking.Zeile] {
         let stand = daten.map { CoachTrainingMarker.aktuellerStand($0, jetzt: jetzt) }
-        return vorschlag.map { CoachTracking.zeile($0, stand: stand) }
+        let weckerStand = umgebung.alarmWecker.stand
+        return vorschlag.map { CoachTracking.zeile($0, stand: stand, weckerStand: weckerStand) }
     }
+
+    /// Wie weit die Wecker-Aufträge sind (Wartet, ok, Fehler). Gestellt gilt erst, wenn Lumen Alarm `ok` meldet.
+    var weckerKarten: [WeckerKarte] { umgebung.alarmWecker.karten(fuer: weckerIds) }
 
     var kannRueckgaengig: Bool { !rueckwege.isEmpty }
 
     /// Schlägt die Eintrags-Marker einer frischen Antwort vor. Ältere Vorschläge und Karten fallen weg.
-    private func schlageVor(_ text: String) {
-        let eintraege = CoachTracking.eintraege(CoachMarker.zerlegen(text).marker, stunde: Datum.kalender.component(.hour, from: jetzt))
+    private func schlageVor(_ text: String, weckerBefehle: [WeckerBefehl] = []) {
+        let marker = CoachMarker.zerlegen(text).marker + weckerBefehle.map { CoachMarker.Art.weckerSteuern($0) }
+        let stunde = Datum.kalender.component(.hour, from: jetzt)
+        let eintraege = CoachTracking.eintraege(marker, stunde: stunde, wecker: umgebung.alarmWecker.stand, heute: Datum.text(jetzt),
+                                                jetztMinute: stunde * 60 + Datum.kalender.component(.minute, from: jetzt))
         vorschlag = eintraege
         bestaetigt = []
         nichtGeklappt = false
@@ -183,11 +193,12 @@ final class CoachModell {
 
     func vorschlagBestaetigen() {
         guard !vorschlag.isEmpty, let daten, let gedaechtnis else { return }
-        let ergebnis = CoachTracking.speichern(vorschlag, daten: daten, gedaechtnis: gedaechtnis, jetzt: jetzt)
+        let ergebnis = CoachTracking.speichern(vorschlag, daten: daten, gedaechtnis: gedaechtnis, jetzt: jetzt, auftraege: umgebung.alarmWecker)
         vorschlag = []
         bestaetigt = ergebnis.zeilen
+        weckerIds = Array((weckerIds + ergebnis.auftragIds).suffix(8))
         rueckwege = ergebnis.zurueck
-        nichtGeklappt = ergebnis.zeilen.isEmpty
+        nichtGeklappt = ergebnis.zeilen.isEmpty && ergebnis.auftragIds.isEmpty
         if nichtGeklappt { warnungSignal += 1 } else { erfolgSignal += 1 }
     }
 
@@ -203,6 +214,11 @@ final class CoachModell {
         bestaetigt = []
         nichtGeklappt = false
         erfolgSignal += 1
+    }
+
+    /// Die Wecker-Karte weg (die Aufträge bleiben in der Datei, Lumen Alarm führt sie weiter aus).
+    func weckerKarteSchliessen() {
+        weckerIds = []
     }
 
     func karteSchliessen() {
@@ -250,6 +266,7 @@ final class CoachModell {
 
     /// Beim Zurückkehren in die App oder beim Öffnen des Tabs: eine gemerkte Frage wird noch einmal gestellt.
     func beiVordergrund() {
+        umgebung.alarmWecker.aktualisieren()
         if einstellungen?.stand.wartendeFrage != nil { nochmal() }
     }
 
@@ -265,8 +282,10 @@ final class CoachModell {
 
     private func beantworte(_ frage: String, bisher: [CoachNachricht], daten: DatenSatz) async {
         defer { denkt = false; denkBeginn = nil; aufgabe = nil }
+        umgebung.alarmWecker.aktualisieren()
         let anfrage = CoachAnfrage(frage: frage, verlauf: Array(bisher.suffix(12)), kontext: CoachDaten.kontext(umgebung, daten),
-                                   ton: ton, ziel: ziel, disziplin: disziplin)
+                                   ton: ton, ziel: ziel, disziplin: disziplin,
+                                   weckerZeilen: AlarmWeckerDienst.promptZeilen(stand: umgebung.alarmWecker.stand))
         let motor = umgebung.coachMotor
         let sekunden = frist
         let wache = CoachHintergrundWache()
@@ -279,7 +298,7 @@ final class CoachModell {
             let neu = nachricht(.coach, antwort.text, chips: antwort.chips)
             merkeFrisch(neu.id)
             daten.coach.haenge(neu)
-            schlageVor(antwort.text)
+            schlageVor(antwort.text, weckerBefehle: antwort.weckerBefehle)
         } catch is CancellationError {
             // Abgebrochen: nichts merken, nichts zeigen.
         } catch {
