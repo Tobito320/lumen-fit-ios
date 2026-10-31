@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fakeD1 } from "./fake-d1.js";
-import { handleFetch } from "./index.js";
+import { handleFetch, filtern } from "./index.js";
 
 const SCHEMA = readFileSync(new URL("./schema.sql", import.meta.url), "utf8");
 const APP = "app-key-test";
@@ -358,6 +358,45 @@ test("Partner: Plan, Verlauf, Tagebuch und Körper gibt es nur mit ihrer eigenen
   assert.deepEqual((await lies(["koerper"])).heute.koerper, { gewicht: [{ tag: heute(), zehntel: 784 }] });
   const alle = (await lies(["plan", "verlauf", "tagebuch", "koerper"])).heute;
   assert.deepEqual(Object.keys(alle).sort(), ["koerper", "plan", "tag", "tagebuch", "tagebuchZiele", "verlauf"]);
+});
+
+test("Partner: Sätze und Trainingstage des Verlaufs kommen nur mit verlauf UND gym, Grenzen halten", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await registrieren(env, ID2, GEHEIM2, "Zweites Gerät");
+  await freigeben(env, ID, "ahmed");
+  await freigeben(env, ID2, "annika");
+  const satz = { wdh: 8, kg: 800 };
+  const verlauf = {
+    trainings: [{ tag: heute(), saetze: 2, uebungen: 1 }],
+    tage: [heute(), heute(), "kaputt", ...Array.from({ length: 500 }, (_, i) => new Date(Date.UTC(2023, 0, 1 + i)).toISOString().slice(0, 10))],
+    einheiten: Array.from({ length: 31 }, () => ({
+      tag: heute(), name: "Push", minuten: 50, geheim: "x",
+      uebungen: Array.from({ length: 16 }, () => ({ name: "Bankdrücken", saetze: [{ wdh: 8, kg: 800, typ: "w", rpe: 9 }, ...Array.from({ length: 11 }, () => satz), { wdh: -1 }, { kg: 5 }] })),
+    })).concat([{ tag: "kaputt", uebungen: [] }]),
+  };
+  const lies = async (freigaben) => {
+    const body = { version: 1, geschrieben: new Date().toISOString(), profilName: "Ahmed", freigaben, heute: { tag: heute(), verlauf }, ereignisse: [] };
+    assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body })).status, 200);
+    return (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner;
+  };
+  const nurVerlauf = (await lies(["verlauf"])).heute.verlauf;
+  assert.ok(!("einheiten" in nurVerlauf) && !("tage" in nurVerlauf), "ohne gym keine Sätze und Tage");
+  assert.deepEqual(nurVerlauf.trainings, [{ tag: heute(), saetze: 2, uebungen: 1 }]);
+  const nurGym = await lies(["gym"]);
+  assert.ok(!nurGym.heute.verlauf, "ohne verlauf gar nichts davon");
+  const v = (await lies(["verlauf", "gym"])).heute.verlauf;
+  assert.equal(v.tage.length, 400);
+  assert.ok(v.tage.every((t) => /^\d{4}-\d{2}-\d{2}$/.test(t)) && new Set(v.tage).size === 400 && v.tage[0] >= v.tage[399], "gültig, einmalig, neueste zuerst");
+  assert.equal(v.einheiten.length, 30);
+  assert.equal(v.einheiten[0].uebungen.length, 15);
+  assert.equal(v.einheiten[0].uebungen[0].saetze.length, 12);
+  assert.deepEqual(v.einheiten[0].uebungen[0].saetze[0], { wdh: 8, kg: 800, typ: "w" }, "RPE und Fremdfelder fallen weg");
+  assert.ok(!("geheim" in v.einheiten[0]));
+  assert.ok(JSON.stringify(v).length < 180000, "auch im ungünstigsten Fall unter der Eingangsgrenze von 262144 Byte");
+  // Eine Verbindung, die gym ausblendet, sieht die Sätze nicht, auch wenn verlauf offen ist.
+  const filtriert = filtern({ version: 1, geschrieben: new Date().toISOString(), profilName: "A", freigaben: ["verlauf", "gym"], heute: { tag: heute(), verlauf }, ereignisse: [] }, ["verlauf"]);
+  assert.ok(!("einheiten" in filtriert.heute.verlauf));
 });
 
 test("Partner: zu große Zusammenfassung wird abgewiesen, Grenzen je Liste halten", async () => {

@@ -15,6 +15,10 @@ enum PartnerAnsichtsDaten {
     nonisolated static let planTage = 14
     nonisolated static let uebungenJeTag = 20
     nonisolated static let trainingsMax = 10
+    nonisolated static let tageMax = 400
+    nonisolated static let einheitenMax = 30
+    nonisolated static let uebungenJeEinheit = 15
+    nonisolated static let saetzeJeUebung = 12
     nonisolated static let tagebuchTage = 7
     nonisolated static let eintraegeJeTag = 30
     nonisolated static let messpunkteJeArt = 90
@@ -24,7 +28,7 @@ enum PartnerAnsichtsDaten {
         let heute = Datum.text(jetzt)
         var w = Werte()
         if freigaben.contains(.plan) { w.plan = plan(daten.training.plan) }
-        if freigaben.contains(.verlauf) { w.verlauf = verlauf(sessions: daten.training.sessions, plan: daten.training.plan, laufende: daten.training.laufende(jetzt: jetzt), heute: heute) }
+        if freigaben.contains(.verlauf) { w.verlauf = verlauf(sessions: daten.training.sessions, plan: daten.training.plan, laufende: daten.training.laufende(jetzt: jetzt), heute: heute, mitSaetzen: freigaben.contains(.gym)) }
         if freigaben.contains(.tagebuch) {
             w.tagebuch = tagebuch(heute: heute) { daten.essen.eintraege($0) }
             let ziele = daten.essen.ernaehrungsZiele(tag: heute)
@@ -59,7 +63,7 @@ enum PartnerAnsichtsDaten {
     }
 
     /// "Im Gym" (laufende Einheit) und die letzten Einheiten mit Daten. Immer eine Antwort: ohne Training leere Liste, damit die Ansicht "noch kein Training" sagt.
-    static func verlauf(sessions: [GymSession], plan: TrainingsPlan, laufende: GymSession?, heute: String) -> PartnerVerlauf {
+    static func verlauf(sessions: [GymSession], plan: TrainingsPlan, laufende: GymSession?, heute: String, mitSaetzen: Bool = false) -> PartnerVerlauf {
         let neueste = sessions.sorted { $0.start > $1.start }
         let trainings = neueste.filter { GymTageLogik.hatDaten($0) }.prefix(trainingsMax).map { s in
             let name = plan.tag(id: s.tag).map { kurz($0.name, 40) }
@@ -70,6 +74,11 @@ enum PartnerAnsichtsDaten {
         }
         var v = PartnerVerlauf(trainings: Array(trainings), woche: TrainingLogik.dieseWoche(sessions, heute: heute),
                                serieWochen: TrainingLogik.serieWochen(sessions, heute: heute), gesamt: sessions.count)
+        if mitSaetzen {
+            let mitDaten = neueste.filter { GymTageLogik.hatDaten($0) }
+            v.tage = Array(Set(mitDaten.map { Datum.text($0.start) }).sorted(by: >).prefix(tageMax))
+            v.einheiten = mitDaten.prefix(einheitenMax).map { einheit($0, plan: plan) }
+        }
         if let laufende {
             v.imGym = true
             v.imGymSeit = laufende.start
@@ -77,6 +86,24 @@ enum PartnerAnsichtsDaten {
             v.imGymName = name?.isEmpty == false ? name : nil
         }
         return v
+    }
+
+    /// Eine Einheit zum Nachlesen: je Übung die abgehakten Sätze (ohne Cardio), Gewicht in Zehnteln. Übungen ohne Sätze fallen weg.
+    static func einheit(_ s: GymSession, plan: TrainingsPlan) -> PartnerEinheit {
+        let name = plan.tag(id: s.tag).map { kurz($0.name, 40) }
+        let uebungen = s.laeufe.compactMap { l -> PartnerUebungKurz? in
+            let zeilen = l.stand.map { $0.filter { $0.ok == true } } ?? l.saetze ?? []
+            let saetze = zeilen.prefix(saetzeJeUebung).map { z in
+                PartnerSatzKurz(wdh: max(0, z.wdh), kg: z.kg.map { gerundet($0 * 10) },
+                                typ: z.typ == "w" || z.typ == "d" ? z.typ : z.failure ? "f" : nil)
+            }
+            guard !saetze.isEmpty else { return nil }
+            let n = kurz(l.name ?? UebungsKatalog.nachId[l.uebung]?.name ?? "Übung", 40)
+            return PartnerUebungKurz(name: n.isEmpty ? "Übung" : n, saetze: Array(saetze))
+        }
+        return PartnerEinheit(tag: Datum.text(s.start), name: name?.isEmpty == false ? name : nil,
+                              minuten: s.ende.map { max(0, Int($0.timeIntervalSince(s.start) / 60)) }, kcal: s.kcal,
+                              uebungen: Array(uebungen.prefix(uebungenJeEinheit)))
     }
 
     /// Die letzten sieben Tage (neuester zuerst), nur Tage mit Einträgen: Summe, Makros, Name und Kalorien jedes Eintrags. Keine Fotos, keine Mengen.

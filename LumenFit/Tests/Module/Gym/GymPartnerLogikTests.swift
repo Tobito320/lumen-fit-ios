@@ -71,4 +71,21 @@ final class GymPartnerLogikTests: XCTestCase {
         XCTAssertEqual(GymPartnerLogik.trainingstage(datei(verlauf: v)), ["2025-10-20", "2025-10-28"])
         XCTAssertTrue(GymPartnerLogik.einheiten(datei(freigaben: [.plan], verlauf: v)).isEmpty)
     }
+
+    func testSaetzeEinheitenUndRasterKommenAusDerErweiterung() {
+        let e = PartnerEinheit(tag: "2025-10-10", name: "Pull", minuten: 45, kcal: nil, uebungen: [
+            PartnerUebungKurz(name: "Rudern", saetze: [PartnerSatzKurz(wdh: 10, kg: 200, typ: "w"), PartnerSatzKurz(wdh: 8, kg: 600, typ: nil), PartnerSatzKurz(wdh: 8, kg: nil, typ: nil)]),
+        ])
+        let kurz = PartnerTrainingKurz(tag: "2025-10-28", name: nil, minuten: 50, saetze: 12, uebungen: 4, kcal: nil)
+        let v = PartnerVerlauf(trainings: [kurz], tage: ["2025-10-28", "2025-09-01"], einheiten: [e])
+        let d = datei(verlauf: v)
+        XCTAssertEqual(GymPartnerLogik.trainingstage(d), ["2025-10-28", "2025-09-01", "2025-10-10"])
+        XCTAssertEqual(GymPartnerLogik.einheit(am: "2025-10-10", in: d), e)
+        XCTAssertNil(GymPartnerLogik.einheit(am: "2025-09-01", in: d), "für den Tag liegt kein Detail vor")
+        XCTAssertEqual(GymPartnerLogik.einheiten(d).map(\.tag), ["2025-10-28", "2025-10-10"], "die Einheit mit Sätzen kommt als Zeile dazu")
+        XCTAssertEqual(GymPartnerLogik.saetzeZahl(e), 3)
+        XCTAssertEqual(GymPartnerLogik.volumen(e), 600 / 10 * 8, "Aufwärmsatz und Satz ohne Gewicht zählen nicht")
+        XCTAssertNil(GymPartnerLogik.einheit(am: "2025-10-10", in: datei(freigaben: [.plan], verlauf: v)), "ohne Freigabe verlauf nichts")
+        XCTAssertEqual(GymPartnerLogik.satz(PartnerSatzKurz(wdh: 8, kg: 625, typ: "f")).kg, 62.5)
+    }
 }

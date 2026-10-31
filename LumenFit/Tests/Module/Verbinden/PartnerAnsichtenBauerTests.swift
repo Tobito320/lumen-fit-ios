@@ -151,6 +151,29 @@ final class PartnerAnsichtenBauerTests: XCTestCase {
         XCTAssertEqual(v.gesamt, 5)
     }
 
+    func testVerlaufMitSaetzenGibtTageUndEinheitenNurAufWunsch() throws {
+        let plan = TrainingsPlan(tage: [TrainingsTag(id: "t1", name: "Push", wochentage: [1], uebungen: [])])
+        let a = einheit("a", tag: "2026-10-26", minuten: 61, saetze: 2, planTag: "t1")
+        let b = einheit("b", tag: "2026-10-20", minuten: 40, saetze: 1)
+        XCTAssertNil(PartnerAnsichtsDaten.verlauf(sessions: [a, b], plan: plan, laufende: nil, heute: heute).einheiten, "ohne gym keine Sätze")
+        let v = PartnerAnsichtsDaten.verlauf(sessions: [a, b], plan: plan, laufende: nil, heute: heute, mitSaetzen: true)
+        XCTAssertEqual(v.tage, ["2026-10-26", "2026-10-20"])
+        let e = try XCTUnwrap(v.einheiten?.first)
+        XCTAssertEqual(e.tag, "2026-10-26")
+        XCTAssertEqual(e.name, "Push")
+        XCTAssertEqual(e.uebungen.count, 1)
+        XCTAssertEqual(e.uebungen[0].saetze.count, 2)
+        XCTAssertEqual(e.uebungen[0].saetze[0], PartnerSatzKurz(wdh: 8, kg: 800, typ: nil))
+    }
+
+    func testVerlaufMitSaetzenBleibtInDenGrenzen() {
+        let viele = (0..<500).map { einheit("s\($0)", tag: Datum.addTage("2026-10-29", -$0), minuten: 50, saetze: 20) }
+        let v = PartnerAnsichtsDaten.verlauf(sessions: viele, plan: .leer, laufende: nil, heute: heute, mitSaetzen: true)
+        XCTAssertEqual(v.tage?.count, PartnerAnsichtsDaten.tageMax)
+        XCTAssertEqual(v.einheiten?.count, PartnerAnsichtsDaten.einheitenMax)
+        XCTAssertEqual(v.einheiten?.first?.uebungen.first?.saetze.count, PartnerAnsichtsDaten.saetzeJeUebung)
+    }
+
     func testVerlaufOhneTrainingIstLeerUndNichtImGym() {
         let v = PartnerAnsichtsDaten.verlauf(sessions: [], plan: .leer, laufende: nil, heute: heute)
         XCTAssertNil(v.imGym)

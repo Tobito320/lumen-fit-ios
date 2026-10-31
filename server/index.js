@@ -278,8 +278,33 @@ function planSauber(p) {
   return aus;
 }
 
-// Freigabe verlauf: "im Gym" und die letzten Trainings als Zusammenfassung, nie Sätze oder Gewichte.
-function verlaufSauber(v) {
+// Gym-Verlauf mit Sätzen (Erweiterung, nur additiv): alle Trainingstage für das Monatsraster und die letzten Einheiten mit Übungen, Gewicht (Zehntel kg)
+// und Wiederholungen zum Nachlesen. Kommt nur an, wenn BEIDE Freigaben (verlauf und gym) offen sind; alte Apps lesen die Felder nicht.
+const MAX_TAGE = 400, MAX_EINHEITEN = 30, MAX_UEBUNGEN = 15, MAX_SAETZE = 12;
+function einheitenSauber(v) {
+  const aus = {};
+  const tage = [...new Set((Array.isArray(v.tage) ? v.tage : []).filter((t) => typeof t === "string" && TAG_FORM.test(t)))].sort().reverse().slice(0, MAX_TAGE);
+  if (tage.length) aus.tage = tage;
+  const einheiten = reihe(v.einheiten, MAX_EINHEITEN).filter((e) => typeof e.tag === "string" && TAG_FORM.test(e.tag)).map((e) => {
+    const x = { tag: e.tag, uebungen: reihe(e.uebungen, MAX_UEBUNGEN).filter((u) => kurz(u.name, 40)).map((u) => ({
+      name: kurz(u.name, 40),
+      saetze: reihe(u.saetze, MAX_SAETZE).filter((z) => ganz(z.wdh) !== undefined && z.wdh < 10000).map((z) => {
+        const y = { wdh: z.wdh };
+        if (ganz(z.kg) !== undefined && z.kg < 100000) y.kg = z.kg; // Zehntel kg
+        if (z.typ === "w" || z.typ === "d" || z.typ === "f") y.typ = z.typ;
+        return y;
+      }),
+    })) };
+    if (kurz(e.name, 40)) x.name = kurz(e.name, 40);
+    for (const f of ["minuten", "kcal"]) if (ganz(e[f]) !== undefined) x[f] = e[f];
+    return x;
+  });
+  if (einheiten.length) aus.einheiten = einheiten;
+  return aus;
+}
+
+// Freigabe verlauf: "im Gym" und die letzten Trainings als Zusammenfassung. Sätze und Gewichte nur mit zusätzlicher Freigabe gym (`einheitenSauber`).
+function verlaufSauber(v, mitSaetzen = false) {
   if (!istObjekt(v)) return undefined;
   const aus = {
     trainings: reihe(v.trainings, 10).filter((t) => typeof t.tag === "string" && TAG_FORM.test(t.tag)).map((t) => {
@@ -295,6 +320,7 @@ function verlaufSauber(v) {
     if (kurz(v.imGymName, 40)) aus.imGymName = kurz(v.imGymName, 40);
   }
   for (const f of ["woche", "serieWochen", "gesamt"]) if (ganz(v[f]) !== undefined) aus[f] = v[f];
+  if (mitSaetzen) Object.assign(aus, einheitenSauber(v));
   return aus;
 }
 
@@ -385,7 +411,7 @@ function zusammenfassungSauber(b) {
   erweiterungSauber(h, freigaben, heute);
   const neu = {
     plan: freigaben.includes("plan") ? planSauber(h.plan) : undefined,
-    verlauf: freigaben.includes("verlauf") ? verlaufSauber(h.verlauf) : undefined,
+    verlauf: freigaben.includes("verlauf") ? verlaufSauber(h.verlauf, freigaben.includes("gym")) : undefined,
     tagebuch: freigaben.includes("tagebuch") ? tagebuchSauber(h.tagebuch) : undefined,
     tagebuchZiele: freigaben.includes("tagebuch") ? zieleSauber(h.tagebuchZiele) : undefined,
     koerper: freigaben.includes("koerper") ? koerperSauber(h.koerper) : undefined,

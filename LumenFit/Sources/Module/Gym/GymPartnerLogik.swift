@@ -37,12 +37,36 @@ enum GymPartnerLogik {
 
     /// Die Einheiten des Partners für die Liste im Verlauf, neueste zuerst; leer ohne Freigabe verlauf.
     static func einheiten(_ datei: ZusammenfassungDatei) -> [PartnerTrainingKurz] {
-        guard datei.freigaben.contains(.verlauf) else { return [] }
-        return (datei.heute.verlauf?.trainings ?? []).sorted { $0.tag > $1.tag }
+        guard datei.freigaben.contains(.verlauf), let v = datei.heute.verlauf else { return [] }
+        // Einheiten mit Sätzen, die nicht unter den letzten zehn stehen, kommen als Zeile dazu.
+        let bekannt = Set(v.trainings.map(\.tag))
+        let dazu = (v.einheiten ?? []).filter { !bekannt.contains($0.tag) }.map {
+            PartnerTrainingKurz(tag: $0.tag, name: $0.name, minuten: $0.minuten, saetze: saetzeZahl($0), uebungen: $0.uebungen.count, kcal: $0.kcal)
+        }
+        return (v.trainings + dazu).sorted { $0.tag > $1.tag }
     }
 
-    /// Die Tage mit Training im Monatsraster des Partners (nur die letzten zehn Einheiten sind bekannt).
+    /// Die Tage mit Training im Monatsraster des Partners: alle Tage, die er mit Gym und Verlauf mitschickt, dazu die Tage der Einheiten (ältere Apps schicken nur die zehn).
     static func trainingstage(_ datei: ZusammenfassungDatei) -> Set<String> {
-        Set(einheiten(datei).map(\.tag))
+        guard datei.freigaben.contains(.verlauf), let v = datei.heute.verlauf else { return [] }
+        return Set(v.tage ?? []).union(v.trainings.map(\.tag)).union((v.einheiten ?? []).map(\.tag))
     }
+
+    /// Die Einheit zum Nachlesen an einem Tag; nil, wenn der Partner für den Tag keine Sätze mitschickt (zu alt oder keine Freigabe gym).
+    static func einheit(am tag: String, in datei: ZusammenfassungDatei) -> PartnerEinheit? {
+        guard datei.freigaben.contains(.verlauf) else { return nil }
+        return datei.heute.verlauf?.einheiten?.first { $0.tag == tag }
+    }
+
+    /// Der Satz als `PlanSatz`, damit Nummer, Text und Volumen dieselbe Logik wie bei den eigenen Einheiten nutzen. Gewicht kommt in Zehnteln.
+    static func satz(_ s: PartnerSatzKurz) -> PlanSatz {
+        PlanSatz(wdh: s.wdh, kg: s.kg.map { Double($0) / 10 }, failure: s.typ == "f", typ: s.typ == "w" || s.typ == "d" ? s.typ : nil, ok: true)
+    }
+
+    /// Volumen in kg ohne Aufwärmsätze (wie `WorkoutLogik.volumen`).
+    static func volumen(_ e: PartnerEinheit) -> Double {
+        e.uebungen.flatMap(\.saetze).map(satz).filter(\.zaehlt).reduce(0) { $0 + ($1.kg ?? 0) * Double($1.wdh) }
+    }
+
+    static func saetzeZahl(_ e: PartnerEinheit) -> Int { e.uebungen.reduce(0) { $0 + $1.saetze.count } }
 }
