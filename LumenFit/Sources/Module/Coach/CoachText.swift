@@ -55,6 +55,12 @@ enum CoachText {
         return !kalender.isDate(vorher, inSameDayAs: jetzt) || jetzt.timeIntervalSince(vorher) > 6 * 3600
     }
 
+    /// Der Satz unter der Begrüßung. Geht die Frage an den Server (echtes Modell), steht das offen da; sonst bleibt alles auf dem iPhone.
+    static func willkommenHinweis(server: Bool) -> String {
+        let anfang = "Ich bin dein Coach. Frag mich nach Schlaf, Schritten, Training oder Essen."
+        return server ? anfang + " Deine Frage und eine Zusammenfassung deiner Zahlen gehen dafür sicher an den Server." : anfang + " Alles bleibt auf deinem iPhone."
+    }
+
     static func begruessung(stunde: Int) -> String {
         switch stunde {
         case 5..<11: "Guten Morgen"

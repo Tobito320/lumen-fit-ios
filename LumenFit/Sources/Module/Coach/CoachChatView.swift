@@ -178,7 +178,7 @@ struct CoachChatView: View {
             LumiView(stimmung: .bereit, groesse: 96)
             Text(CoachText.begruessung(stunde: Datum.kalender.component(.hour, from: modell.jetzt)))
                 .font(.title2.weight(.semibold)).foregroundStyle(palette.text)
-            Text("Ich bin dein Coach. Frag mich nach Schlaf, Schritten, Training oder Essen. Alles bleibt auf deinem iPhone.")
+            Text(CoachText.willkommenHinweis(server: UserDefaults.standard.bool(forKey: CoachServerMotor.standardSchluessel)))
                 .font(.body).foregroundStyle(palette.text2).multilineTextAlignment(.center)
             CoachChipFluss {
                 ForEach(CoachVorschlag.leerFragen(modell.schnellfragen), id: \.self) { frage in
@@ -219,7 +219,7 @@ struct CoachChatView: View {
 
     /// Neue Nachricht: eine Antwort des Coachs beginnt oben im Bild (lesen von vorn), alles andere läuft nach unten.
     private func antwortAnzeigen(_ proxy: ScrollViewProxy) {
-        guard let letzte = modell.heute.last, letzte.rolle == .coach, letzte.text != CoachPersona.fehlerText else {
+        guard let letzte = modell.heute.last, letzte.rolle == .coach, !CoachPersona.istFehler(letzte.text) else {
             scrolle(proxy)
             return
         }
@@ -271,8 +271,10 @@ struct CoachChatView: View {
 
     private var eingabe: some View {
         VStack(spacing: Abstand.s) {
-            CoachEintragsKarte(modell: modell, gedaechtnisOeffnen: { blatt = .gedaechtnis })
-                .padding(.horizontal, Abstand.l)
+            if CoachLokal.eintragsKarteSichtbar(bestaetigt: modell.bestaetigt.count, nichtGeklappt: modell.nichtGeklappt, vorschlag: modell.vorschlagZeilen.count) {
+                CoachEintragsKarte(modell: modell, gedaechtnisOeffnen: { blatt = .gedaechtnis })
+                    .padding(.horizontal, Abstand.l)
+            }
             if let handlung = modell.handlung { handlungsLeiste(handlung) }
             if modell.pausiert { pauseLeiste }
             if !modell.schnellfragen.isEmpty, !modell.heute.isEmpty {

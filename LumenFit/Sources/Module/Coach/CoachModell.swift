@@ -301,6 +301,9 @@ final class CoachModell {
             schlageVor(antwort.text, weckerBefehle: antwort.weckerBefehle)
         } catch is CancellationError {
             // Abgebrochen: nichts merken, nichts zeigen.
+        } catch CoachMotorFehler.nichtVerstanden {
+            // Kein Modell und keine Regel für diese Frage: ehrlich sagen, nichts merken (ein Wiederholen würde nichts ändern).
+            daten.coach.haenge(nachricht(.coach, CoachPersona.nichtVerstandenText))
         } catch {
             // Nie ein rohes Fehlerwort: der ruhige Text mit Lumi und ein Chip zum Wiederholen.
             einstellungen?.merkeFrage(frage)

@@ -1,5 +1,5 @@
 # Lumen-Fit-Server. Immer mit --env test oder --env live deployen (npm run deploy:test / deploy:live).
-# Secrets (wrangler secret put ... --env <env>, nie im Repo): APP_KEY, ADMIN_KEY, LOVEA_KEY, OPENAI_API_KEY (KI-Foto, bleibt aus bis gesetzt und Schalter kiFotoErlaubt an). Siehe docs/research/konfiguration.md.
+# Secrets (wrangler secret put ... --env <env>, nie im Repo): APP_KEY, ADMIN_KEY, LOVEA_KEY, OPENAI_API_KEY (nur KI-Foto und Konten ohne lovea_person; der Coach der Lovea-Konten läuft über die Bindung LOVEA und den Lovea-Schlüssel, Schalter kiFotoErlaubt bzw. kiCoachErlaubt). Siehe docs/research/konfiguration.md.
 name = "lumen-fit"
 main = "index.js"
 compatibility_date = "2026-09-23"

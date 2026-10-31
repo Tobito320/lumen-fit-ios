@@ -15,6 +15,12 @@ enum CoachPersona {
     /// Text bei nicht bereitem Modell oder Fehler: ruhig, mit Lumi, nie ein rohes Fehlerwort.
     static let fehlerText = "Gerade nicht erreichbar, ich merke mir deine Frage."
 
+    /// Text, wenn kein Modell antwortet und die Regeln die Frage nicht wirklich verstehen: ehrlich, keine Scheinantwort.
+    static let nichtVerstandenText = "Der Coach kann gerade nicht antworten. Kurze Fragen wie Tagesbericht gehen weiter."
+
+    /// Beide Fehlertexte zeigt der Chat ruhig mit Lumi und ohne Einblenden.
+    static func istFehler(_ text: String) -> Bool { text == fehlerText || text == nichtVerstandenText }
+
     static let arztHinweis = "Sprich dazu bitte mit deiner Ärztin oder deinem Arzt."
 
     // MARK: - Listen (klein geschrieben verglichen)

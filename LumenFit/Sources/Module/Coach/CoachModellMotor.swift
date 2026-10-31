@@ -15,6 +15,8 @@ enum CoachMotorFehler: Error, Equatable, Sendable {
     case leer
     /// Das Modell hat nicht innerhalb der Frist geantwortet (die Tippanzeige steht höchstens 15 Sekunden).
     case zeitUeberschritten
+    /// Kein Modell hat geantwortet und die Regeln verstehen die Frage nicht wirklich: die App sagt das ehrlich, statt etwas zu erfinden.
+    case nichtVerstanden
 }
 
 // MARK: - Nachladen für die Werkzeuge
@@ -136,11 +138,24 @@ enum CoachModellUebersetzer {
         return CoachMarker.Ziel(rawValue: klein)?.route
     }
 
+    /// Der Knopftext des Modells; ist es ein Bezeichner wie "morgen_leicht", steht der deutsche Standardtext der Art da. Leer bleibt leer (der Knopf fällt weg).
+    static func knopfText(_ roh: String, art: String) -> String {
+        let text = String(roh.trimmingCharacters(in: .whitespacesAndNewlines).prefix(24))
+        let bezeichner = !text.isEmpty && (text.contains("_") || text.lowercased() == art)
+        guard bezeichner else { return text }
+        switch art {
+        case "mach_ich": return "Mach ich"
+        case "morgen_leicht": return "Morgen leicht"
+        case "zeig_mir": return "Zeig mir"
+        default: return text
+        }
+    }
+
     /// Nur Knöpfe mit gültiger Art und gültigem Ziel, höchstens zwei; alles andere fällt still weg.
     static func chips(_ roh: [CoachRohChip]) -> [CoachChip] {
         var liste: [CoachChip] = []
         for r in roh {
-            let text = String(r.text.trimmingCharacters(in: .whitespacesAndNewlines).prefix(24))
+            let text = knopfText(r.text, art: r.art)
             guard !text.isEmpty else { continue }
             switch r.art {
             case "mach_ich":

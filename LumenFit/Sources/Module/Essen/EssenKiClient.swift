@@ -96,13 +96,13 @@ struct EssenKiClient: EssenKiSender {
     }
 }
 
-/// Reine Logik: ob der Server die Foto-Funktion für dieses Konto freigibt (Schalter `kiFotoErlaubt` in der Antwort von `GET /config`).
+/// Reine Logik: ob der Server eine KI-Funktion für dieses Konto freigibt (Schalter, Standard `kiFotoErlaubt`, in der Antwort von `GET /config`).
 enum EssenKiFreigabeLogik {
     /// nil, wenn die Antwort kein Objekt `config` hat (dann bleibt der letzte Stand). Fehlt der Schlüssel oder ist er nicht `true`: aus.
-    static func erlaubt(antwort: Data) -> Bool? {
+    static func erlaubt(antwort: Data, schalter: String = "kiFotoErlaubt") -> Bool? {
         struct Huelle: Decodable { let config: [String: JSONValue]? }
         guard let werte = (try? JSONDecoder().decode(Huelle.self, from: antwort))?.config else { return nil }
-        if case .bool(let an)? = werte["kiFotoErlaubt"] { return an }
+        if case .bool(let an)? = werte[schalter] { return an }
         return false
     }
 }
@@ -114,37 +114,44 @@ final class EssenKiFreigabe {
     nonisolated static let pause: TimeInterval = 300
 
     private(set) var erlaubt = false
+    /// true, sobald der Server (oder das Fehlen eines Zugangs) die Frage nach der Freigabe sicher beantwortet hat; vorher ist `erlaubt` nur der Anfangswert.
+    private(set) var geprueft = false
 
     @ObservationIgnored private let zugang: any EssenKiZugang
     @ObservationIgnored private let lader: any HTTPLader
     @ObservationIgnored private let uhr: Uhr
+    @ObservationIgnored private let schalter: String
     @ObservationIgnored private var letzter: Date?
     @ObservationIgnored private var laeuft = false
 
-    init(zugang: any EssenKiZugang, lader: any HTTPLader, uhr: @escaping Uhr = { Date() }) {
+    /// `schalter`: der Schlüssel in `GET /config` (Foto: `kiFotoErlaubt`, Coach: `kiCoachErlaubt`).
+    init(zugang: any EssenKiZugang, lader: any HTTPLader, uhr: @escaping Uhr = { Date() }, schalter: String = "kiFotoErlaubt") {
         self.zugang = zugang
         self.lader = lader
         self.uhr = uhr
+        self.schalter = schalter
     }
 
     func pruefen(erzwingen: Bool = false) async {
         guard !laeuft else { return }
         guard let verbindung = zugang.verbindung() else {
             erlaubt = false
+            geprueft = true
             return
         }
         let jetzt = uhr()
         if !erzwingen, let letzter, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.pause { return }
         laeuft = true
         defer { laeuft = false }
-        letzter = jetzt
         var anfrage = URLRequest(url: verbindung.server.appendingPathComponent("config"))
         anfrage.timeoutInterval = 15
         for (name, wert) in verbindung.kopfzeilen { anfrage.setValue(wert, forHTTPHeaderField: name) }
+        // Erst eine Antwort des Servers setzt die Pause: ein Funkloch beim Start sperrt die Funktion nicht fünf Minuten lang.
         guard let antwort = try? await lader.lade(anfrage) else { return }
+        letzter = jetzt
         switch antwort.1.statusCode {
-        case 200: if let neu = EssenKiFreigabeLogik.erlaubt(antwort: antwort.0) { erlaubt = neu }
-        case 401, 403: erlaubt = false
+        case 200: if let neu = EssenKiFreigabeLogik.erlaubt(antwort: antwort.0, schalter: schalter) { erlaubt = neu; geprueft = true }
+        case 401, 403: erlaubt = false; geprueft = true
         default: break
         }
     }
