@@ -28,4 +28,10 @@ final class KoerperLoveaLogikTests: XCTestCase {
         XCTAssertEqual(KoerperLoveaFarbe.figurHex(.muede, dunkel: false), 0xE0284A)
         XCTAssertEqual(KoerperLoveaFarbe.figurHex(.leer, dunkel: true), 0x4A4A50)
     }
+
+    func testBilanzLaesstEineArtOhnePlanUndTrainingWeg() {
+        XCTAssertEqual(KoerperWoche(tage: [], beine: 0, oben: 2, pausen: 1).bilanz, "Oberkörper 2 von 2 · 1 Pause")
+        XCTAssertEqual(KoerperWoche(tage: [], beine: 1, oben: 0, pausen: 0).bilanz, "Beine 1 von 1 · 0 Pausen")
+        XCTAssertTrue(KoerperWoche(tage: [], beine: 0, oben: 0, pausen: 0).bilanz.hasPrefix("Noch kein Training"))
+    }
 }

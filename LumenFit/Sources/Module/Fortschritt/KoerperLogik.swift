@@ -276,7 +276,9 @@ struct KoerperWoche: Sendable {
     var bilanz: String {
         let b = max(beineGeplant, beine), o = max(obenGeplant, oben)
         guard b + o > 0 else { return "Noch kein Training geplant. Im Tab Gym legst du deinen Plan an." }
-        return "Beine \(beine) von \(b) · Oberkörper \(oben) von \(o) · \(pausen) \(pausen == 1 ? "Pause" : "Pausen")"
+        // Eine Art ohne Plan und ohne Training (0 von 0) bleibt weg.
+        let teile = [b > 0 ? "Beine \(beine) von \(b)" : nil, o > 0 ? "Oberkörper \(oben) von \(o)" : nil].compactMap { $0 }
+        return (teile + ["\(pausen) \(pausen == 1 ? "Pause" : "Pausen")"]).joined(separator: " · ")
     }
 
     /// `montagVon`: irgendein Tag der gezeigten Woche, Standard die Woche von `heute`.
