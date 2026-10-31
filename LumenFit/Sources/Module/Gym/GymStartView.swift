@@ -76,6 +76,7 @@ struct GymStartView: View {
             .buttonStyle(.bordered)
             letzte(training, jetzt: jetzt)
             StudioKarte(sitzung: sitzung) { heuteStarten(training) }
+            PartnerKarte(bereich: .gym)
         }
     }
 

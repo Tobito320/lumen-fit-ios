@@ -45,3 +45,32 @@ CREATE TABLE IF NOT EXISTS ki_nutzung (
   n INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (konto, tag)
 );
+-- Verbindungen zwischen Konten (QR-Einladung; die zwei Lovea-Konten entstehen von selbst). a hat gescannt, b besitzt den Code.
+-- status: anfrage | aktiv | entfernt. a_einst/b_einst: Einstellungen je Seite als JSON (zeigt, ausblenden, pause, mitteilungen, favorit, name).
+CREATE TABLE IF NOT EXISTS verbindungen (
+  id TEXT PRIMARY KEY,
+  a TEXT NOT NULL,
+  b TEXT NOT NULL,
+  status TEXT NOT NULL,
+  auto INTEGER NOT NULL DEFAULT 0,
+  a_einst TEXT NOT NULL DEFAULT '{}',
+  b_einst TEXT NOT NULL DEFAULT '{}',
+  erstellt TEXT NOT NULL,
+  geaendert TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS verbindungen_paar ON verbindungen (a, b);
+CREATE INDEX IF NOT EXISTS verbindungen_b ON verbindungen (b);
+-- Einladungs-Token: nur der SHA-256-Hash, nie das Token. Läuft nach 10 Minuten ab, einmal nutzbar. laeuft_ab in Millisekunden.
+CREATE TABLE IF NOT EXISTS einladungen (
+  hash TEXT PRIMARY KEY,
+  konto TEXT NOT NULL,
+  laeuft_ab INTEGER NOT NULL,
+  benutzt INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS einladungen_konto ON einladungen (konto);
+-- Drossel je Schlüssel und Minute (Einladungs-Wege).
+CREATE TABLE IF NOT EXISTS drossel (
+  schluessel TEXT PRIMARY KEY,
+  fenster INTEGER NOT NULL,
+  n INTEGER NOT NULL
+);

@@ -85,6 +85,7 @@ private struct HeuteHabitReihe: View {
                             Spacer(minLength: 2)
                             flamme
                         }
+                        PartnerHabitVergleich(habitID: zeile.habit.id, name: zeile.habit.name)
                     }
                     Spacer(minLength: 0)
                 }

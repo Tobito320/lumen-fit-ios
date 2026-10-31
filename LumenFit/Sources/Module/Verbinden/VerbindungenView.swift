@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Die Seite "Verbindungen" (Profil): der Partner (Idee 81; ohne Schalter, er entsteht einmal über den Server und ist nur sichtbar, wenn der Server das Konto freigibt), Freigaben je Datenart mit Vorschau (84), Mitteilungen bei Partner-Ereignissen (83)
-/// und die Freunde (89). Das Band wohnt seit 30.10. unter Profil > Geräte (`GeraeteView`). Nicht verbunden zeigt sie nur die Schalter, nie etwas vom Partner und keine Fehlermeldung.
+/// Die Seite "Verbindungen" (Profil): deine Personen (QR-Code oder Lovea), offene Anfragen, Mein Code, Code scannen, Mitteilungen bei Partner-Ereignissen (83)
+/// und die Freunde (89). Pro Person: was du zeigst (mit Vorschau), was du sehen willst, Pause, Mitteilungen, Favorit, Name, Entfernen (`VerbindungPersonView`).
+/// Das Band wohnt unter Profil > Geräte (`GeraeteView`).
 struct VerbindungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
 
@@ -23,108 +24,90 @@ private struct VerbindungenInhalt: View {
     let daten: DatenSatz
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @State private var codeOffen = false
+    @State private var scanOffen = false
+    @State private var fehler: String?
 
     private static let ereignisArten: [PartnerEreignisArt] = [.gymStart, .gymEnde, .ziel, .rekord, .schlafGut]
 
     private var einstellungen: EinstellungenStore { daten.einstellungen }
-    private var verbindung: VerbindungStore { daten.verbindung }
-    private var loveaAn: Bool { einstellungen.werte.loveaVerbunden }
-    private var loveaErlaubt: Bool { umgebung.konto.loveaErlaubt }
+    private var speicher: VerbindungenSpeicher { umgebung.konto.verbindungen }
+    private var personen: [VerbindungEintrag] {
+        speicher.personen.sorted { ($0.ich.favorit ? 0 : 1, $0.anzeigeName.lowercased()) < ($1.ich.favorit ? 0 : 1, $1.anzeigeName.lowercased()) }
+    }
 
     var body: some View {
         Form {
-            if loveaErlaubt {
-                partnerAbschnitt
-                ansichtenAbschnitt
-                if loveaAn {
-                    freigabenAbschnitt
-                    vorschauAbschnitt
-                    mitteilungenAbschnitt
-                }
-            }
+            if !speicher.anfragen.isEmpty { anfragenAbschnitt }
+            personenAbschnitt
+            hinzufuegenAbschnitt
+            if !speicher.wartend.isEmpty { wartendAbschnitt }
+            if !personen.isEmpty { mitteilungenAbschnitt }
             freundeAbschnitt
         }
         .verbindenFormular()
+        .refreshable { await umgebung.konto.verbindungenNeuLaden() }
+        .task { await umgebung.konto.verbindungenNeuLaden() }
+        .sheet(isPresented: $codeOffen) { VerbindungCodeBlatt() }
+        .sheet(isPresented: $scanOffen) { VerbindungScanBlatt() }
+        .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: { Text(fehler ?? "") }
     }
 
-    // MARK: Partner
+    // MARK: Anfragen
 
-    /// Kein Schalter: die Verbindung entsteht einmal am Server und bleibt. Hier steht nur, wie es gerade steht.
-    private var partnerAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Partner", fuss: partnerStatus) {
-            Label(partnerZeile, systemImage: "person.2.fill")
-        }
-    }
-
-    private var partnerZeile: String {
-        if case .verbunden(let datei) = verbindung.partner { return "Verbunden mit \(datei.profilName)" }
-        return "Noch keine Daten"
-    }
-
-    private var partnerStatus: String {
-        if case .verbunden = verbindung.partner { return "Du teilst nur, was du unten freigibst." }
-        return "Sobald dein Partner Lumen Fit nutzt und teilt, erscheint er hier. Du teilst nur, was du unten freigibst."
-    }
-
-    /// Die Ansichten, die der Partner freigegeben hat (Plan, Training, Tagebuch, Körperwerte). Ohne Freigabe des Partners fehlt der ganze Abschnitt.
-    @ViewBuilder
-    private var ansichtenAbschnitt: some View {
-        if let datei = PartnerAnsichtLogik.datei(PartnerAnsichtLogik.aktuellerStand(umgebung)) {
-            let einstiege = PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr())
-            if !einstiege.isEmpty {
-                VerbindenAbschnitt(titel: "Das teilt \(datei.profilName)", fuss: "Nur lesen. Dein Partner entscheidet, was hier steht.") {
-                    PartnerEinstiegZeilen(einstiege: einstiege, imFormular: true)
-                }
-            }
-        }
-    }
-
-    // MARK: Freigaben und Vorschau
-
-    private var freigabenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Das teilst du", fuss: VerbindenTexte.freigabenFuss()) {
-            ForEach(FreigabeArt.allCases, id: \.self) { art in
-                Toggle(isOn: freigabe(art)) {
+    private var anfragenAbschnitt: some View {
+        VerbindenAbschnitt(titel: "Anfragen", fuss: "Erst wenn du annimmst, sieht die Person etwas. Du zeigst ihr zuerst nur Schritte und Gym.") {
+            ForEach(speicher.anfragen) { a in
+                VStack(alignment: .leading, spacing: Abstand.s) {
+                    Text("\(a.name) möchte sich mit dir verbinden").foregroundStyle(palette.text)
                     HStack(spacing: Abstand.m) {
-                        Image(systemName: FreigabenVorschau.symbol(art))
-                            .frame(width: 28)
-                            .foregroundStyle(palette.text2)
-                            .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(FreigabenVorschau.name(art))
-                            Text(FreigabenVorschau.erklaerung(art)).font(.footnote).foregroundStyle(palette.text2)
-                        }
+                        Button("Annehmen") { Task { if !(await umgebung.konto.anfrageAnnehmen(a.id)) { fehler = "Das ließ sich nicht annehmen. Versuche es nochmal." } } }
+                            .buttonStyle(.borderedProminent)
+                        Button("Ablehnen", role: .destructive) { Task { if !(await umgebung.konto.anfrageAblehnen(a.id)) { fehler = "Das ließ sich nicht ablehnen. Versuche es nochmal." } } }
+                            .buttonStyle(.bordered)
                     }
                 }
-                .frame(minHeight: Abstand.tippflaeche)
+                .padding(.vertical, Abstand.xs)
             }
         }
     }
 
-    private func freigabe(_ art: FreigabeArt) -> Binding<Bool> {
-        Binding(get: { verbindung.freigaben.contains(art) },
-                set: { neu in
-                    if neu { verbindung.freigaben.insert(art) } else { verbindung.freigaben.remove(art) }
-                    VerbindenDienste.geteilt?.bruecke.schreibe()
-                })
+    // MARK: Personen
+
+    private var personenAbschnitt: some View {
+        VerbindenAbschnitt(titel: "Personen", fuss: personenFuss) {
+            if personen.isEmpty {
+                Text(speicher.antwort == nil ? "Verbindungen werden geladen." : "Noch niemand verbunden.").foregroundStyle(palette.text2)
+            }
+            ForEach(personen) { p in
+                NavigationLink { VerbindungPersonView(id: p.id) } label: { VerbindungZeile(eintrag: p) }
+            }
+        }
     }
 
-    private var vorschauAbschnitt: some View {
-        let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau().map(FreigabenVorschau.zeilen) ?? []
-        return VerbindenAbschnitt(titel: "Das sieht dein Partner",
-                                  fuss: VerbindenTexte.vorschauFuss()) {
-            if verbindung.freigaben.isEmpty {
-                Text("Nichts. Du teilst noch keine Daten.").foregroundStyle(palette.text2)
-            } else if zeilen.isEmpty {
-                Text("Heute gibt es noch keine Werte.").foregroundStyle(palette.text2)
-            }
-            ForEach(zeilen) { zeile in
-                LabeledContent {
-                    Text(zeile.wert).monospacedDigit()
-                } label: {
-                    Label(zeile.titel, systemImage: zeile.symbol)
+    private var personenFuss: String {
+        "Jede Person sieht nur, was du für sie einschaltest. Neue Personen bekommen zuerst nur Schritte und Gym."
+    }
+
+    private var hinzufuegenAbschnitt: some View {
+        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt 10 Minuten und nur einmal. Im Code steht nie etwas aus deiner Gesundheit.") {
+            Button { codeOffen = true } label: { Label("Mein Code zeigen", systemImage: "qrcode") }.frame(minHeight: Abstand.tippflaeche)
+            Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }.frame(minHeight: Abstand.tippflaeche)
+        }
+    }
+
+    private var wartendAbschnitt: some View {
+        VerbindenAbschnitt(titel: "Wartet auf Antwort") {
+            ForEach(speicher.wartend) { w in
+                HStack {
+                    Label(w.name, systemImage: "hourglass")
+                    Spacer()
+                    Button("Zurückziehen", role: .destructive) { Task { _ = await umgebung.konto.verbindungEntfernen(w.id) } }
+                        .buttonStyle(.borderless)
                 }
-                .accessibilityElement(children: .combine)
+                .frame(minHeight: Abstand.tippflaeche)
             }
         }
     }

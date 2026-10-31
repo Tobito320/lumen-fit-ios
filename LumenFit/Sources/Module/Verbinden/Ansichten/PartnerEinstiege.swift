@@ -3,14 +3,21 @@ import SwiftUI
 /// Das Ziel eines Einstiegs: die Ansicht zur Freigabe-Art.
 struct PartnerAnsichtZiel: View {
     let art: FreigabeArt
+    /// Eine bestimmte Person (QR-Verbindung); nil = der Lovea-Partner.
+    var stand: PartnerStand?
 
     var body: some View {
+        ansicht.environment(\.partnerStandUeberschreibung, stand)
+    }
+
+    @ViewBuilder
+    private var ansicht: some View {
         switch art {
         case .plan: PartnerPlanAnsicht()
         case .verlauf: PartnerVerlaufAnsicht()
         case .tagebuch: PartnerTagebuchAnsicht()
         case .koerper: PartnerKoerperAnsicht()
-        case .schritte, .gym, .schlaf, .essen: EmptyView()
+        case .schritte, .gym, .schlaf, .essen, .stimmung, .gewohnheiten: EmptyView()
         }
     }
 }
@@ -20,15 +27,16 @@ struct PartnerAnsichtZiel: View {
 struct PartnerEinstiegZeilen: View {
     let einstiege: [PartnerAnsichtLogik.Einstieg]
     var imFormular = false
+    var stand: PartnerStand?
     @Environment(\.palette) private var palette
 
     var body: some View {
         ForEach(Array(einstiege.enumerated()), id: \.element.id) { i, e in
             if i > 0, !imFormular { Haarlinie() }
             if imFormular {
-                NavigationLink { PartnerAnsichtZiel(art: e.art) } label: { zeile(e) }
+                NavigationLink { PartnerAnsichtZiel(art: e.art, stand: stand) } label: { zeile(e) }
             } else {
-                NavigationLink { PartnerAnsichtZiel(art: e.art) } label: { zeile(e) }
+                NavigationLink { PartnerAnsichtZiel(art: e.art, stand: stand) } label: { zeile(e) }
                     .buttonStyle(.federnd)
             }
         }

@@ -59,7 +59,7 @@ test("Config: Standardwerte, Konto gewinnt vor global gewinnt vor Standard", asy
   const env = umgebung();
   await registrieren(env);
   let r = await ruf(env, "GET", "/config", { headers: app() });
-  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7 });
+  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false });
   await ruf(env, "PATCH", "/admin/config", { headers: admin, body: { nameAendernTage: 3, neu: "x" } });
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { nameAendernTage: 1 } } });
   r = await ruf(env, "GET", "/config", { headers: app() });
@@ -297,11 +297,10 @@ test("Partner: Annika sieht nur die Zusammenfassung von Ahmed (und umgekehrt), n
     ereignisse: [{ id: "e1", art: "gymEnde", zeit: new Date().toISOString(), text: "war im Gym" }, { id: "e2", art: "unbekannt", zeit: new Date().toISOString(), text: "x" }],
     ...extra,
   });
-  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei("Ahmed") })).status, 403, "ohne Freigabe nicht");
-  assert.equal((await ruf(env, "GET", "/partner", { headers: app() })).status, 403);
+  assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei("Ahmed") })).status, 200, "hochladen darf jedes Konto (die Verbindungen filtern beim Lesen)");
+  assert.equal((await ruf(env, "GET", "/partner", { headers: app() })).status, 403, "der alte Lese-Weg bleibt auf die zwei freigegebenen Konten begrenzt");
   await freigeben(env, ID, "ahmed");
   await freigeben(env, ID2, "annika");
-  assert.deepEqual((await ruf(env, "GET", "/partner", { headers: app2() })).json, { partner: null, aktualisiert: null });
   assert.equal((await ruf(env, "PUT", "/partner", { headers: app(), body: datei("Ahmed") })).status, 200);
   const p = (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner;
   assert.equal(p.profilName, "Ahmed");

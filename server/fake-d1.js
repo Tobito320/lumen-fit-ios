@@ -8,7 +8,7 @@ export function fakeD1(schema) {
     bind: (...w) => stmt(sql, w),
     first: async () => db.prepare(sql).get(...werte) ?? null,
     all: async () => ({ results: db.prepare(sql).all(...werte) }),
-    run: async () => { db.prepare(sql).run(...werte); return { success: true }; },
+    run: async () => { const r = db.prepare(sql).run(...werte); return { success: true, meta: { changes: Number(r.changes) } }; },
   });
   return { prepare: (sql) => stmt(sql), exec: async (sql) => db.exec(sql), roh: db };
 }

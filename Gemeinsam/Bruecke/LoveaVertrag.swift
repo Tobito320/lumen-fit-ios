@@ -64,10 +64,13 @@ protocol PartnerAustausch: Sendable {
     func schreibe(status: BandStatusDatei)
     /// Löscht die eigenen Dateien im Lovea-Ordner (nach dem Löschen des letzten Profils). Der Standard tut nichts (Fakes, `KeinePartnerBruecke`).
     func loescheEigeneDateien()
+    func schreibe(serverStand: ZusammenfassungDatei)
 }
 
 extension PartnerAustausch {
     func loescheEigeneDateien() {}
+    /// Die Zusammenfassung für den Lumen-Server (alle Bereiche, die eine Verbindung zeigt). Nur die Brücke mit Server tut etwas.
+    func schreibe(serverStand: ZusammenfassungDatei) {}
 }
 
 /// `band-wuensche.json` (Lovea schreibt).

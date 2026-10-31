@@ -13,6 +13,8 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var gewichtsEinheit: GewichtsEinheit = .kg
     var healthSchreiben = false          // Training und Gewicht nach Health (Idee 17, 30)
     var bandAktiv = false                // Idee 85, Annahme 9
+    /// Der Schalter "Band in Lumen Fit nutzen" wurde bewusst ausgeschaltet: dann schaltet auch der Server-Standard (`bandStandard`) ihn nie wieder ein.
+    var bandBewusstAus = false
     var loveaVerbunden = false           // Idee 81
     var alarmWeckt = true                // Lumen Alarm darf das Band wecken (Gerät, Standard an)
     var mitteilungen: [String: Bool] = [:]
@@ -21,7 +23,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt
     }
 
     init(from decoder: Decoder) throws {
@@ -32,6 +34,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         gewichtsEinheit = (try? c.decodeIfPresent(GewichtsEinheit.self, forKey: .gewichtsEinheit)) ?? .kg
         healthSchreiben = (try? c.decodeIfPresent(Bool.self, forKey: .healthSchreiben)) ?? false
         bandAktiv = (try? c.decodeIfPresent(Bool.self, forKey: .bandAktiv)) ?? false
+        bandBewusstAus = (try? c.decodeIfPresent(Bool.self, forKey: .bandBewusstAus)) ?? false
         loveaVerbunden = (try? c.decodeIfPresent(Bool.self, forKey: .loveaVerbunden)) ?? false
         alarmWeckt = (try? c.decodeIfPresent(Bool.self, forKey: .alarmWeckt)) ?? true
         mitteilungen = (try? c.decodeIfPresent([String: Bool].self, forKey: .mitteilungen)) ?? [:]
