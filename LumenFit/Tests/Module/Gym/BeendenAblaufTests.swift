@@ -60,6 +60,7 @@ final class BeendenAblaufTests: XCTestCase {
         a.sitzung.haken(0, 0)
         XCTAssertTrue(a.sitzung.freiFrageNoetig)
         XCTAssertEqual(a.sitzung.ersterBeendenSchritt(), .freiFrage)
+        a.uhr.vor(sekunden: 1) // der neue Check-in gilt nur, wenn er neuer ist als der erste (gleiche Zeit hat keine feste Reihenfolge)
         a.sitzung.alsTagSpeichern(name: "Freitag", einheitZuordnen: true)
         a.sitzung.beende()
         let neu = try XCTUnwrap(a.daten.training.plan.tage.first)
