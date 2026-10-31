@@ -163,14 +163,18 @@ final class GymSitzung: TrainingSteuerung {
     // MARK: - Starten und Beenden
 
     /// Checkt ein (oder nimmt das laufende Training wieder auf): Gym-Häkchen, Plantag von heute, Studio-Hinweis, Puls.
-    func starte(planTag: String?) {
+    func starte(planTag: String?) { einchecken(planTag ?? daten?.training.heutigerTag()?.id) }
+
+    /// Freies Training (Lovea ⋯ "Freies Training"): ohne Plantag, die Übungen kommen im Training dazu. `starte(planTag: nil)` nimmt dagegen den Tag von heute.
+    func starteFrei() { einchecken(nil) }
+
+    private func einchecken(_ gewaehlt: String?) {
         guard let d = daten else { return }
         if d.training.laufende() != nil {
             ladeWennNoetig()
             return
         }
         let jetzt = umgebung.uhr()
-        let gewaehlt = planTag ?? d.training.heutigerTag()?.id
         _ = d.training.einchecken(tag: gewaehlt)
         d.habits.setzeGym(datum: Datum.text(jetzt), an: true)
         studioHinweis = studio.flatMap { GymOeffnung.hinweis($0.profil.oeffnung, jetzt: jetzt) }

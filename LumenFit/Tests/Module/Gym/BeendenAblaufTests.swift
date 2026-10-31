@@ -82,4 +82,13 @@ final class BeendenAblaufTests: XCTestCase {
         let minuten = a.daten.raum.ops(arten: ["gym.checkout"]).compactMap { $0.daten(GymD.self) }.first { $0.status == "ende" }?.minuten
         XCTAssertEqual(minuten, 80)
     }
+
+    func testFreiesTrainingStartetOhnePlantag() throws {
+        let a = try GymTestAufbau(ordner: try tempOrdner())
+        a.daten.training.planSichern(GymTestAufbau.plan())
+        a.sitzung.starteFrei()
+        XCTAssertNotNil(a.sitzung.sessionId)
+        XCTAssertNil(a.sitzung.tag, "frei heißt ohne Plantag, auch wenn heute einer geplant ist")
+        XCTAssertNil(a.daten.training.laufende()?.tag)
+    }
 }
