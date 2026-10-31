@@ -29,8 +29,8 @@ enum SuchRang {
     /// 0 Deutschland, 1 Österreich/Schweiz, 2 EU, 3 Rest oder unbekannt.
     static func landStufe(_ laender: [String]) -> Int {
         if laender.contains("en:germany") { return 0 }
-        if laender.contains { dach.contains($0) } { return 1 }
-        if laender.contains { eu.contains($0) } { return 2 }
+        if laender.contains(where: { dach.contains($0) }) { return 1 }
+        if laender.contains(where: { eu.contains($0) }) { return 2 }
         return 3
     }
 

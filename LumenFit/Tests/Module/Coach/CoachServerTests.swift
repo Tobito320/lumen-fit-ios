@@ -175,7 +175,7 @@ final class CoachServerTests: XCTestCase {
         e.gewicht = ["2026-10-27": 784]
         e.schritte = ["2026-10-30": 9000]
         e.schlaf = ["2026-10-31": 450]
-        let verlauf = [CoachTestBau.nachricht("a", .nutzer, "Hi", Date(timeIntervalSince1970: 1)), CoachTestBau.nachricht("b", .coach, "Hallo [[morgen_leicht]]", Date(timeIntervalSince1970: 2))]
+        let verlauf = [CoachTestBau.nachricht("a", .nutzer, "Hi", Date(timeIntervalSince1970: 1)), CoachTestBau.nachricht("b", .coach, "Hallo [[plan: morgen leicht]]", Date(timeIntervalSince1970: 2))]
         let a = CoachServerMotor.anfrageBauen(CoachTestBau.anfrage(langeFrage, verlauf: verlauf, kontext: CoachTestBau.kontext(tag: "2026-10-31")), eingabe: e)
         XCTAssertEqual(a.frage, langeFrage)
         XCTAssertEqual(a.verlauf.map(\.rolle), ["du", "coach"])
