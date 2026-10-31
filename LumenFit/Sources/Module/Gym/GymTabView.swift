@@ -4,6 +4,7 @@ import SwiftUI
 /// Startseite. `bereich` kommt aus der Route (`Route.gym`) und gilt als Startwert.
 struct GymTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var bereich: GymBereich
     @State private var sitzung: GymSitzung?
 
@@ -33,13 +34,13 @@ struct GymTabView: View {
     @ViewBuilder
     private var inhalt: some View {
         if let sitzung {
-            switch bereich {
-            case .training:
-                if sitzung.sessionId != nil { TrainingLaufView(sitzung: sitzung) } else { GymStartView(sitzung: sitzung) }
-            case .plaene:
-                PlanView(sitzung: sitzung)
-            case .fortschritt:
-                FortschrittSegmentView()
+            // Beide Aufbauten zeigen dieselbe Sitzung: ein Theme-Wechsel tauscht nur die Darstellung, das Training läuft weiter.
+            switch GymSeite.wahl(bereich: bereich, laeuft: sitzung.sessionId != nil, aufbau: aufbau) {
+            case .start: GymStartView(sitzung: sitzung)
+            case .lauf: TrainingLaufView(sitzung: sitzung)
+            case .loveaLauf: TrainingLoveaView(sitzung: sitzung)
+            case .plan: PlanView(sitzung: sitzung)
+            case .fortschritt: FortschrittSegmentView()
             }
         } else {
             Spacer()

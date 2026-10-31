@@ -231,6 +231,7 @@ jobs:
               for aufnahme in \
                 "heute|-lumenFitTab heute" \
                 "gym|-lumenFitRoute lumenfit://gym?bereich=training" \
+                "gym-training|-lumenFitTraining YES -lumenFitRoute lumenfit://gym?bereich=training" \
                 "gym-plan|-lumenFitRoute lumenfit://gym?bereich=plaene" \
                 "gym-fortschritt|-lumenFitRoute lumenfit://gym?bereich=fortschritt" \
                 "schlaf|-lumenFitRoute lumenfit://schlaf?bereich=letzteNacht" \

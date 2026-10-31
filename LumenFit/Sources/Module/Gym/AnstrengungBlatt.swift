@@ -7,6 +7,7 @@ struct AnstrengungBlatt: View {
     let waehle: (Anstrengung?) -> Void
     @Environment(\.dismiss) private var schliessen
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var gewaehlt = 0
 
     var body: some View {
@@ -44,7 +45,7 @@ struct AnstrengungBlatt: View {
     private func zeile(_ stufe: Anstrengung) -> some View {
         let aktiv = aktuell.map { Anstrengung.stufe(rpe: $0) == stufe } ?? false
         return HStack(spacing: Abstand.s) {
-            Circle().fill(AnstrengungFarbe.farbe(stufe)).frame(width: 14, height: 14).accessibilityHidden(true)
+            Circle().fill(aufbau == .lovea ? LoveaTraining.farbe(stufe) : AnstrengungFarbe.farbe(stufe)).frame(width: 14, height: 14).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(stufe.titel).font(.body).foregroundStyle(palette.text)
                 Text("RIR \(stufe.rirText), RPE \(TrainingLogik.kgText(stufe.rpe))").font(.footnote).foregroundStyle(palette.text2)

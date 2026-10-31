@@ -302,6 +302,15 @@ final class GymSitzung: TrainingSteuerung {
         aendere(u) { LetztesMal.aendereWdh($0, i, richtung: richtung) }
     }
 
+    /// Gewicht und Wiederholungen getippt (Lovea-Aufbau: Zahlenfelder statt Plus und Minus). Im Speicher; gesendet wird beim Haken
+    /// oder mit `uebungSichern`.
+    func werteSetzen(_ u: Int, _ i: Int, kg: Double?, wdh: Int) {
+        aendere(u) { LetztesMal.setzeWerte($0, i, kg: kg, wdh: wdh) }
+    }
+
+    /// Sendet den Stand der Übung (die Ansicht verlässt die Übung oder geht in den Hintergrund).
+    func uebungSichern(_ u: Int) { sende(u) }
+
     /// Tipp auf "Letztes Mal": Gewicht und Wiederholungen vom letzten Training in die Zeile.
     func letztesMalUebernehmen(_ u: Int, _ i: Int) {
         guard liste.indices.contains(u) else { return }
