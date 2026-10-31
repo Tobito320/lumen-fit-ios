@@ -65,8 +65,16 @@ struct EnergieBank: View {
         .accessibilityHidden(true)
     }
 
+    private var verlauf: some View { EnergieVerlaufDiagramm(energie: energie) }
+}
+
+/// Die Energie über den Tag (Linie mit Punkten, alle drei Stunden). Teil der Energie-Bank und der Tagesform-Karte im Lovea-Aufbau; ohne zwei Punkte nichts.
+struct EnergieVerlaufDiagramm: View {
+    let energie: HeuteEnergie
+    @Environment(\.palette) private var palette
+
     @ViewBuilder
-    private var verlauf: some View {
+    var body: some View {
         if energie.verlauf.count >= 2 {
             Chart(energie.verlauf) { punkt in
                 LineMark(x: .value("Uhrzeit", punkt.stunde), y: .value("Energie", punkt.akku)).interpolationMethod(.monotone)

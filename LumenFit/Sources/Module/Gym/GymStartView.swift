@@ -9,6 +9,7 @@ struct GymStartView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var gewaehlt: String?
     /// Ein anderer Plantag statt des geplanten, nur für heute ("Heute Beine statt Push").
     @State private var andererTag: String?
@@ -50,8 +51,10 @@ struct GymStartView: View {
         let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
         return VStack(alignment: .leading, spacing: Abstand.l) {
             wochenleiste(stand)
+            // Lovea-Aufbau (`GymStartView.swift:89-95`): Wochenleiste, "Auschecken vergessen?", dann Kopf mit Start, dann die Abweichung (Testwoche, Verlegen).
+            if aufbau == .lovea, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             tagesKarte(stand, training: training, anderer: anderer)
-            if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
+            if aufbau == .lumen, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             verlegenKarte(stand, training: training)
             HStack(spacing: Abstand.s) {
                 Button { cardioGeraet = .laufband } label: {

@@ -16,15 +16,17 @@ struct HeuteTabView: View {
     @State private var deckkraft = 1.0
     @Namespace private var zoom
     @Environment(\.bewegungAus) private var bewegungAus
-    @Environment(\.lumenThema) private var thema
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         ScrollView {
             if let modell, let stand = modell.stand {
-                inhalt(stand, modell)
+                // Die eine Wahl dieses Tabs: Lovea-Aufbau (Theme Lovea mit Freigabe) oder der heutige Aufbau.
+                if aufbau == .lovea { loveaInhalt(stand, modell) } else { inhalt(stand, modell) }
             }
         }
-        .navigationTitle("Heute")
+        .navigationTitle(aufbau == .lovea ? "" : "Heute")
+        .navigationBarTitleDisplayMode(aufbau == .lovea ? .inline : .automatic)
         .lumenHintergrund()
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() } }
         .sheet(item: $blatt) { blatt in
@@ -66,6 +68,18 @@ struct HeuteTabView: View {
         .simultaneousGesture(tagWischen, including: ueberall ? .all : .subviews)
     }
 
+    /// Der Aufbau von Lovea (`HeuteLoveaAufbau.swift`). Die Tagwahl wischt dort nur auf der Woche (eine Woche je Zug), der Inhalt gleitet beim Tagwechsel wie bisher.
+    private func loveaInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        HeuteLoveaInhalt(stand: s, modell: m, blaettere: { blaettere($0) }, springe: { springe(zu: $0) }, kalender: { blatt = .kalender },
+                         oeffneBlatt: { blatt = $0 }, oeffneHabit: { habitSeite = $0 }, starte: { starte($0) }, zoom: zoom)
+            .id(s.tag)
+            .offset(x: versatz)
+            .opacity(deckkraft)
+            .transition(.opacity)
+            .padding(.horizontal, 16)
+            .padding(.bottom, Abstand.xl)
+    }
+
     /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).
     private var tagWischen: some Gesture {
         DragGesture(minimumDistance: 30).onEnded { geste in
@@ -87,8 +101,6 @@ struct HeuteTabView: View {
         PlanKarte(plan: s.plan) { starte(s.plan) }
         ZyklusHinweisAnsicht()
         if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
-        // Nur im Theme Lovea: "Dein Tag" mit den Formkacheln (Wellen, Dampf) aus Lovea.
-        if thema == .lovea, s.hatGesundheit { TagesFormenReihe(stand: s, tippe: { m.tippe($0) }) }
         SchreibKarte(modell: m)
         CoachKachelView()
         habitsKarte(s, m)
@@ -179,7 +191,7 @@ struct HeuteTabView: View {
 }
 
 /// Welches Blatt über dem Heute-Tab liegt.
-private enum HeuteBlatt: Identifiable {
+enum HeuteBlatt: Identifiable {
     case score, energie, schritte, gewicht, habits, kalender
     case tag(String)
 

@@ -6,6 +6,8 @@ import SwiftUI
 /// mit Haptik), Chips für kcal, km, aktive Zeit und Etagen, darunter das Diagramm zum Ziehen oder im Monat ein Mini-Bogen je Tag (Tipp wählt den Tag).
 /// Das Plus oben trägt Schritte von Hand ein.
 struct SchritteDetailView: View {
+    /// Lovea-Aufbau: die Seite liegt im Stapel des Heute-Tabs (Lovea pusht `SchritteDetail`), also ohne eigenen Stapel und ohne "Fertig".
+    var eingebettet = false
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
@@ -26,7 +28,7 @@ struct SchritteDetailView: View {
         let aktuell = min(anker ?? heute, heute)
         let ziel = umgebung.daten?.ziele.ziele.schritte ?? 10_000
         let stand = SchritteDetailLogik.stand(zeitraum: zeitraum, anker: aktuell, heute: heute, tage: umgebung.gesundheit.tage, ziel: ziel)
-        return NavigationStack {
+        return huelle {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     HeroKarte(platte: true) { bogenZeile(stand, aktuell: aktuell, heute: heute) }
@@ -46,13 +48,18 @@ struct SchritteDetailView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Schritte eintragen", systemImage: "plus") { eintragen = true }.labelStyle(.iconOnly)
                 }
-                ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } }
+                if !eingebettet { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
             }
             .sheet(isPresented: $eintragen) { SchritteEintragenView { version += 1 } }
             .onChange(of: zeitraum) { _, _ in wechsel += 1 }
             .haptik(.auswahl, bei: wechsel)
             .haptik(.warnung, bei: grenze)
         }
+    }
+
+    @ViewBuilder
+    private func huelle<Inhalt: View>(@ViewBuilder _ inhalt: () -> Inhalt) -> some View {
+        if eingebettet { inhalt() } else { NavigationStack { inhalt() } }
     }
 
     // MARK: Oben
