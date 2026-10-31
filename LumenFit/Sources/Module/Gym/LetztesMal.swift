@@ -70,6 +70,15 @@ enum LetztesMal {
         return neu
     }
 
+    /// Getippte Werte: Gewicht von 0 bis 500 (0 oder leer = ohne Gewicht), Wiederholungen von 0 bis 100.
+    static func setzeWerte(_ saetze: [PlanSatz], _ i: Int, kg: Double?, wdh: Int) -> [PlanSatz] {
+        guard saetze.indices.contains(i) else { return saetze }
+        var neu = saetze
+        neu[i].kg = kg.flatMap { $0 > 0.001 ? min($0, kgMaximum) : nil }
+        neu[i].wdh = min(max(wdh, 0), wdhBereich.upperBound)
+        return neu
+    }
+
     static func aendereWdh(_ saetze: [PlanSatz], _ i: Int, richtung: Int) -> [PlanSatz] {
         guard saetze.indices.contains(i) else { return saetze }
         var neu = saetze

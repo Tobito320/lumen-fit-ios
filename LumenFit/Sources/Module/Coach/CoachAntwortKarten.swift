@@ -54,6 +54,7 @@ struct CoachDiagramm: View {
     /// Die getippte Spalte (`spalten`-Name), `nil` = keine.
     @State private var auswahl: String?
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var reduceMotion
 
     /// Was nicht getippt ist, tritt zurück, solange eine Spalte gewählt ist.
@@ -71,10 +72,10 @@ struct CoachDiagramm: View {
                 ForEach(Array(punkte.enumerated()), id: \.offset) { index, punkt in
                     if linie {
                         LineMark(x: .value("Zeit", namen[index]), y: .value("Wert", punkt.wert))
-                            .foregroundStyle(palette.akzent)
+                            .foregroundStyle(aufbau.farbe(LoveaDaten.coachMint, sonst: palette.akzent))
                             .interpolationMethod(.monotone)
                         PointMark(x: .value("Zeit", namen[index]), y: .value("Wert", punkt.wert))
-                            .foregroundStyle(palette.akzent)
+                            .foregroundStyle(aufbau.farbe(LoveaDaten.coachMint, sonst: palette.akzent))
                             .symbolSize(auswahl == namen[index] ? 110 : 45)
                             .opacity(deckkraft(namen[index]))
                             .annotation(position: .top, spacing: 3) {
@@ -82,7 +83,7 @@ struct CoachDiagramm: View {
                             }
                     } else {
                         BarMark(x: .value("Zeit", namen[index]), y: .value("Wert", punkt.wert))
-                            .foregroundStyle(palette.akzent)
+                            .foregroundStyle(aufbau.farbe(LoveaDaten.coachMint, sonst: palette.akzent))
                             .cornerRadius(4)
                             .opacity(deckkraft(namen[index]))
                             .annotation(position: .top, spacing: 3) {
@@ -115,6 +116,7 @@ struct CoachFortschritt: View {
 
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var gezeigt: Double = 0
 
@@ -126,7 +128,7 @@ struct CoachFortschritt: View {
                 Circle().stroke(palette.haar, lineWidth: 8)
                 Circle()
                     .trim(from: 0, to: gezeigt)
-                    .stroke(palette.akzent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(aufbau.farbe(LoveaDaten.coachMint, sonst: palette.akzent), style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 Text("\(Int((anteil * 100).rounded())) %").font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
             }

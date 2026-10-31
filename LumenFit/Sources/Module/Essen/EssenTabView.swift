@@ -19,6 +19,7 @@ struct EssenTabView: View {
     var bereich: EssenBereich = .heute
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var gewaehlt: String?
     @State private var blatt: EssenBlatt?
     @State private var toast: ToastInhalt?
@@ -105,9 +106,15 @@ struct EssenTabView: View {
         let woche = WochenanalyseLogik.berechne(bis: heute, eintraege: { essen.eintraege($0) }, ziele: { essen.ernaehrungsZiele(tag: $0) })
         return ScrollView {
             VStack(spacing: Abstand.xl) {
+                if aufbau == .lovea {
+                    // Lovea `ErnaehrungView.swift:81-83`: KI-Aufträge stehen über dem Tageskopf.
+                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
+                }
                 EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
                 VStack(spacing: Abstand.xl) {
-                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
+                    if aufbau != .lovea {
+                        EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
+                    }
                     ForEach(essen.anpassung.sichtbar, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
                         LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",

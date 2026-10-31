@@ -41,6 +41,7 @@ struct KonsistenzKarte: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
+    @Environment(\.lumenAufbau) private var aufbau
 
     /// nil = Gesamt, sonst ein einzelnes Jahr; Standard ist das laufende Jahr (gesetzt beim Erscheinen).
     @State private var auswahl: Int?
@@ -54,6 +55,14 @@ struct KonsistenzKarte: View {
 
     private var ordner: URL? { umgebung.daten?.ordner }
 
+    // Lovea (KonsistenzKarte.swift:171-179): die Karte ist immer dunkel, Training ohne Kategorie rosa, Schrift system (im dunklen Schema weiß/grau).
+    private var lovea: Bool { aufbau == .lovea }
+    private var text: Color { lovea ? Color.primary : palette.text }
+    private var text2: Color { lovea ? Color.secondary : palette.text2 }
+    private var pille: Color { lovea ? Color(red: 0.11, green: 0.11, blue: 0.125) : palette.grund }
+    private var neutral: Color { lovea ? Color(red: 0.941, green: 0.376, blue: 0.620) : GymFarbe.gruen(schema: schema, kontrast: kontrast) }
+    private var leer: Color { lovea ? Color(red: 0.165, green: 0.165, blue: 0.18) : palette.haar }
+
     var body: some View {
         let heute = Datum.text(umgebung.uhr())
         let tage = KonsistenzLogik.tage(sessions)
@@ -61,15 +70,32 @@ struct KonsistenzKarte: View {
         let jahre = KonsistenzLogik.jahre(tage: tage, heute: heute, auswahl: auswahl)
         let fuellungen = KonsistenzKategorienLogik.fuellungen(sessions, einstellung: einstellung) { umgebung.daten?.training.tag(id: $0)?.name }
         let farben = Dictionary(einstellung.kategorien.map { ($0.id, farbe($0.farbe)) }, uniquingKeysWith: { erste, _ in erste })
-        DiagrammKarte(aussage: KonsistenzKarteLogik.aussage(jahre, auswahl: auswahl),
-                      kernzeile: sessions.isEmpty ? "Sobald du im Gym eincheckst, füllt sich das Raster." : "Tipp auf einen Tag zeigt das Training.") {
-            VStack(alignment: .leading, spacing: Abstand.m) {
-                kopf(verfuegbar: verfuegbar)
-                legende
-                detail
-                ForEach(jahre) { j in
+        let stapel = VStack(alignment: .leading, spacing: Abstand.m) {
+            kopf(verfuegbar: verfuegbar)
+            legende
+            detail
+            ForEach(jahre) { j in
+                if lovea {
+                    Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1).accessibilityHidden(true)
+                } else {
                     Haarlinie()
-                    jahrBlock(j, fuellungen: fuellungen, farben: farben)
+                }
+                jahrBlock(j, fuellungen: fuellungen, farben: farben)
+            }
+            if lovea, sessions.isEmpty {
+                Text("Noch kein Training. Sobald du im Gym eincheckst, füllt sich das Raster.").font(.footnote).foregroundStyle(Color.secondary)
+            }
+        }
+        Group {
+            if lovea {
+                stapel
+                    .padding(16)
+                    .background { RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).fill(Color(red: 0.04, green: 0.04, blue: 0.045)) }
+                    .environment(\.colorScheme, .dark)
+            } else {
+                DiagrammKarte(aussage: KonsistenzKarteLogik.aussage(jahre, auswahl: auswahl),
+                              kernzeile: sessions.isEmpty ? "Sobald du im Gym eincheckst, füllt sich das Raster." : "Tipp auf einen Tag zeigt das Training.") {
+                    stapel
                 }
             }
         }
@@ -86,21 +112,26 @@ struct KonsistenzKarte: View {
     }
 
     private func farbe(_ hex: String) -> Color {
-        KonsistenzFarbe.kanaele(hex: hex).map { Color(red: $0.r, green: $0.g, blue: $0.b) } ?? GymFarbe.gruen(schema: schema, kontrast: kontrast)
+        KonsistenzFarbe.kanaele(hex: hex).map { Color(red: $0.r, green: $0.g, blue: $0.b) } ?? neutral
     }
 
     // MARK: Kopf, Legende, Tag
 
     private func kopf(verfuegbar: [Int]) -> some View {
         HStack(spacing: Abstand.s) {
-            Text("Konsistenz").font(.headline).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
+            Text("Konsistenz")
+                .font(lovea ? .title2.bold() : .headline)
+                .lineLimit(lovea ? 2 : nil)
+                .minimumScaleFactor(lovea ? 0.8 : 1)
+                .foregroundStyle(text)
+                .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Abstand.s)
             Button { kategorienOffen = true } label: {
                 Image(systemName: "paintpalette")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(palette.text)
+                    .foregroundStyle(text)
                     .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-                    .background(palette.grund, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
+                    .background(pille, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
             }
             .buttonStyle(.federnd)
             .accessibilityLabel("Kategorien")
@@ -116,10 +147,10 @@ struct KonsistenzKarte: View {
                     Image(systemName: "chevron.down").font(.caption.weight(.semibold)).accessibilityHidden(true)
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(palette.text)
+                .foregroundStyle(text)
                 .padding(.horizontal, Abstand.m)
                 .frame(minHeight: Abstand.tippflaeche)
-                .background(palette.grund, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
+                .background(pille, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
             }
             .accessibilityLabel("Zeitraum, \(KonsistenzKarteLogik.zeitraumText(auswahl))")
         }
@@ -129,8 +160,8 @@ struct KonsistenzKarte: View {
     private var legende: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: Abstand.m, alignment: .leading)], alignment: .leading, spacing: Abstand.xs) {
             ForEach(einstellung.kategorien) { k in legendePunkt(farbe(k.farbe), k.name) }
-            legendePunkt(GymFarbe.gruen(schema: schema, kontrast: kontrast), "Ohne Kategorie")
-            legendePunkt(palette.haar, "Kein Training")
+            legendePunkt(neutral, "Ohne Kategorie")
+            legendePunkt(leer, "Kein Training")
         }
         .accessibilityElement(children: .combine)
     }
@@ -138,7 +169,7 @@ struct KonsistenzKarte: View {
     private func legendePunkt(_ farbe: Color, _ text: String) -> some View {
         HStack(spacing: Abstand.xs) {
             RoundedRectangle(cornerRadius: 3).fill(farbe).frame(width: 14, height: 14).accessibilityHidden(true)
-            Text(text).font(.subheadline).foregroundStyle(palette.text2).lineLimit(1)
+            Text(text).font(.subheadline).foregroundStyle(text2).lineLimit(1)
         }
     }
 
@@ -147,19 +178,19 @@ struct KonsistenzKarte: View {
         if let tag = gewaehlt {
             let einheiten = sessions.filter { Datum.text($0.start) == tag }.sorted { $0.start < $1.start }
             VStack(alignment: .leading, spacing: 2) {
-                Text(Datum.anzeige(tag)).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
+                Text(Datum.anzeige(tag)).font(.subheadline.weight(.semibold)).foregroundStyle(text)
                 if einheiten.isEmpty {
-                    Text("Kein Training").font(.footnote).foregroundStyle(palette.text2)
+                    Text("Kein Training").font(.footnote).foregroundStyle(text2)
                 } else {
                     ForEach(einheiten) { s in
-                        Text(zeile(s)).font(.footnote).foregroundStyle(palette.text2)
+                        Text(zeile(s)).font(.footnote).foregroundStyle(text2)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
         } else if !tippGesehen {
-            Text("Tipp auf einen Tag zeigt das Training.").font(.footnote).foregroundStyle(palette.text2)
+            Text("Tipp auf einen Tag zeigt das Training.").font(.footnote).foregroundStyle(text2)
         }
     }
 
@@ -178,7 +209,7 @@ struct KonsistenzKarte: View {
 
     private func jahrBlock(_ j: KonsistenzLogik.Jahr, fuellungen: [String: KonsistenzFuellung], farben: [String: Color]) -> some View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
-            Text(String(j.jahr)).font(.title3.bold()).foregroundStyle(palette.text)
+            Text(String(j.jahr)).font(lovea ? .title2.bold() : .title3.bold()).foregroundStyle(text)
             raster(j, fuellungen: fuellungen, farben: farben)
         }
         .accessibilityElement(children: .ignore)
@@ -192,8 +223,8 @@ struct KonsistenzKarte: View {
 
     private func raster(_ j: KonsistenzLogik.Jahr, fuellungen: [String: KonsistenzFuellung], farben: [String: Color]) -> some View {
         let gewaehlterTag = gewaehlt
-        let neutral = GymFarbe.gruen(schema: schema, kontrast: kontrast)
-        let farbenSatz = RasterFarben(leer: palette.haar, neutral: neutral, schrift: palette.text2, auswahl: palette.text, kategorien: farben)
+        let farbenSatz = RasterFarben(leer: leer, neutral: neutral, schrift: lovea ? Color(white: 0.62) : palette.text2,
+                                      auswahl: lovea ? Color.white : palette.text, kategorien: farben)
         return GeometryReader { geo in
             Canvas { ctx, size in
                 Self.zeichnen(j, in: &ctx, size: size, gewaehlt: gewaehlterTag, fuellungen: fuellungen, farben: farbenSatz)

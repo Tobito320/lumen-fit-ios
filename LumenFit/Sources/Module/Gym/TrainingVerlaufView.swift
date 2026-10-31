@@ -6,6 +6,7 @@ import SwiftUI
 struct TrainingVerlaufView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var offen: String?
     @State private var nachtragen: NachtragZiel?
     @State private var tipp = 0
@@ -17,6 +18,15 @@ struct TrainingVerlaufView: View {
     }
 
     var body: some View {
+        if aufbau == .lovea {
+            TageLoveaVerlauf()
+        } else {
+            lumenInhalt
+        }
+    }
+
+    @ViewBuilder
+    private var lumenInhalt: some View {
         let jetzt = umgebung.uhr()
         let heute = Datum.text(jetzt)
         let sessions = umgebung.daten?.training.sessions ?? []

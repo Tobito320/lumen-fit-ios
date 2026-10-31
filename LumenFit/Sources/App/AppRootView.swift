@@ -29,6 +29,7 @@ struct AppRootView: View {
             .bewegungsSchalter()
             .lumenTheme(ProfilThemaWahl.wirksam(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt), erscheinung: einstellungen.erscheinung)
             .toggleStyle(.lumenSchalter)
+            .environment(\.lumenAufbau, LumenAufbau.wahl(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt))
             .environment(\.haptikAn, einstellungen.haptik)
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))

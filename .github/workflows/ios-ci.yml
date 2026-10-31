@@ -48,8 +48,8 @@ jobs:
 
   test-iphone:
     runs-on: macos-26
-    # Tests rund 17 Minuten, danach Screenshots (bis 24) und der Release-Bau (bis 20): jeder Schritt hat sein eigenes Limit.
-    timeout-minutes: 55
+    # Tests rund 10 bis 17 Minuten, Screenshots (bis 24), Lovea-Aufbau-Bilder (bis 14) und Release-Bau (bis 40, rund 20 Minuten Bauzeit bei kaltem Cache): jeder Schritt hat sein eigenes Limit, die Summe passt in 100.
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v5
         with:
@@ -201,6 +201,53 @@ jobs:
             done
           done
           ls -l screenshots
+      # Lovea-Aufbau (Theme Lovea, in der Demo freigegeben) auf zwei Breiten: 390 pt (iPhone 16e, 15, 14) und 440 pt (iPhone 17 Pro Max, 16 Pro Max).
+      # Fehlt ein Gerät auf dem Runner, wird die Breite übersprungen. Die App liegt schon vom Test-Schritt in derived/. Darf den Lauf nie röten.
+      - name: Screenshots Lovea-Aufbau
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 14
+        run: |
+          set -u
+          mkdir -p screenshots
+          APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
+          test -n "$APP"
+          FIX="$PWD/LumenFit/Tests/Fixtures"
+          for eintrag in "390|iPhone 16e|iPhone 15|iPhone 14" "440|iPhone 17 Pro Max|iPhone 16 Pro Max"; do
+            breite=${eintrag%%|*}
+            IFS='|' read -ra namen <<< "${eintrag#*|}"
+            ID=""
+            for n in "${namen[@]}"; do
+              ID=$(xcrun simctl list devices available -j | jq -r --arg n "$n" '[.devices[][] | select(.name == $n)][0].udid // empty')
+              if [ -n "$ID" ]; then break; fi
+            done
+            if [ -z "$ID" ]; then echo "Kein Gerät für $breite pt"; continue; fi
+            xcrun simctl boot "$ID" || true
+            xcrun simctl bootstatus "$ID" -b
+            xcrun simctl install "$ID" "$APP"
+            xcrun simctl privacy "$ID" grant motion com.onlyus.lumen-fit || true
+            for modus in light dark; do
+              xcrun simctl ui "$ID" appearance "$modus"
+              for aufnahme in \
+                "heute|-lumenFitTab heute" \
+                "gym|-lumenFitRoute lumenfit://gym?bereich=training" \
+                "gym-training|-lumenFitTraining YES -lumenFitRoute lumenfit://gym?bereich=training" \
+                "gym-plan|-lumenFitRoute lumenfit://gym?bereich=plaene" \
+                "gym-fortschritt|-lumenFitRoute lumenfit://gym?bereich=fortschritt" \
+                "schlaf|-lumenFitRoute lumenfit://schlaf?bereich=letzteNacht" \
+                "essen|-lumenFitRoute lumenfit://essen?bereich=heute" \
+                "coach|-lumenFitRoute lumenfit://coach" \
+                "verlauf|-lumenFitRoute lumenfit://verlauf"; do
+                name="${aufnahme%%|*}"
+                # shellcheck disable=SC2086
+                xcrun simctl launch --terminate-running-process "$ID" com.onlyus.lumen-fit -lumenFitDemo YES -lumenFitTheme lovea -lumenFitFixtures "$FIX" ${aufnahme#*|}
+                sleep 7
+                xcrun simctl io "$ID" screenshot "screenshots/lovea-${breite}-${modus}-${name}.png"
+              done
+            done
+            xcrun simctl shutdown "$ID" || true
+          done
+          ls -l screenshots/lovea-* || true
       - name: Screenshots hochladen
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -213,7 +260,7 @@ jobs:
       # (Demo, Lumi-Probe), ohne Signatur: so wird die Release-Konfiguration schon vor dem ersten TestFlight-Lauf kompiliert.
       - name: Release-Bau ohne Signatur
         if: ${{ !cancelled() }}
-        timeout-minutes: 20
+        timeout-minutes: 40
         run: |
           set -euo pipefail
           xcodebuild build \

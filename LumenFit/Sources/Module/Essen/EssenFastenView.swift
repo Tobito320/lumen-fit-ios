@@ -36,6 +36,7 @@ enum EssenFastenAnzeige {
 struct EssenFastenView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var bewegungAus
     @State private var planOffen = false
     @State private var bearbeiten: FastenEintrag?
@@ -157,7 +158,7 @@ struct EssenFastenView: View {
                 Circle().stroke(palette.haar, style: StrokeStyle(lineWidth: 14, lineCap: .round))
                 Circle()
                     .trim(from: 0, to: CGFloat(anteil))
-                    .stroke(palette.akzent, style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                    .stroke(aufbau.farbe(LoveaDaten.essen, sonst: palette.akzent), style: StrokeStyle(lineWidth: 14, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: Abstand.xs) {
                     Text(FastenLogik.zeitText(vergangen))
@@ -248,7 +249,7 @@ struct EssenFastenView: View {
         return Chart {
             ForEach(letzte) { e in
                 BarMark(x: .value("Tag", e.start, unit: .day), y: .value("Stunden", (FastenLogik.dauerStunden(e) ?? 0) * wachstum))
-                    .foregroundStyle(FastenLogik.geschafft(e) ? palette.akzent : palette.text2.opacity(0.6))
+                    .foregroundStyle(FastenLogik.geschafft(e) ? aufbau.farbe(LoveaDaten.essen, sonst: palette.akzent) : aufbau.farbe(LoveaDaten.ueber, sonst: palette.text2.opacity(0.6)))
                     .cornerRadius(4)
             }
             RuleMark(y: .value("Ziel", plan.stunden))
@@ -273,7 +274,7 @@ struct EssenFastenView: View {
         return HStack(spacing: Abstand.m) {
             Image(systemName: geschafft ? "checkmark.circle.fill" : "xmark.circle")
                 .font(.title3)
-                .foregroundStyle(geschafft ? palette.akzent : palette.text2)
+                .foregroundStyle(geschafft ? aufbau.farbe(LoveaDaten.essen, sonst: palette.akzent) : palette.text2)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: Abstand.xs) {
                 Text(FastenLogik.planVon(e).name).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)

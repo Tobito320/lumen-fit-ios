@@ -10,6 +10,7 @@ struct SchlafSaeulen: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var schriftGroesse
     @State private var gewachsen = false
@@ -19,7 +20,7 @@ struct SchlafSaeulen: View {
     private var hoechster: Double { Double(max(zielMinuten, tage.compactMap(\.minuten).max() ?? 0, 60)) }
 
     var body: some View {
-        let linie = LumenFarben.tief(.erholen, dunkel: schema == .dark, kontrastHoch: kontrast == .increased)
+        let linie = aufbau.farbe(LoveaDaten.schlafKern, sonst: LumenFarben.tief(.erholen, dunkel: schema == .dark, kontrastHoch: kontrast == .increased))
         VStack(spacing: Abstand.xs) {
             GeometryReader { geo in
                 let breite = geo.size.width

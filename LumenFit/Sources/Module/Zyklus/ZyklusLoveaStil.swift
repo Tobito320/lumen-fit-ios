@@ -50,7 +50,7 @@ struct ZyklusLoveaHintergrund: View {
     }
 }
 
-/// Verstreute Herzen, Blüten und Sternchen (Lovea `ZyklusDeko.swift:67`), still: Lumen Fit hat keinen Schwebe-Takt.
+/// Verstreute Herzen, Blüten und Sternchen (Lovea `ZyklusDeko.swift:66-113`): sie schweben sanft auf und ab (3 pt, 2,4 s plus 0,3 s je Stück); Bewegung reduzieren und Stromsparmodus: still.
 private struct ZyklusLoveaDeko: View {
     private enum Art { case herz, bluete, stern }
     private struct Stueck {
@@ -73,18 +73,26 @@ private struct ZyklusLoveaDeko: View {
     ]
 
     @Environment(\.colorScheme) private var schema
+    @Environment(\.bewegungAus) private var bewegungAus
+    @Environment(\.stromsparmodus) private var spar
+    @State private var schwebt = false
 
     var body: some View {
+        let still = bewegungAus || spar
         GeometryReader { geo in
             ForEach(0..<Self.stuecke.count, id: \.self) { i in
                 let s = Self.stuecke[i]
                 form(s)
                     .frame(width: s.groesse, height: s.groesse)
                     .rotationEffect(.degrees(s.winkel))
+                    .offset(y: still ? 0 : (schwebt ? -3 : 3))
+                    .animation(still ? nil : .easeInOut(duration: 2.4 + Double(i) * 0.3).repeatForever(autoreverses: true), value: schwebt)
                     .position(x: geo.size.width * s.x, y: geo.size.height * s.y)
             }
         }
         .allowsHitTesting(false)
+        .onAppear { schwebt = !still }
+        .onDisappear { schwebt = false }
     }
 
     @ViewBuilder
@@ -190,4 +198,39 @@ private struct ZyklusKartenFlaecheModifier: ViewModifier {
     func body(content: Content) -> some View {
         if thema == .lovea { content.modifier(ZyklusLoveaKartenGrund()) } else { content.lumenKartenFlaeche() }
     }
+}
+
+/// Himbeer-Knopf (Lovea `ZyklusKnopf`): Kapsel mit Verlauf und weichem Schatten, mindestens 48 pt hoch, Schrift rund und fett.
+struct ZyklusLoveaKnopfStil: ButtonStyle {
+    @Environment(\.colorScheme) private var schema
+    @Environment(\.isEnabled) private var aktiv
+    @ScaledMetric(relativeTo: .body) private var hoehe: CGFloat = 48
+
+    func makeBody(configuration: Configuration) -> some View {
+        let himbeere = ZyklusLoveaFarbe.himbeere(schema == .dark)
+        configuration.label
+            .font(.system(.body, design: .rounded).weight(.bold))
+            .foregroundStyle(ZyklusLoveaFarbe.aufHimbeere(schema == .dark))
+            .padding(.horizontal, 22)
+            .frame(minHeight: hoehe)
+            .background {
+                Capsule().fill(LinearGradient(colors: [himbeere, himbeere.opacity(0.82)], startPoint: .top, endPoint: .bottom))
+                    .shadow(color: himbeere.opacity(0.35), radius: 8, y: 4)
+            }
+            .opacity(configuration.isPressed ? 0.85 : (aktiv ? 1 : 0.4))
+            .contentShape(.capsule)
+    }
+}
+
+private struct ZyklusHauptknopfModifier: ViewModifier {
+    @Environment(\.lumenThema) private var thema
+
+    func body(content: Content) -> some View {
+        if thema == .lovea { content.buttonStyle(ZyklusLoveaKnopfStil()) } else { content.buttonStyle(.lumenHauptknopf) }
+    }
+}
+
+extension View {
+    /// Hauptknopf der Zyklus-Seiten: Lumen-Hauptknopf, im Thema Lovea der Himbeer-Knopf mit Verlauf.
+    func zyklusHauptknopf() -> some View { modifier(ZyklusHauptknopfModifier()) }
 }

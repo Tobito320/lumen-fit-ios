@@ -7,6 +7,7 @@ struct EinheitNachlesenView: View {
     let sessionId: String
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
     @State private var zeiten: GymSession?
     @State private var sucheOffen = false
@@ -16,7 +17,9 @@ struct EinheitNachlesenView: View {
     @State private var hinzugefuegt = 0
 
     var body: some View {
-        if let training = umgebung.daten?.training, let s = training.sessions.first(where: { $0.id == sessionId }) {
+        if aufbau == .lovea {
+            TageLoveaRueckblick(sessionId: sessionId)
+        } else if let training = umgebung.daten?.training, let s = training.sessions.first(where: { $0.id == sessionId }) {
             inhalt(s, training: training)
         } else {
             LeerZustand(stimmung: .denkt, satz: "Diese Einheit gibt es nicht mehr.")

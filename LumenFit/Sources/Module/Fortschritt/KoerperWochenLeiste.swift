@@ -6,29 +6,52 @@ import SwiftUI
 /// Die Haken springen nacheinander auf (Reduce Motion: sofort).
 struct KoerperWochenLeiste: View {
     let woche: KoerperWoche
+    /// Im Heute-Tab des Lovea-Aufbaus (Lovea `Streifen`, `KoerperView.swift:500`): der gewählte Tag bekommt einen Ring, ein Tipp wählt den Tag.
+    var gewaehlt: String?
+    var waehlen: ((String) -> Void)?
+    /// Eingebettet in die Tagesform-Karte: ohne eigene Karte und ohne Bilanz.
+    var eingebettet = false
     @State private var geladen = false
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var reduceMotion
 
     var body: some View {
-        ListenKarte {
-            VStack(spacing: Abstand.m) {
-                HStack(alignment: .top, spacing: 0) {
-                    ForEach(Array(woche.tage.enumerated()), id: \.element.datum) { i, tag in
-                        spalte(tag, index: i)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(tag.sprechtext)
-                    }
+        if eingebettet {
+            leiste
+        } else {
+            ListenKarte {
+                VStack(spacing: Abstand.m) {
+                    leiste
+                    Text(woche.bilanz)
+                        .font(.footnote)
+                        .foregroundStyle(palette.text2)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                 }
-                Text(woche.bilanz)
-                    .font(.footnote)
-                    .foregroundStyle(palette.text2)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
+                .padding(Abstand.l)
             }
-            .padding(Abstand.l)
+        }
+    }
+
+    private var leiste: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(Array(woche.tage.enumerated()), id: \.element.datum) { i, tag in
+                zelle(tag, index: i)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(tag.sprechtext)
+                    .accessibilityAddTraits(tag.datum == gewaehlt ? .isSelected : [])
+            }
         }
         .onAppear { geladen = true }
+    }
+
+    @ViewBuilder
+    private func zelle(_ tag: KoerperWoche.Tag, index: Int) -> some View {
+        if let waehlen {
+            Button { waehlen(tag.datum) } label: { spalte(tag, index: index) }.buttonStyle(.plain)
+        } else {
+            spalte(tag, index: index)
+        }
     }
 
     private func spalte(_ tag: KoerperWoche.Tag, index: Int) -> some View {
@@ -38,6 +61,9 @@ struct KoerperWochenLeiste: View {
                 .foregroundStyle(tag.heute ? palette.text : palette.text2)
             kreis(tag, index: index)
                 .frame(width: 36, height: 36)
+                .overlay {
+                    if tag.datum == gewaehlt, !tag.heute { Circle().strokeBorder(palette.text, lineWidth: 2).padding(-3) }
+                }
             // Das Wort steht in jeder Spalte (leer als Leerzeichen), damit alle Spalten gleich hoch sind.
             Text(tag.planWort ?? " ")
                 .font(.caption2)

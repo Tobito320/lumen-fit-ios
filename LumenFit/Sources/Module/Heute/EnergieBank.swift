@@ -65,8 +65,16 @@ struct EnergieBank: View {
         .accessibilityHidden(true)
     }
 
+    private var verlauf: some View { EnergieVerlaufDiagramm(energie: energie) }
+}
+
+/// Die Energie über den Tag (Linie mit Punkten, alle drei Stunden). Teil der Energie-Bank und der Tagesform-Karte im Lovea-Aufbau; ohne zwei Punkte nichts.
+struct EnergieVerlaufDiagramm: View {
+    let energie: HeuteEnergie
+    @Environment(\.palette) private var palette
+
     @ViewBuilder
-    private var verlauf: some View {
+    var body: some View {
         if energie.verlauf.count >= 2 {
             Chart(energie.verlauf) { punkt in
                 LineMark(x: .value("Uhrzeit", punkt.stunde), y: .value("Energie", punkt.akku)).interpolationMethod(.monotone)
@@ -94,6 +102,7 @@ struct EnergieDetail: View {
     let energie: HeuteEnergie
     let gefuehl: (Int) -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var schriftGroesse
     @Environment(\.bewegungAus) private var bewegungAus
@@ -103,6 +112,11 @@ struct EnergieDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     kopf
+                    if aufbau == .lovea, let kappe = energie.ergebnis.kappe {
+                        // Lovea `TagesformBlock.swift:149-153`: Obergrenze als orange Warnzeile.
+                        Label("Obergrenze: \(kappe.text)", systemImage: "exclamationmark.triangle.fill")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(LoveaDaten.ueber)
+                    }
                     if !energie.klartext.gruende.isEmpty { gruende }
                     if let empfehlung = energie.klartext.empfehlung {
                         VStack(alignment: .leading, spacing: Abstand.xs) {
@@ -190,13 +204,13 @@ struct EnergieDetail: View {
                 ForEach(Array(energie.ergebnis.faktoren.enumerated()), id: \.element.id) { index, f in
                     if index > 0 { Haarlinie() }
                     HStack(alignment: .top, spacing: Abstand.m) {
-                        Image(systemName: f.art.symbol).foregroundStyle(palette.text2).frame(width: 24).accessibilityHidden(true)
+                        Image(systemName: f.art.symbol).foregroundStyle(aufbau.farbe(LoveaDaten.stufe(f.wert), sonst: palette.text2)).frame(width: 24).accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: Abstand.xs) {
                             Text(f.kurz).font(.subheadline.weight(.semibold))
                             if let d = f.detail { Text(d).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
                         }
                         Spacer(minLength: Abstand.s)
-                        Text("\(Int(f.wert.rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(palette.text2)
+                        Text("\(Int(f.wert.rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(aufbau.farbe(LoveaDaten.stufe(f.wert), sonst: palette.text2))
                     }
                     .overlay(alignment: .bottomLeading) { faktorBalken(f.wert) }
                     .padding(Abstand.l)
@@ -211,7 +225,7 @@ struct EnergieDetail: View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule().fill(palette.haar)
-                Capsule().fill(palette.text).frame(width: geo.size.width * min(max(wert / 100, 0), 1))
+                Capsule().fill(aufbau.farbe(LoveaDaten.stufe(wert), sonst: palette.text)).frame(width: geo.size.width * min(max(wert / 100, 0), 1))
             }
         }
         .frame(height: 4)

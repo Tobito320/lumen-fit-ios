@@ -70,7 +70,7 @@ struct ZyklusSperreAnsicht: View {
             Button { Task { await sperre.entsperren() } } label: {
                 Label("Entsperren", systemImage: "lock.open.fill")
             }
-            .buttonStyle(.lumenHauptknopf)
+            .zyklusHauptknopf()
         }
         .padding(Abstand.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

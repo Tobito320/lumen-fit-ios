@@ -54,6 +54,7 @@ private struct SchlafPhasenLegende: View {
     let minuten: Int
     let anteil: Int?
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
 
@@ -62,7 +63,7 @@ private struct SchlafPhasenLegende: View {
         let grund = palette.flaeche
         HStack(spacing: Abstand.s) {
             Canvas { kontext, groesse in
-                SchlafPhasenZeichner.fuelle(phase, rect: CGRect(origin: .zero, size: groesse), linie: linie, grund: grund, in: &kontext)
+                SchlafPhasenZeichner.fuelle(phase, rect: CGRect(origin: .zero, size: groesse), linie: aufbau.farbe(LoveaDaten.schlaf(phase), sonst: linie), grund: grund, in: &kontext)
             }
             .frame(width: 22, height: 14)
             .clipShape(.rect(cornerRadius: 3))
@@ -83,6 +84,7 @@ private struct SchlafPhasenLegende: View {
 struct PhasenBalken: View {
     let nacht: SchlafNacht
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
 
@@ -113,7 +115,7 @@ struct PhasenBalken: View {
                     let x0 = groesse.width * a.von.timeIntervalSince(von) / spanne
                     let x1 = groesse.width * a.bis.timeIntervalSince(von) / spanne
                     let rect = CGRect(x: x0, y: 0, width: max(x1 - x0 - 1, 1), height: groesse.height)
-                    SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: linie, grund: grund, voll: voll, in: &kontext)
+                    SchlafPhasenZeichner.fuelle(a.phase, rect: rect, linie: aufbau.farbe(LoveaDaten.schlaf(a.phase), sonst: linie), grund: grund, voll: voll, in: &kontext)
                 }
             }
             .frame(height: 32)

@@ -7,6 +7,7 @@ import SwiftUI
 struct MessungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
     @Environment(\.bewegungAus) private var reduceMotion
@@ -16,6 +17,25 @@ struct MessungenView: View {
 
     var body: some View {
         let punkte = MessLogik.punkte(umgebung.daten?.habits.werte(art.habitId) ?? [:])
+        Group {
+            if aufbau == .lovea { loveaListe(punkte) } else { lumenSeite(punkte) }
+        }
+        .navigationTitle("Messungen")
+        .navigationBarTitleDisplayMode(.inline)
+        .lumenToast($toast)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Messung erfassen", systemImage: "plus") { erfassen = true }
+            }
+        }
+        .sheet(isPresented: $erfassen) {
+            MessungBlatt { gespeichert in
+                toast = ToastInhalt(titel: "Gespeichert", zeile: gespeichert.map { "\($0.art.titel) \($0.art.text($0.zehntel))" }.joined(separator: " · "), stimmung: .bereit)
+            }
+        }
+    }
+
+    private func lumenSeite(_ punkte: [MessPunkt]) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 ListenKarte {
@@ -42,18 +62,47 @@ struct MessungenView: View {
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.m)
         }
-        .navigationTitle("Messungen")
-        .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
-        .lumenToast($toast)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Messung erfassen", systemImage: "plus") { erfassen = true }
+    }
+
+    /// Lovea `MessungenView` (Messungen.swift:51-111): Liste mit Messart-Menü, letztem Wert groß, Diagramm (180 pt, ohne eigene Farbe) und Historie.
+    /// Der Umschalter Ich/Partner entfällt, Lumen ist eine Person.
+    private func loveaListe(_ punkte: [MessPunkt]) -> some View {
+        List {
+            Section {
+                Picker("Messung", selection: $art) {
+                    ForEach(MessArt.allCases) { a in Text(a.titel).tag(a) }
+                }
+                .haptik(.auswahl, bei: art)
             }
-        }
-        .sheet(isPresented: $erfassen) {
-            MessungBlatt { gespeichert in
-                toast = ToastInhalt(titel: "Gespeichert", zeile: gespeichert.map { "\($0.art.titel) \($0.art.text($0.zehntel))" }.joined(separator: " · "), stimmung: .bereit)
+            .listRowSeparator(.hidden)
+            Section {
+                if let letzter = punkte.last {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(art.text(letzter.zehntel)).font(.title.bold().monospacedDigit())
+                        Text(Datum.anzeige(letzter.tag)).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    if punkte.count > 1 {
+                        Chart(punkte) { p in
+                            LineMark(x: .value("Datum", Datum.datum(p.tag)), y: .value(art.einheit, Double(p.zehntel) / 10))
+                            PointMark(x: .value("Datum", Datum.datum(p.tag)), y: .value(art.einheit, Double(p.zehntel) / 10))
+                        }
+                        .chartYScale(domain: .automatic(includesZero: false))
+                        .frame(height: 180)
+                        .accessibilityLabel("\(art.titel) über die Zeit")
+                        .accessibilityValue("\(art.titel): \(art.text(letzter.zehntel)), \(punkte.count) Messungen")
+                    }
+                } else {
+                    Text("Noch kein Wert. Tipp oben auf das Plus.").foregroundStyle(.secondary)
+                }
+            }
+            .listRowSeparator(.hidden)
+            if !punkte.isEmpty {
+                Section("\(art.titel) Historie") {
+                    ForEach(punkte.reversed()) { p in
+                        LabeledContent(Datum.anzeige(p.tag), value: art.text(p.zehntel))
+                    }
+                }
             }
         }
     }

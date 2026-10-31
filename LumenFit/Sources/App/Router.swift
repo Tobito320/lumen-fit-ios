@@ -25,6 +25,12 @@ final class Router {
         }
     }
 
+    /// Lovea-Aufbau: legt eine Seite auf den Stapel des Heute-Tabs (wie `pfad.append` im Health-Tab von Lovea), ohne den Tab zu wechseln.
+    func schiebe(_ route: Route) {
+        blatt = nil
+        pfade[.heute, default: []].append(route)
+    }
+
     /// Öffnet einen `lumenfit://`-Link. false, wenn er keine Seite der App ist.
     /// Ein fremder Link darf dem Coach keine Frage stellen: ohne `vertraut` wird `coach?frage=` zum Entwurf im Eingabefeld. Nur der Demo-Start ist vertraut.
     @discardableResult

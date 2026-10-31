@@ -1,5 +1,6 @@
 // Quelle: Lovea Health/Verlauf/VerlaufWocheAnsichten.swift (neu im Lumen-Design)
 import SwiftUI
+import UIKit
 
 // Bausteine der ruhigen Verlauf-Seite: Zahlenzeile, Start-Knopf, Gruppenliste mit Balken und Erholungspunkt, Highlights, Plan. Ohne Timer und Hintergrundarbeit,
 // Ziele mindestens 44 pt, Bewegung nur bei Ereignissen und nie unter "Bewegung reduzieren".
@@ -30,6 +31,7 @@ enum VerlaufZiel: Hashable {
 struct VerlaufZusammenfassung: View {
     let z: VerlaufWoche.Zusammenfassung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -47,10 +49,15 @@ struct VerlaufZusammenfassung: View {
 
     private func wert(_ n: Int, _ name: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            RollZahl(wert: Double(n), format: .number.precision(.fractionLength(0)))
-                .font(.title.bold()).fontDesign(.rounded)
-                .foregroundStyle(n > 0 ? palette.text : palette.text2)
-            Text(name).font(.footnote).foregroundStyle(palette.text2).lineLimit(1)
+            if aufbau == .lovea {
+                // Lovea VerlaufWocheAnsichten.swift:38-45: feste Zahl, Systemschrift, kein Hochrollen.
+                Text("\(n)").font(.title.bold()).monospacedDigit().foregroundStyle(n > 0 ? Color.primary : Color.secondary)
+            } else {
+                RollZahl(wert: Double(n), format: .number.precision(.fractionLength(0)))
+                    .font(.title.bold()).fontDesign(.rounded)
+                    .foregroundStyle(n > 0 ? palette.text : palette.text2)
+            }
+            Text(name).font(.footnote).foregroundStyle(aufbau == .lovea ? Color.secondary : palette.text2).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)
@@ -61,16 +68,33 @@ struct VerlaufZusammenfassung: View {
 struct VerlaufStartKnopf: View {
     let text: String
     let aktion: () -> Void
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
-        Button(action: aktion) {
-            Label(text, systemImage: "play.fill")
-                .font(.headline)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + 8)
+        if aufbau == .lovea {
+            // Lovea VerlaufWocheAnsichten.swift:56-68: weiße Schrift auf Rose, 52 pt hoch, Radius 14, federnder Knopf.
+            Button(action: aktion) {
+                Label(text, systemImage: "play.fill")
+                    .font(.headline)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .padding(.horizontal, 16)
+                    .background(VerlaufLovea.rose, in: .rect(cornerRadius: 14, style: .continuous))
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.federnd)
+        } else {
+            Button(action: aktion) {
+                Label(text, systemImage: "play.fill")
+                    .font(.headline)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + 8)
+            }
+            .buttonStyle(.lumenHauptknopf)
         }
-        .buttonStyle(.lumenHauptknopf)
     }
 }
 
@@ -80,6 +104,7 @@ struct VerlaufKlapp<Inhalt: View>: View {
     @Binding var offen: Bool
     @ViewBuilder var inhalt: () -> Inhalt
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var ruhig
     @State private var tipp = 0
 
@@ -97,14 +122,15 @@ struct VerlaufKlapp<Inhalt: View>: View {
                         .rotationEffect(.degrees(offen ? 90 : 0))
                         .accessibilityHidden(true)
                 }
-                .foregroundStyle(palette.text2)
+                .foregroundStyle(aufbau == .lovea ? Color.secondary : palette.text2)
                 .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
                 .contentShape(.rect)
             }
             .buttonStyle(.federnd)
             .accessibilityValue(offen ? "Ausgeklappt" : "Eingeklappt")
             if offen {
-                inhalt().transition(ruhig ? .opacity : .opacity.combined(with: .move(edge: .top)))
+                // Lovea (:98) blendet nur ein; Lumen lässt den Inhalt zusätzlich von oben gleiten.
+                inhalt().transition(ruhig || aufbau == .lovea ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
         .haptik(.auswahl, bei: tipp)
@@ -116,10 +142,14 @@ struct VerlaufKlapp<Inhalt: View>: View {
 struct VerlaufGruppenZeile: View {
     let zeile: VerlaufWoche.Zeile
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
 
     private var leer: Bool { zeile.saetze <= 0 }
+    private var lovea: Bool { aufbau == .lovea }
+    private var text: Color { lovea ? Color.primary : palette.text }
+    private var text2: Color { lovea ? Color.secondary : palette.text2 }
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -130,7 +160,7 @@ struct VerlaufGruppenZeile: View {
             }
         }
         .frame(minHeight: Abstand.tippflaeche)
-        .padding(.horizontal, Abstand.l)
+        .padding(.horizontal, lovea ? 0 : Abstand.l) // Lovea: die Liste liegt ohne Kasten auf der Seite
         .contentShape(.rect)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(sprechtext)
@@ -153,28 +183,29 @@ struct VerlaufGruppenZeile: View {
         let farbe = GymFarbe.gruen(schema: schema, kontrast: kontrast)
         Group {
             if let e = zeile.erholung {
-                Image(systemName: e == .erholt ? "circle.fill" : e == .fast ? "circle.lefthalf.filled" : "circle")
-                    .foregroundStyle(e == .erholt ? farbe : palette.text2)
+                // Lovea (:137-141): Punkt in der Stufenfarbe; die Form (voll, halb, leer) bleibt zusätzlich.
+                Image(systemName: VerlaufLovea.zeichen(e))
+                    .foregroundStyle(lovea ? VerlaufLovea.stufe(e) : (e == .erholt ? farbe : palette.text2))
             } else {
                 Color.clear
             }
         }
-        .font(.caption)
-        .frame(width: 14, height: 14)
+        .font(lovea ? .system(size: 8) : .caption)
+        .frame(width: lovea ? 8 : 14, height: lovea ? 8 : 14)
         .accessibilityHidden(true)
     }
 
     private var name: some View {
         Text(zeile.gruppe.name)
             .font(.subheadline.weight(leer ? .regular : .semibold))
-            .foregroundStyle(leer ? palette.text2 : palette.text)
+            .foregroundStyle(leer ? text2 : text)
             .lineLimit(1)
     }
 
     @ViewBuilder private func balken(breit: Bool) -> some View {
         if !leer, let anteil = zeile.anteil {
             ProgressView(value: anteil)
-                .tint(GymFarbe.gruen(schema: schema, kontrast: kontrast))
+                .tint(lovea ? VerlaufLovea.rose : GymFarbe.gruen(schema: schema, kontrast: kontrast))
                 .frame(width: breit ? nil : 96)
                 .accessibilityHidden(true)
         }
@@ -183,12 +214,12 @@ struct VerlaufGruppenZeile: View {
     @ViewBuilder private var zahl: some View {
         if !leer {
             Text(zeile.ziel.map { "\(VerlaufLogik.zahl(zeile.saetze)) / \($0)" } ?? VerlaufLogik.zahl(zeile.saetze))
-                .font(.subheadline).monospacedDigit().foregroundStyle(palette.text2).lineLimit(1)
+                .font(.subheadline).monospacedDigit().foregroundStyle(text2).lineLimit(1)
         }
     }
 
     private var pfeil: some View {
-        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(lovea ? Color(uiColor: .tertiaryLabel) : palette.text2).accessibilityHidden(true)
     }
 }
 
@@ -198,6 +229,7 @@ struct VerlaufHinweis: View {
     let tage: [VerlaufLogik.TagOhneSaetze]
     var nachtragen: (() -> Void)?
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         if let nachtragen {
@@ -210,7 +242,25 @@ struct VerlaufHinweis: View {
         }
     }
 
-    private var zeile: some View {
+    @ViewBuilder private var zeile: some View {
+        if aufbau == .lovea { loveaZeile } else { lumenZeile }
+    }
+
+    /// Lovea VerlaufView.swift:439-447: ohne Symbol, graue Schrift, Systemfläche mit Radius 12.
+    private var loveaZeile: some View {
+        HStack(spacing: 8) {
+            Text(VerlaufWoche.ohneSaetzeText(tage.count)).font(.subheadline).foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            if nachtragen != nil {
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+        .background(Color(uiColor: .secondarySystemBackground), in: .rect(cornerRadius: 12, style: .continuous))
+    }
+
+    private var lumenZeile: some View {
         HStack(spacing: Abstand.s) {
             Image(systemName: "info.circle").accessibilityHidden(true)
             Text(VerlaufWoche.ohneSaetzeText(tage.count)).font(.subheadline)
@@ -231,10 +281,61 @@ struct VerlaufHighlightsListe: View {
     let eintraege: [VerlaufHighlights.Eintrag]
     let oeffnen: (String) -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var mehrOffen = false
 
     var body: some View {
         let teile = VerlaufHighlights.kappen(eintraege)
+        if aufbau == .lovea { loveaListe(teile) } else { lumenListe(teile) }
+    }
+
+    /// Lovea VerlaufWocheAnsichten.swift:182-195: Titel "Highlights", Zeilen mit Trennlinie, ohne Kasten und ohne Symbol.
+    private func loveaListe(_ teile: (offen: [VerlaufHighlights.Eintrag], mehr: [VerlaufHighlights.Eintrag])) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Highlights")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(teile.offen) { loveaZeile($0) }
+            if !teile.mehr.isEmpty {
+                VerlaufKlapp(titel: "Mehr (\(teile.mehr.count))", offen: $mehrOffen) {
+                    ForEach(teile.mehr) { loveaZeile($0) }
+                }
+            }
+        }
+    }
+
+    /// Lovea :197-219.
+    private func loveaZeile(_ e: VerlaufHighlights.Eintrag) -> some View {
+        Button { oeffnen(e.uebung.id) } label: {
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(e.uebung.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                        Text(loveaUntertitel(e)).font(.footnote).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
+                }
+                .frame(minHeight: Abstand.tippflaeche)
+                .padding(.vertical, 4)
+                Divider()
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.federnd)
+        .foregroundStyle(.primary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(e.uebung.name), \(loveaUntertitel(e))")
+        .accessibilityHint("Öffnet die Übung")
+    }
+
+    private func loveaUntertitel(_ e: VerlaufHighlights.Eintrag) -> String {
+        let kg = "e1RM \(VerlaufLogik.zahl(e.e1rm)) kg"
+        return e.art == .rekord ? "Neuer Rekord, \(kg)" : "Plateau, \(kg)"
+    }
+
+    private func lumenListe(_ teile: (offen: [VerlaufHighlights.Eintrag], mehr: [VerlaufHighlights.Eintrag])) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             GymAbschnitt(titel: "Rekorde und Plateaus")
             ListenKarte {
@@ -289,8 +390,43 @@ struct VerlaufPlan: View {
     let plan: TrainingsPlan
     let oeffnen: () -> Void
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
+        if aufbau == .lovea { loveaPlan } else { lumenPlan }
+    }
+
+    /// Lovea VerlaufWocheAnsichten.swift:232-257: flache Liste mit Trennlinien, Split als graue Zeile, Textlink in Rose.
+    private var loveaPlan: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if plan.tage.isEmpty {
+                Text("Noch kein Plan. Such dir in der Gym-Seite einen Split aus.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 8)
+            } else {
+                if let split = plan.splitName {
+                    Text(split).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).padding(.bottom, 4)
+                }
+                ForEach(plan.tage) { t in
+                    VStack(spacing: 0) {
+                        HStack(spacing: 8) {
+                            Text(t.name.isEmpty ? "Training" : t.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                            Spacer(minLength: 8)
+                            Text(Self.untertitel(t)).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
+                        }
+                        .frame(minHeight: Abstand.tippflaeche)
+                        Divider()
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            Button(action: oeffnen) { VerlaufLoveaTextlink(text: plan.tage.isEmpty ? "Gym öffnen" : "Plan ansehen und ändern") }
+                .buttonStyle(.federnd)
+        }
+    }
+
+    private var lumenPlan: some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             if plan.tage.isEmpty {
                 Text("Noch kein Plan. Such dir in der Gym-Seite einen Split aus.").font(.subheadline).foregroundStyle(palette.text2)

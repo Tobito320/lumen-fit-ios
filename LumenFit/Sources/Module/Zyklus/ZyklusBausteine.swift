@@ -251,21 +251,24 @@ struct ZyklusWahlChip: View {
     var symbol: String?
     var gewaehlt = false
     @Environment(\.palette) private var palette
+    @Environment(\.lumenThema) private var thema
 
     var body: some View {
+        // Lovea `ZyklusChip`: runde Schrift, Perlmutt-Fläche, Rand 1,5 pt in Himbeere zu 55 %; gewählt gefüllt (das Häkchen bleibt, nie nur Farbe).
+        let lovea = thema == .lovea
         HStack(spacing: Abstand.xs) {
             if gewaehlt {
                 Image(systemName: "checkmark").font(.footnote.weight(.bold)).accessibilityHidden(true)
             } else if let symbol {
                 Image(systemName: symbol).font(.footnote.weight(.semibold)).accessibilityHidden(true)
             }
-            Text(titel).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+            Text(titel).font(.system(.subheadline, design: lovea ? .rounded : .default).weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
         .foregroundStyle(gewaehlt ? palette.aufAkzent : palette.text)
         .padding(.horizontal, Abstand.m)
         .frame(minHeight: Abstand.tippflaeche)
         .background(gewaehlt ? palette.akzent : palette.grund, in: .capsule)
-        .overlay(Capsule().stroke(gewaehlt ? Color.clear : palette.rand, lineWidth: 1))
+        .overlay(Capsule().stroke(gewaehlt ? Color.clear : (lovea ? palette.akzent.opacity(0.55) : palette.rand), lineWidth: lovea ? 1.5 : 1))
         .contentShape(.capsule)
         .accessibilityAddTraits(gewaehlt ? .isSelected : [])
     }

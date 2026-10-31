@@ -6,6 +6,7 @@ import SwiftUI
 struct FortschrittSegmentView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.lumenAufbau) private var aufbau
     @State private var auswahl: KoerperAuswahl?
     @State private var befragung = false
     @State private var tipp = 0
@@ -15,21 +16,33 @@ struct FortschrittSegmentView: View {
         let koerper = q.koerper
         ScrollView {
             VStack(spacing: Abstand.l) {
-                KoerperWochenLeiste(woche: koerper.streifen)
-                if q.hatTraining {
-                    NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
-                    KraftKurveKarte(sessions: q.sessions, heute: q.heute)
-                } else {
-                    LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
-                        umgebung.router.oeffne(.gym(.training))
+                if aufbau == .lovea {
+                    // Lovea-Aufbau (Lovea `KoerperView.swift:431-492`): Streifen, Bilanz, Figur, Ziel-Karte, Felder, Nächstes; danach die Lumen-Karten.
+                    KoerperLoveaSeite(daten: koerper, zieleGesetzt: q.zieleGesetzt, beiGruppe: waehle, beiZiele: { befragung = true },
+                                      beiTraining: { umgebung.router.oeffne(.gym(.training)) })
+                    if q.hatTraining {
+                        NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
+                        KraftKurveKarte(sessions: q.sessions, heute: q.heute)
+                        SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
+                        SilhouetteKarte(daten: koerper, beiGruppe: waehle)
                     }
-                    .lumenKartenFlaeche()
-                }
-                if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
-                SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }
-                if q.hatTraining {
-                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
-                    SilhouetteKarte(daten: koerper, beiGruppe: waehle)
+                } else {
+                    KoerperWochenLeiste(woche: koerper.streifen)
+                    if q.hatTraining {
+                        NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
+                        KraftKurveKarte(sessions: q.sessions, heute: q.heute)
+                    } else {
+                        LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
+                            umgebung.router.oeffne(.gym(.training))
+                        }
+                        .lumenKartenFlaeche()
+                    }
+                    if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
+                    SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }
+                    if q.hatTraining {
+                        SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
+                        SilhouetteKarte(daten: koerper, beiGruppe: waehle)
+                    }
                 }
                 links(stufe: q.stufe, medaillen: q.medaillen.count)
             }

@@ -12,7 +12,40 @@ struct HabitsKarte: View {
     var zoom: Namespace.ID?
     @Environment(\.palette) private var palette
 
+    @Environment(\.lumenAufbau) private var aufbau
+
     var body: some View {
+        if aufbau == .lovea {
+            // Lovea `HabitsSektion.swift:141`: jede Gewohnheit ist eine eigene Karte in ihrer Farbe.
+            VStack(spacing: Abstand.m) {
+                ForEach(habits) { zeile in
+                    ListenKarte {
+                        HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom)
+                    }
+                    .kartenTint(zeile.habit.tint)
+                }
+                ListenKarte { verwalten }
+            }
+        } else {
+            standard
+        }
+    }
+
+    private var verwalten: some View {
+        Button(action: verwalte) {
+            HStack {
+                Text("Gewohnheiten verwalten").font(.subheadline).foregroundStyle(palette.text)
+                Spacer()
+                Image(systemName: "chevron.right").font(.footnote.weight(.medium)).foregroundStyle(palette.text2).accessibilityHidden(true)
+            }
+            .padding(.horizontal, Abstand.l)
+            .frame(minHeight: Abstand.tippflaeche)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var standard: some View {
         ListenKarte {
             HeuteKartenKopf(symbol: "checkmark.circle", titel: "Gewohnheiten").padding(Abstand.l)
             ForEach(habits) { zeile in
@@ -20,17 +53,7 @@ struct HabitsKarte: View {
                 HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom)
             }
             Haarlinie()
-            Button(action: verwalte) {
-                HStack {
-                    Text("Gewohnheiten verwalten").font(.subheadline).foregroundStyle(palette.text)
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.footnote.weight(.medium)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                }
-                .padding(.horizontal, Abstand.l)
-                .frame(minHeight: Abstand.tippflaeche)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+            verwalten
         }
     }
 }
@@ -110,6 +133,7 @@ private struct HeuteHabitReihe: View {
                 .animation(bewegungAus ? nil : Feder.weich, value: zeile.serie)
         }
         .foregroundStyle(zeile.serie > 0 ? zeile.habit.tint : palette.text2)
+        .serieFeier(zeile.serie, schluessel: "serie.habit.\(zeile.habit.id)")
         .accessibilityHidden(true)
     }
 

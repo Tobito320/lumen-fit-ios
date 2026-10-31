@@ -402,70 +402,72 @@ struct TagesFormKachel: View {
     }
 }
 
-/// "Dein Tag" im Theme Lovea: Schlaf, Wasser, Koffein und was sonst als Gewohnheit da ist, als Raster mit Formkacheln.
-struct TagesFormenReihe: View {
-    let stand: HeuteStand
-    let tippe: (HeuteHabitZeile) -> Void
-    @Environment(\.palette) private var palette
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Abstand.m) {
-            Text("Dein Tag").font(.headline).foregroundStyle(palette.text)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: 3), spacing: Abstand.s) {
-                if let b = stand.boegen.first(where: { $0.id == .bewegen }) {
-                    TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil,
-                                    zusatz: stand.schritte.ziel > 0 ? "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))" : nil)
-                }
-                if let b = stand.boegen.first(where: { $0.id == .erholen }) {
-                    TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil)
-                }
-                if let b = stand.boegen.first(where: { $0.id == .trainieren }) {
-                    TagesFormKachel(form: .training, titel: "Training", wert: b.zahl, einheit: "", fuellung: b.anteil)
-                }
-                ForEach([TagesForm.wasser, .koffein, .protein, .creatin], id: \.self) { form in
-                    if let zeile = stand.habits.first(where: { $0.habit.id == form.habitID }) { habitKachel(form, zeile) }
-                }
-                if !stand.habits.isEmpty {
-                    let erledigt = stand.habits.filter(\.erledigt).count
-                    TagesFormKachel(form: .habits, titel: "Gewohnheiten", wert: String(erledigt), einheit: "von \(stand.habits.count)",
-                                    fuellung: Double(erledigt) / Double(stand.habits.count))
-                }
-                if let stimmung = stand.stimmungsWert {
-                    // 1 bis 2 traurig, 3 neutral, 4 bis 5 froh.
-                    TagesFormKachel(form: .stimmung, titel: "Stimmung", wert: String(stimmung), einheit: "von 5", fuellung: Double(stimmung) / 5,
-                                    stimmung: stimmung <= 2 ? 1 : (stimmung == 3 ? 2 : 3))
-                }
-                TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
-                                einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0,
-                                zusatz: stand.gewicht.punkte.last.map { "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))" })
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func habitKachel(_ form: TagesForm, _ zeile: HeuteHabitZeile) -> some View {
-        let ziel = zeile.ziel ?? zeile.habit.tagesziel
-        let nurTag = stand.istHeute
-        return TagesFormKachel(
-            form: form, titel: zeile.habit.name,
-            wert: zeile.habit.zaehlen ? String(zeile.wert) : (zeile.erledigt ? "Ja" : "Nein"),
-            einheit: zeile.habit.zaehlen ? (ziel.map { "von \($0)" } ?? "") : "",
-            // Ohne Ziel (Koffein) füllt sich die Form bis vier Stück.
-            fuellung: zeile.habit.zaehlen && ziel == nil ? min(1, Double(zeile.wert) / 4) : zeile.anteil,
-            zusatz: form == .creatin ? ziel.map { "\(zeile.wert)/\($0) Klicks" } : nil,
-            aktion: nurTag ? { tippe(zeile) } : nil)
-    }
+/// Was die Food-Kachel zeigt: Kalorien des Tages und das Ziel (Lovea `HeuteView.swift:925`).
+struct TagesFormEssen: Equatable {
+    var kcal: Int
+    var ziel: Int
 }
 
-private extension TagesForm {
-    /// Die Gewohnheit hinter der Form (Schlaf hat keine).
-    var habitID: String {
-        switch self {
-        case .wasser: Habit.wasser.id
-        case .koffein: Habit.koffein.id
-        case .protein: Habit.protein.id
-        case .creatin: Habit.creatin.id
-        case .schritte, .schlaf, .habits, .stimmung, .gewicht, .training: ""
+/// Das Raster von "Dein Tag" im Lovea-Aufbau, in der Reihenfolge von Lovea (`HeuteView.swift:765`): Schritte, Wasser, Schlaf, Habits, Coach, Food, Gewicht, Gym, Creatin.
+/// Was Lumen Fit mehr hat (Koffein, Protein, Stimmung), steht danach. Ein Tipp öffnet die Seite oder trägt ein, wie in Lovea; `oeffne` bekommt die Form.
+struct TagesFormenReihe<Coach: View>: View {
+    let stand: HeuteStand
+    let essen: TagesFormEssen
+    let tippe: (HeuteHabitZeile) -> Void
+    let oeffne: (TagesForm) -> Void
+    @ViewBuilder let coach: () -> Coach
+    @Environment(\.dynamicTypeSize) private var schrift
+
+    var body: some View {
+        let spalten = Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: schrift.isAccessibilitySize ? 1 : 3)
+        LazyVGrid(columns: spalten, spacing: Abstand.s) {
+            if let b = stand.boegen.first(where: { $0.id == .bewegen }) {
+                TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil,
+                                zusatz: stand.schritte.ziel > 0 ? "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))" : nil, aktion: { oeffne(.schritte) })
+            }
+            habitKachel(.wasser, Habit.wasser.id)
+            if let b = stand.boegen.first(where: { $0.id == .erholen }) {
+                TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil, aktion: { oeffne(.schlaf) })
+            }
+            if !stand.habits.isEmpty {
+                let erledigt = stand.habits.filter(\.erledigt).count
+                TagesFormKachel(form: .habits, titel: "Gewohnheiten", wert: String(erledigt), einheit: "/\(stand.habits.count)",
+                                fuellung: Double(erledigt) / Double(stand.habits.count), aktion: { oeffne(.habits) })
+            }
+            if stand.istHeute { coach() }
+            TagesFormKachel(form: .protein, titel: "Food", wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
+                            fuellung: essen.ziel > 0 ? Double(essen.kcal) / Double(essen.ziel) : 0, aktion: { oeffne(.protein) })
+            TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
+                            einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0,
+                            zusatz: stand.gewicht.punkte.last.map { "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))" },
+                            aktion: stand.istHeute ? { oeffne(.gewicht) } : nil)
+            if let b = stand.boegen.first(where: { $0.id == .trainieren }) {
+                TagesFormKachel(form: .training, titel: "Gym", wert: b.anteil > 0 ? "Gym" : "Pause", einheit: "", fuellung: b.anteil > 0 ? 1 : 0, aktion: { oeffne(.training) })
+            }
+            habitKachel(.creatin, Habit.creatin.id)
+            habitKachel(.koffein, Habit.koffein.id)
+            // Lumen Fit mehr als Lovea: der Protein-Zähler (Lovea hat "Food" statt seiner) und die Stimmung (Lovea hat sie 15.10. aus dem Raster genommen).
+            habitKachel(.protein, Habit.protein.id)
+            if let stimmung = stand.stimmungsWert {
+                // 1 bis 2 traurig, 3 neutral, 4 bis 5 froh.
+                TagesFormKachel(form: .stimmung, titel: "Stimmung", wert: String(stimmung), einheit: "von 5", fuellung: Double(stimmung) / 5,
+                                stimmung: stimmung <= 2 ? 1 : (stimmung == 3 ? 2 : 3))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func habitKachel(_ form: TagesForm, _ id: String) -> some View {
+        if let zeile = stand.habits.first(where: { $0.habit.id == id }) {
+            let ziel = zeile.ziel ?? zeile.habit.tagesziel
+            TagesFormKachel(
+                form: form, titel: zeile.habit.name,
+                wert: zeile.habit.zaehlen ? String(zeile.wert) : (zeile.erledigt ? "Ja" : "Nein"),
+                einheit: zeile.habit.zaehlen ? (ziel.map { form == .wasser ? "/\($0) Gl." : "von \($0)" } ?? "") : "",
+                // Ohne Ziel (Koffein) füllt sich die Form bis vier Stück.
+                fuellung: zeile.habit.zaehlen && ziel == nil ? min(1, Double(zeile.wert) / 4) : zeile.anteil,
+                zusatz: form == .creatin ? ziel.map { "\(zeile.wert)/\($0) Klicks" } : nil,
+                aktion: stand.istHeute ? { tippe(zeile) } : nil)
         }
     }
 }
