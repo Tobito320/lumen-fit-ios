@@ -22,6 +22,14 @@ enum AppGruppe {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: eigene)
     }
 
+    /// Unterordner der eigenen Gruppe für alles, was Lumen Fit und Lumen Alarm austauschen.
+    nonisolated static let alarmOrdnerName = "LumenAlarm"
+
+    /// `<eigene Gruppe>/LumenAlarm/`; nil ohne Signierung.
+    static func alarmOrdner() -> URL? {
+        eigeneWurzel()?.appendingPathComponent(alarmOrdnerName, isDirectory: true)
+    }
+
     /// Ordner der Lovea-Gruppe; nil ohne Signierung oder ohne Berechtigung = nicht verbunden.
     static func loveaOrdner() -> URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: lovea)
