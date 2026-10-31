@@ -87,7 +87,7 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertTrue(d.nutzung.stand.tage["2026-09-23"] == nil, "gesendete Zähler sind weg")
         let vorher = lader.aufrufe
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
-        XCTAssertEqual(Array(pfade(lader).suffix(lader.aufrufe - vorher)), ["/config", "/lovea/freigabe"], "in derselben Sitzung geht nichts mehr raus")
+        XCTAssertEqual(Array(pfade(lader).suffix(lader.aufrufe - vorher)), ["/config", "/lovea/freigabe", "/verbindungen"], "in derselben Sitzung geht keine Nutzung mehr raus (der Abgleich der Verbindungen läuft bei jeder Runde)")
     }
 
     func testNutzungBleibtBeiNetzfehlerLiegen() async throws {
