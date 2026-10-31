@@ -17,7 +17,7 @@ const TAG_FORM = /^\d{4}-\d{2}-\d{2}$/;
 const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
 const MAX_NAMEN = 60;
 const NUTZUNG_TAGE = 90;
-const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper"];
+const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"];
 // Bereiche je Verbindung: die acht Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den Zyklus-Einstellungen selbst erlaubt hat).
 export const BEREICHE = [...FREIGABEN, "zyklus"];
 // Partner-Daten: rohe Obergrenze, bevor etwas geparst wird. Gesäubert bleibt es weit darunter (Plan, Tagebuch, Messreihen sind einzeln begrenzt).
@@ -350,6 +350,19 @@ function erweiterungSauber(h, freigaben, heute) {
     const erlaubt = [freigaben.includes("gym") ? "gym" : null, freigaben.includes("essen") ? "wasser" : null];
     const fertig = [...new Set(h.habitsFertig.filter((k) => typeof k === "string" && erlaubt.includes(k)))];
     if (fertig.length) heute.habitsFertig = fertig;
+  }
+  // Stimmung (Morgen-Check, 1 bis 5): heute und die letzten Tage der Woche.
+  if (freigaben.includes("stimmung")) {
+    if (Number.isInteger(h.stimmung) && h.stimmung >= 1 && h.stimmung <= 5) heute.stimmung = h.stimmung;
+    const woche = zahlenTage(h.stimmungWoche, 5);
+    if (woche) { for (const t of Object.keys(woche)) if (woche[t] < 1) delete woche[t]; if (Object.keys(woche).length) heute.stimmungWoche = woche; }
+  }
+  // Alle Gewohnheiten mit Serie (Tage oder Wochen in Folge) und Quote der letzten 30 Tage in Prozent; höchstens 30.
+  if (freigaben.includes("gewohnheiten")) {
+    const liste = reihe(h.gewohnheiten, 30).filter((g) => typeof g.id === "string" && g.id && g.id.length <= 60 && kurz(g.name, 40)).map((g) => ({
+      id: g.id, name: kurz(g.name, 40), symbol: kurz(g.symbol, 40), serie: Math.min(ganz(g.serie) ?? 0, 9999), quote: Math.min(ganz(g.quote) ?? 0, 100), heute: g.heute === true,
+    }));
+    if (liste.length) heute.gewohnheiten = liste;
   }
   const z = h.zyklus;
   if (istObjekt(z) && typeof z.phase === "string" && typeof z.wunsch === "string" && typeof z.satz === "string" && Array.isArray(z.tipps)) {

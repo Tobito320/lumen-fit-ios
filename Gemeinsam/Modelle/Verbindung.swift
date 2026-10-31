@@ -2,7 +2,7 @@ import Foundation
 
 /// Was der Nutzer seinem Partner zeigt. Jede Art ist einzeln und standardmäßig aus. `plan`, `verlauf`, `tagebuch` und `koerper` gehören zu den Ansichten des Partners
 /// (Trainingsplan, Statuszeile und Verlauf, Tagebuch, Körperwerte); `schritte`, `gym`, `schlaf` und `essen` zu den Zeilen der Partner-Karte.
-enum FreigabeArt: String, Codable, CaseIterable, Sendable { case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper }
+enum FreigabeArt: String, Codable, CaseIterable, Sendable { case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, stimmung, gewohnheiten }
 enum PartnerBereich: Sendable { case heute, schlaf, essen, gym }
 enum PartnerEreignisArt: String, Codable, Sendable { case gymStart, gymEnde, ziel, rekord, schlafGut }
 enum BandMuster: String, Codable, Sendable { case kurz, lang, doppelt, ruf, pauseEnde }
@@ -40,11 +40,26 @@ struct TagesZusammenfassung: Codable, Equatable, Sendable {
     var tagebuchZiele: PartnerMakros?
     /// Messreihen je `MessArt.rawValue` in Zehnteln, Gewicht eingeschlossen (Freigabe koerper).
     var koerper: [String: [PartnerMesspunkt]]?
+    /// Morgen-Check von heute (1 schwer bis 5 top) und der Verlauf der Woche je Tag (Freigabe stimmung).
+    var stimmung: Int?
+    var stimmungWoche: [String: Int]?
+    /// Alle Gewohnheiten mit Serie und Quote (Freigabe gewohnheiten).
+    var gewohnheiten: [GewohnheitStand]?
 
     init(tag: String, schritte: Int? = nil, gymTageWoche: Int? = nil, schlafMinuten: Int? = nil, kcal: Int? = nil) {
         self.tag = tag; self.schritte = schritte; self.gymTageWoche = gymTageWoche
         self.schlafMinuten = schlafMinuten; self.kcal = kcal
     }
+}
+
+/// Eine Gewohnheit für den Vergleich: Serie (Tage oder Wochen in Folge, je nach Art), Quote der letzten 30 Tage in Prozent und ob sie heute erledigt ist.
+struct GewohnheitStand: Codable, Equatable, Hashable, Identifiable, Sendable {
+    var id: String
+    var name: String
+    var symbol: String
+    var serie: Int
+    var quote: Int
+    var heute: Bool
 }
 
 /// Ein Tag des Plans: Name, Wochentage (1 = Montag bis 7 = Sonntag) und die Übungen.

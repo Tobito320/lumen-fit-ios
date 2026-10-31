@@ -137,9 +137,10 @@ struct VerbindungPersonView: View {
                     LabeledContent { Text(z.wert).monospacedDigit() } label: { Label(z.titel, systemImage: z.symbol) }
                         .accessibilityElement(children: .combine)
                 }
-                // Plan, Verlauf, Tagebuch und Körperwerte öffnen als eigene Ansichten, die am Lovea-Partner hängen.
-                if e.lovea, let datei = PartnerAnsichtLogik.datei(PartnerAnsichtLogik.aktuellerStand(umgebung)) {
-                    PartnerEinstiegZeilen(einstiege: PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()), imFormular: true)
+                // Plan, Verlauf, Tagebuch und Körperwerte öffnen als eigene Ansichten: für den Lovea-Partner mit seinem Stand, für alle anderen mit dem der Person.
+                let stand = e.lovea ? PartnerAnsichtLogik.aktuellerStand(umgebung) : e.stand(jetzt: umgebung.uhr())
+                if let datei = PartnerAnsichtLogik.datei(stand) {
+                    PartnerEinstiegZeilen(einstiege: PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()), imFormular: true, stand: e.lovea ? nil : stand)
                 }
             }
         }

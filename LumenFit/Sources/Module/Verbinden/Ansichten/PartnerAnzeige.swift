@@ -30,6 +30,12 @@ enum PartnerAnzeige {
             if frei.contains(.essen), let k = datei.heute.kcal {
                 liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
             }
+            if frei.contains(.stimmung), let s = datei.heute.stimmung {
+                liste.append(Zeile(titel: "Stimmung", wert: stimmungText(s), symbol: "face.smiling"))
+            }
+            if frei.contains(.gewohnheiten), let g = datei.heute.gewohnheiten, !g.isEmpty {
+                liste.append(Zeile(titel: "Gewohnheiten", wert: "\(g.filter(\.heute).count) von \(g.count) heute", symbol: "checkmark.circle"))
+            }
         case .essen:
             if frei.contains(.essen), let k = datei.heute.kcal {
                 liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
@@ -87,6 +93,23 @@ enum PartnerAnzeige {
     /// Tage der Woche mit Gym beim Partner (leer ohne Freigabe gym).
     static func gymTage(_ datei: ZusammenfassungDatei) -> Set<String> {
         datei.freigaben.contains(.gym) ? Set(datei.heute.gymTage ?? []) : []
+    }
+
+    /// Die Antwort auf den Morgen-Check in Worten (1 schwer bis 5 top).
+    static func stimmungText(_ wert: Int) -> String {
+        switch wert {
+        case ...1: "Schwer"
+        case 2: "Müde"
+        case 3: "Okay"
+        case 4: "Gut"
+        default: "Top"
+        }
+    }
+
+    /// Dieselbe Gewohnheit beim Partner: zuerst gleiche Kennung (Gym, Wasser), sonst gleicher Name (ohne Groß- und Kleinschreibung). Nur mit Freigabe gewohnheiten.
+    static func gewohnheit(_ datei: ZusammenfassungDatei, id: String, name: String) -> GewohnheitStand? {
+        guard datei.freigaben.contains(.gewohnheiten), let liste = datei.heute.gewohnheiten else { return nil }
+        return liste.first { $0.id == id } ?? liste.first { $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }
     }
 
     /// "7 h 35 min", "8 h", "45 min".

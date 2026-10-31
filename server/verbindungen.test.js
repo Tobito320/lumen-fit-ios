@@ -37,8 +37,10 @@ async function welt(...namen) {
 }
 const volleDatei = (name, extra = {}) => ({
   version: 1, geschrieben: new Date().toISOString(), profilName: name,
-  freigaben: ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper"],
+  freigaben: ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"],
   heute: {
+    stimmung: 4, stimmungWoche: { [heute()]: 4 },
+    gewohnheiten: [{ id: "gym", name: "Gym", symbol: "dumbbell.fill", serie: 3, quote: 80, heute: true }, { id: "lesen", name: "Lesen", symbol: "book", serie: 12, quote: 55, heute: false }],
     tag: heute(), schritte: 4200, gymTageWoche: 2, schlafMinuten: 420, kcal: 1900, schlafZiel: 480, habitsFertig: ["gym", "wasser"],
     plan: { name: "PPL", tage: [{ name: "Push", wochentage: [1], uebungen: [{ name: "Bank", saetze: 3 }] }] },
     tagebuch: [{ tag: heute(), kcal: 1900, protein: 100, kohlenhydrate: 200, fett: 60, mahlzeiten: [{ mahlzeit: "mittag", name: "Reis", kcal: 500 }] }],
@@ -284,8 +286,10 @@ test("Lovea-Konten sind ohne Scan verbunden, alle Bereiche an; eigenes Ausschalt
   assert.equal(bei.auto, true);
   assert.equal(bei.status, "aktiv");
   assert.equal(bei.name, "Annika");
-  assert.deepEqual(bei.siehst, ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "zyklus"]);
+  assert.deepEqual(bei.siehst, ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten", "zyklus"]);
   assert.equal(bei.daten.heute.kcal, 1900);
+  assert.equal(bei.daten.heute.stimmung, 4);
+  assert.equal(bei.daten.heute.gewohnheiten.length, 2);
   assert.equal(bei.daten.heute.zyklus.phase, "folikular", "Annika hat den Zyklus in der App erlaubt (Feld im Upload)");
   const umgekehrt = (await meine(env, "du"))[0];
   assert.equal(umgekehrt.daten.heute.tagebuch.length, 1);
@@ -340,6 +344,8 @@ test("Alter Weg: PUT /partner begrenzt wie vorher, die gespeicherte Datei bleibt
   const viel = volleDatei("Ich", {
     plan: { name: lang, ruhetage: [1, 2], tage: Array.from({ length: 14 }, () => ({ name: lang, wochentage: [1, 2, 3, 4, 5, 6, 7], uebungen: Array.from({ length: 20 }, () => ({ name: lang, saetze: 5 })) })) },
     tagebuch: Array.from({ length: 7 }, () => ({ tag: t, kcal: 1, protein: 1, kohlenhydrate: 1, fett: 1, mahlzeiten: Array.from({ length: 30 }, () => ({ mahlzeit: "snack", name: lang, kcal: 100 })) })),
+    stimmungWoche: Object.fromEntries(Array.from({ length: 14 }, (_, i) => [`2026-10-${String(i + 1).padStart(2, "0")}`, 5])),
+    gewohnheiten: Array.from({ length: 50 }, (_, i) => ({ id: `h${i}`.padEnd(60, "x"), name: lang, symbol: lang, serie: 9999, quote: 100, heute: true })),
     koerper: Object.fromEntries(["gewicht", "taille", "brust", "schulter", "bizeps", "oberschenkel", "koerperfett"].map((a) => [a, Array.from({ length: 90 }, () => ({ tag: t, zehntel: 999 }))])),
   });
   const roh = JSON.stringify(viel);
@@ -381,4 +387,23 @@ test("Lovea-Einträge tragen lovea: true, QR-Verbindungen nicht", async () => {
   await verbinden(env, "fremd", "ich");
   const alle = await meine(env, "ich");
   assert.deepEqual(alle.map((e) => e.lovea).sort(), [false, true]);
+});
+
+test("Stimmung und Gewohnheiten: Standard-Verbindung sieht sie nicht, mit Freigabe ja, ungültige Werte fallen weg", async () => {
+  const env = await welt("ich", "fremd");
+  await hochladen(env, "ich", "Ich", { gewohnheiten: [{ id: "x", name: "Lesen", symbol: "book", serie: 5, quote: 400, heute: true }, { id: "", name: "ohne Id" }, { id: "y", name: "" }], stimmung: 9 });
+  const code = await ruf(env, "ich", "POST", "/verbindungen/einladung");
+  const a = await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: code.json.token });
+  await ruf(env, "ich", "POST", `/verbindungen/${a.json.id}/annehmen`);
+  const standard = (await meine(env, "fremd"))[0].daten.heute;
+  assert.equal(standard.stimmung, undefined);
+  assert.equal(standard.stimmungWoche, undefined);
+  assert.equal(standard.gewohnheiten, undefined);
+  await ruf(env, "ich", "PATCH", `/verbindungen/${a.json.id}`, { zeigt: ["schritte", "gym", "stimmung", "gewohnheiten"] });
+  const frei = (await meine(env, "fremd"))[0].daten.heute;
+  assert.equal(frei.stimmung, undefined, "9 liegt außerhalb von 1 bis 5");
+  assert.deepEqual(frei.gewohnheiten, [{ id: "x", name: "Lesen", symbol: "book", serie: 5, quote: 100, heute: true }], "Quote auf 100 gekappt, Einträge ohne Id oder Namen weg");
+  assert.deepEqual(frei.stimmungWoche, { [heute()]: 4 });
+  await ruf(env, "fremd", "PATCH", `/verbindungen/${a.json.id}`, { ausblenden: ["gewohnheiten"] });
+  assert.equal((await meine(env, "fremd"))[0].daten.heute.gewohnheiten, undefined, "ausgeblendet bei mir: Feld fehlt");
 });

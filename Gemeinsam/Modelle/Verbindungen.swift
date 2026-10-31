@@ -1,9 +1,9 @@
 import Foundation
 
-/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die acht Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den
+/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die zehn Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den
 /// Zyklus-Einstellungen selbst erlaubt hat). Die Namen sind die des Servers.
 enum VerbindungBereich: String, CaseIterable, Sendable {
-    case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, zyklus
+    case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, stimmung, gewohnheiten, zyklus
 
     var freigabe: FreigabeArt? { FreigabeArt(rawValue: rawValue) }
 
@@ -17,6 +17,8 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .verlauf: "Training und Verlauf"
         case .tagebuch: "Tagebuch"
         case .koerper: "Körperwerte"
+        case .stimmung: "Stimmung"
+        case .gewohnheiten: "Gewohnheiten"
         case .zyklus: "Zyklus"
         }
     }
@@ -31,6 +33,8 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .verlauf: "figure.strengthtraining.traditional"
         case .tagebuch: "book.closed"
         case .koerper: "scalemass"
+        case .stimmung: "face.smiling"
+        case .gewohnheiten: "checkmark.circle"
         case .zyklus: "circle.dotted"
         }
     }
@@ -50,6 +54,8 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .verlauf: "Ob du im Gym bist und deine letzten zehn Trainings als Zusammenfassung. Keine Gewichte."
         case .tagebuch: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien, Makros. Keine Fotos."
         case .koerper: "Gewicht und Körpermaße mit dem Verlauf der letzten Monate."
+        case .stimmung: "Deine Antwort auf den Morgen-Check und der Verlauf der Woche."
+        case .gewohnheiten: "Alle Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind."
         }
     }
 }
@@ -146,6 +152,13 @@ struct VerbindungEintrag: Codable, Equatable, Identifiable, Sendable {
     /// Anzeigename: mein eigener Name für die Person, sonst der des Servers.
     var anzeigeName: String { ich.name.isEmpty ? name : ich.name }
     var sichtbareBereiche: Set<VerbindungBereich> { Set(siehst.compactMap(VerbindungBereich.init(rawValue:))) }
+
+    /// Der Stand dieser Person für die Ansichten: frisch, veraltet (älter als 48 Stunden), unbekannte Version oder keine Daten.
+    func stand(jetzt: Date) -> PartnerStand {
+        guard aktiv, let d = daten else { return .nichtVerbunden }
+        guard d.version == LoveaVertrag.version else { return .unbekannteVersion }
+        return jetzt.timeIntervalSince(d.geschrieben) <= LoveaVertrag.frist ? .verbunden(d) : .veraltet(d)
+    }
 }
 
 /// Die ganze Antwort von `GET /verbindungen`. `teilen`: die Bereiche, die Lumen Fit hochladen darf (mindestens eine aktive, nicht pausierte Verbindung zeigt sie).
@@ -226,6 +239,8 @@ enum VerbindungenLogik {
         if d.freigaben.contains(.verlauf) { h.verlauf = alt.verlauf }
         if d.freigaben.contains(.tagebuch) { h.tagebuch = alt.tagebuch; h.tagebuchZiele = alt.tagebuchZiele }
         if d.freigaben.contains(.koerper) { h.koerper = alt.koerper }
+        if d.freigaben.contains(.stimmung) { h.stimmung = alt.stimmung; h.stimmungWoche = alt.stimmungWoche }
+        if d.freigaben.contains(.gewohnheiten) { h.gewohnheiten = alt.gewohnheiten }
         d.heute = h   // Zyklus fällt immer weg: er kommt nur vom Server, der ihn nach der Freigabe der Verbindung prüft
         d.ereignisse = datei.ereignisse.filter { d.freigaben.contains(ereignisFreigabe($0.art)) }
         return d

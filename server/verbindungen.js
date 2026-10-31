@@ -11,7 +11,7 @@ const EINLADUNG_MS = 10 * 60 * 1000;
 const TOKEN_FORM = /^[A-Za-z0-9_-]{43}$/;
 const ID_FORM = /^[a-f0-9]{32}$/;
 const STANDARD_ZEIGT = ["schritte", "gym"];
-const ALLE_ZEIGT = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "zyklus"];
+const ALLE_ZEIGT = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten", "zyklus"];
 const MAX_AKTIV = 50;
 const MAX_ANFRAGEN = 10;
 // Abruf gedrosselt: je Konto höchstens so viele Einladungs-Wege (anlegen, ansehen, anfragen) je Minute.
@@ -92,7 +92,8 @@ export async function partnerFuerLovea(env, k, h) {
   for (const zeile of results) {
     const seite = seiteVon(zeile, k.id);
     const e = einstellung(zeile, seite, { lesen: h.lesen });
-    const erlaubt = erlaubteBereiche(zeile, seite, { lesen: h.lesen });
+    // Alte App-Versionen kennen Stimmung und Gewohnheiten nicht: dieser alte Weg bleibt bei den früheren Bereichen.
+    const erlaubt = erlaubteBereiche(zeile, seite, { lesen: h.lesen }).filter((b) => b !== "stimmung" && b !== "gewohnheiten");
     const r = await datenFuer(env, zeile.o_id, erlaubt, e.mitteilungen, h);
     if (r) return { partner: r.daten, aktualisiert: r.aktualisiert };
   }

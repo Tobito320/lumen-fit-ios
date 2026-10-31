@@ -8,6 +8,16 @@ extension PartnerAnsichtLogik {
     }
 }
 
+private struct PartnerStandKey: EnvironmentKey { static let defaultValue: PartnerStand? = nil }
+
+extension EnvironmentValues {
+    /// Eine bestimmte Person statt des Lovea-Partners: die Ansichten (Plan, Verlauf, Tagebuch, Körperwerte) lesen dann ihren Stand. Gesetzt über `PartnerEinstiegZeilen(stand:)`.
+    var partnerStandUeberschreibung: PartnerStand? {
+        get { self[PartnerStandKey.self] }
+        set { self[PartnerStandKey.self] = newValue }
+    }
+}
+
 /// Der gemeinsame Rahmen der vier Partner-Ansichten: holt den Stand, zeigt bei fehlender Freigabe oder ohne Daten einen Leerzustand mit Lumi
 /// ("Dein Partner hat das nicht freigegeben."), bei älteren Daten einen Hinweis über dem Inhalt und sonst den Inhalt der Ansicht.
 struct PartnerAnsichtRahmen<Inhalt: View>: View {
@@ -16,6 +26,7 @@ struct PartnerAnsichtRahmen<Inhalt: View>: View {
     let inhalt: (ZusammenfassungDatei) -> Inhalt
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @Environment(\.partnerStandUeberschreibung) private var person
 
     init(art: FreigabeArt, titel: String, @ViewBuilder inhalt: @escaping (ZusammenfassungDatei) -> Inhalt) {
         self.art = art
@@ -24,7 +35,7 @@ struct PartnerAnsichtRahmen<Inhalt: View>: View {
     }
 
     var body: some View {
-        let lage = PartnerAnsichtLogik.lage(PartnerAnsichtLogik.aktuellerStand(umgebung), art: art)
+        let lage = PartnerAnsichtLogik.lage(person ?? PartnerAnsichtLogik.aktuellerStand(umgebung), art: art)
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 if case .bereit(let datei, let veraltet) = lage {

@@ -100,6 +100,41 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertNil(d.heute.kcal, "Essen sieht diese Verbindung nicht")
     }
 
+    // MARK: Form der Server-Antworten (Wortlaut wie `server/verbindungen.js` sie schickt)
+
+    func testAntwortDesServersLaesstSichLesen() throws {
+        let json = #"""
+        {"verbindungen":[
+          {"id":"abc123","name":"Person","auto":true,"erstellt":"2026-10-31T09:00:00.000Z","lovea":true,"status":"aktiv",
+           "ich":{"zeigt":["schritte","gym","schlaf","essen","plan","verlauf","tagebuch","koerper","stimmung","gewohnheiten","zyklus"],"ausblenden":["koerper"],"pause":false,"mitteilungen":true,"favorit":true,"name":""},
+           "siehst":["schritte","gym"],"pausiert":false,"zuletzt":"2026-10-31T09:30:00.000Z",
+           "daten":{"version":1,"geschrieben":"2026-10-31T09:30:00.000Z","profilName":"Person","freigaben":["schritte","gym"],
+                    "heute":{"tag":"2026-10-31","schritte":4200,"gymTageWoche":2},"ereignisse":[]}},
+          {"id":"def456","name":"Ben","auto":false,"erstellt":"2026-10-31T09:00:00.000Z","lovea":false,"status":"anfrageEingehend"},
+          {"id":"ghi789","name":"Cem","auto":false,"erstellt":"2026-10-31T09:00:00.000Z","lovea":false,"status":"anfrageAusgehend"}],
+         "teilen":["schritte","gym","schlaf","essen","plan","verlauf","tagebuch","koerper","stimmung","gewohnheiten","zyklus"]}
+        """#
+        let a = try LoveaVertrag.decoder().decode(VerbindungenAntwort.self, from: Data(json.utf8))
+        XCTAssertEqual(a.verbindungen.map(\.status), [.aktiv, .anfrageEingehend, .anfrageAusgehend])
+        let e = try XCTUnwrap(a.verbindungen.first)
+        XCTAssertTrue(e.lovea)
+        XCTAssertEqual(e.ich.zeigtBereiche.count, 11)
+        XCTAssertEqual(e.ich.ausgeblendet, [.koerper])
+        XCTAssertEqual(e.sichtbareBereiche, [.schritte, .gym])
+        XCTAssertNotNil(e.zuletzt)
+        XCTAssertEqual(e.daten?.heute.schritte, 4200)
+        XCTAssertEqual(a.teilenBereiche, Set(VerbindungBereich.allCases))
+    }
+
+    func testEinladungDesServersLaesstSichLesen() throws {
+        // `POST /verbindungen/einladung` antwortet mit 43 Zeichen Token und einem ISO-Datum mit Millisekunden.
+        let json = #"{"token":"\#(token)","laeuftAb":"2026-10-31T10:10:00.000Z","sekunden":600}"#
+        struct Antwort: Decodable { var token: String; var laeuftAb: String }
+        let a = try JSONDecoder().decode(Antwort.self, from: Data(json.utf8))
+        XCTAssertTrue(VerbindungenLogik.istToken(a.token))
+        XCTAssertNotNil(LoveaVertrag.isoDatum(a.laeuftAb))
+    }
+
     // MARK: Band-Standard und Einstellungen
 
     func testBandBewusstAusUeberlebtDenRoundTripUndFehltBeiAlterDatei() throws {
