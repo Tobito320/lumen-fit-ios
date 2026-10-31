@@ -224,7 +224,7 @@ struct GymStartView: View {
         switch ziel {
         case .partnerPlan: PartnerPlanAnsicht()
         case .verlauf: TrainingVerlaufView()
-        case .messungen: MessungenView()
+        case .messungen: PartnerKoerperWeiche { MessungenView() }
         case .uebungen: UebungsSucheView()
         case .splits: PlanLoveaView(sitzung: sitzung)
         }
