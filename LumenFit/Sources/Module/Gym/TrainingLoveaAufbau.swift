@@ -10,9 +10,11 @@ enum LoveaTraining {
     static var feld: Color { Color(uiColor: .tertiarySystemFill) }
     static let kachel = RoundedRectangle(cornerRadius: 9, style: .continuous)
 
-    /// Cardio-Kurzknöpfe unter "Übung hinzufügen" (Lovea `WorkoutView.swift:539`): Laufband und Stairmaster aus dem Katalog.
+    /// Cardio-Kurzknöpfe unter "Übung hinzufügen" (Lovea `WorkoutView.swift:539`, `cardioSchnell`): dieselben Katalog-ids wie in Lovea
+    /// (Laufband `rjiM4L3`, Stairmaster `j9Q5crt`), damit Verlauf und Rekorde zu den Lovea-Daten passen; sonst die erste Übung des Geräts.
     static func cardio(_ geraet: String) -> Uebung? {
-        UebungsKatalog.alle.first { TrainingLogik.cardioGeraet($0) == geraet }
+        let id = geraet == "stairmaster" ? "j9Q5crt" : "rjiM4L3"
+        return UebungsKatalog.nachId[id] ?? UebungsKatalog.alle.first { TrainingLogik.cardioGeraet($0) == geraet }
     }
 
     /// Lovea `WorkoutView.swift:387`: Farbe der Anstrengung.
@@ -410,7 +412,7 @@ struct TrainingLoveaView: View {
 /// Nur diese eine Übung (Lovea `WorkoutUebungView`): Notiz, Pausenzeit, Defekt, Einstellung, Tabelle der Sätze, Leiste. Die Zeilen leben in
 /// `GymSitzung`; gesendet wird beim Haken, bei Satz dazu oder löschen und beim Verlassen der Seite.
 struct TrainingLoveaUebungView: View {
-    let sitzung: GymSitzung
+    @Bindable var sitzung: GymSitzung
     let planId: String
     /// Zur nächsten Übung wechseln, nil = zurück zur Übersicht.
     var wechseln: (String?) -> Void = { _ in }
@@ -473,6 +475,8 @@ struct TrainingLoveaUebungView: View {
         }
         .listStyle(.plain)
         .scrollDismissesKeyboard(.interactively)
+        .focused($fokus)
+        .lumenToast($sitzung.toast)
         .navigationTitle(u.planUebung.anzeigeName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -710,11 +714,31 @@ struct LoveaSatzZeile: View {
     var vorherUebernehmen: () -> Void = {}
     var werte: (Double?, Int) -> Void = { _, _ in }
 
+    @Environment(\.dynamicTypeSize) private var schriftGroesse
     private var fertig: Bool { satz.ok == true }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 6) {
+            // Ab Accessibility-Größe passt die Tabelle nicht mehr in eine Zeile: die Felder stehen dann untereinander (wie im Lumen-Aufbau).
+            if schriftGroesse.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) { felder }
+            } else {
+                HStack(spacing: 6) { felder }
+            }
+            if fertig, let zeiten = WorkoutLogik.zeitenText(sek: satz.sek, pause: satz.pause, satzzeit: satzzeit) {
+                Text(zeiten).font(.caption).foregroundStyle(Color.primary.opacity(0.75)).padding(.leading, schriftGroesse.isAccessibilitySize ? 0 : 50)
+            }
+            if fertig, let rekord {
+                Label("Rekord: \(rekord)", systemImage: "medal.fill")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.orange)
+                    .padding(.leading, schriftGroesse.isAccessibilitySize ? 0 : 50)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var felder: some View {
                 typMenue
                 Button(action: vorherUebernehmen) {
                     Text(vorher ?? "–")
@@ -757,17 +781,6 @@ struct LoveaSatzZeile: View {
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel(fertig ? "Haken entfernen" : "Satz abhaken")
-            }
-            if fertig, let zeiten = WorkoutLogik.zeitenText(sek: satz.sek, pause: satz.pause, satzzeit: satzzeit) {
-                Text(zeiten).font(.caption).foregroundStyle(Color.primary.opacity(0.75)).padding(.leading, 50)
-            }
-            if fertig, let rekord {
-                Label("Rekord: \(rekord)", systemImage: "medal.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.orange)
-                    .padding(.leading, 50)
-            }
-        }
     }
 
     private var typMenue: some View {
@@ -794,7 +807,8 @@ struct LoveaSatzZeile: View {
         eingabe
             .multilineTextAlignment(.center)
             .font(.headline.monospacedDigit())
-            .frame(width: breite, height: 44)
+            .frame(minWidth: breite, maxWidth: schriftGroesse.isAccessibilitySize ? .infinity : breite, minHeight: 44)
+            .frame(height: schriftGroesse.isAccessibilitySize ? nil : 44)
             .overlay {
                 LoveaTraining.kachel.strokeBorder(fertig ? Color.clear : laeuft ? Color.blue : Color(uiColor: .separator), lineWidth: 1)
             }
