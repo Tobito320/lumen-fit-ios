@@ -193,6 +193,45 @@ final class LoveaBrueckeDienstTests: XCTestCase {
         let a = try await aufbau()
         XCTAssertEqual(FreigabenVorschau.zeilen(try XCTUnwrap(a.dienst.vorschau())), [])
     }
+
+    // MARK: Server-Upload für Verbindungen
+
+    func testOhneVerbindungGehtNichtsAnDenServer() async throws {
+        let a = try await aufbau(schalter: false, freigaben: Set(FreigabeArt.allCases))
+        a.dienst.schreibe()
+        XCTAssertTrue(a.fake.serverStaende.isEmpty)
+    }
+
+    func testServerStandEnthaeltNurDieBereicheDerVerbindungenAuchOhneLoveaSchalter() async throws {
+        let a = try await aufbau(schalter: false, freigaben: Set(FreigabeArt.allCases))
+        a.dienst.hochladen = { ([.schritte, .gym], false) }
+        XCTAssertFalse(a.dienst.schreibe(), "ohne Lovea-Schalter keine Datei für Lovea")
+        XCTAssertTrue(a.fake.zusammenfassungen.isEmpty)
+        let stand = try XCTUnwrap(a.fake.serverStaende.last)
+        XCTAssertEqual(Set(stand.freigaben), [.schritte, .gym])
+        XCTAssertEqual(stand.heute.schritte, 8_200)
+        XCTAssertNil(stand.heute.kcal, "Essen zeigt keine Verbindung")
+        XCTAssertNil(stand.heute.schlafMinuten)
+        XCTAssertNil(stand.heute.zyklus)
+    }
+
+    func testZyklusGehtNurHinausWennEineVerbindungIhnZeigt() async throws {
+        let a = try await aufbau(schalter: false)
+        a.dienst.hochladen = { ([], false) }
+        a.dienst.schreibe()
+        XCTAssertTrue(a.fake.serverStaende.isEmpty)
+        a.dienst.hochladen = { ([.schritte], false) }
+        a.dienst.schreibe()
+        XCTAssertNil(a.fake.serverStaende.last?.heute.zyklus)
+    }
+
+    func testDateiFuerLoveaBleibtBeiDenFreigabenDesProfils() async throws {
+        let a = try await aufbau(freigaben: [.schlaf])
+        a.dienst.hochladen = { ([.schritte], false) }
+        XCTAssertTrue(a.dienst.schreibe())
+        XCTAssertEqual(a.fake.zusammenfassungen.last?.freigaben, [.schlaf])
+        XCTAssertEqual(a.fake.serverStaende.last?.freigaben, [.schritte])
+    }
 }
 
 /// Zählt die gesendeten Darwin-Namen (ein Verweistyp statt einer erfassten Variable).

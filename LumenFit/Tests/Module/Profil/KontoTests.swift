@@ -106,8 +106,8 @@ final class KontoTests: XCTestCase {
         XCTAssertTrue(zweite.registriert)
         XCTAssertEqual(zweite.id, erste.id, "dieselbe Kennung, nie neu gewürfelt")
         XCTAssertEqual(zweite.geheimnis, erste.geheimnis)
-        XCTAssertEqual(lader.anfragen.compactMap { $0.url?.path }, ["/konto", "/konto", "/config", "/lovea/freigabe", "/partner", "/nutzung"])
-        XCTAssertEqual(lader.anfragen.map { $0.httpMethod }, ["POST", "POST", "GET", "GET", "GET", "POST"])
+        XCTAssertEqual(lader.anfragen.compactMap { $0.url?.path }, ["/konto", "/konto", "/config", "/lovea/freigabe", "/verbindungen", "/partner", "/nutzung"])
+        XCTAssertEqual(lader.anfragen.map { $0.httpMethod }, ["POST", "POST", "GET", "GET", "GET", "GET", "POST"])
         let koerper = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(lader.anfragen[1].httpBody)) as? [String: String])
         XCTAssertEqual(koerper["id"], erste.id)
         XCTAssertEqual(koerper["name"], "Beispiel")
@@ -121,7 +121,7 @@ final class KontoTests: XCTestCase {
         let danach = SkriptLader([antwort(200, configJson), antwort(200, freigabeJson)])
         let weiter = try dienst(danach, bund: bund)
         await weiter.aktualisiere(profilName: "Beispiel", erzwingen: true)
-        XCTAssertEqual(danach.anfragen.compactMap { $0.url?.path }, ["/config", "/lovea/freigabe", "/partner", "/nutzung"], "eine angemeldete Kennung meldet sich nie nochmal an")
+        XCTAssertEqual(danach.anfragen.compactMap { $0.url?.path }, ["/config", "/lovea/freigabe", "/verbindungen", "/partner", "/nutzung"], "eine angemeldete Kennung meldet sich nie nochmal an")
     }
 
     func testKennungHatDieFormDesServers() throws {
@@ -147,7 +147,7 @@ final class KontoTests: XCTestCase {
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         let k = try gespeicherteKennung(bund)
         XCTAssertTrue(k.registriert)
-        XCTAssertEqual(lader.anfragen.compactMap { $0.url?.path }, ["/konto", "/config", "/lovea/freigabe", "/partner", "/nutzung"])
+        XCTAssertEqual(lader.anfragen.compactMap { $0.url?.path }, ["/konto", "/config", "/lovea/freigabe", "/verbindungen", "/partner", "/nutzung"])
         XCTAssertTrue(d.config.profilAnlegenErlaubt)
     }
 
@@ -175,13 +175,13 @@ final class KontoTests: XCTestCase {
         let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(200, configJson), antwort(200, freigabeJson)])
         let d = try dienst(lader, uhr: uhr)
         await d.aktualisiere(profilName: "Beispiel")
-        XCTAssertEqual(lader.aufrufe, 5, "Anmelden, Einstellungen, Freigabe, Partner, Nutzung")
+        XCTAssertEqual(lader.aufrufe, 6, "Anmelden, Einstellungen, Freigabe, Verbindungen, Partner, Nutzung")
         uhr.vor(sekunden: 60)
         await d.aktualisiere(profilName: "Beispiel")
-        XCTAssertEqual(lader.aufrufe, 5, "innerhalb von fünf Minuten kein neuer Aufruf")
+        XCTAssertEqual(lader.aufrufe, 6, "innerhalb von fünf Minuten kein neuer Aufruf")
         uhr.vor(sekunden: KontoDienst.pause)
         await d.aktualisiere(profilName: "Beispiel")
-        XCTAssertEqual(lader.aufrufe, 8, "Einstellungen, Freigabe, Partner; die Nutzung geht nur einmal je Start raus")
+        XCTAssertEqual(lader.aufrufe, 10, "Einstellungen, Freigabe, Verbindungen, Partner; die Nutzung geht nur einmal je Start raus")
     }
 
     // MARK: - Lovea-Freigabe
@@ -197,7 +197,7 @@ final class KontoTests: XCTestCase {
     func testAblehnungOderNetzfehlerNimmtDieFreigabeNichtZurueck() async throws {
         let ordner = try tempOrdner()
         let bund = SpeicherSchluesselbund()
-        let d = try dienst(SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(200), antwort(401), antwort(403)]), bund: bund, ordner: ordner)
+        let d = try dienst(SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson), antwort(404), antwort(404), antwort(200), antwort(401), antwort(403)]), bund: bund, ordner: ordner)
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertTrue(d.loveaErlaubt)
         XCTAssertTrue(d.freigabeAktuell)

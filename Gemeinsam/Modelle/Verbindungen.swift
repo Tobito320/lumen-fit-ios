@@ -68,7 +68,9 @@ struct VerbindungEinstellung: Codable, Equatable, Sendable {
     /// Eigener Name für die Person, nur für meine Anzeige.
     var name = ""
 
-    init() {}
+    init(zeigt: [String] = [], ausblenden: [String] = [], pause: Bool = false, mitteilungen: Bool = true, favorit: Bool = false, name: String = "") {
+        self.zeigt = zeigt; self.ausblenden = ausblenden; self.pause = pause; self.mitteilungen = mitteilungen; self.favorit = favorit; self.name = name
+    }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
