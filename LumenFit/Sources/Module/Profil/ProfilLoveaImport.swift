@@ -127,6 +127,8 @@ struct ProfilLoveaErgebnis: Equatable, Sendable {
     var geplant: [String: Int] = [:]
     var wiedergefunden: [String: Int] = [:]
     var uebersprungenArt: [String: Int] = [:]
+    /// Was aus Loveas Abgabe und den Arten ohne Leser geworden ist, je Gruppe (siehe `ProfilLoveaUebernahme`).
+    var uebernahme: [String: ProfilLoveaUebernahmeBeleg] = [:]
 }
 
 enum ProfilLoveaImport {
@@ -283,6 +285,9 @@ enum ProfilLoveaImport {
         if ProfilSicherungLogik.hatDaten(daten), !bestaetigt { throw ProfilLoveaFehler.profilNichtLeer }
         let abzug = try await hole(zugang: zugang, lader: lader, stand: stand) { n in fortschritt("\(n) Einträge geladen") }
         let plan = plane(abzug, fuer: daten.profil)
-        return try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt("\(fertig) von \(gesamt) gespeichert") }
+        var ergebnis = try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt("\(fertig) von \(gesamt) gespeichert") }
+        // Danach, weil es nur Ops liest, die oben geschrieben wurden; ein zweiter Lauf findet alles schon vor und überschreibt nichts.
+        ergebnis.uebernahme = ProfilLoveaUebernahme.uebernehme(plan.ops, in: daten)
+        return ergebnis
     }
 }

@@ -62,6 +62,26 @@ test("Import-Beleg: nur freigegebene Konten, Eingabe geprüft, Größe begrenzt,
   assert.ok(!JSON.stringify(k).includes(GEHEIM));
 });
 
+test("Import-Beleg: Übernahme-Gruppen (Abgabe aus Lovea) werden geprüft und gespeichert, alte Apps ohne Feld gehen weiter", async () => {
+  const e = env();
+  await konto(e, "annika");
+  const senden = (body) => ruf(e, "POST", "/lovea/import-beleg", { headers: app(), body });
+  const gruppe = { geholt: 3, aelter: 2, uebernommen: 1, vorhanden: 0, roh: 0, unlesbar: 0, eintraege: 4, geschrieben: 4 };
+  assert.equal((await senden(beleg({ uebernahme: { "abgabe.lovea.gym.studioprofil": gruppe, "wecker.setzen": { geholt: 5, roh: 5, eintraege: 5 } } }))).status, 200);
+  const z = JSON.parse(e.DB.roh.prepare("SELECT wert FROM konto_merker WHERE schluessel = 'lovea_import_beleg'").get().wert);
+  assert.deepEqual(z.uebernahme["abgabe.lovea.gym.studioprofil"], gruppe);
+  assert.equal(z.uebernahme["wecker.setzen"].roh, 5);
+  assert.equal(z.uebernahme["wecker.setzen"].aelter, 0, "fehlende Zahl = 0");
+  for (const schlecht of [
+    beleg({ uebernahme: [] }), beleg({ uebernahme: { "Freitext mit Leerzeichen": gruppe } }), beleg({ uebernahme: { "abgabe.x": { geholt: 1.5 } } }),
+    beleg({ uebernahme: { "abgabe.x": { geholt: -1 } } }), beleg({ uebernahme: { "abgabe.x": "text" } }),
+    beleg({ uebernahme: Object.fromEntries(Array.from({ length: 61 }, (_, i) => [`abgabe.g${i}`, gruppe])) }),
+  ]) assert.equal((await senden(schlecht)).status, 400, JSON.stringify(schlecht).slice(0, 70));
+  assert.equal((await senden(beleg())).status, 200, "alte App ohne Feld");
+  const k = (await ruf(e, "GET", "/admin/import-beleg", { headers: admin })).json.konten[0];
+  assert.deepEqual(k.beleg.uebernahme, {});
+});
+
 test("Import-Fehler: Art aus fester Liste, zählt mit, Beleg bleibt daneben stehen", async () => {
   const e = env();
   await konto(e, "annika");

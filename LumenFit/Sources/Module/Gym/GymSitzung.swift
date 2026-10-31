@@ -69,6 +69,13 @@ final class GymSitzung: TrainingSteuerung {
     var tag: TrainingsTag? { training?.tag(id: laufende?.tag) }
     var einstellungen: Einstellungen { daten?.einstellungen.werte ?? Einstellungen() }
 
+    /// Nach dem Lovea-Import: die Dateien (`studio.json`, `geraete.json`, `defekte.json`) können sich geändert haben, die Speicher lesen sie neu.
+    func speicherNeuLaden() {
+        studios = [:]
+        geraeteStores = [:]
+        defektStores = [:]
+    }
+
     /// Das Studio-Profil des aktiven Profils; ein Objekt je Profil.
     var studio: StudioStore? {
         guard let d = daten else { return nil }

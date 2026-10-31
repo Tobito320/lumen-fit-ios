@@ -4,7 +4,9 @@
 //   node scripts/import-vergleich.mjs BELEG.json LOVEA.json [--konto ID]
 //   node scripts/import-vergleich.mjs --selbsttest
 // BELEG.json: der Beleg selbst, {"beleg": ...} oder die Admin-Antwort {"konten": [...]} (dann --konto ID, bei genau einem Konto ohne).
-// LOVEA.json: {"arten": {"schritte.setzen": 1234, ...}, "seqMax": 11698} (Anzahl Ops je Art der Person, gezählt bis seq <= seqMax des Belegs) oder nur die Karte {art: Anzahl}.
+// LOVEA.json: {"arten": {"schritte.setzen": 1234, ...}, "gruppen": {"abgabe.lovea.gym.studioprofil": 1, ...}, "seqMax": 11698} (Anzahl Ops je Art der Person, gezählt bis seq <= seqMax des Belegs)
+//   oder nur die Karte {art: Anzahl}. `gruppen` zählt dieselben Ops nach den Gruppen des Belegs (`uebernahme`, siehe `gruppeVon`); fehlt es, bleibt die Abgabe ungeprüft (Hinweis).
+//   Die Zählung macht `node scripts/import-vergleich.mjs --zaehle OPS.json [--bis SEQ]` aus einer Liste [{seq, art, d}] (Ops der Person aus Lovea).
 // Exit 0 nur, wenn für alle Health-Arten alles stimmt; sonst 1 (Abweichung), 2 (Eingabe unbrauchbar).
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -19,6 +21,36 @@ export const HEALTH_ARTEN = [
   "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen", "zyklus.tag", "zyklus.einstellung",
   "coach.nachricht", "wecker.setzen", "einkauf.liste", "kuehl.setzen", "kuehl.weg",
 ];
+
+// Arten, die im Beleg als Gruppe (`uebernahme`) mit eigener Zählung stehen, nicht nur als Art. Gleich wie ProfilLoveaUebernahme.opArten (Swift); der Test prüft das.
+export const OP_ARTEN = ["coach.nachricht", "wecker.setzen", "einkauf.liste", "kuehl.setzen", "kuehl.weg"];
+
+const GUELTIGE_ART = /^[a-z][A-Za-z0-9_.]{0,59}$/;
+
+/** Gruppe einer Op im Beleg (`uebernahme`), gleiche Regel wie ProfilLoveaUebernahme.einordnen; null = keine Gruppe. */
+export function gruppeVon(art, schluessel) {
+  if (OP_ARTEN.includes(art)) return art;
+  if (art !== "einstellung.setzen" || typeof schluessel !== "string") return null;
+  if (schluessel.startsWith("abgabe.tagesform.gefuehl.")) return "abgabe.tagesform.gefuehl";
+  if (schluessel.startsWith("abgabe.")) return GUELTIGE_ART.test(schluessel) ? schluessel : "abgabe.andere";
+  if (schluessel.startsWith("coach.")) return "einstellung.coach";
+  return null;
+}
+
+/** Zählt Ops [{seq, art, d}] nach Art und Gruppe, höchstens bis `bis` (seq). */
+export function zaehle(ops, bis = Infinity) {
+  const arten = {};
+  const gruppen = {};
+  let seqMax = 0;
+  for (const op of ops) {
+    if (!(op.seq <= bis)) continue;
+    seqMax = Math.max(seqMax, op.seq);
+    arten[op.art] = (arten[op.art] ?? 0) + 1;
+    const g = gruppeVon(op.art, op.d?.schluessel);
+    if (g && !OP_ARTEN.includes(g)) gruppen[g] = (gruppen[g] ?? 0) + 1;
+  }
+  return { arten, gruppen, seqMax };
+}
 
 const n = (x) => (Number.isInteger(x) ? x : 0);
 
@@ -59,7 +91,36 @@ export function vergleiche(beleg, lovea) {
     zeilen.push(`${marke} ${ist ? "H" : " "} ${art.padEnd(24)} Lovea ${String(l).padStart(6)} | ${rest}${fehler.length ? "  <- " + fehler.join("; ") : ""}`);
     if (fehler.length && (ist || b?.unbekannt > 0 || !b || n(b.geholt) !== l)) probleme.push(`${art}: ${fehler.join("; ")}`);
   }
+  uebernahmePruefen(beleg, lovea, zaehlung, zeilen, probleme);
   return { ok: probleme.length === 0, zeilen, probleme };
+}
+
+/** Gruppen ohne eigene Art: jede Einheit sichtbar oder bewusst roh, Zahlen stimmen mit Lovea überein, nichts unlesbar. */
+function uebernahmePruefen(beleg, lovea, zaehlung, zeilen, probleme) {
+  const u = beleg.uebernahme;
+  if (u !== undefined && (typeof u !== "object" || u === null || Array.isArray(u))) { probleme.push("Beleg: uebernahme unbrauchbar"); return; }
+  const ist = u ?? {};
+  const soll = { ...(lovea?.gruppen ?? {}) };
+  for (const art of OP_ARTEN) if (n(zaehlung[art]) > 0) soll[art] = n(zaehlung[art]);
+  if (!lovea?.gruppen) zeilen.push("Hinweis: keine gruppen in der Zählung, die Abgabe (abgabe.*, einstellung.coach) bleibt ungeprüft (Zählung mit --zaehle machen)");
+  for (const g of [...new Set([...Object.keys(ist), ...Object.keys(soll)])].sort()) {
+    const b = ist[g];
+    const l = n(soll[g]);
+    const fehler = [];
+    if (!b) {
+      if (l > 0) fehler.push(`Lovea ${l}, im Beleg nicht vorhanden`);
+    } else {
+      const einheiten = n(b.uebernommen) + n(b.vorhanden) + n(b.roh) + n(b.unlesbar);
+      if (lovea?.gruppen || OP_ARTEN.includes(g)) { if (n(b.geholt) !== l) fehler.push(`geholt ${n(b.geholt)} statt ${l} (Lovea)`); }
+      if (n(b.geholt) !== n(b.aelter) + einheiten) fehler.push(`geholt ${n(b.geholt)}, aber ${n(b.aelter)} ältere + ${einheiten} Einheiten`);
+      if (n(b.unlesbar) > 0) fehler.push(`${b.unlesbar} unlesbar oder nicht geschrieben`);
+      if (n(b.geschrieben) > n(b.eintraege)) fehler.push(`geschrieben ${n(b.geschrieben)} > Einträge ${n(b.eintraege)}`);
+    }
+    const marke = fehler.length ? "FEHLER" : "ok    ";
+    const rest = b ? `geholt ${n(b.geholt)} · sichtbar ${n(b.uebernommen)} · schon da ${n(b.vorhanden)} · nur im Log ${n(b.roh)} · Einträge ${n(b.geschrieben)}/${n(b.eintraege)}` : "-";
+    zeilen.push(`${marke} G ${g.padEnd(32)} Lovea ${String(l).padStart(6)} | ${rest}${fehler.length ? "  <- " + fehler.join("; ") : ""}`);
+    if (fehler.length) probleme.push(`${g}: ${fehler.join("; ")}`);
+  }
 }
 
 function belegAus(roh, kontoId) {
@@ -98,6 +159,32 @@ export function selbsttest() {
   const zuAusgeschlossen = kopie((k) => { k.arten["schlaf.setzen"] = { geholt: 2, ausgeschlossen: 2 }; });
   assert.equal(vergleiche(zuAusgeschlossen, { ...zahl, arten: { ...zahl.arten, "schlaf.setzen": 2 } }).ok, false, "Health-Art nicht übernommen");
   assert.equal(vergleiche({}, zahl).ok, false);
+  // Gruppen: Abgabe aus Lovea
+  const grp = { geholt: 3, aelter: 2, uebernommen: 1, vorhanden: 0, roh: 0, unlesbar: 0, eintraege: 4, geschrieben: 4 };
+  const mitGruppe = kopie((k) => { k.arten["wecker.setzen"] = { geholt: 2, roh: 2, geplant: 2, wiedergefunden: 2 }; k.uebernahme = { "abgabe.lovea.gym.studioprofil": grp, "wecker.setzen": { geholt: 2, roh: 2, eintraege: 2 } }; });
+  const zahlG = { arten: { ...zahl.arten, "wecker.setzen": 2 }, gruppen: { "abgabe.lovea.gym.studioprofil": 3 }, seqMax: 50 };
+  assert.equal(vergleiche(mitGruppe, zahlG).ok, true, "Gruppen gleich");
+  assert.equal(vergleiche(mitGruppe, { ...zahlG, gruppen: { "abgabe.lovea.gym.studioprofil": 4 } }).ok, false, "Lovea hat mehr Abgabe-Ops");
+  assert.equal(vergleiche(mitGruppe, { ...zahlG, gruppen: { ...zahlG.gruppen, "abgabe.lovea.wecker.v1": 1 } }).ok, false, "Gruppe fehlt im Beleg");
+  assert.equal(vergleiche(mitGruppe, { ...zahlG, arten: { ...zahl.arten, "wecker.setzen": 3 } }).ok, false, "Wecker-Ops: Lovea hat mehr");
+  assert.equal(vergleiche(kopie((k) => { k.uebernahme = { "abgabe.x": { ...grp, unlesbar: 1, uebernommen: 0 } }; }), { ...zahl, gruppen: { "abgabe.x": 3 } }).ok, false, "unlesbar");
+  assert.equal(vergleiche(kopie((k) => { k.uebernahme = { "abgabe.x": { ...grp, aelter: 0 } }; }), { ...zahl, gruppen: { "abgabe.x": 3 } }).ok, false, "Einheiten passen nicht zu geholt");
+  assert.equal(vergleiche(mitGruppe, { arten: zahlG.arten, seqMax: 50 }).ok, true, "ohne gruppen: Hinweis, kein Fehler");
+  // Zählung
+  const z = zaehle([
+    { seq: 1, art: "einstellung.setzen", d: { schluessel: "abgabe.tagesform.gefuehl.2026-10-01" } },
+    { seq: 2, art: "einstellung.setzen", d: { schluessel: "abgabe.tagesform.gefuehl.2026-10-02" } },
+    { seq: 3, art: "einstellung.setzen", d: { schluessel: "coach.ton" } },
+    { seq: 4, art: "einstellung.setzen", d: { schluessel: "ziel.schritte" } },
+    { seq: 5, art: "wecker.setzen", d: {} },
+    { seq: 99, art: "wecker.setzen", d: {} },
+  ], 50);
+  assert.deepEqual(z.gruppen, { "abgabe.tagesform.gefuehl": 2, "einstellung.coach": 1 });
+  assert.equal(z.arten["wecker.setzen"], 1, "seq über der Grenze zählt nicht");
+  assert.equal(z.arten["einstellung.setzen"], 4);
+  assert.equal(z.seqMax, 5);
+  assert.equal(gruppeVon("einstellung.setzen", "abgabe." + "x".repeat(70)), "abgabe.andere");
+  assert.equal(gruppeVon("einstellung.setzen", "ziel.x"), null);
   assert.equal(belegAus({ konten: [{ id: "a", beleg: gut }] }).seqMax, 50);
   console.log("Selbsttest ok");
 }
@@ -105,6 +192,13 @@ export function selbsttest() {
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const args = process.argv.slice(2);
   if (args.includes("--selbsttest")) { selbsttest(); process.exit(0); }
+  if (args[0] === "--zaehle") {
+    const bi = args.indexOf("--bis");
+    const bis = bi >= 0 ? Number(args[bi + 1]) : Infinity;
+    if (!args[1] || Number.isNaN(bis)) { console.error("Aufruf: import-vergleich.mjs --zaehle OPS.json [--bis SEQ]"); process.exit(2); }
+    try { console.log(JSON.stringify(zaehle(JSON.parse(readFileSync(args[1], "utf8")), bis))); process.exit(0); }
+    catch (e) { console.error("Eingabe unbrauchbar:", e.message); process.exit(2); }
+  }
   const i = args.indexOf("--konto");
   const kontoId = i >= 0 ? args.splice(i, 2)[1] : undefined;
   if (args.length !== 2) { console.error("Aufruf: import-vergleich.mjs BELEG.json LOVEA.json [--konto ID] | --selbsttest"); process.exit(2); }

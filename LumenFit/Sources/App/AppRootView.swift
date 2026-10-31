@@ -97,7 +97,9 @@ struct AppRootView: View {
                 einstellungen.aendere { $0.loveaVerbunden = false }
             }
         }
-        await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http)
+        if await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http) {
+            (umgebung.trainingSteuerung as? GymSitzung)?.speicherNeuLaden()   // Studio, Geräte und Defekt-Notizen aus der Abgabe sind jetzt da
+        }
         umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())   // der Partner-Stand vom Server liegt jetzt da
     }
 }

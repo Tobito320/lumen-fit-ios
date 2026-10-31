@@ -136,12 +136,11 @@ final class ProfilLoveaImportTests: XCTestCase {
         for art in ["gym.plan", "gym.checkin", "gym.uebung", "gym.checkout", "gym.loeschen", "cardio.setzen", "essen.setzen", "lebensmittel.favorit",
                     "koerper.setzen", "habit.setzen", "habit.anlegen", "habit.loeschen",
                     "schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen", "zyklus.tag", "zyklus.einstellung"] { XCTAssertEqual(b(art), .uebernehmen, art) }
-        for art in ["coach.nachricht"] { XCTAssertEqual(b(art), .rohBehalten, art) }
+        for art in ["coach.nachricht", "wecker.setzen"] { XCTAssertEqual(b(art), .rohBehalten, art) }
         XCTAssertEqual(b("nachricht.neu"), .ausschliessen("Chat"))
         XCTAssertEqual(b("entwurf.setzen"), .ausschliessen("Chat"))
         XCTAssertEqual(b("notizbuch.setzen"), .ausschliessen("Notizen"))
         XCTAssertEqual(b("termin.setzen"), .ausschliessen("Kalender und Orte"))
-        XCTAssertEqual(b("wecker.setzen"), .ausschliessen("Wecker und Erinnerungen"))
         XCTAssertEqual(b("figur.aussehen"), .ausschliessen("Figuren und Shop"))
         XCTAssertEqual(b("spiel.ergebnis"), .ausschliessen("Spiele"))
         XCTAssertEqual(b("zeichnung.op"), .ausschliessen("Zeichnen und Galerie"))

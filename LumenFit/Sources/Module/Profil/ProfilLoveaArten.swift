@@ -23,18 +23,20 @@ enum ProfilLoveaArten {
         "zyklus.tag", "zyklus.einstellung",
     ]
 
-    /// Health-Arten ohne Leser in Lumen Fit. Roh behalten, im Bericht genannt. `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank)
-    /// aus älteren Lovea-Fassungen: kein Leser hier, aber nichts geht verloren.
-    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg"]
+    /// Arten, die Lumen Fit nicht selbst liest, aber nicht verlieren darf. Roh im Log, im Bericht genannt (`ProfilLoveaUebernahme`: `coach.nachricht` wird dazu
+    /// als `fit.coach.nachricht` sichtbar). `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank) aus älteren Lovea-Fassungen: keine
+    /// Ansicht hier. `wecker.setzen` ist die Weckzeit, die Lovea dem Partner zeigt: Wecker gehören zu Lumen Alarm, Lumen Fit ist nur Health (Umfang-Gate), und
+    /// beim Entfernen in Lovea darf diese Zeit nicht verschwinden.
+    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen"]
 
-    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach und die Konsistenz-Kategorien. Der Rest ist Lovea-Oberfläche.
-    static let einstellungPraefixe = ["ziel.", "coach.", "konsistenz."]
+    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach, die Konsistenz-Kategorien und die Abgabe aus Lovea
+    /// (`abgabe.*`: was nur auf dem Lovea-Gerät lag, siehe `ProfilLoveaUebernahme`). Der Rest ist Lovea-Oberfläche.
+    static let einstellungPraefixe = ["ziel.", "coach.", "konsistenz.", "abgabe."]
 
     private static let gruppen: [(grund: String, exakt: Set<String>, praefixe: [String])] = [
         ("Chat", ["entwurf.setzen", "geste", "gruss", "gefuehl.setzen"], ["nachricht.", "snap.", "sprachpost.", "medium.", "brief."]),
         ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "spiegel.setzen"], ["notizbuch."]),
         ("Kalender und Orte", ["jahrestag.setzen", "dates.idee", "puenktlich.setzen", "muster.setzen", "muster.loeschen", "ausnahme.setzen"], ["termin.", "treffen.", "ort."]),
-        ("Wecker und Erinnerungen", ["wecker.setzen"], []),
         ("Figuren und Shop", ["stern"], ["figur.", "look.", "katze.", "shop.", "punkte."]),
         ("Spiele", ["wuerfel.gezogen"], ["spiel.", "frage."]),
         ("Lovea-Technik", ["app.kann"], []),
