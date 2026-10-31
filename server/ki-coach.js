@@ -1,6 +1,7 @@
 // Quelle: Lovea server/coach.js und coach-anweisung.js (Anweisung und Kontext, gekürzt; ohne Marker, Gedächtnis und Durable Object).
 // POST /ki/coach: Frage der Person + Zusammenfassung ihrer Zahlen -> Antwort des Coachs (OpenAI Responses API).
-// Aus bis der Schalter `kiCoachErlaubt` (Konto oder global) true ist UND das Secret OPENAI_API_KEY gesetzt ist. Gesundheitsdaten gehen nur an OpenAI.
+// Aus bis der Schalter `kiCoachErlaubt` (Konto oder global) true ist. Konten mit lovea_person fragen über die Dienstbindung LOVEA (POST /agent/ki des Lovea-Servers,
+// dort liegen Schlüssel, Modell und das 10-USD-Buch; hier kein OpenAI-Schlüssel); andere Konten brauchen das Secret OPENAI_API_KEY. Gesundheitsdaten gehen nur an OpenAI.
 // Der Server übernimmt nichts roh: jedes Feld wird geprüft, begrenzt und neu zusammengesetzt. Nichts wird geloggt oder gespeichert (nur ein Zähler).
 import { berlinTag, fehlerAntwort, nein, text, textAusAntwort, zahl, zaehlen, zurueck } from "./ki-foto.js";
 
@@ -141,8 +142,18 @@ export function knoepfeBereinigen(roh) {
   return aus.slice(0, 2);
 }
 
+// Fehler des Lovea-Servers -> Fehlerart der App: Schlüssel oder Bindung falsch und Buch voll heißen "nicht erreichbar" statt Scheinantwort.
+async function loveaFehler(res) {
+  let j = null;
+  try { j = await res.json(); } catch { /* kein JSON */ }
+  if (res.status === 401 || res.status === 403 || res.status === 503 || j?.fehler === "nicht eingerichtet") return nein(503, "nichtEingerichtet");
+  if (j?.fehler === "budget") return nein(503, "guthaben");
+  if (res.status === 429) return nein(429, "zuVieleAnfragen");
+  return nein(502, "kiFehler");
+}
+
 /**
- * hilfen: { kontoPruefen, zusammen, globaleConfig } aus index.js (kein Import von dort, sonst ein Kreis).
+ * hilfen: { kontoPruefen, zusammen, globaleConfig, loveaHolen? } aus index.js (kein Import von dort, sonst ein Kreis).
  * holen: der Abruf zu OpenAI; Standard ist das globale fetch. Nie die Dienstbindung LOVEA, sonst ginge der Schlüssel an den falschen Worker.
  * Kostengrenze: Schalter je Konto, Tageslimit und Monatslimit je Konto (Zähler in ki_nutzung unter eigenem Schlüssel), kleine Ausgabe. Eine Frage zählt, sobald sie
  * angenommen ist; schlägt sie danach fehl, wird sie zurückgegeben.
@@ -151,7 +162,8 @@ export async function kiCoach(request, env, hilfen, holen = (u, o) => fetch(u, o
   const { konto, antwort } = await hilfen.kontoPruefen(request, env);
   if (antwort) return antwort;
   if (hilfen.zusammen(konto, await hilfen.globaleConfig(env)).kiCoachErlaubt !== true) return nein(403, "nichtErlaubt");
-  if (!env.OPENAI_API_KEY) return nein(503, "nichtEingerichtet");
+  const ueberLovea = Boolean(konto.lovea_person);
+  if (ueberLovea ? !env.LOVEA || !env.LOVEA_KEY : !env.OPENAI_API_KEY) return nein(503, "nichtEingerichtet");
 
   if (Number(request.headers.get("content-length")) > BODY_MAX) return nein(413, "zuGross");
   const roh = await request.text();
@@ -172,36 +184,45 @@ export async function kiCoach(request, env, hilfen, holen = (u, o) => fetch(u, o
   }
   const alleZurueck = async () => { await zurueck(env, schluessel, tag); await zurueck(env, schluessel, monat); };
 
+  const system = systemBauen(a, jetzt);
+  const verlauf = [...a.verlauf, { role: "user", content: a.frage }];
   let res;
   try {
-    res = await holen(OPENAI_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODELL,
-        store: false,
-        instructions: systemBauen(a, jetzt),
-        input: [...a.verlauf, { role: "user", content: a.frage }],
-        reasoning: { effort: "low" },
-        max_output_tokens: 1200,
-        prompt_cache_key: "lumen-coach-v1",
-        text: { format: { type: "json_schema", name: "coach", strict: true, schema: COACH_SCHEMA } },
-      }),
-      signal: AbortSignal.timeout(25_000),
-    });
+    res = ueberLovea
+      ? await (hilfen.loveaHolen ?? ((u, o) => env.LOVEA.fetch(u, o)))(`${env.LOVEA_URL ?? "https://lovea.intern"}/agent/ki`, {
+        method: "POST",
+        headers: { "X-Lovea-Key": env.LOVEA_KEY, "X-Lovea-Person": konto.lovea_person, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "coach", system, schema: COACH_SCHEMA, verlauf, maxTokens: 1200 }),
+        signal: AbortSignal.timeout(25_000),
+      })
+      : await holen(OPENAI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: MODELL,
+          store: false,
+          instructions: system,
+          input: verlauf,
+          reasoning: { effort: "low" },
+          max_output_tokens: 1200,
+          prompt_cache_key: "lumen-coach-v1",
+          text: { format: { type: "json_schema", name: "coach", strict: true, schema: COACH_SCHEMA } },
+        }),
+        signal: AbortSignal.timeout(25_000),
+      });
   } catch {
     await alleZurueck();
     return nein(502, "netz");
   }
   if (!res.ok) {
     await alleZurueck();
-    return fehlerAntwort(res);
+    return ueberLovea ? loveaFehler(res) : fehlerAntwort(res);
   }
   let ergebnis;
   try {
     const j = await res.json();
     if (j?.status === "incomplete" || j?.error) throw new Error("unvollstaendig");
-    ergebnis = JSON.parse(textAusAntwort(j));
+    ergebnis = JSON.parse(ueberLovea ? j.text : textAusAntwort(j));
   } catch {
     await alleZurueck();
     return nein(502, "kiFehler");

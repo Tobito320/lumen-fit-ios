@@ -576,7 +576,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
-  if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
+  if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig, loveaHolen: holen }, kiHolen);
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }
