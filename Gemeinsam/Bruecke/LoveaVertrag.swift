@@ -88,6 +88,8 @@ struct BandWuenscheDatei: Codable, Equatable, Sendable {
     var wuensche: [BandWunsch]
     /// Nur von Lumen Alarm: je Weckzeit mit Wünschen die Schritte-Pflicht. Fehlt bei Lovea.
     var wecker: [WeckFenster]?
+
+    enum CodingKeys: String, CodingKey { case version, wuensche, wecker }
 }
 
 extension BandWuenscheDatei {

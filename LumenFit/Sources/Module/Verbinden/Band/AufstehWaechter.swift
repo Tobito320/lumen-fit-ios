@@ -80,7 +80,7 @@ final class AufstehWaechter {
     /// Aufruf nach jedem Verarbeiten der Wünsche (Start, Vordergrund, Darwin, Takt): startet oder beendet das Zählen.
     func anstossen() {
         guard let f = Self.aktives(fenster(), jetzt: uhr(), offen: offen), !erreicht.contains(f.weckzeit) else { stoppe(); return }
-        if let datei = bisher(), datei.weckzeit == f.weckzeit, datei.aufstanden {
+        if let datei = bisher(), datei.weckzeit == f.weckzeit, datei.aufgestanden {
             erreicht.insert(f.weckzeit)
             stoppe()
             return

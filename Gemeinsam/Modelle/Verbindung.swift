@@ -194,6 +194,8 @@ struct BandStatusDatei: Codable, Equatable, Sendable {
     var zuletztGesehen: Date?
     var staerke: Int?
     var schritteHeute: Int?
+
+    enum CodingKeys: String, CodingKey { case version, geschrieben, verbunden, akkuProzent, name, bluetoothAn, laedt, zuletztGesehen, staerke, schritteHeute }
 }
 
 extension BandStatusDatei {

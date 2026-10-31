@@ -46,7 +46,7 @@ final class AlarmUebernahmeTests: XCTestCase {
         XCTAssertEqual(dienst.weitergereicht()?.person, "person-a")
     }
 
-    func testFitJsonEnthaeltNurZahlen() throws {
+    func testFitJsonHatGenauDieFelderDesVertrags() throws {
         try uebergabe()
         dienst.weitergeben(person: "person-a", jetzt: VerbindenTest.jetzt)
         let roh = try JSONSerialization.jsonObject(with: Data(contentsOf: ziel.appendingPathComponent("fit.json"))) as? [String: Any]
