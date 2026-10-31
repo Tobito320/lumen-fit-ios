@@ -16,7 +16,7 @@ enum CoachPersona {
     static let fehlerText = "Gerade nicht erreichbar, ich merke mir deine Frage."
 
     /// Text, wenn kein Modell antwortet und die Regeln die Frage nicht wirklich verstehen: ehrlich, keine Scheinantwort.
-    static let nichtVerstandenText = "Das kann ich gerade nicht beantworten, der KI-Coach ist nicht erreichbar. Kurze Fragen wie Tagesbericht gehen weiter."
+    static let nichtVerstandenText = "Der Coach kann gerade nicht antworten. Kurze Fragen wie Tagesbericht gehen weiter."
 
     /// Beide Fehlertexte zeigt der Chat ruhig mit Lumi und ohne Einblenden.
     static func istFehler(_ text: String) -> Bool { text == fehlerText || text == nichtVerstandenText }

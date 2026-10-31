@@ -49,13 +49,13 @@ final class CoachServerTests: XCTestCase {
     }
 
     func testFaelltDerServerAusGibtEsKeineScheinantwortZurLangenFrage() async {
-        for verhalten in [Verhalten.fehler, .haengt] {
+        for (verhalten, erwartet) in [(Verhalten.fehler, CoachMotorFehler.nichtBereit), (.haengt, .zeitUeberschritten)] {
             let server = Motor("Server", verhalten), apple = Motor("Apple", .antwort("Heute fühlst du dich bereit.")), regeln = Motor("Regeln", .antwort("Regel"))
             do {
                 _ = try await wahl(server: server, apple: apple, regeln: regeln, serverFrist: 0.2).antworte(CoachTestBau.anfrage(langeFrage))
                 XCTFail("hätte ehrlich scheitern müssen")
             } catch {
-                XCTAssertEqual(error as? CoachMotorFehler, .nichtVerstanden)
+                XCTAssertEqual(error as? CoachMotorFehler, erwartet, "der Fehler des Servers geht weiter, damit der Chat \"Nochmal\" anbietet")
             }
             XCTAssertEqual(apple.fragen, 0)
             XCTAssertEqual(regeln.fragen, 0, "die Regeln raten nicht bei einer Frage, die sie nicht verstehen")
@@ -140,6 +140,20 @@ final class CoachServerTests: XCTestCase {
         XCTAssertFalse(letzte.text.contains("Heute fühlst du dich bereit"))
     }
 
+    @MainActor
+    func testAusgefallenerServerGibtDenRuhigenFehlertextMitNochmalUndMerktDieFrage() async throws {
+        let wahl = CoachWahlMotor(modell: Motor("Apple", bereit: false, .fehler), regeln: Motor("Regeln", .antwort("Regel")), frist: 1,
+                                  server: Motor("Server", .fehler), serverFrist: 1)
+        let (u, _, _) = try CoachTestBau.umgebung(motor: wahl)
+        let modell = CoachModell(umgebung: u)
+        modell.senden(langeFrage)
+        while modell.denkt { await Task.yield() }
+        let letzte = try XCTUnwrap(modell.verlauf.last)
+        XCTAssertEqual(letzte.text, CoachPersona.fehlerText)
+        XCTAssertEqual(letzte.chips.map(\.text), ["Nochmal"])
+        XCTAssertEqual(modell.einstellungen?.stand.wartendeFrage, langeFrage)
+    }
+
     // MARK: - Schlaf aus allen Quellen
 
     @MainActor
@@ -171,6 +185,11 @@ final class CoachServerTests: XCTestCase {
         XCTAssertEqual(a.kontext.schlafTage, [CoachServerMotor.ServerSchlafTag(tag: "2026-10-31", minuten: 450)])
         XCTAssertEqual(a.kontext.schlafMinuten, 450)
         XCTAssertEqual(a.kontext.schritteTage.first?.n, 9000)
+
+        // "Nochmal": die Frage steht schon als letzte Nachricht im Verlauf und geht nicht doppelt mit.
+        let mitFrage = verlauf + [CoachTestBau.nachricht("c", .nutzer, " \(langeFrage) ", Date(timeIntervalSince1970: 3))]
+        let b = CoachServerMotor.anfrageBauen(CoachTestBau.anfrage(langeFrage, verlauf: mitFrage), eingabe: nil)
+        XCTAssertEqual(b.verlauf.count, 2)
     }
 
     private struct Zugang: EssenKiZugang {

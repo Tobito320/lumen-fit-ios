@@ -96,7 +96,10 @@ struct CoachServerMotor: CoachMotor {
         let schritte = neueste(e?.schritte ?? [:]).map { ServerSchrittTag(tag: $0.tag, n: $0.wert) }
         let schlaf = neueste(e?.schlaf ?? [:]).map { ServerSchlafTag(tag: $0.tag, minuten: $0.wert) }
         let z = k.ziele
-        let verlauf = a.verlauf.suffix(12).map { ServerVerlaufZeile(rolle: $0.rolle == .nutzer ? "du" : "coach", text: String(CoachMarker.zerlegen($0.text).text.prefix(400))) }
+        // Beim "Nochmal" steht die Frage schon im Verlauf: nicht doppelt senden.
+        var bisher = a.verlauf
+        if let letzte = bisher.last, letzte.rolle == .nutzer, letzte.text.trimmingCharacters(in: .whitespacesAndNewlines) == a.frage { bisher.removeLast() }
+        let verlauf = bisher.suffix(12).map { ServerVerlaufZeile(rolle: $0.rolle == .nutzer ? "du" : "coach", text: String(CoachMarker.zerlegen($0.text).text.prefix(400))) }
         let kontext = ServerKontext(
             tag: k.tag, schlafMinuten: k.schlafMinuten, bereitschaft: k.bereitschaft, schritte: k.schritte, letztesTraining: k.letztesTraining,
             stimmung: k.stimmung.rawValue,

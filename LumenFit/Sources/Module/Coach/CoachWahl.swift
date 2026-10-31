@@ -20,8 +20,9 @@ enum CoachWahl {
 }
 
 /// Der Motor, den die App benutzt (`AppUmgebung.coachMotor`): wählt je Frage. Gibt der Server dem Konto das echte Modell frei (`server`), antwortet nur
-/// das; fällt es aus, antworten die Regeln allein bei Fragen, die sie wirklich verstehen (`CoachAbsicht.versteht`), sonst kommt `nichtVerstanden`
-/// und die App sagt ehrlich, dass der Coach gerade nicht antworten kann. Ohne Server: Apples Modell, geprüft, sonst dieselbe Regel.
+/// das; fällt es aus, antworten die Regeln allein bei Fragen, die sie wirklich verstehen (`CoachAbsicht.versteht`), sonst geht der Fehler weiter und die
+/// App sagt ehrlich, dass der Coach gerade nicht antworten kann (mit "Nochmal"). Ohne Server: Apples Modell, geprüft, sonst dieselbe Regel; versteht
+/// sie die Frage nicht, kommt `nichtVerstanden`.
 struct CoachWahlMotor: CoachMotor {
     let modell: any CoachMotor
     let regeln: any CoachMotor
@@ -39,8 +40,11 @@ struct CoachWahlMotor: CoachMotor {
                 return try await Self.mitFrist(serverFrist) { try await server.antworte(anfrage) }
             } catch is CancellationError {
                 throw CancellationError()
-            } catch {
-                return try await nurVerstandenes(anfrage)
+            } catch let fehler {
+                // Der Server war da und hat nicht geantwortet: nur eine Frage, die die Regeln wirklich verstehen, bekommt eine Regel-Antwort.
+                // Sonst geht der Fehler weiter (ruhiger Text mit "Nochmal", die Frage bleibt gemerkt).
+                guard CoachAbsicht.versteht(anfrage.frage) else { throw fehler }
+                return try await regeln.antworte(anfrage)
             }
         }
         let gewaehlt = await CoachWahl.motor(modell: modell, regeln: regeln)
