@@ -130,3 +130,33 @@ private struct LoveaKartenScroll: ViewModifier {
 extension View {
     func karteScrollt() -> some View { modifier(LoveaKartenScroll()) }
 }
+
+/// Serie wächst um genau 1: Zahl hüpft kurz, Herzen platzen (einmal pro Tag und Schlüssel). Nur im Thema Lovea (Quelle: Lovea `serieFeier`).
+private struct LoveaSerieFeier: ViewModifier {
+    let serie: Int
+    let schluessel: String
+    @Environment(\.lumenThema) private var thema
+    @Environment(\.accessibilityReduceMotion) private var bewegungReduziert
+    @State private var hupft = false
+    @State private var feiert = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(hupft ? 1.3 : 1)
+            .overlay { if feiert { LoveaHerzenSpritzer(anzahl: 6, radius: 26, groesse: 9) } }
+            .onChange(of: serie) { alt, neu in
+                guard thema == .lovea, neu == alt + 1, LoveaTagesMoment.einmalHeute(schluessel) else { return }
+                feiert = true
+                if !bewegungReduziert { withAnimation(Feder.schnell) { hupft = true } }
+                Task {
+                    try? await Task.sleep(for: .milliseconds(800))
+                    hupft = false
+                    feiert = false
+                }
+            }
+    }
+}
+
+extension View {
+    func serieFeier(_ serie: Int, schluessel: String) -> some View { modifier(LoveaSerieFeier(serie: serie, schluessel: schluessel)) }
+}

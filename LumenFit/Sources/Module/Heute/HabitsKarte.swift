@@ -109,6 +109,7 @@ private struct HeuteHabitReihe: View {
                 .animation(bewegungAus ? nil : Feder.weich, value: zeile.serie)
         }
         .foregroundStyle(zeile.serie > 0 ? zeile.habit.tint : palette.text2)
+        .serieFeier(zeile.serie, schluessel: "serie.habit.\(zeile.habit.id)")
         .accessibilityHidden(true)
     }
 
