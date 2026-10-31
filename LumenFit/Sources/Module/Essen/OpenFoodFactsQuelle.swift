@@ -61,16 +61,27 @@ actor OpenFoodFactsQuelle {
         return ErnaehrungLogik.offProdukt(daten).map(Self.alsOff)
     }
 
+    /// Erst nur DACH und EU, geordnet nach `SuchRang`; bleibt das leer, einmal ohne Länderfilter (seltene Importware).
     func suche(_ text: String) async throws -> [Lebensmittel] {
         let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty, var teile = URLComponents(string: "https://search.openfoodfacts.org/search") else { return [] }
-        teile.queryItems = [URLQueryItem(name: "q", value: q), URLQueryItem(name: "page_size", value: "20"),
+        guard !q.isEmpty else { return [] }
+        // Lucene-Zeichen raus: ein Anführungszeichen oder Doppelpunkt im Text bräche die Anfrage mit Länderfilter.
+        let sauber = String(q.map { $0.isLetter || $0.isNumber ? $0 : " " }).split(separator: " ").joined(separator: " ")
+        var kandidaten: [SuchKandidat] = []
+        if !sauber.isEmpty { kandidaten = try await abfrage(sauber + " " + SuchRang.laenderFilter) }
+        if kandidaten.isEmpty { kandidaten = try await abfrage(q) }
+        return SuchRang.rangfolge(kandidaten, text: q).map(Self.alsOff)
+    }
+
+    private func abfrage(_ q: String) async throws -> [SuchKandidat] {
+        guard var teile = URLComponents(string: "https://search.openfoodfacts.org/search") else { throw OffFehler.antwort }
+        teile.queryItems = [URLQueryItem(name: "q", value: q), URLQueryItem(name: "page_size", value: "40"),
                             URLQueryItem(name: "langs", value: "de"),
-                            URLQueryItem(name: "fields", value: "code,product_name,brands,nutriments")]
+                            URLQueryItem(name: "fields", value: ErnaehrungLogik.offFelder + ",countries_tags,popularity_key,unique_scans_n")]
         guard let url = teile.url else { throw OffFehler.antwort }
         let (daten, status) = try await hole(url, suche: true)
         guard status == 200 else { throw OffFehler.server(status) }
-        return ErnaehrungLogik.offSuche(daten).map(Self.alsOff)
+        return SuchRang.kandidaten(daten)
     }
 
     private static func alsOff(_ l: Lebensmittel) -> Lebensmittel {
