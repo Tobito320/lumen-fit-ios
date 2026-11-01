@@ -31,7 +31,8 @@ struct RouteAnsicht: View {
         case .quellen: QuellenView()
         case .meilensteine: MeilensteineView()
         case .lumi: LumiSeiteView()
-        case .zyklus: ZyklusRouteSeite()
+        // Zyklus gehört nur in Lovea: ein alter Link landet auf Heute.
+        case .zyklus: HeuteTabView()
         }
     }
 

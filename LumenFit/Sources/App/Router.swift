@@ -13,6 +13,9 @@ final class Router {
 
     func oeffne(_ route: Route) {
         switch route {
+        case .profil(.zyklus):
+            // Zyklus gehört nur in Lovea: ein alter Link oder ein gespeicherter Stand landet auf Heute.
+            wechsle(.heute, [])
         case .profil, .freund:
             blatt = route
         case .heute: wechsle(.heute, [])

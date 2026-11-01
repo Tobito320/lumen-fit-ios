@@ -35,8 +35,6 @@ struct ProfilBlattView: View {
                     link(symbol: "target", titel: "Ziele und Körper") { ZieleView() }
                     Haarlinie()
                     link(symbol: "heart.text.square.fill", titel: "Health-Zugriff") { ProfilHealthZugriffView() }
-                    Haarlinie()
-                    zyklusZeile
                 }
 
                 gruppe("Fortschritt") {
@@ -103,22 +101,6 @@ struct ProfilBlattView: View {
 
     private var sicherungZeile: String {
         ProfilSicherungStand.zeile(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
-    }
-
-    /// Zyklus: aus (Standard) nur ein Schalter, an ein Link auf die Zyklus-Seite.
-    @ViewBuilder
-    private var zyklusZeile: some View {
-        if let zyklus = umgebung.daten?.zyklus {
-            if zyklus.aktiv {
-                link(symbol: "circle.hexagongrid.fill", titel: "Zyklus") { ZyklusEinstieg(store: zyklus) }
-            } else {
-                Toggle("Zyklus verwenden", isOn: Binding(get: { false }, set: { an in if an { zyklus.aendere { $0.aktiv = true } } }))
-                    .toggleStyle(.lumenSchalter)
-                    .foregroundStyle(palette.text)
-                    .padding(.horizontal, Abstand.l)
-                    .frame(minHeight: Abstand.tippflaeche)
-            }
-        }
     }
 
     private var version: String {

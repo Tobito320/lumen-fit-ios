@@ -31,7 +31,7 @@ struct TagesZusammenfassung: Codable, Equatable, Sendable {
     var habitsFertig: [String]?
     /// Wassergläser von heute (Freigabe essen); Lovea braucht die Zahl für Punkte, `habitsFertig` sagt nur "Ziel erreicht".
     var wasserGlaeser: Int?
-    /// Phase und Tag des Zyklus in kurzen Hinweisen. Nur wenn die Person es in den Zyklus-Einstellungen erlaubt (kein Teil von `FreigabeArt`).
+    /// Phase und Tag des Zyklus (kein Teil von `FreigabeArt`). Lumen Fit schreibt und zeigt ihn nicht mehr (Zyklus nur in Lovea); das Feld bleibt, damit alte Dateien lesbar sind.
     var zyklus: ZyklusZusammenfassung?
     /// Trainingsplan: Name, Wochentage, Übungsnamen (Freigabe plan).
     var plan: PartnerPlan?

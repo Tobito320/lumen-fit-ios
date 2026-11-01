@@ -1,9 +1,9 @@
 import Foundation
 
-/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die zehn Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den
-/// Zyklus-Einstellungen selbst erlaubt hat). Die Namen sind die des Servers.
+/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die zehn Freigaben. Die Namen sind die des Servers. Der Zyklus gehört nur in Lovea:
+/// ein "zyklus" vom Server ist hier ein unbekannter Bereich und fällt beim Lesen weg (`init(rawValue:)` liefert nil).
 enum VerbindungBereich: String, CaseIterable, Sendable {
-    case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, stimmung, gewohnheiten, zyklus
+    case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, stimmung, gewohnheiten
 
     var freigabe: FreigabeArt? { FreigabeArt(rawValue: rawValue) }
 
@@ -19,7 +19,6 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .koerper: "Körperwerte"
         case .stimmung: "Stimmung"
         case .gewohnheiten: "Gewohnheiten"
-        case .zyklus: "Zyklus"
         }
     }
 
@@ -35,13 +34,11 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .koerper: "scalemass"
         case .stimmung: "face.smiling"
         case .gewohnheiten: "checkmark.circle"
-        case .zyklus: "circle.dotted"
         }
     }
 
     var erklaerung: String {
-        if let art = freigabe { return Self.text(art) }
-        return "Phase und Tag deines Zyklus in kurzen Hinweisen. Nur wenn du den Zyklus in den Zyklus-Einstellungen für andere erlaubst."
+        freigabe.map { Self.text($0) } ?? ""
     }
 
     private static func text(_ art: FreigabeArt) -> String {
@@ -206,17 +203,16 @@ enum VerbindungenLogik {
 
     nonisolated static func link(token: String) -> URL { RouteURL.url(fuer: .freund(daten: token)) }
 
-    /// Die Freigaben für die Lovea-Datei und die Vorschau: was die Lovea-Verbindung zeigt, ohne Zyklus; leer bei Pause oder ohne aktive Verbindung.
+    /// Die Freigaben für die Lovea-Datei und die Vorschau: was die Lovea-Verbindung zeigt; leer bei Pause oder ohne aktive Verbindung.
     nonisolated static func freigaben(fuer eintrag: VerbindungEintrag?) -> Set<FreigabeArt> {
         guard let eintrag, eintrag.aktiv, !eintrag.ich.pause else { return [] }
         return Set(eintrag.ich.zeigtBereiche.compactMap(\.freigabe))
     }
 
-    /// Die Bereiche, die diese App hochladen darf, als Freigaben (ohne Zyklus) und ob der Zyklus dazugehört.
-    nonisolated static func hochladen(_ antwort: VerbindungenAntwort?) -> (freigaben: Set<FreigabeArt>, zyklus: Bool) {
-        guard let antwort else { return ([], false) }
-        let b = antwort.teilenBereiche
-        return (Set(b.compactMap(\.freigabe)), b.contains(.zyklus))
+    /// Die Bereiche, die diese App hochladen darf, als Freigaben. Nie der Zyklus, auch wenn der Server ihn noch nennt: er gehört nur in Lovea.
+    nonisolated static func hochladen(_ antwort: VerbindungenAntwort?) -> Set<FreigabeArt> {
+        guard let antwort else { return [] }
+        return Set(antwort.teilenBereiche.compactMap(\.freigabe))
     }
 
     /// Schneidet eine Zusammenfassung auf die erlaubten Freigaben zu: Felder der anderen Bereiche fallen weg, nicht nur die Liste.
@@ -241,7 +237,7 @@ enum VerbindungenLogik {
         if d.freigaben.contains(.koerper) { h.koerper = alt.koerper }
         if d.freigaben.contains(.stimmung) { h.stimmung = alt.stimmung; h.stimmungWoche = alt.stimmungWoche }
         if d.freigaben.contains(.gewohnheiten) { h.gewohnheiten = alt.gewohnheiten }
-        d.heute = h   // Zyklus fällt immer weg: er kommt nur vom Server, der ihn nach der Freigabe der Verbindung prüft
+        d.heute = h   // Zyklus fällt immer weg: er gehört nur in Lovea
         d.ereignisse = datei.ereignisse.filter { d.freigaben.contains(ereignisFreigabe($0.art)) }
         return d
     }
