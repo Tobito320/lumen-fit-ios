@@ -99,7 +99,6 @@ struct HeuteTabView: View {
         if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
         if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
         PlanKarte(plan: s.plan) { starte(s.plan) }
-        ZyklusHinweisAnsicht()
         if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
         SchreibKarte(modell: m)
         CoachKachelView()

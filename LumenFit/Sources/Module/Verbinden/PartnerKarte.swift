@@ -51,10 +51,6 @@ struct PartnerKarte: View {
                 Haarlinie()
                 PartnerEnergieZeile(datei: datei)
             }
-            if bereich == .heute, let z = datei.heute.zyklus {
-                Haarlinie()
-                ZyklusPartnerZeile(zusammenfassung: z)
-            }
             if !einstiege.isEmpty {
                 Haarlinie()
                 PartnerEinstiegZeilen(einstiege: einstiege)

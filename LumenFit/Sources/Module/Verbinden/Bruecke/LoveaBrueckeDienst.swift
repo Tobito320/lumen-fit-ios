@@ -23,7 +23,7 @@ final class LoveaBrueckeDienst {
     private var letzteServer: ZusammenfassungDatei?
     /// Was die Verbindungen zu Personen erlauben hochzuladen (Bereiche, die mindestens eine aktive, nicht pausierte Verbindung zeigt). Ohne Verbindung: nichts,
     /// dann geht auch nichts zum Server. Gesetzt von `VerbindenDienste` aus dem Stand des Servers.
-    var hochladen: @MainActor () -> (freigaben: Set<FreigabeArt>, zyklus: Bool) = { ([], false) }
+    var hochladen: @MainActor () -> Set<FreigabeArt> = { [] }
 
     init(bruecke: any PartnerAustausch, quellen: Quellen, uhr: @escaping Uhr = { Date() }, sende: @escaping (String) -> Void = DarwinKanal.sende) {
         self.bruecke = bruecke
@@ -74,7 +74,7 @@ final class LoveaBrueckeDienst {
         guard let daten = quellen.daten() else { return false }
         let loveaAn = daten.einstellungen.werte.loveaVerbunden
         let teilen = hochladen()
-        let zumServer = !teilen.freigaben.isEmpty || teilen.zyklus
+        let zumServer = !teilen.isEmpty
         guard loveaAn || zumServer else { return false }
         let jetzt = uhr()
         let heute = Datum.text(jetzt)
@@ -100,10 +100,8 @@ final class LoveaBrueckeDienst {
     }
 
     /// Der Stand für den Server enthält nur Bereiche, die eine aktive Verbindung zeigt (ohne Verbindung geht nichts hinaus). Der Server filtert danach je Verbindung.
-    private func serverStandSenden(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis], teilen: (freigaben: Set<FreigabeArt>, zyklus: Bool)) {
-        var eingabe = eingabeBauen(daten, jetzt: jetzt, ereignisse: ereignisse, freigaben: teilen.freigaben)
-        if !teilen.zyklus { eingabe.zyklus = nil }
-        let datei = ZusammenfassungBauer.baue(eingabe)
+    private func serverStandSenden(_ daten: DatenSatz, jetzt: Date, ereignisse: [PartnerEreignis], teilen: Set<FreigabeArt>) {
+        let datei = ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: jetzt, ereignisse: ereignisse, freigaben: teilen))
         if let alt = letzteServer, Self.gleich(alt, datei), jetzt.timeIntervalSince(alt.geschrieben) < Self.auffrischen { return }
         bruecke.schreibe(serverStand: datei)
         letzteServer = datei
@@ -125,18 +123,15 @@ final class LoveaBrueckeDienst {
             schritteZiel: ziele.schritte, schritteWoche: zusatz.schritteWoche, gymTage: zusatz.gymTage, gymZiel: ziele.gymTageProWoche,
             schlafWoche: zusatz.schlafWoche, schlafZiel: ziele.schlafMinuten, energieStufe: zusatz.energie?.stufe.rawValue,
             energieGym: zusatz.energie?.gym, habitsFertig: zusatz.habitsFertig, wasserGlaeser: zusatz.wasserGlaeser,
-            zyklus: daten.zyklus.partnerZusammenfassung(),
             plan: ansichten.plan, verlauf: ansichten.verlauf, tagebuch: ansichten.tagebuch, tagebuchZiele: ansichten.tagebuchZiele, koerper: ansichten.koerper,
             stimmung: zusatz.stimmung, stimmungWoche: zusatz.stimmungWoche, gewohnheiten: zusatz.gewohnheiten)
     }
 
     /// Die Datei, wie sie jetzt geschrieben würde (Vorschau "das sieht dein Partner", Idee 84). Schreibt und merkt nichts.
-    /// `freigaben` und `zyklus`: für eine Person ihre Auswahl ("das sieht diese Person"); ohne Angabe die Freigaben des Profils.
-    func vorschau(freigaben: Set<FreigabeArt>? = nil, zyklus: Bool = true) -> ZusammenfassungDatei? {
+    /// `freigaben`: für eine Person ihre Auswahl ("das sieht diese Person"); ohne Angabe die Freigaben des Profils.
+    func vorschau(freigaben: Set<FreigabeArt>? = nil) -> ZusammenfassungDatei? {
         guard let daten = quellen.daten() else { return nil }
-        var eingabe = eingabeBauen(daten, jetzt: uhr(), ereignisse: eigeneEreignisse(daten).liste, freigaben: freigaben)
-        if !zyklus { eingabe.zyklus = nil }
-        return ZusammenfassungBauer.baue(eingabe)
+        return ZusammenfassungBauer.baue(eingabeBauen(daten, jetzt: uhr(), ereignisse: eigeneEreignisse(daten).liste, freigaben: freigaben))
     }
 
     /// Alles außer dem Zeitstempel gleich?

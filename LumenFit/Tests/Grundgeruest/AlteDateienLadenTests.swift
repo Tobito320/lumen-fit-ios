@@ -4,6 +4,31 @@ import XCTest
 /// Dateien aus älteren oder neueren Ständen dürfen nie dazu führen, dass der Store leer startet oder Daten verliert.
 @MainActor
 final class AlteDateienLadenTests: XCTestCase {
+    func testAlteZyklusDatenBleibenLesbarObwohlLumenFitDenZyklusNichtMehrZeigt() throws {
+        // Zyklus gehört nur in Lovea. Lumen Fit zeigt und schickt ihn nicht mehr, aber gespeicherte Werte, Ops und alte Server-Antworten bleiben lesbar.
+        let ordner = try tempOrdner()
+        try Data(#"{"aktiv":true,"sperre":false,"partnerZeigen":true,"gibtEsNochNicht":1}"#.utf8).write(to: ordner.appendingPathComponent("zyklus-lokal.json"))
+        let raum = LokalerRaum(ordner: ordner, profil: .testA)
+        var tag = ZyklusTag(id: "2026-10-29")
+        tag.blutung = .mittel
+        ZyklusStore(raum: raum, ordner: ordner).setze(tag)
+        let store = ZyklusStore(raum: raum, ordner: ordner)
+        XCTAssertTrue(store.aktiv, "der alte Schalter bleibt gespeichert")
+        XCTAssertFalse(store.werte.sperre)
+        XCTAssertEqual(store.tage["2026-10-29"]?.blutung, .mittel, "die Ops bleiben im Log")
+
+        let einstellung = try LoveaVertrag.decoder().decode(VerbindungEinstellung.self, from: Data(#"{"zeigt":["schritte","zyklus"],"ausblenden":["zyklus"]}"#.utf8))
+        XCTAssertEqual(einstellung.zeigt, ["schritte", "zyklus"], "der Text bleibt, nur der Bereich ist unbekannt")
+        XCTAssertEqual(einstellung.zeigtBereiche, [.schritte])
+        XCTAssertTrue(einstellung.ausgeblendet.isEmpty)
+
+        let heute = try LoveaVertrag.decoder().decode(
+            TagesZusammenfassung.self,
+            from: Data(#"{"tag":"2026-10-29","schritte":12,"zyklus":{"phase":"follikel","tag":3,"wunsch":"a","satz":"b","tipps":[]}}"#.utf8))
+        XCTAssertEqual(heute.schritte, 12)
+        XCTAssertEqual(heute.zyklus?.tag, 3, "eine alte Partner-Datei mit Zyklus bleibt lesbar")
+    }
+
     func testEinstellungenMitNurEinemFeldUndFremdenFeldernSindLesbar() throws {
         let ordner = try tempOrdner()
         try Data(#"{"thema":"wald","gibtEsNochNicht":{"a":1}}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))

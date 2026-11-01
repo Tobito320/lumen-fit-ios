@@ -35,10 +35,9 @@ final class VerbindungenLogikTests: XCTestCase {
     }
 
     func testHochladenFolgtDerTeilenListe() {
-        XCTAssertTrue(VerbindungenLogik.hochladen(nil).freigaben.isEmpty)
+        XCTAssertTrue(VerbindungenLogik.hochladen(nil).isEmpty)
         let h = VerbindungenLogik.hochladen(VerbindungenAntwort(teilen: ["schritte", "zyklus"]))
-        XCTAssertEqual(h.freigaben, [.schritte])
-        XCTAssertTrue(h.zyklus)
+        XCTAssertEqual(h, [.schritte], "Zyklus nennt der Server vielleicht noch, Lumen Fit lädt ihn nie hoch")
     }
 
     func testFreigabenFuerLoveaBraucheAktivUndKeinePause() {
@@ -118,7 +117,8 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertEqual(a.verbindungen.map(\.status), [.aktiv, .anfrageEingehend, .anfrageAusgehend])
         let e = try XCTUnwrap(a.verbindungen.first)
         XCTAssertTrue(e.lovea)
-        XCTAssertEqual(e.ich.zeigtBereiche.count, 11)
+        XCTAssertEqual(e.ich.zeigtBereiche.count, 10, "ein altes \"zyklus\" vom Server fällt beim Lesen weg")
+        XCTAssertFalse(e.ich.zeigt.isEmpty)
         XCTAssertEqual(e.ich.ausgeblendet, [.koerper])
         XCTAssertEqual(e.sichtbareBereiche, [.schritte, .gym])
         XCTAssertNotNil(e.zuletzt)

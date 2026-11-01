@@ -83,7 +83,7 @@ struct VerbindungPersonView: View {
     private func zeigstAbschnitt(_ e: VerbindungEintrag) -> some View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
         return VerbindenAbschnitt(titel: "Das zeigst du \(e.anzeigeName)",
-                                  fuss: "Neue Personen sehen nur Schritte und Gym. Zyklus sieht niemand, solange du ihn nicht selbst einschaltest. Es gehen nur Zusammenfassungen von heute hinaus.") {
+                                  fuss: "Neue Personen sehen nur Schritte und Gym. Es gehen nur Zusammenfassungen von heute hinaus.") {
             ForEach(VerbindungBereich.allCases, id: \.self) { b in
                 Toggle(isOn: Binding(get: { an.contains(b) }, set: { neu in
                     var n = an
@@ -99,7 +99,7 @@ struct VerbindungPersonView: View {
     private func vorschauAbschnitt(_ e: VerbindungEintrag) -> some View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
         let frei = Set(an.compactMap(\.freigabe))
-        let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau(freigaben: frei, zyklus: an.contains(.zyklus)).map(FreigabenVorschau.zeilen) ?? []
+        let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau(freigaben: frei).map(FreigabenVorschau.zeilen) ?? []
         return VerbindenAbschnitt(titel: "Das sieht \(e.anzeigeName)", fuss: "Genau diese Zeilen bekommt diese Person, nicht mehr.") {
             if an.isEmpty || e.ich.pause {
                 Text(e.ich.pause ? "Nichts, die Pause ist an." : "Nichts. Du zeigst dieser Person noch nichts.").foregroundStyle(palette.text2)

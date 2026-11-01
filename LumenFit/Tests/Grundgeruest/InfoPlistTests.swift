@@ -17,9 +17,12 @@ final class InfoPlistTests: XCTestCase {
         }
     }
 
-    func testZyklusBrauchtFaceIDTextUndNenntDenZyklusBeiHealth() {
+    func testHealthTextNenntKeinenZyklusMehr() {
+        // Zyklus gehört nur in Lovea. Der Face-ID-Text bleibt, solange der alte Zyklus-Code im Ziel liegt.
         XCTAssertFalse((info["NSFaceIDUsageDescription"] as? String ?? "").isEmpty)
-        XCTAssertTrue((info["NSHealthShareUsageDescription"] as? String ?? "").contains("Menstruationsfluss"))
+        let health = info["NSHealthShareUsageDescription"] as? String ?? ""
+        XCTAssertFalse(health.contains("Zyklus"))
+        XCTAssertFalse(health.contains("Menstruationsfluss"))
     }
 
     func testLinkSchemaLumenfit() throws {
