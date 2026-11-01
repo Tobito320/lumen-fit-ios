@@ -1,6 +1,7 @@
 import BackgroundTasks
 import Foundation
 import Observation
+import os
 
 /// Alles, was Ansichten und Module von außen brauchen: Profil, Navigation, Ereignisse, Gesundheit, die Ports und der `DatenSatz` des aktiven Profils.
 /// `geteilt` ist die eine Instanz der laufenden App (auch für Intents); im Test-Host ist es eine Vorschau ohne Modulstarts.
@@ -116,9 +117,16 @@ final class AppUmgebung {
     /// Module melden Aufgaben für den Hintergrund-Abruf an (BGTask `com.onlyus.lumen-fit.aktualisieren`); das Grundgerüst führt alle aus (höchstens 20 s) und plant neu.
     func beiAbruf(_ aufgabe: @escaping @MainActor () async -> Void) { abrufAufgaben.append(aufgabe) }
 
-    /// Führt alle angemeldeten Abruf-Aufgaben nacheinander aus, höchstens 20 Sekunden (danach wird abgebrochen).
+    /// Läuft gerade ein Abruf? Dann startet kein zweiter (die Health-Hintergrundlieferung meldet oft mehrmals kurz hintereinander).
+    @ObservationIgnored private var abrufLaeuft = false
+
+    /// Führt alle angemeldeten Abruf-Aufgaben nacheinander aus, höchstens 20 Sekunden: danach wird abgebrochen und die Funktion kehrt
+    /// zurück, auch wenn eine Aufgabe den Abbruch nicht beachtet (sonst endet der Hintergrundlauf nie und iOS beendet die App hart).
     func fuehreAbrufAus() async {
         ereignisse.senden(.healthAktualisiert)
+        guard !abrufLaeuft else { return }
+        abrufLaeuft = true
+        defer { abrufLaeuft = false }
         let aufgaben = abrufAufgaben
         let arbeit = Task { @MainActor in
             for aufgabe in aufgaben {
@@ -126,12 +134,18 @@ final class AppUmgebung {
                 await aufgabe()
             }
         }
-        let wache = Task {
-            try? await Task.sleep(for: .seconds(20))
-            arbeit.cancel()
+        await withCheckedContinuation { (fertig: CheckedContinuation<Void, Never>) in
+            let einmal = EinmalSchalter()
+            Task { @MainActor in
+                await arbeit.value
+                if einmal.zuerst() { fertig.resume() }
+            }
+            Task {
+                try? await Task.sleep(for: .seconds(20))
+                arbeit.cancel()
+                if einmal.zuerst() { fertig.resume() }
+            }
         }
-        await arbeit.value
-        wache.cancel()
     }
 
     // MARK: - Fabriken
@@ -194,10 +208,16 @@ enum AbrufPlaner {
         BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: nil) { aufgabe in
             guard let aufgabe = aufgabe as? BGAppRefreshTask else { aufgabe.setTaskCompleted(success: false); return }
             let auftrag = Auftrag(aufgabe: aufgabe)
-            Task { @MainActor in
+            let einmal = EinmalSchalter()
+            let arbeit = Task { @MainActor in
                 plane()
                 await umgebung.fuehreAbrufAus()
-                auftrag.aufgabe.setTaskCompleted(success: true)
+                if einmal.zuerst() { auftrag.aufgabe.setTaskCompleted(success: true) }
+            }
+            // Ohne Ablauf-Handler beendet iOS die App hart, wenn die Zeit um ist (Absturz im Hintergrund). Genau einmal abschließen.
+            aufgabe.expirationHandler = {
+                arbeit.cancel()
+                if einmal.zuerst() { auftrag.aufgabe.setTaskCompleted(success: false) }
             }
         }
         plane()
@@ -208,5 +228,18 @@ enum AbrufPlaner {
         let anfrage = BGAppRefreshTaskRequest(identifier: kennung)
         anfrage.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
         try? BGTaskScheduler.shared.submit(anfrage)
+    }
+}
+
+/// Lässt genau einen Aufrufer durch (für "genau einmal abschließen" aus verschiedenen Threads).
+final class EinmalSchalter: Sendable {
+    private let schon = OSAllocatedUnfairLock(initialState: false)
+
+    /// `true` beim ersten Aufruf, danach immer `false`.
+    func zuerst() -> Bool {
+        schon.withLock { war in
+            defer { war = true }
+            return !war
+        }
     }
 }
