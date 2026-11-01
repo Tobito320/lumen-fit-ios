@@ -667,8 +667,7 @@ struct TrainingLoveaUebungView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 4)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
+            .lumenFlaeche(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
             .transition(.move(edge: .bottom).combined(with: .opacity))

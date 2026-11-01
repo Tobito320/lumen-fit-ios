@@ -65,7 +65,7 @@ struct CoachVorschlagChip: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(palette.text)
-        .glassEffect(.regular.interactive(), in: .capsule)
+        .lumenFlaeche(.capsule)
     }
 }
 

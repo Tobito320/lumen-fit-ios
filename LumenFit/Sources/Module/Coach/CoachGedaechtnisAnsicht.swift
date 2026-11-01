@@ -119,7 +119,7 @@ struct CoachGedaechtnisAnsicht: View {
             .frame(minHeight: Abstand.tippflaeche)
         }
         .padding(.horizontal, Abstand.l)
-        .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenFlaeche(.rect(cornerRadius: Rundung.karte, style: .continuous))
         .padding(.horizontal, Abstand.l)
     }
 

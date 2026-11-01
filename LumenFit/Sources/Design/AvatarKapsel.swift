@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Glaskapsel oben rechts auf jedem Tab: Initiale des aktiven Profils, öffnet `.profil(.uebersicht)`.
+/// Runde flache Kapsel oben rechts auf jedem Tab: Initiale des aktiven Profils, öffnet `.profil(.uebersicht)`.
 struct AvatarKapsel: View {
     @Environment(AppUmgebung.self) private var umgebung
 
@@ -13,7 +13,7 @@ struct AvatarKapsel: View {
                 .font(.headline.weight(.bold)).fontDesign(.rounded)
                 .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
         }
-        .glassEffect(.regular.interactive(), in: .circle)
+        .lumenFlaeche(.circle)
         .accessibilityLabel("Profil \(name)")
         .accessibilityHint("Öffnet dein Profil")
     }

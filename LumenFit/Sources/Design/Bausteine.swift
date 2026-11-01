@@ -25,6 +25,24 @@ struct Pille: View {
     }
 }
 
+/// Flache Fläche für eigene schwebende Knöpfe, Leisten, Toasts und Karten: `flaeche` mit `haar`-Rand, kein Liquid Glass,
+/// kein Material, keine Unschärfe, kein Schatten (Ahmed 01.11.2026: "If iOS apple liquid glass is heavy then no more of that").
+/// Tab- und Navigationsleiste zeichnet iOS selbst; die bleiben System.
+private struct LumenFlaeche<Form: Shape>: ViewModifier {
+    let form: Form
+    @Environment(\.palette) private var palette
+
+    func body(content: Content) -> some View {
+        content
+            .background(palette.flaeche, in: form)
+            .overlay(form.stroke(palette.haar, lineWidth: 1))
+    }
+}
+
+extension View {
+    func lumenFlaeche(_ form: some Shape) -> some View { modifier(LumenFlaeche(form: form)) }
+}
+
 /// Leerzustand: Lumi, ein Satz, eine Handlung.
 struct LeerZustand: View {
     let stimmung: LumiStimmung
@@ -168,7 +186,7 @@ private struct ToastModifier: ViewModifier {
                     .foregroundStyle(palette.text)
                     .padding(.horizontal, Abstand.l)
                     .padding(.vertical, Abstand.m)
-                    .glassEffect(.regular, in: .capsule)
+                    .lumenFlaeche(.capsule)
                     .padding(.top, Abstand.s)
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                     .accessibilityElement(children: .combine)

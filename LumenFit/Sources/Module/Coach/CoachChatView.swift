@@ -259,7 +259,7 @@ struct CoachChatView: View {
             .foregroundStyle(palette.text)
             .padding(.horizontal, Abstand.m)
             .frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
-            .glassEffect(.regular.interactive(), in: .capsule)
+            .lumenFlaeche(.capsule)
         }
         .buttonStyle(.plain)
         .padding(Abstand.l)
@@ -350,7 +350,7 @@ struct CoachChatView: View {
         }
         .foregroundStyle(palette.text)
         .padding(.horizontal, Abstand.l)
-        .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenFlaeche(.rect(cornerRadius: Rundung.karte, style: .continuous))
         .padding(.horizontal, Abstand.l)
         .accessibilityElement(children: .combine)
     }
@@ -372,7 +372,7 @@ struct CoachChatView: View {
         }
         .foregroundStyle(palette.text)
         .padding(.horizontal, Abstand.l)
-        .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenFlaeche(.rect(cornerRadius: Rundung.karte, style: .continuous))
         .padding(.horizontal, Abstand.l)
         .accessibilityElement(children: .combine)
     }
