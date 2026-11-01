@@ -1,10 +1,10 @@
 import Foundation
 
 /// Texte der Verbinden-Seite, die ehrlich sagen, was heute läuft (SPEC 5.5 und 16, Annahme 33).
-/// Quelle A (Lovea an Lumen Fit) läuft ab dem ersten Tag. Vertrag B (Lumen Fit an Lovea, Band-Wünsche) wartet auf eine Lovea-Runde;
-/// sobald Lovea die Dateien liest und schreibt, wird `loveaTauschtDateien` wahr und die Zusätze verschwinden.
+/// Quelle A (Lovea an Lumen Fit) läuft ab dem ersten Tag. Vertrag B (Lumen Fit an Lovea, Band-Wünsche) liest und schreibt Lovea seit
+/// der Lovea-Runde (Schritte 1, 2, 3 und 5, im TestFlight-Build vom 31.10.2026): darum ist `loveaTauschtDateien` wahr.
 enum VerbindenTexte {
-    nonisolated static let loveaTauschtDateien = false
+    nonisolated static let loveaTauschtDateien = true
 
     nonisolated static func freigabenFuss(loveaTauscht: Bool = VerbindenTexte.loveaTauschtDateien) -> String {
         let basis = "Standard: nichts. Dein Partner sieht nur, was du hier einschaltest, und immer nur eine Zusammenfassung von heute."
