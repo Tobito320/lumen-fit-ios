@@ -17,19 +17,13 @@ struct ZieleView: View {
     private var gewichtKg: Double? { umgebung.daten?.essen.gewichtKg }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Abstand.xl) {
-                koerperGruppe
-                zielGruppe
-                tageszieleGruppe
-                muskelGruppe
-            }
-            .padding(Abstand.l)
+        List {
+            zielGruppe
+            tageszieleGruppe
+            mehrGruppe
         }
-        .scrollDismissesKeyboard(.interactively)
+        .profilListe()
         .navigationTitle("Ziele und Körper")
-        .navigationBarTitleDisplayMode(.inline)
-        .lumenHintergrund()
         .onAppear(perform: lade)
         .onChange(of: ziele) { _, _ in sichere() }
         .onChange(of: koerper) { _, _ in sichere() }
@@ -39,165 +33,85 @@ struct ZieleView: View {
 
     // MARK: - Gruppen
 
-    private var koerperGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Körperdaten")
-            ListenKarte {
-                HStack {
-                    Text("Größe").font(.body).foregroundStyle(palette.text)
-                    Spacer()
-                    TextField("cm", text: $groesseText)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.trailing)
-                        .frame(width: 80)
-                        .onChange(of: groesseText) { _, neu in
-                            let zahl = Int(neu.filter(\.isNumber).prefix(3))
-                            koerper.groesseCm = (zahl ?? 0) >= 100 && (zahl ?? 0) <= 250 ? zahl : nil
-                        }
-                        .accessibilityLabel("Größe in Zentimetern")
-                    Text("cm").font(.body).foregroundStyle(palette.text2)
-                }
-                .padding(Abstand.l).frame(minHeight: Abstand.tippflaeche)
-                Haarlinie()
-                HStack {
-                    Text("Geburtsjahr").font(.body).foregroundStyle(palette.text)
-                    Spacer()
-                    Picker("Geburtsjahr", selection: $koerper.geburtsjahr) {
-                        Text("Keine Angabe").tag(Int?.none)
-                        ForEach(Array(stride(from: jahr - 10, through: jahr - 90, by: -1)), id: \.self) { Text(String($0)).tag(Int?.some($0)) }
-                    }
-                    .pickerStyle(.menu)
-                }
-                .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
-                Haarlinie()
-                HStack {
-                    Text("Geschlecht").font(.body).foregroundStyle(palette.text)
-                    Spacer()
-                    Picker("Geschlecht", selection: $koerper.geschlecht) {
-                        Text("Keine Angabe").tag(Geschlecht?.none)
-                        Text("Weiblich").tag(Geschlecht?.some(.weiblich))
-                        Text("Männlich").tag(Geschlecht?.some(.maennlich))
-                        Text("Divers").tag(Geschlecht?.some(.divers))
-                    }
-                    .pickerStyle(.menu)
-                }
-                .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
-                Haarlinie()
-                HStack {
-                    Text("Gewicht in").font(.body).foregroundStyle(palette.text)
-                    Spacer()
-                    Picker("Einheit", selection: Binding(
-                        get: { einheit },
-                        set: { neu in umgebung.daten?.einstellungen.aendere { $0.gewichtsEinheit = neu } })) {
-                        Text("kg").tag(GewichtsEinheit.kg)
-                        Text("lb").tag(GewichtsEinheit.lb)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 120)
-                }
-                .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
-            }
-            Text("Geschlecht und Geburtsjahr brauche ich nur für die Formeln der Vorschläge. Beides ist freiwillig.")
-                .font(.footnote).foregroundStyle(palette.text2).padding(.horizontal, Abstand.xs)
-        }
-    }
-
     private var zielGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Ziel")
+        ProfilAbschnitt(fuss: vorschlagHinweis) {
             Picker("Ziel", selection: $ziele.art) {
                 Text("Abnehmen").tag(Zielart.abnehmen)
                 Text("Halten").tag(Zielart.halten)
                 Text("Aufbauen").tag(Zielart.aufbauen)
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
             Button {
                 let neu = ProfilZielVorschlag.vorschlag(koerper: koerper, art: ziele.art, gymTage: ziele.gymTageProWoche, kg: gewichtKg, jahr: jahr, bisher: ziele)
                 ziele = neu
                 vorschlagGenutzt += 1
             } label: {
-                Label("Vorschläge übernehmen", systemImage: "wand.and.stars").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                Label("Vorschläge übernehmen", systemImage: "wand.and.stars")
             }
-            .buttonStyle(.bordered)
-            Text(vorschlagHinweis).font(.footnote).foregroundStyle(palette.text2).padding(.horizontal, Abstand.xs)
         }
     }
 
+    /// Ein Satz: woraus die Vorschläge rechnen.
     private var vorschlagHinweis: String {
-        var teile = ["Kalorien und Protein rechne ich nach Mifflin-St Jeor aus Größe, Alter und Gewicht."]
-        if let kg = gewichtKg {
-            teile.append("Dein Gewicht aus deinen Einträgen: \(gewichtText(kg)).")
-        } else {
-            teile.append("Ohne Gewicht rechne ich mit einem Durchschnittswert.")
-        }
-        return teile.joined(separator: " ")
+        if let kg = gewichtKg { return "Vorschläge nach Mifflin-St Jeor, mit deinem Gewicht \(gewichtText(kg))." }
+        return "Vorschläge nach Mifflin-St Jeor, ohne Gewicht mit einem Durchschnittswert."
     }
 
     private var tageszieleGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Tagesziele")
-            ListenKarte {
-                zeile("Schritte", Text(ziele.schritte, format: .number), Stepper("", value: $ziele.schritte, in: 1_000...50_000, step: 500))
-                Haarlinie()
-                zeile("Kalorien", Text("\(ziele.kalorien) kcal"), Stepper("", value: $ziele.kalorien, in: 1_000...6_000, step: 50))
-                Haarlinie()
-                zeile("Protein", Text("\(ziele.proteinGramm) g"), Stepper("", value: $ziele.proteinGramm, in: 20...350, step: 5))
-                Haarlinie()
-                zeile("Schlaf", Text(schlafText(ziele.schlafMinuten)), Stepper("", value: $ziele.schlafMinuten, in: 240...720, step: 15))
-                Haarlinie()
-                zeile("Gym-Tage pro Woche", Text("\(ziele.gymTageProWoche)"), Stepper("", value: $ziele.gymTageProWoche, in: 1...7))
-                Haarlinie()
-                zeile("Wasser", Text("\(ziele.wasserMl) ml"), Stepper("", value: $ziele.wasserMl, in: 500...6_000, step: 100))
-                Haarlinie()
-                gewichtsziel
-            }
-        }
-    }
-
-    private var gewichtsziel: some View {
-        VStack(spacing: 0) {
+        ProfilAbschnitt("Tagesziele") {
+            zeile("Schritte", ziele.schritte.formatted(.number), $ziele.schritte, 1_000...50_000, schritt: 500)
+            zeile("Kalorien", "\(ziele.kalorien) kcal", $ziele.kalorien, 1_000...6_000, schritt: 50)
+            zeile("Protein", "\(ziele.proteinGramm) g", $ziele.proteinGramm, 20...350, schritt: 5)
+            zeile("Schlaf", schlafText(ziele.schlafMinuten), $ziele.schlafMinuten, 240...720, schritt: 15)
+            zeile("Gym-Tage pro Woche", "\(ziele.gymTageProWoche)", $ziele.gymTageProWoche, 1...7, schritt: 1)
+            zeile("Wasser", "\(ziele.wasserMl) ml", $ziele.wasserMl, 500...6_000, schritt: 100)
             Toggle(isOn: Binding(get: { ziele.gewichtKg != nil }, set: { an in ziele.gewichtKg = an ? (gewichtKg ?? 75).rounded() : nil })) {
-                Text("Gewichtsziel").font(.body).foregroundStyle(palette.text)
+                ProfilListenZeile("Gewichtsziel")
             }
-            .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
             if let ziel = ziele.gewichtKg {
-                Haarlinie()
-                zeile("Zielgewicht", Text(gewichtText(ziel)),
-                      Stepper("", value: Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), in: 30...250, step: 0.5))
+                zeile("Zielgewicht", gewichtText(ziel), Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), 30...250, schritt: 0.5)
             }
         }
     }
 
-    private var muskelGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Muskeln")
-            ListenKarte {
-                Button { befragung = true } label: {
-                    ProfilZeile(symbol: "figure.strengthtraining.traditional", titel: "Satzziele je Muskel",
-                                zeile: muskelZeile)
-                }
-                .buttonStyle(.plain)
+    /// Selten Gebrauchtes eine Ebene tiefer: Körperdaten und die Satzziele je Muskel.
+    private var mehrGruppe: some View {
+        ProfilAbschnitt {
+            NavigationLink {
+                ZieleKoerperSeite(koerper: $koerper, groesseText: $groesseText, jahr: jahr)
+            } label: {
+                ProfilListenZeile("Körperdaten", symbol: "figure.stand", wert: koerperWert)
+            }
+            Button { befragung = true } label: {
+                ProfilListenZeile("Satzziele je Muskel", symbol: "figure.strengthtraining.traditional", wert: muskelWert)
             }
         }
     }
 
-    private var muskelZeile: String {
-        guard let raum = umgebung.daten?.raum, let prio = ZieleLogik.gespeichert(in: raum) else { return "Drei Fragen, dann rechne ich deine Wochenziele." }
-        return "Wichtigste: " + prio.prefix(3).map(\.name).joined(separator: ", ")
+    /// "180 cm, 1990" oder "Keine Angabe".
+    private var koerperWert: String {
+        let teile: [String] = [koerper.groesseCm.map { "\($0) cm" }, koerper.geburtsjahr.map { String($0) }].compactMap { $0 }
+        return teile.isEmpty ? "Keine Angabe" : teile.joined(separator: ", ")
+    }
+
+    private var muskelWert: String {
+        guard let raum = umgebung.daten?.raum, let prio = ZieleLogik.gespeichert(in: raum), let erste = prio.first else { return "Offen" }
+        return erste.name
     }
 
     // MARK: - Bausteine
 
-    /// Eine Zeile: Titel links, Wert und Stepper rechts. Der Stepper hat kein eigenes Label, VoiceOver liest Titel und Wert zusammen.
-    private func zeile(_ titel: String, _ wert: Text, _ stepper: some View) -> some View {
-        HStack {
-            Text(titel).font(.body).foregroundStyle(palette.text)
-            Spacer()
-            wert.font(.body.monospacedDigit()).foregroundStyle(palette.text2)
-            stepper.labelsHidden().fixedSize().accessibilityLabel(titel)
+    /// Eine Zeile: Titel links, Wert und Stepper rechts. VoiceOver liest Titel und Wert.
+    private func zeile<Wert: Strideable>(_ titel: String, _ wert: String, _ bindung: Binding<Wert>, _ bereich: ClosedRange<Wert>,
+                                         schritt: Wert.Stride) -> some View {
+        Stepper(value: bindung, in: bereich, step: schritt) {
+            LabeledContent {
+                Text(wert).monospacedDigit().foregroundStyle(palette.text2).lineLimit(1).minimumScaleFactor(0.8)
+            } label: {
+                Text(titel).foregroundStyle(palette.text).lineLimit(1).minimumScaleFactor(0.8)
+            }
         }
-        .padding(.horizontal, Abstand.l)
-        .frame(minHeight: Abstand.tippflaeche)
+        .accessibilityValue(wert)
     }
 
     private func schlafText(_ minuten: Int) -> String { "\(minuten / 60) h \(String(format: "%02d", minuten % 60)) min" }
@@ -222,5 +136,61 @@ struct ZieleView: View {
     private func sichere() {
         guard geladen, let daten = umgebung.daten, ziele != daten.ziele.ziele || koerper != daten.ziele.koerper else { return }
         ProfilZielSpeicher.sichere(ziele: ziele, koerper: koerper, in: daten, jahr: jahr)
+    }
+}
+
+/// Körperdaten (eine Ebene unter "Ziele und Körper"): Größe, Geburtsjahr, Geschlecht und die Einheit kg oder lb. Speichern macht `ZieleView` über die Bindungen.
+private struct ZieleKoerperSeite: View {
+    @Binding var koerper: Koerperdaten
+    @Binding var groesseText: String
+    let jahr: Int
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.palette) private var palette
+
+    private var einheit: GewichtsEinheit { umgebung.daten?.einstellungen.werte.gewichtsEinheit ?? .kg }
+
+    var body: some View {
+        List {
+            ProfilAbschnitt(fuss: "Geschlecht und Geburtsjahr sind freiwillig und nur für die Formeln der Vorschläge.") {
+                LabeledContent {
+                    HStack(spacing: Abstand.xs) {
+                        TextField("cm", text: $groesseText)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(maxWidth: 80)
+                            .onChange(of: groesseText) { _, neu in
+                                let zahl = Int(neu.filter(\.isNumber).prefix(3))
+                                koerper.groesseCm = (zahl ?? 0) >= 100 && (zahl ?? 0) <= 250 ? zahl : nil
+                            }
+                            .accessibilityLabel("Größe in Zentimetern")
+                        Text("cm").foregroundStyle(palette.text2)
+                    }
+                } label: {
+                    Text("Größe").foregroundStyle(palette.text)
+                }
+                Picker("Geburtsjahr", selection: $koerper.geburtsjahr) {
+                    Text("Keine Angabe").tag(Int?.none)
+                    ForEach(Array(stride(from: jahr - 10, through: jahr - 90, by: -1)), id: \.self) { Text(String($0)).tag(Int?.some($0)) }
+                }
+                .pickerStyle(.menu)
+                Picker("Geschlecht", selection: $koerper.geschlecht) {
+                    Text("Keine Angabe").tag(Geschlecht?.none)
+                    Text("Weiblich").tag(Geschlecht?.some(.weiblich))
+                    Text("Männlich").tag(Geschlecht?.some(.maennlich))
+                    Text("Divers").tag(Geschlecht?.some(.divers))
+                }
+                .pickerStyle(.menu)
+                Picker("Gewicht in", selection: Binding(
+                    get: { einheit },
+                    set: { neu in umgebung.daten?.einstellungen.aendere { $0.gewichtsEinheit = neu } })) {
+                    Text("kg").tag(GewichtsEinheit.kg)
+                    Text("lb").tag(GewichtsEinheit.lb)
+                }
+                .pickerStyle(.menu)
+            }
+        }
+        .profilListe()
+        .scrollDismissesKeyboard(.interactively)
+        .navigationTitle("Körperdaten")
     }
 }

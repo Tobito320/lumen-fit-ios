@@ -160,6 +160,14 @@ final class SicherungTests: XCTestCase {
         XCTAssertEqual(ProfilSicherungStand.zeile(zuletzt: jetzt.addingTimeInterval(-12 * 86_400), jetzt: jetzt), "Letzte Sicherung: vor 12 Tagen")
     }
 
+    func testStandKurzFuerEinstellungszeile() {
+        let jetzt = TestUhr().lesen
+        XCTAssertEqual(ProfilSicherungStand.kurz(zuletzt: nil, jetzt: jetzt), "Noch keine")
+        XCTAssertEqual(ProfilSicherungStand.kurz(zuletzt: jetzt, jetzt: jetzt), "Heute")
+        XCTAssertEqual(ProfilSicherungStand.kurz(zuletzt: jetzt.addingTimeInterval(-86_400), jetzt: jetzt), "Gestern")
+        XCTAssertEqual(ProfilSicherungStand.kurz(zuletzt: jetzt.addingTimeInterval(-12 * 86_400), jetzt: jetzt), "Vor 12 Tagen")
+    }
+
     func testDateiSchreibenMerktDenZeitpunkt() throws {
         let (_, quelle) = try ProfilTestWelt.gefuellt(ordner: tempOrdner())
         XCTAssertNil(ProfilSicherungStand.lade(quelle.ordner))

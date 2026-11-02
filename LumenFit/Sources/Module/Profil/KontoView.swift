@@ -46,18 +46,13 @@ struct KontoView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Abstand.xl) {
-                namensGruppe
-                passwortGruppe
-                if !andere.isEmpty || darfAnlegen { profilGruppe }
-            }
-            .padding(Abstand.l)
+        List {
+            namensGruppe
+            kontoGruppe
         }
+        .profilListe()
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Konto")
-        .navigationBarTitleDisplayMode(.inline)
-        .lumenHintergrund()
         .onAppear { name = aktiv?.name ?? "" }
         .confirmationDialog("Profil wechseln", isPresented: $profilWahl, titleVisibility: .visible) {
             ForEach(andere) { p in Button(p.name) { blatt = .wechseln(p) } }
@@ -87,34 +82,22 @@ struct KontoView: View {
     // MARK: - Teile
 
     private var namensGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Name")
-            ListenKarte {
-                VStack(alignment: .leading, spacing: Abstand.m) {
-                    TextField("Dein Name", text: $name)
-                        .textContentType(.givenName)
-                        .textInputAutocapitalization(.words)
-                        .autocorrectionDisabled()
-                        .submitLabel(.done)
-                        .focused($fokus)
-                        .onSubmit(speichern)
-                        .onChange(of: name) { meldung = nil }
-                        .disabled(freiAb != nil)
-                        .padding(Abstand.m).frame(minHeight: Abstand.tippflaeche)
-                        .background(palette.grund, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
-                        .overlay { RoundedRectangle(cornerRadius: Rundung.feld, style: .continuous).stroke(palette.rand, lineWidth: 1) }
-                    if let text = eingabeFehler ?? meldung {
-                        Label(text, systemImage: "exclamationmark.circle")
-                            .font(.footnote).foregroundStyle(palette.text)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    Text(regelText).font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
-                    Button(action: speichern) { Text("Name speichern").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
-                        .buttonStyle(.borderedProminent)
-                        .foregroundStyle(palette.aufAkzent)
-                        .disabled(!kannSpeichern)
-                }
-                .padding(Abstand.l)
+        ProfilAbschnitt("Name", fuss: regelText) {
+            TextField("Dein Name", text: $name)
+                .textContentType(.givenName)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .focused($fokus)
+                .onSubmit(speichern)
+                .onChange(of: name) { meldung = nil }
+                .disabled(freiAb != nil)
+                .foregroundStyle(palette.text)
+            if let text = eingabeFehler ?? meldung {
+                Label(text, systemImage: "exclamationmark.circle").foregroundStyle(palette.text)
+            }
+            if name != (aktiv?.name ?? "") {
+                Button("Name speichern", action: speichern).disabled(!kannSpeichern)
             }
         }
     }
@@ -122,35 +105,21 @@ struct KontoView: View {
     /// Die Regel in einem Satz; gesperrt: mit dem Tag, ab dem es wieder geht.
     private var regelText: String {
         if let frei = freiAb {
-            return "Dein Name ist gesperrt. Wieder ab \(frei.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "de_DE"))))."
+            return "Gesperrt bis \(frei.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "de_DE"))))."
         }
-        let wann = tage == 0 ? "" : tage == 1 ? " Du kannst ihn einmal am Tag ändern." : " Du kannst ihn alle \(tage) Tage ändern."
-        return "\(NamenRegel.minLaenge) bis \(NamenRegel.maxLaenge) Zeichen: Buchstaben, Leerzeichen, Bindestrich, Apostroph.\(wann)"
+        let wann = tage == 0 ? "" : tage == 1 ? ", einmal am Tag änderbar" : ", alle \(tage) Tage änderbar"
+        return "\(NamenRegel.minLaenge) bis \(NamenRegel.maxLaenge) Zeichen aus Buchstaben, Leerzeichen, - und '\(wann)."
     }
 
-    private var passwortGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Passwort")
-            ListenKarte {
-                Button { blatt = .passwortAendern } label: { ProfilZeile(symbol: "key.fill", titel: "Passwort ändern") }
+    private var kontoGruppe: some View {
+        ProfilAbschnitt {
+            Button { blatt = .passwortAendern } label: { ProfilListenZeile("Passwort ändern", symbol: "key.fill") }
+            if !andere.isEmpty {
+                Button { profilWahl = true } label: { ProfilListenZeile("Profil wechseln", symbol: "person.2.fill", wert: "\(andere.count + 1) Profile") }
             }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var profilGruppe: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: "Profile")
-            ListenKarte {
-                if !andere.isEmpty {
-                    Button { profilWahl = true } label: { ProfilZeile(symbol: "person.2.fill", titel: "Profil wechseln", wert: "\(andere.count + 1) Profile") }
-                }
-                if !andere.isEmpty && darfAnlegen { Haarlinie() }
-                if darfAnlegen {
-                    Button { blatt = .anlegen } label: { ProfilZeile(symbol: "person.badge.plus", titel: "Neues Profil anlegen") }
-                }
+            if darfAnlegen {
+                Button { blatt = .anlegen } label: { ProfilListenZeile("Neues Profil anlegen", symbol: "person.badge.plus") }
             }
-            .buttonStyle(.plain)
         }
     }
 

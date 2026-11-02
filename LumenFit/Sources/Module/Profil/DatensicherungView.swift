@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// Datensicherung als Datei (Idee 74): alles in einer JSON-Datei teilen und auf einem neuen Gerät einspielen. Nach einer Neuinstallation steht
-/// oben die Willkommen-zurück-Karte "Datensicherung einspielen?". Keine Erinnerung, keine Wiederholung: nur die Zeile "Letzte Sicherung: vor 12 Tagen".
+/// oben der Abschnitt "Willkommen zurück". Keine Erinnerung, keine Wiederholung: nur die Zeile "Letzte Sicherung" mit "Vor 12 Tagen".
 struct DatensicherungView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -14,57 +14,34 @@ struct DatensicherungView: View {
     @State private var fehler: String?
 
     var body: some View {
-        let name = umgebung.profil.aktiv?.name ?? ""
-        ScrollView {
-            VStack(alignment: .leading, spacing: Abstand.xl) {
-                if umgebung.neuinstallationErkannt { willkommenZurueck(name: name) }
-                if let fehler { FehlerKarte(titel: "Das hat nicht geklappt", hilfe: fehler) }
-
-                VStack(alignment: .leading, spacing: Abstand.s) {
-                    ProfilGruppenKopf(text: "Sichern")
-                    ListenKarte {
-                        VStack(alignment: .leading, spacing: Abstand.m) {
-                            Text("Eine Datei mit deinen Trainings, deinem Essenstagebuch, deinen Gewohnheiten, Zielen und Einstellungen. Ohne Passwort. Speichere sie in Dateien oder schick sie dir selbst.")
-                                .font(.subheadline).foregroundStyle(palette.text2)
-                            Text(zeile).font(.footnote.weight(.semibold)).foregroundStyle(palette.text)
-                            Button(action: erstelle) {
-                                Label(datei == nil ? "Sicherung erstellen" : "Neu erstellen", systemImage: "externaldrive.badge.plus")
-                                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .foregroundStyle(palette.aufAkzent)
-                            if let datei {
-                                ShareLink(item: datei) {
-                                    Label("\(datei.lastPathComponent) teilen", systemImage: "square.and.arrow.up")
-                                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                                }
-                                .buttonStyle(.bordered)
-                            }
-                        }
-                        .padding(Abstand.l)
-                    }
-                }
-
-                VStack(alignment: .leading, spacing: Abstand.s) {
-                    ProfilGruppenKopf(text: "Einspielen")
-                    ListenKarte {
-                        VStack(alignment: .leading, spacing: Abstand.m) {
-                            Text("Wähle eine Sicherung von Lumen Fit. Was schon da ist, wird übersprungen, nichts wird doppelt eingetragen.")
-                                .font(.subheadline).foregroundStyle(palette.text2)
-                            Button { fehler = nil; waehlen = true } label: {
-                                Label("Sicherung einspielen", systemImage: "square.and.arrow.down").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                        .padding(Abstand.l)
-                    }
+        List {
+            if umgebung.neuinstallationErkannt {
+                ProfilAbschnitt("Willkommen zurück", fuss: "Dein Profil ist wieder da, Trainings und Essen kommen mit der Sicherung.") {
+                    Button("Ohne Sicherung weiter") { umgebung.neuinstallationQuittieren() }
                 }
             }
-            .padding(Abstand.l)
+            if let fehler {
+                ProfilAbschnitt {
+                    Label(fehler, systemImage: "exclamationmark.triangle.fill").foregroundStyle(palette.text)
+                }
+            }
+            ProfilAbschnitt(fuss: "Trainings, Essen, Gewohnheiten, Ziele und Einstellungen in einer Datei, ohne Passwort.") {
+                ProfilListenZeile("Letzte Sicherung", wert: kurz)
+                Button(action: erstelle) {
+                    Label(datei == nil ? "Sicherung erstellen" : "Neu erstellen", systemImage: "externaldrive.badge.plus")
+                }
+                if let datei {
+                    ShareLink(item: datei) { Label("\(datei.lastPathComponent) teilen", systemImage: "square.and.arrow.up") }
+                }
+            }
+            ProfilAbschnitt(fuss: "Was schon da ist, wird übersprungen, nichts wird doppelt.") {
+                Button { fehler = nil; waehlen = true } label: {
+                    Label("Sicherung einspielen", systemImage: "square.and.arrow.down")
+                }
+            }
         }
+        .profilListe()
         .navigationTitle("Datensicherung")
-        .navigationBarTitleDisplayMode(.inline)
-        .lumenHintergrund()
         .fileImporter(isPresented: $waehlen, allowedContentTypes: [.json]) { ergebnis in lies(ergebnis) }
         .confirmationDialog(bestaetigungTitel, isPresented: $bestaetigen, titleVisibility: .visible) {
             Button("Einspielen") { spieleEin() }
@@ -76,35 +53,10 @@ struct DatensicherungView: View {
         .onDisappear { if let datei { try? FileManager.default.removeItem(at: datei) } }
     }
 
-    // MARK: - Willkommen zurück
-
-    private func willkommenZurueck(name: String) -> some View {
-        HeroKarte {
-            VStack(alignment: .leading, spacing: Abstand.m) {
-                HStack(spacing: Abstand.m) {
-                    LumiView(stimmung: .bereit, groesse: 56)
-                    Text(name.isEmpty ? "Willkommen zurück!" : "Willkommen zurück, \(name)!").font(.title3.bold())
-                }
-                Text("Dein Profil ist wieder da, deine Trainings und dein Essen noch nicht. Datensicherung einspielen?").font(.subheadline)
-                HStack(spacing: Abstand.m) {
-                    Button { fehler = nil; waehlen = true } label: {
-                        Text("Sicherung wählen").font(.body.weight(.semibold)).frame(minHeight: Abstand.tippflaeche).padding(.horizontal, Abstand.m)
-                            .background(palette.aufAkzent.opacity(0.2), in: .capsule)
-                    }
-                    Button { umgebung.neuinstallationQuittieren() } label: {
-                        Text("Ohne Sicherung weiter").font(.body).frame(minHeight: Abstand.tippflaeche)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .accessibilityElement(children: .contain)
-    }
-
     // MARK: - Sichern
 
-    private var zeile: String {
-        ProfilSicherungStand.zeile(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
+    private var kurz: String {
+        ProfilSicherungStand.kurz(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
     }
 
     private func erstelle() {
