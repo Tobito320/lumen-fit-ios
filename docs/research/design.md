@@ -324,6 +324,10 @@ Erhöhter Kontrast: aus (Abschnitt 3.7). Alle Muster `accessibilityHidden(true)`
 
 ## 7. Liquid Glass: wo ja, wo nein
 
+Stand 01.11.2026 (Ahmed: "If iOS apple liquid glass is heavy then no more of that"): kein eigenes Glas mehr. Nur das Glas, das iOS selbst
+zeichnet (Tab-Leiste, Toolbar, Sheets), bleibt. Was unten unter "Ja, eigenes Glas" steht, ist ersetzt durch `lumenFlaeche` (Bausteine.swift):
+`flaeche` mit `haar`-Rand, ohne Unschärfe und Schatten. Der Rest des Abschnitts ist Geschichte.
+
 Grundsatz laut HIG "Materials" (heute gelesen): Liquid Glass ist die Steuerungs- und Navigationsebene und liegt über dem Inhalt; in der
 Inhaltsebene benutzt man Standard-Materialien oder deckende Flächen; sparsam einsetzen.
 

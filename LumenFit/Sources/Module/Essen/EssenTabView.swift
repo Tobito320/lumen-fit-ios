@@ -294,16 +294,14 @@ struct EssenTabView: View {
     }
 
     private var scanKnopf: some View {
-        GlassEffectContainer(spacing: Abstand.m) {
-            Button {
-                blatt = .scan(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: umgebung.uhr())))
-            } label: {
-                Image(systemName: "camera.viewfinder").font(.title2).frame(width: 56, height: 56)
-            }
-            .glassEffect(.regular.interactive(), in: .circle)
-            .accessibilityLabel("Essen scannen")
-            .accessibilityHint("Öffnet die Kamera für den Barcode")
+        Button {
+            blatt = .scan(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: umgebung.uhr())))
+        } label: {
+            Image(systemName: "camera.viewfinder").font(.title2).frame(width: 56, height: 56)
         }
+        .lumenFlaeche(.circle)
+        .accessibilityLabel("Essen scannen")
+        .accessibilityHint("Öffnet die Kamera für den Barcode")
         .padding(Abstand.l)
     }
 

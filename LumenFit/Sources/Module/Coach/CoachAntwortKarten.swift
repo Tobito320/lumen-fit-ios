@@ -252,7 +252,7 @@ struct CoachWeg: View {
             .contentShape(.capsule)
         }
         .buttonStyle(.federnd)
-        .glassEffect(.regular.interactive(), in: .capsule)
+        .lumenFlaeche(.capsule)
     }
 }
 
@@ -347,7 +347,7 @@ struct CoachEintragsKarte: View {
         }
         .padding(Abstand.m)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
+        .lumenFlaeche(.rect(cornerRadius: Rundung.karte, style: .continuous))
         .accessibilityElement(children: .contain)
     }
 
