@@ -21,11 +21,14 @@ final class BandDienstImplTests: XCTestCase {
         var tage: BandOpsSammler
     }
 
-    private func aufbau(bruecke: FakePartnerAustausch = FakePartnerAustausch()) -> Aufbau {
+    private final class AnstossZaehler { var anzahl = 0 }
+
+    private func aufbau(bruecke: FakePartnerAustausch = FakePartnerAustausch(), anstoss: @escaping @MainActor () -> Void = {}) -> Aufbau {
         let fabrik = FakeFunkFabrik()
         let sammler = BandOpsSammler()
         let d = defaults!
-        let senke = BandSenke(bisher: { sammler.bisher }, tag: { sammler.tage.append($0); sammler.bisher[$0.tag] = $0 }, schlaf: { sammler.schlaf.append($0) })
+        let senke = BandSenke(bisher: { sammler.bisher }, tag: { sammler.tage.append($0); sammler.bisher[$0.tag] = $0 }, schlaf: { sammler.schlaf.append($0) },
+                              geschrieben: anstoss)
         let dienst = BandDienstImpl(aktiv: { [unowned self] in self.schalter }, bruecke: bruecke, defaults: d, uhr: { VerbindenTest.jetzt }, sende: { _ in },
                                     modell: { TrackerModell(funk: { fabrik.baue($0) }, senke: senke, defaults: d, uhr: { VerbindenTest.jetzt }) })
         return Aufbau(dienst: dienst, fabrik: fabrik, bruecke: bruecke, tage: sammler)
@@ -246,6 +249,22 @@ final class BandDienstImplTests: XCTestCase {
         a.fabrik.melde(.verbunden(name: "H59 Test"))
         await warte { self.uhrPakete(a).count == 2 }
         XCTAssertEqual(uhrPakete(a).count, 2)
+    }
+
+    func testNeueBandZahlenStossenEinmalDieAnzeigenAnUndNichtOhneNeueOps() async throws {
+        let zaehler = AnstossZaehler()
+        let a = aufbau(anstoss: { zaehler.anzahl += 1 })
+        await verbunden(a)
+        // Eine Schritte-Zeile (Datum BCD 26-10-29, Viertelstunde 0x44, 128 Schritte), dann reißt die Verbindung: `abbrechen` schreibt, was neu ist.
+        a.fabrik.melde(.daten(TrackerProtokoll.paket(.schritte, [0x26, 0x10, 0x29, 0x44, 0x00, 0x01, 0xCD, 0x01, 0x80, 0x00, 0x4D, 0x00])))
+        a.fabrik.melde(.getrennt)
+        await warte { zaehler.anzahl == 1 }
+        XCTAssertEqual(zaehler.anzahl, 1)
+        XCTAssertEqual(a.tage.tage.map(\.schritte), [128])
+        a.fabrik.melde(.verbunden(name: "H59 Test"))
+        a.fabrik.melde(.getrennt)
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(zaehler.anzahl, 1, "nichts Neues: kein neuer Anstoß")
     }
 
     // MARK: Verbindungsweg

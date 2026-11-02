@@ -635,7 +635,9 @@ final class TrackerModell {
         bandSchlaf.kuerzen(heute: Datum.text(jetzt))
         schlafStand += 1
         // Nur was der Raum noch nicht hat: die Nächte im Speicher sind nach einem Neustart leer, die Ops stehen aber schon da.
-        for op in TrackerSchlaf.neueOps(ergebnis.naechte, bisher: senke.bisherSchlaf()) { senke.schlaf(op) }
+        let neueOps = TrackerSchlaf.neueOps(ergebnis.naechte, bisher: senke.bisherSchlaf())
+        for op in neueOps { senke.schlaf(op) }
+        if !neueOps.isEmpty { senke.geschrieben() }
     }
 
     /// Eine Zeile ins Fehlersuche-Log (nur im Speicher, die letzten `bandLogMaximum`). `nurWennNeu`: gleicher Text wie beim letzten Mal derselben
@@ -773,7 +775,9 @@ final class TrackerModell {
         let bisher = senke.bisher()
         guard let bisher else { return }
         ungemeldet = false
-        for op in schritteTageFuerOps().ops(bisher: bisher) { senke.tag(op) }
+        let neueOps = schritteTageFuerOps().ops(bisher: bisher)
+        for op in neueOps { senke.tag(op) }
+        if !neueOps.isEmpty { senke.geschrieben() }
     }
 
     /// Nur die Tage, die in die Schritte eingehen sollen (Schalter "Band-Schritte zählen").
