@@ -19,7 +19,8 @@ final class VerbindenTexteTests: XCTestCase {
         XCTAssertTrue(VerbindenTexte.pauseFuss.contains("Sperrbildschirm"))
     }
 
-    func testStandHeuteIstOhneLoveaRunde() {
-        XCTAssertFalse(VerbindenTexte.loveaTauschtDateien)
+    func testStandHeuteIstMitLoveaRunde() {
+        XCTAssertTrue(VerbindenTexte.loveaTauschtDateien)
+        XCTAssertFalse(VerbindenTexte.freigabenFuss().contains("Update"))
     }
 }
