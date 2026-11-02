@@ -48,7 +48,8 @@ final class VerbindungenSpeicher {
 /// Was beim Scannen oder Annehmen eines Codes herauskommt.
 enum EinladungErgebnis: Equatable, Sendable {
     case person(String)
-    case fertig
+    /// Die Anfrage ist raus; `id` ist die Verbindung beim Server (bis zur Annahme eine "wartende" in der Liste).
+    case angefragt(id: String)
     case fehler(String)
 }
 
@@ -101,7 +102,7 @@ extension KontoDienst {
 
     /// Ein neuer Code für mich: zufälliges Token vom Server, zehn Minuten gültig, einmal nutzbar. Im Code steht nie ein Wert aus Health.
     func einladungErzeugen() async -> EigeneEinladung? {
-        guard let k = registrierteKennung(), let r = await sendeMitKonto("/verbindungen/einladung", methode: "POST", kennung: k), r.status == 201 else { return nil }
+        guard let k = await kennungBereit(), let r = await sendeMitKonto("/verbindungen/einladung", methode: "POST", kennung: k), r.status == 201 else { return nil }
         struct Antwort: Decodable { var token: String; var laeuftAb: String }
         guard let a = try? JSONDecoder().decode(Antwort.self, from: r.daten), VerbindungenLogik.istToken(a.token),
               let ende = LoveaVertrag.isoDatum(a.laeuftAb) else { return nil }
@@ -119,8 +120,12 @@ extension KontoDienst {
 
     /// Die Anfrage an den Besitzer des Codes. Daten fließen erst, wenn er sie annimmt.
     func einladungEinloesen(_ token: String) async -> EinladungErgebnis {
-        let e = await einladungSenden("/verbindungen/anfrage", token) { _ in EinladungErgebnis.fertig }
-        if e == .fertig { await verbindungenNeuLaden() }
+        let e = await einladungSenden("/verbindungen/anfrage", token) { daten in
+            struct Antwort: Decodable { var id: String }
+            guard let a = try? JSONDecoder().decode(Antwort.self, from: daten) else { return EinladungErgebnis.fehler(Self.keinNetz) }
+            return EinladungErgebnis.angefragt(id: a.id)
+        }
+        if case .angefragt = e { await verbindungenNeuLaden() }
         return e
     }
 
@@ -128,7 +133,7 @@ extension KontoDienst {
 
     private func einladungSenden(_ pfad: String, _ token: String, ok: (Data) -> EinladungErgebnis) async -> EinladungErgebnis {
         guard VerbindungenLogik.istToken(token) else { return .fehler("Das ist kein Code von Lumen Fit.") }
-        guard let k = registrierteKennung(), let body = try? JSONSerialization.data(withJSONObject: ["token": token]),
+        guard let k = await kennungBereit(), let body = try? JSONSerialization.data(withJSONObject: ["token": token]),
               let r = await sendeMitKonto(pfad, methode: "POST", body: body, kennung: k) else { return .fehler(Self.keinNetz) }
         switch r.status {
         case 200, 201: return ok(r.daten)

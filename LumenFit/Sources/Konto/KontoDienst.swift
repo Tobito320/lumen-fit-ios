@@ -121,6 +121,8 @@ final class KontoDienst {
     @ObservationIgnored private var letzterVersuch: Date?
     /// Der Server hat die Anmeldung als ungültig abgelehnt (400): in dieser Sitzung nicht nochmal.
     @ObservationIgnored private var aufgegeben = false
+    /// Der Profilname der letzten Anmeldung: damit ein Blatt (Code zeigen, scannen) das Konto nachholen kann, wenn der Start kein Netz hatte.
+    @ObservationIgnored private var letzterProfilName: String?
 
     init(zugang: KontoZugang?, schluesselbund: any Schluesselbund, http: any HTTPLader, ordner: URL, uhr: @escaping Uhr = { Date() },
          version: String = KontoDienst.appVersion) {
@@ -200,6 +202,7 @@ final class KontoDienst {
     /// Holt Kennung, meldet das Gerät an (einmal, bei Netzfehler später nochmal), dann Einstellungen und Freigabe.
     /// `profilName`: Name des aktiven Profils; ohne Profil wird nichts angemeldet (der Server verlangt einen Namen).
     func aktualisiere(profilName: String?, erzwingen: Bool = false) async {
+        if let profilName { letzterProfilName = profilName }
         guard zugang != nil, !laeuft, !aufgegeben else { return }
         let jetzt = uhr()
         if !erzwingen, let letzter = letzterVersuch, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.pause { return }
@@ -300,6 +303,20 @@ final class KontoDienst {
     func registrierteKennung() -> KontoKennung? {
         if case .da(let k) = liesKennung(), k.registriert { return k }
         return nil
+    }
+
+    /// Wie `registrierteKennung`, aber holt das Konto nach: läuft die Anmeldung gerade (Start), wird bis zu fünf Sekunden darauf gewartet,
+    /// sonst wird sie sofort versucht (der erste Start hatte kein Netz). nil: der Server kennt dieses Gerät nicht (Netz, voll, abgelehnt).
+    func kennungBereit() async -> KontoKennung? {
+        for _ in 0..<10 {
+            if let k = registrierteKennung() { return k }
+            if !laeuft {
+                await aktualisiere(profilName: letzterProfilName, erzwingen: true)
+                return registrierteKennung()
+            }
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+        return registrierteKennung()
     }
 
     /// Die nächste Zusammenfassung geht sofort raus, ohne die 2 Minuten Pause (nach einer Änderung der Freigaben).

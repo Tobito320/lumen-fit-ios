@@ -407,3 +407,22 @@ test("Stimmung und Gewohnheiten: Standard-Verbindung sieht sie nicht, mit Freiga
   await ruf(env, "fremd", "PATCH", `/verbindungen/${a.json.id}`, { ausblenden: ["gewohnheiten"] });
   assert.equal((await meine(env, "fremd"))[0].daten.heute.gewohnheiten, undefined, "ausgeblendet bei mir: Feld fehlt");
 });
+
+test("Neue QR-Person ohne Lovea: ohne Upload leer ohne Fehler; Gym in der App aus heißt kein Gym beim Gegenüber, Schritte kommen", async () => {
+  const env = await welt("ich", "du");
+  const id = await verbinden(env);
+  const leer = (await meine(env, "du"))[0];
+  assert.equal(leer.status, "aktiv");
+  assert.ok(!leer.daten, "noch nichts hochgeladen: leer, kein Fehler");
+  // "ich" hat Gym ausgeschaltet: die App lädt nur Schritte hoch (die Verbindung würde Gym erlauben)
+  const nurSchritte = volleDatei("Ich");
+  nurSchritte.freigaben = ["schritte"];
+  assert.equal((await ruf(env, "ich", "PUT", "/partner", nurSchritte)).status, 200);
+  const d = (await meine(env, "du")).find((e) => e.id === id);
+  assert.deepEqual(d.siehst, ["schritte", "gym"], "die Verbindung erlaubt Gym");
+  assert.deepEqual(d.daten.freigaben, ["schritte"], "geteilt wird nur, was hochgeladen wurde");
+  assert.equal(d.daten.heute.schritte, 4200);
+  assert.equal(d.daten.heute.gymTageWoche, undefined);
+  assert.deepEqual(d.daten.ereignisse, [], "kein Gym-Ereignis");
+});
+

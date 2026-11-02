@@ -413,4 +413,24 @@ final class KontoTests: XCTestCase {
 
 private extension NamenAenderung {
     var isGesperrt: Bool { if case .gesperrt = self { true } else { false } }
+
+    func testKennungBereitHoltDasKontoNachWennDerStartKeinNetzHatte() async throws {
+        let bund = SpeicherSchluesselbund()
+        let lader = SkriptLader([netzfehler(), antwort(201), antwort(200, configJson), antwort(200, freigabeJson)])
+        let d = try dienst(lader, bund: bund)
+        await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        XCTAssertNil(d.registrierteKennung(), "Start ohne Netz: noch kein Konto")
+
+        let k = await d.kennungBereit()
+        XCTAssertNotNil(k, "der Code-Knopf legt das Konto an, ohne dass die App neu starten muss")
+        XCTAssertEqual(k?.id, try gespeicherteKennung(bund).id)
+        XCTAssertEqual(lader.anfragen.compactMap { $0.url?.path }.prefix(2), ["/konto", "/konto"])
+    }
+
+    func testKennungBereitOhneNetzGibtNilStattEinerLeerenKarte() async throws {
+        let d = try dienst(SkriptLader([netzfehler()]))
+        await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        let k = await d.kennungBereit()
+        XCTAssertNil(k)
+    }
 }
