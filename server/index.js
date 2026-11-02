@@ -456,7 +456,8 @@ export function filtern(stand, erlaubt, mitteilungen = true) {
   const s = zusammenfassungSauber({ ...stand, freigaben: (stand.freigaben ?? []).filter((f) => frei.includes(f)) });
   if (!s) return null;
   if (!erlaubt.includes("zyklus")) delete s.heute.zyklus;
-  s.ereignisse = mitteilungen ? s.ereignisse.filter((e) => frei.includes(EREIGNIS_BEREICH[e.art])) : [];
+  // Auch nur, was die App für diese Art hochgeladen hat (Gym in der App aus: kein Gym-Ereignis, selbst wenn die Verbindung Gym erlaubt).
+  s.ereignisse = mitteilungen ? s.ereignisse.filter((e) => s.freigaben.includes(EREIGNIS_BEREICH[e.art])) : [];
   return s;
 }
 
