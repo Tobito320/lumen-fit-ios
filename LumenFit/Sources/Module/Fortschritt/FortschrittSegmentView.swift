@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Das Segment "Fortschritt" im Tab Gym (Ideen 31 bis 34): Wochenleiste, nächstes Training, Kraftkurve, Sätze je Muskel (Felder und Balken), Erholungs-Silhouette
+/// Das Segment "Fortschritt" im Tab Gym (Ideen 31 bis 34): Wochenleiste, nächstes Training, Kraftkurve, Sätze je Muskel (Balken), danach die Körperkarte (Felder, Erholungs-Silhouette)
 /// und die Wege zu Verlauf, Messungen, Rückblick, Meilensteinen und Lumi. Ein Tipp auf Silhouette, Legende oder Feld öffnet das Blatt der Muskelgruppe;
 /// "Ziele" in der Leiste öffnet die Befragung. Die Seite bringt ihren eigenen Hintergrund und kein Navigationstitel mit, der Tab Gym setzt ihn.
 struct FortschrittSegmentView: View {
@@ -31,6 +31,7 @@ struct FortschrittSegmentView: View {
                     if q.hatTraining {
                         NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
                         KraftKurveKarte(sessions: q.sessions, heute: q.heute)
+                        SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
                     } else {
                         LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                             umgebung.router.oeffne(.gym(.training))
@@ -39,10 +40,7 @@ struct FortschrittSegmentView: View {
                     }
                     if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
                     SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }
-                    if q.hatTraining {
-                        SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
-                        SilhouetteKarte(daten: koerper, beiGruppe: waehle)
-                    }
+                    if q.hatTraining { SilhouetteKarte(daten: koerper, beiGruppe: waehle) }
                 }
                 links(stufe: q.stufe, medaillen: q.medaillen.count)
             }
