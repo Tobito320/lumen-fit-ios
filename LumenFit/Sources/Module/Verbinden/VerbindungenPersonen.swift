@@ -115,7 +115,7 @@ struct VerbindungPersonView: View {
 
     private func vorschauAbschnitt(_ e: VerbindungEintrag) -> some View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
-        let frei = Set(an.compactMap(\.freigabe))
+        let frei = VerbindungenLogik.erlaubt(Set(an.compactMap(\.freigabe)), einstellungen: umgebung.daten?.einstellungen.werte ?? Einstellungen())
         let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau(freigaben: frei).map(FreigabenVorschau.zeilen) ?? []
         return VerbindenAbschnitt(titel: "Das sieht \(e.anzeigeName)", fuss: "Genau diese Zeilen bekommt diese Person, nicht mehr.") {
             if an.isEmpty || e.ich.pause {

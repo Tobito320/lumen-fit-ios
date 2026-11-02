@@ -210,9 +210,44 @@ enum VerbindungenLogik {
     }
 
     /// Die Bereiche, die diese App hochladen darf, als Freigaben. Nie der Zyklus, auch wenn der Server ihn noch nennt: er gehört nur in Lovea.
-    nonisolated static func hochladen(_ antwort: VerbindungenAntwort?) -> Set<FreigabeArt> {
+    /// Ein ausgeschalteter Bereich (`Einstellungen`) wird auch dann nicht hochgeladen, wenn eine Verbindung ihn zeigen darf.
+    nonisolated static func hochladen(_ antwort: VerbindungenAntwort?, einstellungen: Einstellungen = Einstellungen()) -> Set<FreigabeArt> {
         guard let antwort else { return [] }
-        return Set(antwort.teilenBereiche.compactMap(\.freigabe))
+        return erlaubt(Set(antwort.teilenBereiche.compactMap(\.freigabe)), einstellungen: einstellungen)
+    }
+
+    /// Streicht die Freigaben, deren Bereich in der App ausgeschaltet ist (Gym: auch Plan und Training; Essen: auch Tagebuch). Auch für die Vorschau.
+    nonisolated static func erlaubt(_ frei: Set<FreigabeArt>, einstellungen: Einstellungen) -> Set<FreigabeArt> {
+        frei.filter { art in
+            let bereich: AppBereich?
+            switch art {
+            case .gym, .plan, .verlauf: bereich = AppBereich.gym
+            case .essen, .tagebuch: bereich = AppBereich.essen
+            case .schlaf: bereich = AppBereich.schlaf
+            case .schritte, .koerper, .stimmung, .gewohnheiten: bereich = nil
+            }
+            return bereich.map { einstellungen.zeigt($0) } ?? true
+        }
+    }
+
+    /// Bereiche, die die Person dir erlaubt, die aber in ihren Daten fehlen (bei ihr ausgeschaltet): "wird nicht geteilt". Ohne Daten nichts behaupten.
+    nonisolated static func nichtGeteilt(_ eintrag: VerbindungEintrag) -> [VerbindungBereich] {
+        guard let daten = eintrag.daten else { return [] }
+        let da = Set(daten.freigaben)
+        return VerbindungBereich.allCases.filter { b in eintrag.sichtbareBereiche.contains(b) && (b.freigabe.map { !da.contains($0) } ?? false) }
+    }
+
+    /// Die Zeile unter dem Namen in der Liste: Schritte und Gym von heute, wenn die Person sie teilt und der Stand von heute ist; sonst nil.
+    nonisolated static func kurzInfo(_ eintrag: VerbindungEintrag, jetzt: Date) -> String? {
+        guard eintrag.aktiv, !eintrag.ich.pause, case .verbunden(let d) = eintrag.stand(jetzt: jetzt), d.heute.tag == Datum.text(jetzt) else { return nil }
+        var teile: [String] = []
+        if d.freigaben.contains(.schritte), let s = d.heute.schritte {
+            teile.append("\(s.formatted(.number.locale(Locale(identifier: "de_DE")))) Schritte")
+        }
+        if d.freigaben.contains(.gym), let g = d.heute.gymTageWoche {
+            if let z = d.heute.gymZiel, z > 0 { teile.append("Gym \(g) von \(z)") } else { teile.append(g == 1 ? "Gym 1 Tag" : "Gym \(g) Tage") }
+        }
+        return teile.isEmpty ? nil : teile.joined(separator: " · ")
     }
 
     /// Schneidet eine Zusammenfassung auf die erlaubten Freigaben zu: Felder der anderen Bereiche fallen weg, nicht nur die Liste.

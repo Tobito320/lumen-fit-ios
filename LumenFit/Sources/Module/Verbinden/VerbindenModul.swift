@@ -74,7 +74,7 @@ final class VerbindenDienste {
                                      quellen: .init(daten: { [weak umgebung] in umgebung?.daten }, gesundheit: umgebung.gesundheit,
                                                     profilName: { [weak umgebung] in umgebung?.profil.aktiv?.name }),
                                      uhr: umgebung.uhr)
-        bruecke.hochladen = { [weak umgebung] in VerbindungenLogik.hochladen(umgebung?.konto.verbindungen.antwort) }
+        bruecke.hochladen = { [weak umgebung] in VerbindungenLogik.hochladen(umgebung?.konto.verbindungen.antwort, einstellungen: umgebung?.daten?.einstellungen.werte ?? Einstellungen()) }
         let uhr = umgebung.uhr
         band = BandDienstImpl(aktiv: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.bandAktiv ?? false },
                               bruecke: umgebung.bruecke, uhr: uhr,
@@ -264,8 +264,8 @@ final class VerbindenDienste {
             if !werte.alarmWeckt { alarmTakt?.cancel(); alarmTakt = nil; aufsteher?.stoppe() }
             if bandAus { band.ausschalten() }
             await abruf()
-        } else if werte.loveaVerbunden {
-            bruecke.schreibe()
+        } else {
+            bruecke.schreibe()   // auch ohne Lovea: ein ausgeschalteter Bereich geht sofort nicht mehr zum Server (die Brücke vergleicht und sendet nur bei Änderung)
         }
     }
 }

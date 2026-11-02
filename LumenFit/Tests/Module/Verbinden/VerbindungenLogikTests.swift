@@ -161,4 +161,45 @@ final class VerbindungenLogikTests: XCTestCase {
         let neu = ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"bandStandard":true}}"#.utf8))
         XCTAssertEqual(neu?.bandStandard, true)
     }
+
+    // MARK: Ausgeschaltete Bereiche, Liste
+
+    func testAusgeschalteterBereichWirdNichtHochgeladen() {
+        let antwort = VerbindungenAntwort(teilen: ["schritte", "gym", "plan", "verlauf", "essen", "tagebuch", "schlaf"])
+        var e = Einstellungen()
+        XCTAssertEqual(VerbindungenLogik.hochladen(antwort, einstellungen: e).count, 7, "alles an: alles darf hinaus")
+        e.setze(.gym, an: false)
+        XCTAssertEqual(VerbindungenLogik.hochladen(antwort, einstellungen: e), [.schritte, .essen, .tagebuch, .schlaf], "Gym aus: auch Plan und Training bleiben da")
+        e.setze(.essen, an: false)
+        XCTAssertEqual(VerbindungenLogik.hochladen(antwort, einstellungen: e), [.schritte, .schlaf])
+        XCTAssertEqual(VerbindungenLogik.hochladen(VerbindungenAntwort(teilen: ["schritte", "gym"]), einstellungen: e), [.schritte], "Wenig ohne Gym teilt nur Schritte")
+    }
+
+    func testNichtGeteiltNenntErlaubteAberFehlendeBereiche() {
+        let jetzt = TestUhr().lesen
+        let datei = ZusammenfassungDatei(version: LoveaVertrag.version, geschrieben: jetzt, profilName: "Beispiel", freigaben: [.schritte],
+                                         heute: TagesZusammenfassung(tag: Datum.text(jetzt)), ereignisse: [])
+        var e = VerbindungEintrag(id: "p", name: "Person", siehst: ["schritte", "gym"], daten: datei)
+        XCTAssertEqual(VerbindungenLogik.nichtGeteilt(e), [.gym])
+        e.daten = nil
+        XCTAssertEqual(VerbindungenLogik.nichtGeteilt(e), [], "ohne Daten wird nichts behauptet")
+    }
+
+    func testKurzInfoZeigtSchritteUndGymVonHeute() {
+        let jetzt = TestUhr().lesen
+        var tag = TagesZusammenfassung(tag: Datum.text(jetzt))
+        tag.schritte = 4200; tag.gymTageWoche = 2; tag.gymZiel = 4
+        let datei = ZusammenfassungDatei(version: LoveaVertrag.version, geschrieben: jetzt, profilName: "Beispiel", freigaben: [.schritte, .gym], heute: tag, ereignisse: [])
+        var e = VerbindungEintrag(id: "p", name: "Person", daten: datei)
+        XCTAssertEqual(VerbindungenLogik.kurzInfo(e, jetzt: jetzt), "4.200 Schritte · Gym 2 von 4")
+        e.daten?.freigaben = [.schritte]
+        XCTAssertEqual(VerbindungenLogik.kurzInfo(e, jetzt: jetzt), "4.200 Schritte", "Gym nicht geteilt: keine Gym-Zeile")
+        e.daten?.freigaben = []
+        XCTAssertNil(VerbindungenLogik.kurzInfo(e, jetzt: jetzt))
+        e.daten = datei
+        e.ich.pause = true
+        XCTAssertNil(VerbindungenLogik.kurzInfo(e, jetzt: jetzt), "Pause: nichts")
+        e.ich.pause = false
+        XCTAssertNil(VerbindungenLogik.kurzInfo(e, jetzt: jetzt.addingTimeInterval(2 * 86_400)), "gestriger Stand steht nicht als heute da")
+    }
 }
