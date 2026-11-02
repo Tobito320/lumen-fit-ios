@@ -60,30 +60,3 @@ enum ProfilThemaWahl {
         }
     }
 }
-
-/// Mini-Vorschau einer Theme-Karte: Grundfläche, Karte, Akzent und das Muster des Themes in der aktuellen Erscheinung.
-struct ProfilThemaVorschau: View {
-    let thema: ThemaID
-    let dunkel: Bool
-    @Environment(\.colorSchemeContrast) private var kontrast
-
-    var body: some View {
-        let palette = LumenFarben.palette(thema: thema, dunkel: dunkel, kontrastHoch: kontrast == .increased)
-        ZStack(alignment: .bottomLeading) {
-            palette.grund
-            MusterFlaeche(thema: thema, ort: .kopf)
-            VStack(alignment: .leading, spacing: Abstand.xs) {
-                Capsule().fill(palette.akzent).frame(width: 36, height: 8)
-                RoundedRectangle(cornerRadius: 6, style: .continuous).fill(palette.flaeche).frame(height: 22)
-                    .overlay(alignment: .leading) { Capsule().fill(palette.text2).frame(width: 40, height: 4).padding(.leading, Abstand.s) }
-            }
-            .padding(Abstand.s)
-        }
-        .environment(\.palette, palette)
-        .environment(\.colorScheme, dunkel ? .dark : .light)
-        .frame(height: 76)
-        .clipShape(.rect(cornerRadius: Rundung.klein, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Rundung.klein, style: .continuous).stroke(palette.rand, lineWidth: 1))
-        .accessibilityHidden(true)
-    }
-}

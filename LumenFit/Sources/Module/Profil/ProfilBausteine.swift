@@ -1,22 +1,6 @@
 import SwiftUI
 
-/// Kleine Bausteine, die nur die Profil-Seiten brauchen (Gruppenkopf, Zeilen, Passwort-Abfrage). Alles im Lumen-Design: deckende Karten, Haarlinien.
-
-/// Kopf einer Gruppe auf einer Seite.
-struct ProfilGruppenKopf: View {
-    let text: String
-    @Environment(\.palette) private var palette
-
-    var body: some View {
-        Text(text)
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(palette.text2)
-            .textCase(.uppercase)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Abstand.xs)
-            .accessibilityAddTraits(.isHeader)
-    }
-}
+/// Kleine Bausteine, die nur die Profil-Seiten brauchen (Zeilen, Passwort-Abfrage). Alles im Lumen-Design: deckende Karten, Haarlinien.
 
 /// Eine Zeile mit Symbol, Titel, optionaler Zeile darunter und optionalem Wert rechts. Als Navigationsziel mit Pfeil (`pfeil`).
 struct ProfilZeile: View {
