@@ -91,7 +91,7 @@ struct LoveaTrainingLeiste: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.bar)
+        .lumenLeiste()
         .haptik(.mehr, bei: mehr)
         .haptik(.weniger, bei: weniger)
     }
