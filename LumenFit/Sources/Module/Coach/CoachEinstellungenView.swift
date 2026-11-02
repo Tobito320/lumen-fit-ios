@@ -1,11 +1,14 @@
 import SwiftUI
 
-/// Einstellungen des Coachs: eigener Name, wer antwortet (Apple Intelligence oder Regeln) und was mit den Daten passiert (nichts verlässt das iPhone).
+/// Einstellungen des Coachs: eigener Name, wer antwortet (Server-Modell, Apple Intelligence oder Regeln) und was mit den Daten passiert (je nach Weg).
 struct CoachEinstellungenView: View {
     let modell: CoachModell
     @Environment(\.palette) private var palette
+    @Environment(AppUmgebung.self) private var umgebung
     @State private var name = ""
     @State private var motorText = "Wird geprüft ..."
+    /// Letzter sicherer Stand der Server-Freigabe (wie im Chat); die Prüfung unten frischt ihn auf.
+    @State private var server = UserDefaults.standard.bool(forKey: CoachServerMotor.standardSchluessel)
     @FocusState private var fokus: Bool
 
     var body: some View {
@@ -55,8 +58,7 @@ struct CoachEinstellungenView: View {
                     .frame(minHeight: Abstand.tippflaeche)
                     .accessibilityElement(children: .combine)
                 }
-                Text("Alle Antworten entstehen auf deinem iPhone. Deine Fragen, dein Schlaf, dein Training und dein Essen werden nie gesendet. "
-                     + "Gemerkt wird nur, was du im Gedächtnis siehst, und du kannst es jederzeit löschen.")
+                Text(CoachText.datenschutzText(server: server))
                     .font(.subheadline).foregroundStyle(palette.text2)
                 Text("Der Coach ist kein Arzt und stellt keine Diagnosen. Bei Beschwerden sprich bitte mit deiner Ärztin oder deinem Arzt.")
                     .font(.subheadline).foregroundStyle(palette.text2)
@@ -70,8 +72,8 @@ struct CoachEinstellungenView: View {
         .onAppear { name = modell.einstellungen?.stand.name ?? "" }
         .onDisappear { sichern() }
         .task {
-            let bereit = await ModellCoachMotor().verfuegbar()
-            motorText = bereit ? "Apple Intelligence auf deinem iPhone" : "Textbausteine und Regeln auf deinem iPhone (Apple Intelligence ist hier nicht verfügbar)"
+            if let wahl = umgebung.coachMotor as? CoachWahlMotor, let motor = wahl.server { server = await motor.verfuegbar() }
+            motorText = CoachText.motorText(server: server, modellBereit: await ModellCoachMotor().verfuegbar())
         }
     }
 
