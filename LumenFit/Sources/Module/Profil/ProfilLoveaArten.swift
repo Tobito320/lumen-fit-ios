@@ -26,14 +26,14 @@ enum ProfilLoveaArten {
     /// als `fit.coach.nachricht` sichtbar). `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank) aus älteren Lovea-Fassungen: keine
     /// Ansicht hier. `wecker.setzen` ist die Weckzeit, die Lovea dem Partner zeigt: Wecker gehören zu Lumen Alarm, Lumen Fit ist nur Health (Umfang-Gate), und
     /// beim Entfernen in Lovea darf diese Zeit nicht verschwinden.
-    /// `zyklus.tag` und `zyklus.einstellung`: der Zyklus ist aus Lumen Fit entfernt (02.11.2026), nichts liest die Ops mehr; sie bleiben roh im Log, wie sie waren.
-    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen", "zyklus.tag", "zyklus.einstellung"]
+    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen"]
 
     /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach, die Konsistenz-Kategorien und die Abgabe aus Lovea
     /// (`abgabe.*`: was nur auf dem Lovea-Gerät lag, siehe `ProfilLoveaUebernahme`). Der Rest ist Lovea-Oberfläche.
     static let einstellungPraefixe = ["ziel.", "coach.", "konsistenz.", "abgabe."]
 
     private static let gruppen: [(grund: String, exakt: Set<String>, praefixe: [String])] = [
+        ("Zyklus", ["zyklus.tag", "zyklus.einstellung"], []),
         ("Chat", ["entwurf.setzen", "geste", "gruss", "gefuehl.setzen"], ["nachricht.", "snap.", "sprachpost.", "medium.", "brief."]),
         ("Notizen", ["notiz.setzen", "wir.notiz", "liste.setzen", "spiegel.setzen"], ["notizbuch."]),
         ("Kalender und Orte", ["jahrestag.setzen", "dates.idee", "puenktlich.setzen", "muster.setzen", "muster.loeschen", "ausnahme.setzen"], ["termin.", "treffen.", "ort."]),

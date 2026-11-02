@@ -18,7 +18,7 @@ export const HEALTH_ARTEN = [
   "gym.plan", "gym.checkin", "gym.uebung", "gym.checkout", "gym.loeschen", "cardio.setzen", "cardio.loeschen",
   "essen.setzen", "lebensmittel.setzen", "lebensmittel.favorit", "rezept.setzen", "fasten.setzen", "fasten.eintrag", "fasten.plan",
   "koerper.setzen", "food.anpassung", "habit.setzen", "habit.anlegen", "habit.aendern", "habit.ausblenden", "habit.loeschen",
-  "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen", "zyklus.tag", "zyklus.einstellung",
+  "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen",
   "coach.nachricht", "wecker.setzen", "einkauf.liste", "kuehl.setzen", "kuehl.weg",
 ];
 
