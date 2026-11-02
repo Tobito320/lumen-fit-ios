@@ -82,6 +82,7 @@ final class AppUmgebungTests: XCTestCase {
         let u = umgebung(ordner: try tempOrdner(), leser: leser)
         let merker = Merker()
         u.beiAbruf { merker.eintraege.append("abruf") }
+        try u.profil.anlegen(name: "Test", passwort: "abcd")   // ohne Profil ist noch kein Bereich gewählt und nichts wird beobachtet
         u.beobachteHealth()
         XCTAssertEqual(leser.beobachterAnzahl, 1)
         leser.melde()

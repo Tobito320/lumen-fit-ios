@@ -35,6 +35,7 @@ final class AppUmgebung {
     private(set) var neuinstallationErkannt = false
 
     @ObservationIgnored private var datenSatz: DatenSatz?
+    @ObservationIgnored private var beobachteteTypen: Set<HealthTyp> = []
     @ObservationIgnored private var abrufAufgaben: [@MainActor () async -> Void] = []
 
     /// Der `DatenSatz` des aktiven Profils; nil, solange es kein Profil gibt. Ein Profilwechsel liefert einen neuen.
@@ -75,7 +76,8 @@ final class AppUmgebung {
         let profile = ProfilStore(schluesselbund: schluesselbund, ereignisse: kanal, runden: passwortRunden, uhr: uhr)
         self.profil = profile
         let anker = UmgebungsAnker()
-        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() })
+        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() },
+                                         typen: { anker.healthTypen() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -106,10 +108,15 @@ final class AppUmgebung {
 
     // MARK: - Hintergrund-Abruf
 
-    /// Meldet die Health-Hintergrundlieferung für Schritte, Schlaf und Training an (synchron in `ModulStart.starteAlle`). Neue Daten lösen
-    /// `Ereignis.healthAktualisiert` und alle Abruf-Aufgaben aus.
+    /// Meldet die Health-Hintergrundlieferung für Schritte, Schlaf und Training an (synchron in `ModulStart.starteAlle`), aber nur für gewählte Bereiche.
+    /// Ein später eingeschalteter Bereich meldet nur seine neuen Typen nach (nie doppelt). Neue Daten lösen `Ereignis.healthAktualisiert` und alle Abruf-Aufgaben aus.
     func beobachteHealth() {
-        healthLeser.beobachte([.schritte, .schlaf, .training]) { [weak self] in
+        guard let einstellungen = daten?.einstellungen.werte else { return }   // ohne Profil ist noch nichts gewählt; `auffrischen` ruft es nach dem Onboarding nochmal
+        let gewollt = Set<HealthTyp>([.schritte, .schlaf, .training]).intersection(einstellungen.healthTypen)
+        let neu = gewollt.subtracting(beobachteteTypen)
+        guard !neu.isEmpty else { return }
+        beobachteteTypen.formUnion(neu)
+        healthLeser.beobachte(neu) { [weak self] in
             Task { @MainActor in await self?.fuehreAbrufAus() }
         }
     }
@@ -186,6 +193,8 @@ final class AppUmgebung {
 /// Raum des aktiven Profils (Ops `fit.band.tag`, die letzte Op je Tag gewinnt).
 @MainActor private final class UmgebungsAnker {
     weak var umgebung: AppUmgebung?
+
+    func healthTypen() -> Set<HealthTyp> { (umgebung?.daten?.einstellungen.werte ?? Einstellungen()).healthTypen }
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
 
