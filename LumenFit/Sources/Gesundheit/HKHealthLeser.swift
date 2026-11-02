@@ -18,7 +18,6 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
         case .etagen: [HKQuantityType(.flightsClimbed)]
         case .aktiveEnergie: [HKQuantityType(.activeEnergyBurned)]
         case .training: [HKObjectType.workoutType(), HKQuantityType(.appleExerciseTime)]
-        case .stehen: [HKCategoryType(.appleStandHour)]
         case .schlaf: [HKCategoryType(.sleepAnalysis)]
         case .ruhepuls: [HKQuantityType(.restingHeartRate)]
         case .hrv: [HKQuantityType(.heartRateVariabilitySDNN)]

@@ -39,7 +39,7 @@ struct HealthWorkout: Codable, Hashable, Identifiable, Sendable {
 }
 
 enum HealthTyp: String, CaseIterable, Sendable {
-    case schritte, distanz, etagen, aktiveEnergie, training, stehen, schlaf, ruhepuls, hrv, sauerstoff, atmung, temperatur, vo2max, gewicht, puls
+    case schritte, distanz, etagen, aktiveEnergie, training, schlaf, ruhepuls, hrv, sauerstoff, atmung, temperatur, vo2max, gewicht, puls
 }
 
 enum HealthZugriff: Sendable { case unbekannt, angefragt, verweigert, nichtVerfuegbar }

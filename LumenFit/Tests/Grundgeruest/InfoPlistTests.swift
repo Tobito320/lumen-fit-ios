@@ -11,8 +11,15 @@ final class InfoPlistTests: XCTestCase {
         }
     }
 
-    func testTexteFuerKameraBluetoothUndBewegung() {
-        for schluessel in ["NSCameraUsageDescription", "NSBluetoothAlwaysUsageDescription", "NSMotionUsageDescription"] {
+    func testSchreibtextNenntNurTrainingUndGewichtUndEsGibtKeineBewegungsRechte() {
+        let schreiben = info["NSHealthUpdateUsageDescription"] as? String ?? ""
+        XCTAssertTrue(schreiben.contains("Training") && schreiben.contains("Gewicht"))
+        XCTAssertFalse(schreiben.contains("Mahlzeit"))
+        XCTAssertNil(info["NSMotionUsageDescription"], "keine Bewegungsdaten über CoreMotion")
+    }
+
+    func testTexteFuerKameraUndBluetooth() {
+        for schluessel in ["NSCameraUsageDescription", "NSBluetoothAlwaysUsageDescription"] {
             XCTAssertFalse((info[schluessel] as? String ?? "").isEmpty, schluessel)
         }
     }

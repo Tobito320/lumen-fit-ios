@@ -4,7 +4,7 @@ import Foundation
 /// "abgelehnt", sondern nur, ob in den letzten 30 Tagen Daten angekommen sind. Die Probe liest nur; die Rechte-Abfrage macht sie nie.
 enum ProfilHealthZeile: Equatable, Sendable {
     case datenDa, keineDaten
-    /// Diesen Typ liest die App heute nicht so, dass sich eine Probe lohnt (Stehen, Puls ohne Training).
+    /// Diesen Typ liest die App heute nicht so, dass sich eine Probe lohnt (Puls ohne Training).
     case nichtPruefbar
 }
 
@@ -47,10 +47,6 @@ enum ProfilHealthProbe {
         case .etagen: return da(b.tage.contains { $0.etagen > 0 })
         case .aktiveEnergie: return da(b.tage.contains { $0.aktiveKcal > 0 })
         case .training: return da(b.tage.contains { $0.trainingMinuten > 0 } || !b.workouts.isEmpty)
-        case .stehen:
-            // `HKHealthLeser` liefert heute keine Stehstunden; erst wenn welche ankommen, lässt sich die Frage beantworten.
-            let gemessen = b.tage.filter { $0.stehStunden != nil }
-            return gemessen.isEmpty ? .nichtPruefbar : da(gemessen.contains { ($0.stehStunden ?? 0) > 0 })
         case .schlaf: return da(!b.naechte.isEmpty)
         case .ruhepuls: return vital(.ruhepuls)
         case .hrv: return vital(.hrv)
@@ -65,7 +61,7 @@ enum ProfilHealthProbe {
         }
     }
 
-    /// Kurzer Wert für die Einstellungszeile: "2 von 15 mit Daten".
+    /// Kurzer Wert für die Einstellungszeile: "2 von 14 mit Daten".
     static func zusammenfassung(_ b: Befund) -> String {
         let mitDaten = HealthTyp.allCases.filter { zeile($0, b) == .datenDa }.count
         return "\(mitDaten) von \(HealthTyp.allCases.count) mit Daten"
@@ -86,7 +82,6 @@ enum ProfilHealthProbe {
         case .etagen: "Etagen"
         case .aktiveEnergie: "Aktive Energie"
         case .training: "Training"
-        case .stehen: "Stehen"
         case .schlaf: "Schlaf"
         case .ruhepuls: "Ruhepuls"
         case .hrv: "Herzfrequenzvariabilität"
@@ -107,7 +102,6 @@ enum ProfilHealthProbe {
         case .etagen: "Für gestiegene Etagen im Tagesverlauf."
         case .aktiveEnergie: "Für deine aktive Energie und das Bewegen-Ziel."
         case .training: "Damit Training aus anderen Apps und von der Uhr zählt."
-        case .stehen: "Für die Steh-Stunden im Tagesverlauf."
         case .schlaf: "Für deine Nächte, Schlafphasen und die Bereitschaft am Morgen."
         case .ruhepuls: "Für deine Erholung: ein niedriger Ruhepuls ist ein gutes Zeichen."
         case .hrv: "Für deine Erholung: Lumi vergleicht mit deinem eigenen Schnitt."
@@ -128,7 +122,6 @@ enum ProfilHealthProbe {
         case .etagen: "figure.stairs"
         case .aktiveEnergie: "flame.fill"
         case .training: "dumbbell.fill"
-        case .stehen: "figure.stand"
         case .schlaf: "bed.double.fill"
         case .ruhepuls: "heart.fill"
         case .hrv: "waveform.path.ecg"

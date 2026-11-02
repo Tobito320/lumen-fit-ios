@@ -51,7 +51,7 @@ final class ProfilHealthTests: XCTestCase {
     }
 
     func testJederTypHatNameGrundUndSymbol() {
-        XCTAssertEqual(HealthTyp.allCases.count, 15)
+        XCTAssertEqual(HealthTyp.allCases.count, 14, "Stehen wird nicht mehr gelesen")
         for typ in HealthTyp.allCases {
             XCTAssertFalse(ProfilHealthProbe.name(typ).isEmpty)
             XCTAssertFalse(ProfilHealthProbe.grund(typ).isEmpty)
@@ -64,7 +64,7 @@ final class ProfilHealthTests: XCTestCase {
         let leer = ProfilHealthProbe.Befund()
         for typ in HealthTyp.allCases {
             let z = ProfilHealthProbe.zeile(typ, leer)
-            XCTAssertEqual(z, typ == .stehen || typ == .puls ? .nichtPruefbar : .keineDaten, "\(typ)")
+            XCTAssertEqual(z, typ == .puls ? .nichtPruefbar : .keineDaten, "\(typ)")
         }
     }
 
@@ -81,7 +81,7 @@ final class ProfilHealthTests: XCTestCase {
     func testNullwerteZaehlenAlsKeineDaten() {
         let t = TagesWerte(tag: "2026-09-22", schritte: 0, distanzMeter: 0, etagen: 0, aktiveKcal: 0, trainingMinuten: 0, stehStunden: 0)
         let b = ProfilHealthProbe.Befund(tage: [t])
-        for typ in [HealthTyp.schritte, .distanz, .etagen, .aktiveEnergie, .training, .stehen] {
+        for typ in [HealthTyp.schritte, .distanz, .etagen, .aktiveEnergie, .training] {
             XCTAssertEqual(ProfilHealthProbe.zeile(typ, b), .keineDaten, "\(typ)")
         }
     }

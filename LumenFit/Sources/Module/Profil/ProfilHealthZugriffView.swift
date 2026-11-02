@@ -47,7 +47,7 @@ struct ProfilHealthZugriffView: View {
         .task { await pruefe() }
     }
 
-    /// "9 von 15 mit Daten"; solange die Prüfung läuft, nichts.
+    /// "9 von 14 mit Daten"; solange die Prüfung läuft, nichts.
     private var lesenWert: String? {
         befund.map(ProfilHealthProbe.zusammenfassung)
     }
