@@ -56,10 +56,10 @@ struct BandSeite: View {
     /// Ohne Freigabe steht hier kein Wort von Lovea.
     private var fuss: String {
         if umgebung.konto.config.bandStandard {
-            return "Für dein Konto von selbst an, Aus bleibt aus. Lovea und Lumen Fit können dasselbe Band nutzen; ob sie sich beim Lesen stören, ist am Gerät nicht bewiesen. Fehlen Daten, schalte eine der beiden aus."
+            return "Für dein Konto von selbst an, Aus bleibt aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Fehlen Daten, schalte eine der beiden aus."
         }
         let basis = "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth."
-        return umgebung.konto.loveaErlaubt ? "Standard aus. Lovea und Lumen Fit können dasselbe Band nutzen; ob sie sich beim Lesen stören, ist am Gerät nicht bewiesen. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
+        return umgebung.konto.loveaErlaubt ? "Standard aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
     }
 }
 

@@ -597,10 +597,10 @@ final class TrackerModell {
     /// angefragt und werden ignoriert.
     private func schlafAntwort(_ daten: Data) {
         guard var sammler = schlafSammler else {
-            // Nur zur Fehlersuche, einmal je App-Start: kam das, hat eine andere App am selben Band angefragt (Vermutung, nicht bewiesen).
+            // Nur zur Fehlersuche, einmal je App-Start. Kein Beleg für eine zweite App: dieselbe Lage entsteht, wenn die eigene Antwort nach den 15 s oder einem "ungültig" eintrifft.
             if !fremdesPaketGemeldet {
                 fremdesPaketGemeldet = true
-                bandLogSchreiben(art: "fremd", text: "Dienst-2-Paket ohne eigene Anfrage (\(daten.count) Byte), ignoriert: \(Self.hex(daten.prefix(8)))", nurWennNeu: false)
+                bandLogSchreiben(art: "ohne-anfrage", text: "Dienst-2-Paket ohne offene eigene Anfrage (\(daten.count) Byte), ignoriert: \(Self.hex(daten.prefix(8)))", nurWennNeu: false)
             }
             return
         }

@@ -215,7 +215,7 @@ struct BandHilfeAbschnitt: View {
         VerbindenAbschnitt(titel: "Hilfe", fuss: nil) {
             DisclosureGroup("Verbindung klappt nicht") {
                 VStack(alignment: .leading, spacing: Abstand.s) {
-                    Text("Das iPhone hält das Band nur einmal; mehrere Apps teilen sich diese Verbindung (so liefert iOS es, am Gerät noch nicht bewiesen). Ob eine andere App es schon hielt, steht bei den Rohdaten unter Verbindung. In QWatch Pro muss das Band unter Device, Device Binding gelöst sein.")
+                    Text("Ob mehrere Apps sich die Verbindung zum Band teilen, ist am Gerät noch nicht bewiesen. Ob das Band beim Verbinden schon verbunden war, steht bei den Rohdaten unter Verbindung (von wem, sagt iOS nicht). In QWatch Pro muss das Band unter Device, Device Binding gelöst sein.")
                     Text("Nach dem Trennen sendet es erst wieder, wenn du es antippst. Lumen Fit verbindet sich dann von selbst, auch im Hintergrund.")
                     Text("Lumen Fit fragt bei jeder Verbindung, beim Öffnen der App und \(TrackerModus.abfrageText(modell.modus)) ab, solange die Verbindung steht.")
                 }

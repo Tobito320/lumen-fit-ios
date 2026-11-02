@@ -1066,7 +1066,7 @@ Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktr
 6. **Passwort:** Mindestlänge 4; es schützt nur lokale Handlungen (Wechsel, Ändern, Löschen); es gibt keinen Rückweg per Mail. Der Start fragt nie danach.
 7. **Lovea-Kopplung:** Dateivertrag in `group.com.onlyus.lovea` (5.5). Die App-ID von Lumen Fit bekommt beide Gruppen, Loveas App-IDs bleiben unberührt. Loveas Hälfte (Dateien schreiben und lesen, Paar-Karten, Verkleinerung) ist eine spätere Lovea-Runde.
 8. **Kein Push:** Mitteilungen über Partner-Ereignisse sind lokal und kommen, wenn Lumen Fit läuft oder der Hintergrund-Abruf es weckt. Echtzeit liefert Loveas eigener Push. Echter Push für Lumen Fit bräuchte Server, `PUSH_NOTIFICATIONS` und neue Profile.
-9. **Band:** opt-in, Standard aus, solange Lovea den Band-Code behält (das Band nimmt eine Verbindung). Ob iOS zwei Apps dieselbe Verbindung teilen lässt, ist ungeprüft; die Warteschlange über die Gruppe ist der sichere Weg.
+9. **Band:** opt-in, Standard aus, solange Lovea den Band-Code behält. Ob iOS zwei Apps dieselbe Verbindung teilen lässt und ob sie sich beim Lesen stören, ist ungeprüft (die Rohdaten-Seite zeigt Verbindungsweg und ein Paket ohne eigene Anfrage); die Warteschlange über die Gruppe ist der sichere Weg.
 10. **Coach:** Apple Foundation Models nur mit Apple Intelligence; nicht jedes Gerät hat sie, deshalb ist der Regel-Coach vollwertig. Typnamen von FoundationModels sind am Compiler und in der Apple-Doku zu prüfen. Der Coach gibt keine medizinischen Ratschläge.
 11. **Freunde:** ohne Server nur als geteilte Wochenkarte (Bild, Link, QR); keine Live-Rangliste.
 12. **Zeit und Sprache:** Zeitzone Europe/Berlin (wie Lovea), App-Sprache Deutsch.

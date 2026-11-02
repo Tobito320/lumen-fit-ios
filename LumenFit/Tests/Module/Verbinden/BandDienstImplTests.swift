@@ -274,7 +274,7 @@ final class BandDienstImplTests: XCTestCase {
         a.fabrik.melde(.schlafDaten(Data([0x01, 0x02])))
         try? await Task.sleep(for: .milliseconds(100))
         let modell = try XCTUnwrap(a.dienst.modell)
-        XCTAssertEqual(modell.bandLog.filter { $0.contains("fremd: Dienst-2-Paket ohne eigene Anfrage") }.count, 1)
+        XCTAssertEqual(modell.bandLog.filter { $0.contains("ohne-anfrage: Dienst-2-Paket ohne offene eigene Anfrage") }.count, 1)
         XCTAssertEqual(modell.schlafStand, 0, "nichts wurde ausgewertet")
     }
 
