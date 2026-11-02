@@ -11,28 +11,29 @@ struct ProfilBlattView: View {
         List {
             ProfilAbschnitt {
                 Button { verbindenOffen = true } label: { ProfilListenZeile("Kollegen verbinden", symbol: "qrcode") }
+                    .nutzungEintrag(.profilKollegen)
             }
             ProfilBereicheAbschnitt()
             ProfilAbschnitt {
-                link("Konto", symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
+                link("Konto", .profilKonto, symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
             }
             ProfilAbschnitt {
-                link("Aussehen", symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
+                link("Aussehen", .profilAussehen, symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
                 Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
                                      set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
                     ProfilListenZeile("Haptik", symbol: "hand.tap.fill")
                 }
-                link("Ziele und Körper", symbol: "target") { ZieleView() }
-                link("Health-Zugriff", symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
-                link("Meilensteine", symbol: "star.fill") { MeilensteineView() }
+                link("Ziele und Körper", .profilZiele, symbol: "target") { ZieleView() }
+                link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
+                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
             }
             ProfilAbschnitt {
-                link("Geräte", symbol: "applewatch") { GeraeteView() }
-                link("Freunde und Partner", symbol: "link") { VerbindungenView() }
+                link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() }
+                link("Freunde und Partner", .profilFreunde, symbol: "link") { VerbindungenView() }
             }
             ProfilAbschnitt {
-                link("Deine Daten", symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
-                link("Über Lumen Fit", symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
+                link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
+                link("Über Lumen Fit", .profilUeber, symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
             }
         }
         .profilListe()
@@ -58,8 +59,9 @@ struct ProfilBlattView: View {
         ProfilSicherungStand.kurz(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
     }
 
-    private func link<Ziel: View>(_ titel: String, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
+    private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
         NavigationLink { ziel() } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
+            .nutzungEintrag(eintrag)
     }
 }
 

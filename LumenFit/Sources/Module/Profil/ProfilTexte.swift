@@ -19,7 +19,7 @@ enum ProfilTexte {
         Abschnitt(titel: "Was ins Netz geht",
                   text: "Nur das Nötige: beim Scannen oder Suchen fragt die App Open Food Facts nach dem Barcode oder deinem Suchtext, und Übungsbilder werden geladen und gemerkt. Beim Eintragen deines Studios geht dein Suchtext an Apple Karten, dazu deine ungefähre Position, wenn du den Standort erlaubst (nur während der Suche, ohne Erlaubnis suchst du ohne Entfernung). Gespeichert wird nur der Name des Studios, nie ein Standort. Dabei gehen nie dein Name, deine Gesundheitsdaten oder dein Training mit."),
         Abschnitt(titel: "Was an den Lumen-Server geht",
-                  text: "Eine zufällige Kennung dieses iPhones, dein Profilname und die App-Version. Daran erkennt der Server dein Gerät, damit Einstellungen wie die Namensregel ohne Update geändert werden können. Dazu einmal je Start eine kleine Nutzungsmeldung: an welchen Tagen du die App geöffnet hast und wie oft du welchen Bereich oder welche Funktion benutzt hast (zum Beispiel den Gym-Tab oder \"Mahlzeit gespeichert\"). So sieht der Betreiber, was genutzt wird und was nicht. Kein Gesundheitswert, kein Inhalt, kein Training, kein Essen und kein Passwort geht dorthin. Mit dem Schalter „Nutzung anonym zählen“ unten auf dieser Seite schaltest du diese Meldung aus; die Kennung, der Profilname und die App-Version gehen trotzdem hin, damit Einstellungen ankommen."),
+                  text: "Eine zufällige Kennung dieses iPhones, dein Profilname und die App-Version. Daran erkennt der Server dein Gerät, damit Einstellungen wie die Namensregel ohne Update geändert werden können. Nur wenn du Ja sagst, kommt eine Nutzungsmeldung dazu. Sie besteht aus kleinen Zählern und festen Namen, hängt an deinem Konto und ist deshalb nicht anonym. Sie zeigt, welchen Tab und welche Funktion du am Tag zuerst öffnest und zu welcher Tageszeit, wie lange eine Sitzung ungefähr dauert, welche Wege du in der App gehst, wo ein Ablauf (zum Beispiel das Verbinden per QR-Code) abbricht, welche Einstellungen gewählt sind, welche Fehler aufgetreten sind (nur die Art, zum Beispiel Absturz oder Speichern fehlgeschlagen), wie schnell der Server antwortet, dazu App-Version, iOS-Version und Gerätetyp. Kein Gesundheitswert, kein Gewicht, kein Essen, kein Schlaf, kein Training, kein Text, kein Name, kein Studio, kein Standort, keine Verbindung und kein Fehlertext geht dorthin. Sagst du Nein oder gar nichts, geht nichts davon raus. Die Meldungen werden nach 90 Tagen gelöscht. Mit dem Schalter „Nutzung melden“ unten auf dieser Seite änderst du deine Antwort jederzeit; Aus stoppt das Senden sofort und verwirft, was noch nicht gesendet ist. Die Kennung, der Profilname und die App-Version gehen trotzdem hin, damit Einstellungen ankommen."),
         Abschnitt(titel: "Was dein Partner sieht",
                   text: "Nichts, solange du keine Datenart freigibst. Ist dein Konto mit einem Partner verbunden, sieht er nur die Zusammenfassungen (Schritte, Gym-Tage, Schlaf, Kalorien), die du einzeln freigibst, nie Rohdaten. Sie laufen über den Lumen-Server und, solange Lovea den Weg noch nutzt, zusätzlich über eine Datei auf diesem iPhone."),
         Abschnitt(titel: "Passwort",
@@ -27,6 +27,22 @@ enum ProfilTexte {
         Abschnitt(titel: "Alles löschen",
                   text: "Löscht dein Profil und alle Daten dieser App auf diesem iPhone, mit deinem Passwort. Beim letzten Profil gehen auch die Dateien für Lovea, der Stand der Widgets und die Spuren des Bands weg. Daten in Health bleiben unberührt. Eine Datensicherung, die du geteilt hast, bleibt dort, wo du sie abgelegt hast."),
     ] }
+
+    // MARK: - Frage nach der Nutzungsmeldung
+
+    /// Die Frage im ersten Start, für Bestandskonten einmal und im Datenschutz-Bereich: gleiche Worte an allen Stellen, zwei gleichwertige Antworten.
+    enum NutzungFrage {
+        static let titel = "Hilfst du uns, Lumen Fit besser zu machen?"
+        static let einleitung = "Wenn du Ja sagst, meldet die App dem Lumen-Server kleine Zähler zur Nutzung. So finden wir Fehler schneller und sehen, was niemand braucht."
+        static let gezaehlt = "Das wird gezählt: welchen Tab und welche Funktion du am Tag zuerst öffnest, zu welcher Tageszeit, wie lange eine Sitzung ungefähr dauert, welche Wege du gehst, wo ein Ablauf abbricht, welche Einstellungen gewählt sind, Fehlerarten wie Absturz und wie schnell der Server antwortet."
+        static let nie = "Das wird nie gesendet: Gesundheitswerte, Gewicht, Essen, Schlaf, Trainings, Texte, Namen, Studios, Standort, Verbindungen und Fehlertexte."
+        static let konto = "Die Zähler hängen an der zufälligen Kennung dieses iPhones und deinem Profilnamen. Sie sind nicht anonym."
+        static let aus = "Du kannst jederzeit unter Profil, Über Lumen Fit, Datenschutz ausschalten. Die App funktioniert bei Nein genauso, auch mit Health."
+        static let ja = "Ja, helfen"
+        static let nein = "Nein"
+        static let schalter = "Nutzung melden"
+        static let schalterFuss = "Hängt an deinem Konto, nicht anonym. Aus stoppt das Senden sofort und verwirft, was noch nicht gesendet ist."
+    }
 
     // MARK: - Quellen
 

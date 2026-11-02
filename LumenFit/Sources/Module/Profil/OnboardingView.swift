@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Das Onboarding in fünf Karten (Idee 71): Willkommen mit Lumi, Name (ohne Passwort), Bereiche, ein Ziel, Health. Es gibt nie ein Passwort beim Start;
+/// Das Onboarding in sechs Karten (Idee 71): Willkommen mit Lumi, Name (ohne Passwort), Bereiche, ein Ziel, die Frage nach der Nutzungsmeldung, Health. Es gibt nie ein Passwort beim Start;
 /// freiwillig legt man eines später unter Konto fest.
 /// Das Profil entsteht erst auf der letzten Karte (`ProfilOnboardingFluss.abschliessen`).
 struct OnboardingView: View {
@@ -23,6 +23,7 @@ struct OnboardingView: View {
                     case .profil: profil(name: Bindable(fluss).name)
                     case .bereiche: bereiche
                     case .ziel: ziel
+                    case .nutzung: NutzungFrageText()
                     case .health: health
                     }
                     if let fehler = fluss.fehler { FehlerKarte(titel: "Das hat nicht geklappt", hilfe: fehler) }
@@ -77,6 +78,8 @@ struct OnboardingView: View {
                 knopf("Los geht's") { fluss.weiter() }
             case .profil, .bereiche, .ziel:
                 knopf("Weiter") { fokus = nil; fluss.weiter() }.disabled(!fluss.kannWeiter)
+            case .nutzung:
+                NutzungFrageKnoepfe { fluss.antworteNutzung($0) }
             case .health:
                 knopf("Health erlauben") { fertig(mitHealth: true) }.disabled(arbeitet)
                 Button("Später") { fertig(mitHealth: false) }

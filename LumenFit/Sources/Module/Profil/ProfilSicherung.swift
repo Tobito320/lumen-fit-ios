@@ -182,6 +182,7 @@ enum ProfilSicherungLogik {
         if daten.einstellungen.werte == Einstellungen() {
             var geraetefrei = sicherung.einstellungen
             geraetefrei.bandAktiv = false; geraetefrei.bandBewusstAus = false; geraetefrei.loveaVerbunden = false; geraetefrei.alarmWeckt = Einstellungen().alarmWeckt; geraetefrei.healthSchreiben = false; geraetefrei.healthGefragt = false
+            geraetefrei.nutzungAntwort = .offen; geraetefrei.nutzungJaSeit = nil   // die Zustimmung gilt für dieses Gerät, auf einem neuen wird neu gefragt
             daten.einstellungen.werte = geraetefrei
         }
         if daten.ziele.ziele == Ziele() { daten.ziele.setze(sicherung.ziele) }

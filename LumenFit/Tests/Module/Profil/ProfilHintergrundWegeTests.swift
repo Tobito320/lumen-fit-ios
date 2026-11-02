@@ -28,6 +28,7 @@ final class ProfilHintergrundWegeTests: XCTestCase {
         f.weiter()
         f.weiter()
         f.weiter()
+        f.antworteNutzung(.nein)   // die Frage nach der Nutzungsmeldung steht vor Health
     }
 
     func testOnboardingLegtImHintergrundDasProfilOhnePasswortAn() async throws {

@@ -41,6 +41,16 @@ export const WERKZEUGE = [
     inputSchema: { type: "object", properties: { umgebung } },
   },
   {
+    name: "lumenfit_fehler",
+    description: "Fehler aus der echten Nutzung (nur Zähler mit festen Namen, nie Texte oder Stacks): neue und häufigste Fehler je App-Version mit Anzahl, Anzahl Konten, erstem und letztem Tag, iOS und Gerätetyp. Dazu fehlgeschlagene Serveraufrufe je fester Route und Status. Unter 5 Konten steht einzelfall: true, das ist kein Trend. Nur Konten, die der Nutzungsmeldung zugestimmt haben.",
+    inputSchema: { type: "object", properties: { umgebung, tage: { type: "integer", minimum: 1, maximum: 90, description: "Fenster in Tagen, Standard 30." } } },
+  },
+  {
+    name: "lumenfit_auswertung",
+    description: "Auswertung der Nutzung ohne App-Build: erster Griff am Tag (Tab und Funktion), Tageszeit der Starts, Sitzungsdauer, Top und Flop, häufigste Wege und Absprünge, Zeit bis zum Ziel, Abbruchstellen je Ablauf (QR-Verbinden, Studio-Suche, Essen eintragen), gesehen aber nie angetippt, Einstellungen als Stand, Tempo und Streichkandidaten (erst ab 30 Tagen Daten und mehreren Konten, Nutzung 0). Unter 5 Konten steht einzelfall: true, das ist kein Trend.",
+    inputSchema: { type: "object", properties: { umgebung, tage: { type: "integer", minimum: 1, maximum: 90, description: "Fenster in Tagen, Standard 30." } } },
+  },
+  {
     name: "lumenfit_import_beleg",
     description: "Import-Beleg je Konto mit Lovea-Person: wann der Import fertig war, der letzte Beleg der App (je Op-Art: geholt, übernommen, roh, ausgeschlossen, unbekannt, geplant, im lokalen Speicher wiedergefunden; nur Zahlen) und der letzte Fehler (Art, Zeit, bis wohin geladen). Vergleich mit Lovea: scripts/import-vergleich.mjs.",
     inputSchema: { type: "object", properties: { umgebung } },
@@ -71,6 +81,13 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
   let pfad, methode = "GET", body;
   if (name === "lumenfit_konten") pfad = "/admin/konten";
   else if (name === "lumenfit_nutzung") pfad = "/admin/nutzung";
+  else if (name === "lumenfit_fehler" || name === "lumenfit_auswertung") {
+    pfad = name === "lumenfit_fehler" ? "/admin/fehler" : "/admin/auswertung";
+    if (a.tage !== undefined) {
+      if (!Number.isInteger(a.tage) || a.tage < 1 || a.tage > 90) throw new Error("tage: ganze Zahl von 1 bis 90");
+      pfad += `?tage=${a.tage}`;
+    }
+  }
   else if (name === "lumenfit_import_beleg") pfad = "/admin/import-beleg";
   else if (name === "lumenfit_config_setzen") [pfad, methode, body] = ["/admin/config", "PATCH", a.einstellungen];
   else {
@@ -105,7 +122,7 @@ async function antworten(msg) {
       protocolVersion: params?.protocolVersion ?? "2025-06-18",
       capabilities: { tools: {} },
       serverInfo: { name: "lumenfit", version: "1.0.0" },
-      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Schalter je Konto und global ändern, Konten sperren. Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
+      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Fehler (lumenfit_fehler), Auswertung (lumenfit_auswertung), Schalter je Konto und global ändern, Konten sperren. Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
     };
   }
   if (method === "ping") return {};

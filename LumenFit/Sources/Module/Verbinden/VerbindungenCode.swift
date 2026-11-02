@@ -243,6 +243,21 @@ struct VerbindungScanBlatt: View {
             .task(id: phase) { if case .wartet(let name, let id) = phase { await warte(id, name: name) } }
             .onChange(of: foto) { _, neu in if let neu { Task { await fotoLesen(neu) } } }
         }
+        .nutzungAblauf(.qr, stufe: "scannen")
+        .onChange(of: phase) { _, neu in nutzungStufe(neu) }
+    }
+
+    /// Zählt die Stufe des Ablaufs (nur feste Namen). Verbunden, abgelehnt und "wartet auf die andere Person" sind das Ende dieses Ablaufs; ein Abbruch ist Schließen vorher.
+    private func nutzungStufe(_ phase: Phase) {
+        let zaehler = umgebung.konto.nutzung
+        switch phase {
+        case .scannen: zaehler.ablauf(.qr, stufe: "scannen")
+        case .pruefen: zaehler.ablauf(.qr, stufe: "pruefen")
+        case .frage: zaehler.ablauf(.qr, stufe: "frage")
+        case .sendet: zaehler.ablauf(.qr, stufe: "sendet")
+        case .fehler: zaehler.ablauf(.qr, stufe: "fehler")
+        case .wartet, .verbunden, .abgelehnt: zaehler.ablaufFertig(.qr)
+        }
     }
 
     @ViewBuilder

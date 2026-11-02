@@ -27,6 +27,32 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(heute.schritte, 12, "eine alte Partner-Datei mit Zyklus-Feld lädt, das Feld wird ignoriert")
     }
 
+    func testEinAltesNutzungZaehlenTrueIstKeineEinwilligung() throws {
+        for alt in [#"{"thema":"wald","nutzungZaehlen":true}"#, #"{"nutzungZaehlen":false}"#, #"{"nutzungAntwort":"vielleicht"}"#, #"{"nutzungAntwort":3}"#] {
+            let ordner = try tempOrdner()
+            try Data(alt.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
+            let werte = EinstellungenStore(ordner: ordner).werte
+            XCTAssertEqual(werte.nutzungAntwort, .offen, alt)
+            XCTAssertFalse(werte.nutzungErlaubt, alt)
+        }
+        let ordner = try tempOrdner()
+        try Data(#"{"nutzungAntwort":"ja","nutzungJaSeit":"2026-11-02"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
+        let werte = EinstellungenStore(ordner: ordner).werte
+        XCTAssertTrue(werte.nutzungErlaubt)
+        XCTAssertEqual(werte.nutzungJaSeit, "2026-11-02")
+    }
+
+    func testNutzungAntwortHaeltDenTagDesJaNurBeimJa() {
+        var e = Einstellungen()
+        e.antworteNutzung(.ja, tag: "2026-11-02")
+        XCTAssertEqual(e.nutzungJaSeit, "2026-11-02")
+        e.antworteNutzung(.ja, tag: "2026-11-05")
+        XCTAssertEqual(e.nutzungJaSeit, "2026-11-02", "ein zweites Ja ändert den Tag nicht")
+        e.antworteNutzung(.nein, tag: "2026-11-06")
+        XCTAssertNil(e.nutzungJaSeit)
+        XCTAssertFalse(e.nutzungErlaubt)
+    }
+
     func testEinstellungenMitNurEinemFeldUndFremdenFeldernSindLesbar() throws {
         let ordner = try tempOrdner()
         try Data(#"{"thema":"wald","gibtEsNochNicht":{"a":1}}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
@@ -36,7 +62,9 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertTrue(store.werte.haptik)
         XCTAssertFalse(store.werte.healthSchreiben)
         XCTAssertTrue(store.werte.alarmWeckt, "neues Feld fehlt in der alten Datei: Standard an")
-        XCTAssertTrue(store.werte.nutzungZaehlen, "neues Feld fehlt in der alten Datei: Standard an")
+        XCTAssertEqual(store.werte.nutzungAntwort, .offen, "neues Feld fehlt in der alten Datei: noch nicht gefragt")
+        XCTAssertFalse(store.werte.nutzungErlaubt)
+        XCTAssertNil(store.werte.nutzungJaSeit)
         XCTAssertFalse(store.werte.fastenAn, "neues Feld fehlt in der alten Datei: Fasten aus")
         XCTAssertFalse(store.werte.bandEingerichtet, "Band nie angefasst: nur die Zeile Band einrichten")
         var band = store.werte

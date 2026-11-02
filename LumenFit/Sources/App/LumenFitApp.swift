@@ -8,6 +8,7 @@ struct LumenFitApp: App {
 
     /// `ModulStart.starteAlle` läuft synchron hier (BGTask-Kennungen müssen vor Ende des Starts registriert sein); im Test-Host startet nichts.
     init() {
+        _ = NutzungStart.beginn   // startet die Uhr für die Startzeit
         let umgebung = AppUmgebung.geteilt
         self.umgebung = umgebung
         ModulStart.starteAlle(umgebung)
@@ -27,6 +28,10 @@ struct LumenFitApp: App {
         }
         .onChange(of: phase) { _, neu in
             if neu == .active { umgebung.ereignisse.senden(.vordergrund) }
+            if neu == .background {
+                umgebung.konto.nutzung.hintergrund()
+                Task { await umgebung.konto.nutzungHochladen() }
+            }
         }
     }
 }

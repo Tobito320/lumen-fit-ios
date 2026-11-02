@@ -8,6 +8,7 @@ struct BandKopfAbschnitt: View {
     let modell: TrackerModell
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var ruhig
+    @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
         let status = BandAnzeige.status(modell.zustand, gekoppelt: modell.gekoppelt, abfrageLaeuft: modell.abfrageLaeuft)
@@ -37,6 +38,14 @@ struct BandKopfAbschnitt: View {
             .animation(ruhig ? nil : Feder.weich, value: status)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+            // Nutzungszähler: nur die Art des Fehlers, nie der Text.
+            .onChange(of: modell.zustand) { _, neu in
+                switch neu {
+                case .fehler: umgebung.konto.nutzung.fehler(.bandVerbindung)
+                case .nichtGefunden: umgebung.konto.nutzung.fehler(.bandNichtGefunden)
+                default: break
+                }
+            }
         }
     }
 

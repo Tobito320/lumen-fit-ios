@@ -150,6 +150,9 @@ struct EssenHinzufuegenView: View {
             }
         }
         .lumenToast($toast)
+        .nutzungAblauf(.essen, stufe: "offen")
+        .onChange(of: scanOffen) { _, offen in if offen { umgebung.konto.nutzung.ablauf(.essen, stufe: "scan") } }
+        .onChange(of: fotoOffen) { _, offen in if offen { umgebung.konto.nutzung.ablauf(.essen, stufe: "foto") } }
     }
 
     /// Favoriten, Zuletzt, Eigene und eigene Rezepte stehen in den Treffern vor dem BLS.
