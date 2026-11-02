@@ -70,6 +70,13 @@ final class AppUmgebungTests: XCTestCase {
         guard case .healthAktualisiert? = ereignis else { return XCTFail("healthAktualisiert erwartet, bekam \(String(describing: ereignis))") }
     }
 
+    func testEinmalSchalterLaesstGenauEinenDurch() {
+        let einmal = EinmalSchalter()
+        XCTAssertTrue(einmal.zuerst())
+        XCTAssertFalse(einmal.zuerst())
+        XCTAssertFalse(einmal.zuerst())
+    }
+
     func testNeueHealthDatenLoesenDenAbrufAus() async throws {
         let leser = FakeHealthLeser()
         let u = umgebung(ordner: try tempOrdner(), leser: leser)
