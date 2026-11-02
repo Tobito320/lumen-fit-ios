@@ -19,8 +19,8 @@ const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
 const MAX_NAMEN = 60;
 const NUTZUNG_TAGE = 90;
 const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"];
-// Bereiche je Verbindung: die acht Freigaben plus der Zyklus (der nur ankommt, wenn die Person ihn in den Zyklus-Einstellungen selbst erlaubt hat).
-export const BEREICHE = [...FREIGABEN, "zyklus"];
+// Bereiche je Verbindung: die zehn Freigaben.
+export const BEREICHE = FREIGABEN;
 // Partner-Daten: rohe Obergrenze, bevor etwas geparst wird. Gesäubert bleibt es weit darunter (Plan, Tagebuch, Messreihen sind einzeln begrenzt).
 const MAX_PARTNER_BYTES = 262144;
 const KOERPER_ARTEN = ["gewicht", "taille", "brust", "schulter", "bizeps", "oberschenkel", "koerperfett"];
@@ -369,8 +369,7 @@ function koerperSauber(k) {
   return Object.keys(aus).length ? aus : undefined;
 }
 
-// Felder aus dem Health-Gleichstand (Wochenwerte, Ziele, Energie, Gewohnheiten, Zyklus): jedes nur mit seiner Freigabe, mit Grenzen. Zyklus hängt an keiner Freigabe,
-// sondern an der Erlaubnis in den Zyklus-Einstellungen (die App schreibt das Feld nur dann).
+// Felder aus dem Health-Gleichstand (Wochenwerte, Ziele, Energie, Gewohnheiten): jedes nur mit seiner Freigabe, mit Grenzen.
 const ENERGIE = ["hoch", "mittel", "niedrig"];
 const zahlenTage = (x, max) => {
   if (!istObjekt(x)) return undefined;
@@ -409,11 +408,6 @@ function erweiterungSauber(h, freigaben, heute) {
       id: g.id, name: kurz(g.name, 40), symbol: kurz(g.symbol, 40), serie: Math.min(ganz(g.serie) ?? 0, 9999), quote: Math.min(ganz(g.quote) ?? 0, 100), heute: g.heute === true,
     }));
     if (liste.length) heute.gewohnheiten = liste;
-  }
-  const z = h.zyklus;
-  if (istObjekt(z) && typeof z.phase === "string" && typeof z.wunsch === "string" && typeof z.satz === "string" && Array.isArray(z.tipps)) {
-    heute.zyklus = { phase: kurz(z.phase, 30), wunsch: kurz(z.wunsch, 200), satz: kurz(z.satz, 300), tipps: z.tipps.slice(0, 5).map((t) => kurz(t, 200)).filter(Boolean) };
-    if (Number.isInteger(z.tag) && z.tag > 0 && z.tag < 100) heute.zyklus.tag = z.tag;
   }
 }
 
@@ -455,7 +449,6 @@ export function filtern(stand, erlaubt, mitteilungen = true) {
   const frei = erlaubt.filter((b) => FREIGABEN.includes(b));
   const s = zusammenfassungSauber({ ...stand, freigaben: (stand.freigaben ?? []).filter((f) => frei.includes(f)) });
   if (!s) return null;
-  if (!erlaubt.includes("zyklus")) delete s.heute.zyklus;
   // Auch nur, was die App für diese Art hochgeladen hat (Gym in der App aus: kein Gym-Ereignis, selbst wenn die Verbindung Gym erlaubt).
   s.ereignisse = mitteilungen ? s.ereignisse.filter((e) => s.freigaben.includes(EREIGNIS_BEREICH[e.art])) : [];
   return s;

@@ -148,16 +148,26 @@ test("Bereich aus heißt Feld fehlt; ausblenden, Pause und Mitteilungen gelten s
   assert.deepEqual((await lies()).siehst, ["gym", "essen"]);
 });
 
-test("Zyklus: nur wenn die Verbindung ihn zeigt UND die Person ihn hochgeladen hat; Standard aus", async () => {
+test("Zyklus ist weg: alte Builds dürfen \"zyklus\" schicken, es wird verworfen, nicht gespeichert und nie ausgegeben", async () => {
   const env = await welt("ich", "du");
   const zyklus = { phase: "luteal", wunsch: "ruhig", satz: "Satz", tipps: ["a"], tag: 20 };
   await hochladen(env, "ich", "Ich", { zyklus });
   const id = await verbinden(env);
-  assert.equal((await meine(env, "du"))[0].daten.heute.zyklus, undefined, "neue Verbindung: Zyklus aus");
-  await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { zeigt: ["schritte", "zyklus"] });
-  assert.equal((await meine(env, "du"))[0].daten.heute.zyklus.phase, "luteal");
-  await hochladen(env, "ich", "Ich"); // Person hat den Zyklus in der App wieder ausgeschaltet: Feld fehlt im Upload
-  assert.equal((await meine(env, "du"))[0].daten.heute.zyklus, undefined);
+  const r = await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { zeigt: ["schritte", "zyklus"], ausblenden: ["zyklus"] });
+  assert.equal(r.status, 200, "kein Fehler für den alten Client");
+  assert.deepEqual(r.json.verbindung.ich.zeigt, ["schritte"]);
+  assert.deepEqual(r.json.verbindung.ich.ausblenden, []);
+  assert.equal((await meine(env, "du"))[0].daten.heute.zyklus, undefined, "Upload mit zyklus wird nie ausgegeben");
+  assert.equal(JSON.stringify((await meine(env, "du"))[0]).includes("zyklus"), false);
+  assert.equal(JSON.stringify((await ruf(env, "ich", "GET", "/verbindungen")).json).includes("zyklus"), false, "auch teilen/siehst ohne zyklus");
+  // Ein anderer unbekannter Name bleibt ein Fehler.
+  assert.equal((await ruf(env, "ich", "PATCH", `/verbindungen/${id}`, { zeigt: ["schritte", "quatsch"] })).status, 400);
+  // Schon gespeichertes "zyklus" in der Zeile fällt beim Lesen weg.
+  env.DB.roh.prepare("UPDATE verbindungen SET a_einst = ?, b_einst = ?").run(JSON.stringify({ zeigt: ["schritte", "zyklus"] }), JSON.stringify({ zeigt: ["schritte", "zyklus"] }));
+  const eintrag = (await meine(env, "du"))[0];
+  assert.deepEqual(eintrag.siehst, ["schritte"]);
+  assert.deepEqual(eintrag.ich.zeigt, ["schritte"]);
+  assert.equal(JSON.stringify(eintrag).includes("zyklus"), false);
 });
 
 test("Fremdes Konto liest nichts, fremde Ids gibt es nicht, ohne Anmeldung 401", async () => {
@@ -286,14 +296,13 @@ test("Lovea-Konten sind ohne Scan verbunden, alle Bereiche an; eigenes Ausschalt
   assert.equal(bei.auto, true);
   assert.equal(bei.status, "aktiv");
   assert.equal(bei.name, "Annika");
-  assert.deepEqual(bei.siehst, ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten", "zyklus"]);
+  assert.deepEqual(bei.siehst, ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"]);
   assert.equal(bei.daten.heute.kcal, 1900);
   assert.equal(bei.daten.heute.stimmung, 4);
   assert.equal(bei.daten.heute.gewohnheiten.length, 2);
-  assert.equal(bei.daten.heute.zyklus.phase, "folikular", "Annika hat den Zyklus in der App erlaubt (Feld im Upload)");
+  assert.equal(bei.daten.heute.zyklus, undefined, "ein alter Upload mit zyklus wird nie ausgegeben");
   const umgekehrt = (await meine(env, "du"))[0];
   assert.equal(umgekehrt.daten.heute.tagebuch.length, 1);
-  assert.equal(umgekehrt.daten.heute.zyklus, undefined, "Ahmed hat keinen Zyklus hochgeladen");
   assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM verbindungen").get().n, 1, "eine Zeile für beide Richtungen");
   // Annika schaltet Schlaf bei sich aus: bleibt so, auch nach weiteren Abrufen.
   await ruf(env, "du", "PATCH", `/verbindungen/${bei.id}`, { zeigt: ["schritte", "gym", "essen"] });
