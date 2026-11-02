@@ -616,7 +616,8 @@ final class TrackerModell {
         guard bandSchlaf.aufnehmen(ergebnis.naechte) else { return }
         bandSchlaf.kuerzen(heute: Datum.text(jetzt))
         schlafStand += 1
-        for nacht in ergebnis.naechte { if let op = TrackerSchlaf.op(nacht) { senke.schlaf(op) } }
+        // Nur was der Raum noch nicht hat: die Nächte im Speicher sind nach einem Neustart leer, die Ops stehen aber schon da.
+        for op in TrackerSchlaf.neueOps(ergebnis.naechte, bisher: senke.bisherSchlaf()) { senke.schlaf(op) }
     }
 
     /// Eine Zeile ins Fehlersuche-Log (nur im Speicher, die letzten `bandLogMaximum`). `nurWennNeu`: gleicher Text wie beim letzten Mal derselben

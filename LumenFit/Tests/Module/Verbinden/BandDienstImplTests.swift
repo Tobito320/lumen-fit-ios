@@ -277,6 +277,25 @@ final class BandDienstImplTests: XCTestCase {
         XCTAssertEqual(gelesen.map(\.tag), ["2026-10-29"])
     }
 
+    func testNachEinemNeustartSchreibenDieselbenNaechteKeineNeuenOps() throws {
+        let raum = LokalerRaum(ordner: try tempOrdner(), profil: TestDaten.profilID, uhr: { VerbindenTest.jetzt })
+        let senke = BandSenke.raum { raum }
+        let von = VerbindenTest.jetzt.addingTimeInterval(-9 * 3600)
+        let nacht = TrackerSchlaf.Nacht(tag: "2026-10-29", von: von, bis: von.addingTimeInterval(400 * 60), minuten: 400,
+                                        phasen: [.init(art: 2, minuten: 200), .init(art: 3, minuten: 200)])
+        for op in TrackerSchlaf.neueOps([nacht], bisher: senke.bisherSchlaf()) { senke.schlaf(op) }
+        XCTAssertEqual(raum.ops(arten: ["fit.band.schlaf"]).count, 1)
+        // Neustart: das Modell hat nichts im Speicher, der Raum aber die Op von vorhin. Dieselbe Nacht schreibt nichts mehr (Zeiten überstehen das Speichern genau).
+        XCTAssertTrue(TrackerSchlaf.neueOps([nacht], bisher: senke.bisherSchlaf()).isEmpty)
+        // Eine gewachsene Nacht ist neu; ohne Wissen über den Raum (`nil`) wird geschrieben.
+        var laenger = nacht
+        laenger.bis = nacht.bis.addingTimeInterval(600)
+        laenger.minuten = 410
+        laenger.phasen = [.init(art: 2, minuten: 200), .init(art: 3, minuten: 210)]
+        XCTAssertEqual(TrackerSchlaf.neueOps([nacht, laenger], bisher: senke.bisherSchlaf()).count, 1)
+        XCTAssertEqual(TrackerSchlaf.neueOps([nacht], bisher: nil).count, 1)
+    }
+
     func testOhneRaumSchreibtDieSenkeNichts() {
         let senke = BandSenke.raum { nil }
         XCTAssertNil(senke.bisher())

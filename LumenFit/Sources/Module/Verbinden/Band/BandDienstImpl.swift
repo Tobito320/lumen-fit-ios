@@ -7,6 +7,9 @@ struct BandSenke {
     var bisher: @MainActor () -> [String: BandTagOp]?
     var tag: @MainActor (BandTagOp) -> Void
     var schlaf: @MainActor (BandSchlafOp) -> Void
+    /// Je Tag die zuletzt geschriebene Schlaf-Op (`nil`: unbekannt, dann wird geschrieben). Die Nächte im Speicher des Modells sind nach einem Neustart
+    /// leer; ohne diesen Blick in den Raum schriebe jeder Start dieselben Nächte noch einmal.
+    var bisherSchlaf: @MainActor () -> [String: BandSchlafOp]? = { nil }
 
     /// Schreibt in den Raum des aktiven Profils; `raum` wird bei jedem Aufruf neu gefragt (Profilwechsel).
     static func raum(_ raum: @escaping @MainActor () -> LokalerRaum?) -> BandSenke {
@@ -18,7 +21,8 @@ struct BandSenke {
                 return tage
             },
             tag: { raum()?.senden("fit.band.tag", $0) },
-            schlaf: { raum()?.senden("fit.band.schlaf", $0) })
+            schlaf: { raum()?.senden("fit.band.schlaf", $0) },
+            bisherSchlaf: { SchlafEigeneQuellen.bandOps(raum()).reduce(into: [String: BandSchlafOp]()) { $0[$1.tag] = $1 } })
     }
 }
 

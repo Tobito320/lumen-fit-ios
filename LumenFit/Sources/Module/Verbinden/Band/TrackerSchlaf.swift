@@ -282,4 +282,10 @@ extension TrackerSchlaf {
         guard let leiste = diagramm(nacht) else { return nil }
         return BandSchlafOp(tag: nacht.tag, start: nacht.von, ende: nacht.bis, phasen: leiste.abschnitte)
     }
+
+    /// Die Ops, die der Raum noch nicht hat: `bisher` ist je Tag die zuletzt geschriebene Op (`nil`: unbekannt, dann alle). Die Nächte im Speicher
+    /// (`BandSchlaf`) sind nach einem Neustart leer, der Raum nicht; ohne diesen Vergleich schriebe jeder Start dieselben Nächte noch einmal.
+    static func neueOps(_ naechte: [Nacht], bisher: [String: BandSchlafOp]?) -> [BandSchlafOp] {
+        naechte.compactMap { op($0) }.filter { bisher?[$0.tag] != $0 }
+    }
 }
