@@ -102,6 +102,17 @@ struct ProfilSicherungStand: Codable, Equatable, Sendable {
         default: return "Letzte Sicherung: vor \(tage) Tagen"
         }
     }
+
+    /// Kurzer Wert für rechts in einer Einstellungszeile: "Heute", "Gestern", "Vor 12 Tagen", "Noch keine".
+    static func kurz(zuletzt: Date?, jetzt: Date) -> String {
+        guard let zuletzt else { return "Noch keine" }
+        let tage = Datum.tageZwischen(Datum.text(zuletzt), Datum.text(jetzt))
+        switch tage {
+        case ..<1: return "Heute"
+        case 1: return "Gestern"
+        default: return "Vor \(tage) Tagen"
+        }
+    }
 }
 
 /// Erzeugen und Einspielen. Einspielen ändert nur das aktive Profil (`von` aller Einträge wird auf dessen Kennung umgeschrieben).

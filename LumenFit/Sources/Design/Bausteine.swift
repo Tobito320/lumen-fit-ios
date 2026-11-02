@@ -26,7 +26,7 @@ struct Pille: View {
 }
 
 /// Flache Fläche für eigene schwebende Knöpfe, Leisten, Toasts und Karten: `flaeche` mit `haar`-Rand, kein Liquid Glass,
-/// kein Material, keine Unschärfe, kein Schatten (Ahmed 01.11.2026: "If iOS apple liquid glass is heavy then no more of that").
+/// kein Material, keine Unschärfe, kein Schatten (Wunsch 01.11.2026: "If iOS apple liquid glass is heavy then no more of that").
 /// Tab- und Navigationsleiste zeichnet iOS selbst; die bleiben System.
 private struct LumenFlaeche<Form: Shape>: ViewModifier {
     let form: Form

@@ -1,81 +1,38 @@
 import SwiftUI
 
-/// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Oben der Kopf und eine Zeile "Konto" (Name, Passwort, Profile), darunter
-/// klare Gruppen: Aussehen und Gefühl, Ziele und Gesundheit, Fortschritt, Verbindungen, Deine Daten, Über Lumen Fit; ganz unten "Alles löschen".
+/// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Kompakte Einstellungsliste: eine Zeile je Eintrag, Wert rechts.
+/// Selten Gebrauchtes (Datensicherung, Tabelle, Alles löschen; Datenschutz, Quellen, Version) liegt eine Ebene tiefer unter "Deine Daten" und "Über Lumen Fit".
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-    @State private var loeschen = false
 
     var body: some View {
-        let aktiv = umgebung.profil.aktiv
-        ScrollView {
-            VStack(spacing: Abstand.xl) {
-                kopf(aktiv)
-
-                gruppe(nil) {
-                    link(symbol: "person.crop.circle.fill", titel: "Konto", wert: aktiv?.name) { KontoView() }
-                }
-
-                gruppe("Aussehen und Gefühl") {
-                    link(symbol: "paintpalette.fill", titel: "Aussehen", wert: umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }) { AussehenView() }
-                    Haarlinie()
-                    Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
-                                         set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
-                        HStack(spacing: Abstand.m) {
-                            Image(systemName: "hand.tap.fill").font(.body.weight(.semibold)).frame(width: 28).accessibilityHidden(true)
-                            Text("Haptik").font(.body).foregroundStyle(palette.text)
-                        }
-                    }
-                    .padding(.horizontal, Abstand.l).frame(minHeight: Abstand.tippflaeche)
-                }
-
-                gruppe("Ziele und Gesundheit") {
-                    link(symbol: "target", titel: "Ziele und Körper") { ZieleView() }
-                    Haarlinie()
-                    link(symbol: "heart.text.square.fill", titel: "Health-Zugriff") { ProfilHealthZugriffView() }
-                }
-
-                gruppe("Fortschritt") {
-                    link(symbol: "star.fill", titel: "Meilensteine") { MeilensteineView() }
-                }
-
-                gruppe("Geräte") {
-                    link(symbol: "applewatch", titel: "Geräte", zeile: "Fitness-Tracker, AirPods, Apple Watch") { GeraeteView() }
-                }
-
-                gruppe("Verbindungen") {
-                    link(symbol: "link", titel: "Freunde und Partner") { VerbindungenView() }
-                }
-
-                gruppe("Deine Daten") {
-                    link(symbol: "externaldrive.fill", titel: "Datensicherung", zeile: sicherungZeile) { DatensicherungView() }
-                    Haarlinie()
-                    link(symbol: "tablecells", titel: "Als Tabelle teilen") { ProfilExportView() }
-                }
-
-                gruppe("Über Lumen Fit") {
-                    link(symbol: "hand.raised.fill", titel: "Datenschutz") { ProfilDatenschutzView() }
-                    Haarlinie()
-                    link(symbol: "doc.text.fill", titel: "Quellen und Lizenzen") { QuellenView() }
-                }
-
-                Text("Lumen Fit \(version)").font(.footnote).foregroundStyle(palette.text2)
-
-                gruppe(nil) {
-                    Button(role: .destructive) { loeschen = true } label: {
-                        ProfilZeile(symbol: "trash.fill", titel: "Alles löschen", zeile: "Profil und alle Daten auf diesem iPhone", pfeil: false)
-                    }
-                }
+        List {
+            ProfilAbschnitt {
+                link("Konto", symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
             }
-            .padding(Abstand.l)
+            ProfilAbschnitt {
+                link("Aussehen", symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
+                Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
+                                     set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
+                    ProfilListenZeile("Haptik", symbol: "hand.tap.fill")
+                }
+                link("Ziele und Körper", symbol: "target") { ZieleView() }
+                link("Health-Zugriff", symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
+                link("Meilensteine", symbol: "star.fill") { MeilensteineView() }
+            }
+            ProfilAbschnitt {
+                link("Geräte", symbol: "applewatch") { GeraeteView() }
+                link("Freunde und Partner", symbol: "link") { VerbindungenView() }
+            }
+            ProfilAbschnitt {
+                link("Deine Daten", symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
+                link("Über Lumen Fit", symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
+            }
         }
+        .profilListe()
         .defaultScrollAnchor(startAnker)
         .navigationTitle("Profil")
-        .navigationBarTitleDisplayMode(.inline)
-        .lumenHintergrund()
-        .sheet(isPresented: $loeschen) { ProfilLoeschenBlatt() }
     }
 
     /// Oben; nur das Debug-Bild der CI startet unten (Start-Argument `-lumenFitScroll unten`), damit die untere Hälfte im Bild zu sehen ist.
@@ -87,36 +44,58 @@ struct ProfilBlattView: View {
         #endif
     }
 
-    // MARK: - Teile
+    private var themaName: String? {
+        umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }
+    }
 
-    private func kopf(_ aktiv: Profil?) -> some View {
-        VStack(spacing: Abstand.s) {
-            LumiView(stimmung: .bereit, groesse: 88, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-            Text(aktiv?.name ?? "Profil").font(.title2.bold()).foregroundStyle(palette.text)
-            Text(sicherungZeile).font(.footnote).foregroundStyle(palette.text2)
+    private var sicherungKurz: String {
+        ProfilSicherungStand.kurz(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
+    }
+
+    private func link<Ziel: View>(_ titel: String, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
+        NavigationLink { ziel() } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
+    }
+}
+
+/// "Deine Daten": Datensicherung, Tabellenexport und ganz unten "Alles löschen".
+struct ProfilDatenView: View {
+    @Environment(AppUmgebung.self) private var umgebung
+    @State private var loeschen = false
+
+    var body: some View {
+        List {
+            ProfilAbschnitt {
+                NavigationLink { DatensicherungView() } label: {
+                    ProfilListenZeile("Datensicherung", symbol: "externaldrive.fill", wert: sicherungKurz)
+                }
+                NavigationLink { ProfilExportView() } label: { ProfilListenZeile("Als Tabelle teilen", symbol: "tablecells") }
+            }
+            ProfilAbschnitt(fuss: "Löscht Profil und alle Daten auf diesem iPhone.") {
+                Button(role: .destructive) { loeschen = true } label: { Label("Alles löschen", systemImage: "trash.fill") }
+            }
         }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
+        .profilListe()
+        .navigationTitle("Deine Daten")
+        .sheet(isPresented: $loeschen) { ProfilLoeschenBlatt() }
     }
 
-    private var sicherungZeile: String {
-        ProfilSicherungStand.zeile(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
+    private var sicherungKurz: String {
+        ProfilSicherungStand.kurz(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
     }
+}
 
-    private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
-    }
-
-    private func gruppe<Inhalt: View>(_ titel: String?, @ViewBuilder _ inhalt: () -> Inhalt) -> some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            if let titel { ProfilGruppenKopf(text: titel) }
-            ListenKarte { inhalt() }.buttonStyle(.plain)
+/// "Über Lumen Fit": Datenschutz, Quellen und Lizenzen, Version.
+struct ProfilUeberView: View {
+    var body: some View {
+        List {
+            ProfilAbschnitt {
+                NavigationLink { ProfilDatenschutzView() } label: { ProfilListenZeile("Datenschutz", symbol: "hand.raised.fill") }
+                NavigationLink { QuellenView() } label: { ProfilListenZeile("Quellen und Lizenzen", symbol: "doc.text.fill") }
+                ProfilListenZeile("Version", symbol: "info.circle", wert: ProfilAppInfo.version)
+            }
         }
-    }
-
-    private func link<Ziel: View>(symbol: String, titel: String, zeile: String? = nil, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
-        NavigationLink { ziel() } label: { ProfilZeile(symbol: symbol, titel: titel, zeile: zeile, wert: wert) }
-            .buttonStyle(.plain)
+        .profilListe()
+        .navigationTitle("Über Lumen Fit")
     }
 }
 

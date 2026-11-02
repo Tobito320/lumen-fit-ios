@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Zyklus gehört nur in Lovea (Ahmed, 01.11.2026): Lumen Fit bietet ihn bei den Verbindungen nicht an, lädt ihn nicht hoch und schreibt ihn nicht in
+/// Zyklus gehört nur in Lovea (Wunsch 01.11.2026): Lumen Fit bietet ihn bei den Verbindungen nicht an, lädt ihn nicht hoch und schreibt ihn nicht in
 /// die Zusammenfassung für Lovea. Ein alter Link auf die Zyklus-Seite landet auf Heute.
 @MainActor
 final class ZyklusNurInLoveaTests: XCTestCase {

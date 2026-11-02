@@ -307,7 +307,7 @@ struct EssenKiFotoBlatt: View {
             .buttonStyle(.lumenHauptknopf)
             .disabled(eintraege.isEmpty || speichert)
             .padding(.horizontal, Abstand.l).padding(.vertical, Abstand.m)
-            .background(.bar)
+            .lumenLeiste()
         }
     }
 

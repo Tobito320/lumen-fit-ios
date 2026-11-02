@@ -58,7 +58,7 @@ private struct VerbindungenInhalt: View {
     // MARK: Anfragen
 
     private var anfragenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Anfragen", fuss: "Erst wenn du annimmst, sieht die Person etwas. Du zeigst ihr zuerst nur Schritte und Gym.") {
+        VerbindenAbschnitt(titel: "Anfragen", fuss: "Erst nach Annehmen sieht die Person etwas, zuerst nur Schritte und Gym.") {
             ForEach(speicher.anfragen) { a in
                 VStack(alignment: .leading, spacing: Abstand.s) {
                     Text("\(a.name) möchte sich mit dir verbinden").foregroundStyle(palette.text)
@@ -88,11 +88,11 @@ private struct VerbindungenInhalt: View {
     }
 
     private var personenFuss: String {
-        "Jede Person sieht nur, was du für sie einschaltest. Neue Personen bekommen zuerst nur Schritte und Gym."
+        "Jede Person sieht nur, was du für sie einschaltest."
     }
 
     private var hinzufuegenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt 10 Minuten und nur einmal. Im Code steht nie etwas aus deiner Gesundheit.") {
+        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten und enthält keine Gesundheitsdaten.") {
             Button { codeOffen = true } label: { Label("Mein Code zeigen", systemImage: "qrcode") }.frame(minHeight: Abstand.tippflaeche)
             Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }.frame(minHeight: Abstand.tippflaeche)
         }
@@ -114,14 +114,18 @@ private struct VerbindungenInhalt: View {
 
     // MARK: Mitteilungen
 
+    /// Die fünf Schalter liegen eine Ebene tiefer; die Zeile zeigt, wie viele an sind.
     private var mitteilungenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Mitteilungen", fuss: VerbindenTexte.mitteilungenFuss) {
-            ForEach(Self.ereignisArten, id: \.self) { art in
-                Toggle(PartnerEreignisRegeln.name(art), isOn: Binding(
-                    get: { PartnerEreignisRegeln.an(art, einstellungen.werte) },
-                    set: { neu in einstellungen.aendere { $0.mitteilungen[PartnerEreignisRegeln.schluessel(art)] = neu } }))
+        VerbindenAbschnitt {
+            NavigationLink { VerbindungMitteilungenSeite(einstellungen: einstellungen, arten: Self.ereignisArten) } label: {
+                ProfilListenZeile("Mitteilungen", symbol: "bell.badge", wert: mitteilungenWert)
             }
         }
+    }
+
+    private var mitteilungenWert: String {
+        let an = Self.ereignisArten.filter { PartnerEreignisRegeln.an($0, einstellungen.werte) }.count
+        return "\(an) von \(Self.ereignisArten.count) an"
     }
 
     // MARK: Freunde
@@ -130,5 +134,26 @@ private struct VerbindungenInhalt: View {
         VerbindenAbschnitt(titel: "Freunde", fuss: "Wochenkarten per Bild, Link oder QR-Code tauschen, ganz ohne Server.") {
             NavigationLink { FreundeView() } label: { Label("Freunde und Rangliste", systemImage: "person.2") }
         }
+    }
+}
+
+/// Mitteilungen bei Partner-Ereignissen: je Ereignis ein Schalter.
+private struct VerbindungMitteilungenSeite: View {
+    let einstellungen: EinstellungenStore
+    let arten: [PartnerEreignisArt]
+
+    var body: some View {
+        Form {
+            VerbindenAbschnitt(fuss: VerbindenTexte.mitteilungenFuss) {
+                ForEach(arten, id: \.self) { art in
+                    Toggle(PartnerEreignisRegeln.name(art), isOn: Binding(
+                        get: { PartnerEreignisRegeln.an(art, einstellungen.werte) },
+                        set: { neu in einstellungen.aendere { $0.mitteilungen[PartnerEreignisRegeln.schluessel(art)] = neu } }))
+                }
+            }
+        }
+        .verbindenFormular()
+        .navigationTitle("Mitteilungen")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

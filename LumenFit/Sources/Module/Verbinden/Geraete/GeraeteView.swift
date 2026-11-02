@@ -5,44 +5,26 @@ import SwiftUI
 /// und nur mit dem Schalter "Band in Lumen Fit nutzen".
 struct GeraeteView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
 
     private var dienst: BandDienstImpl? { umgebung.band as? BandDienstImpl }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Abstand.xl) {
-                gruppe("Fitness-Tracker") {
-                    NavigationLink { BandSeite() } label: {
-                        ProfilZeile(symbol: "applewatch", titel: "Fitness-Tracker", zeile: "Das Band: Schritte, Puls, Schlaf, Vibration", wert: bandKurz)
-                    }
+        Form {
+            VerbindenAbschnitt(fuss: VerbindenDienste.geteilt?.uebernahmeZeile ?? "Was die Apple Watch misst, kommt über Apple Health.") {
+                NavigationLink { BandSeite() } label: {
+                    ProfilListenZeile("Fitness-Tracker", symbol: "applewatch", wert: bandKurz)
                 }
-                gruppe("Audio") {
-                    NavigationLink { KopfhoererSeite() } label: {
-                        ProfilZeile(symbol: "airpods", titel: "Kopfhörer und AirPods", zeile: "Ansagen im Training", wert: nil)
-                    }
+                NavigationLink { KopfhoererSeite() } label: {
+                    ProfilListenZeile("Kopfhörer und AirPods", symbol: "airpods")
                 }
-                gruppe("Apple Watch und Health") {
-                    NavigationLink { ProfilHealthZugriffView() } label: {
-                        ProfilZeile(symbol: "heart.text.square.fill", titel: "Apple Health", zeile: "Puls, Schritte und Schlaf von Watch und iPhone", wert: nil)
-                    }
+                NavigationLink { ProfilHealthZugriffView() } label: {
+                    ProfilListenZeile("Apple Watch und Health", symbol: "heart.text.square.fill")
                 }
-                if let zeile = VerbindenDienste.geteilt?.uebernahmeZeile {
-                    Text(zeile)
-                        .font(.footnote)
-                        .foregroundStyle(palette.text2)
-                        .padding(.horizontal, Abstand.xs)
-                }
-                Text("Den Akku der AirPods gibt iOS Apps nicht frei. Was die Apple Watch misst, kommt über Apple Health.")
-                    .font(.footnote)
-                    .foregroundStyle(palette.text2)
-                    .padding(.horizontal, Abstand.xs)
             }
-            .padding(Abstand.l)
         }
+        .verbindenFormular()
         .navigationTitle("Geräte")
         .navigationBarTitleDisplayMode(.inline)
-        .lumenHintergrund()
     }
 
     /// Kurzer Stand für die Zeile: aus, nicht verbunden oder Status mit Akku.
@@ -51,12 +33,5 @@ struct GeraeteView: View {
         guard let modell = dienst?.modell else { return "Nicht verbunden" }
         guard let akku = modell.akku, modell.zustand == .verbunden else { return modell.statusText }
         return "\(modell.statusText), \(akku.prozent) %"
-    }
-
-    private func gruppe<Inhalt: View>(_ titel: String, @ViewBuilder _ inhalt: () -> Inhalt) -> some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            ProfilGruppenKopf(text: titel)
-            ListenKarte { inhalt() }.buttonStyle(.plain)
-        }
     }
 }

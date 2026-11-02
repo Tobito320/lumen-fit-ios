@@ -36,7 +36,7 @@ struct PartnerKoerperWeiche<Eigene: View>: View {
         .pickerStyle(.segmented)
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.s)
-        .background(.bar)
+        .lumenLeiste()
     }
 }
 

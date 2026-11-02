@@ -25,6 +25,13 @@ private final class ProfilZaehlLeser: HealthLeser, @unchecked Sendable {
 final class ProfilHealthTests: XCTestCase {
     private let verboten = ["erlaubt", "abgelehnt", "verweigert"]
 
+    func testZusammenfassungZaehltTypenMitDaten() {
+        let leer = ProfilHealthProbe.Befund()
+        XCTAssertEqual(ProfilHealthProbe.zusammenfassung(leer), "0 von \(HealthTyp.allCases.count) mit Daten")
+        let befund = ProfilHealthProbe.Befund(tage: [TagesWerte(tag: "2026-09-23", schritte: 5_000)])
+        XCTAssertEqual(ProfilHealthProbe.zusammenfassung(befund), "1 von \(HealthTyp.allCases.count) mit Daten")
+    }
+
     private func alleTexte() -> [String] {
         var texte = [ProfilHealthProbe.wegText]
         for typ in HealthTyp.allCases { texte += [ProfilHealthProbe.name(typ), ProfilHealthProbe.grund(typ)] }
