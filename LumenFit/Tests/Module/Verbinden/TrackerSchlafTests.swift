@@ -37,6 +37,8 @@ final class TrackerSchlafTests: XCTestCase {
     private let nachMitternacht = "bc270f0075f201000c14007c0102c80364050a0432"
     private let summeZuLang = "bc270b0066d30100086e05900102ff03f5"
     private let phaseNeun = "bc270b0091b90100086e05900102c809fa"
+    /// Wie `einTag`, aber mit einem Eintrag der Art 0 (30 min) mitten in der Nacht; die Phasen summieren sich genau auf die 450 min.
+    private let phaseNull = "bc271500d7d20100126e0590010264033c0432001e025a05140264"
     private let keinTag = "bc270100bf4000"
     private let ohnePhasen = "bc2707005b290100046e059001"
     private let kaputteCrc = "bc27130000200100106e0590010264033c0432027805140264"
@@ -156,6 +158,27 @@ final class TrackerSchlafTests: XCTestCase {
         let ergebnis = TrackerSchlaf.auswerten(nutzdaten: nutzdaten(phaseNeun), heute: heute, jetzt: jetzt)
         XCTAssertTrue(ergebnis.naechte.isEmpty)
         XCTAssertTrue(ergebnis.verworfen[0].contains("unbekannte Phase 9"), ergebnis.verworfen[0])
+    }
+
+    /// Das echte Band meldet Einträge der Art 0 mitten in sonst stimmigen Nächten (Summe der Phasen gleich der Zeit): die Nacht bleibt,
+    /// die Art 0 zählt nicht als Schlaf (Annahme "keine Daten", am Gerät ungeprüft).
+    func testPhaseNullVerwirftDieNachtNichtUndZaehltNichtAlsSchlaf() throws {
+        let ergebnis = TrackerSchlaf.auswerten(nutzdaten: nutzdaten(phaseNull), heute: heute, jetzt: jetzt)
+        XCTAssertTrue(ergebnis.verworfen.isEmpty, ergebnis.verworfen.joined())
+        let nacht = try XCTUnwrap(ergebnis.naechte.first)
+        XCTAssertEqual(nacht.minuten, 100 + 60 + 50 + 90 + 100, "ohne die 30 min Art 0 und die 20 min wach")
+        XCTAssertEqual(nacht.phasen.count, 7)
+    }
+
+    func testPhaseNullLaesstDasDiagrammZeitlichStimmen() throws {
+        let nacht = try XCTUnwrap(TrackerSchlaf.auswerten(nutzdaten: nutzdaten(phaseNull), heute: heute, jetzt: jetzt).naechte.first)
+        let leiste = try XCTUnwrap(TrackerSchlaf.diagramm(nacht))
+        // 100 + 60 + 50 min Schlaf, dann 30 min Art 0 als Lücke (wach), dann 90 min leicht: das Ende der Lücke liegt 240 min nach dem Einschlafen.
+        let luecke = try XCTUnwrap(leiste.abschnitte.first { $0.phase == .wach })
+        XCTAssertEqual(luecke.von, nacht.von.addingTimeInterval(210 * 60))
+        XCTAssertEqual(luecke.bis, nacht.von.addingTimeInterval(240 * 60))
+        XCTAssertEqual(leiste.bis, nacht.bis)
+        XCTAssertEqual(leiste.schlafMinuten, nacht.minuten)
     }
 
     func testOhnePhasenWirdVerworfen() {
