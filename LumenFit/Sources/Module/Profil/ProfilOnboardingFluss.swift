@@ -1,37 +1,45 @@
 import Foundation
 import Observation
 
-/// Der Ablauf des Onboardings in vier Karten (Idee 71): Willkommen, Name und Passwort, ein Ziel, Health. Alles Eingegebene bleibt hier im Speicher.
+/// Der Ablauf des Onboardings in fünf Karten (Idee 71): Willkommen, Name (ohne Passwort), Bereiche, ein Ziel (Gym-Tage nur mit Gym), Health (nur gewählte Typen).
+/// Alles Eingegebene bleibt hier im Speicher.
 /// Das Profil entsteht erst auf der letzten Karte: `AppRootView` wechselt sofort zu den Tabs, sobald es ein aktives Profil gibt,
 /// und würde die Karten 3 und 4 sonst mitten im Ausfüllen wegnehmen.
 @MainActor @Observable
 final class ProfilOnboardingFluss {
     enum Karte: Int, CaseIterable, Sendable {
-        case willkommen, profil, ziel, health
+        case willkommen, profil, bereiche, ziel, health
     }
 
     private(set) var karte: Karte = .willkommen
     var name = ""
-    var passwort = ""
     var art: Zielart = .halten
     var gymTage = 3
+    /// Die gewählten Bereiche (Standard alle drei); `setzeBereich` lässt den letzten nie ausschalten.
+    private(set) var bereiche = Einstellungen()
     private(set) var healthAngefragt = false
     private(set) var fehler: String?
 
     var anzahl: Int { Karte.allCases.count }
-    /// "Schritt 2 von 4" für VoiceOver und die Anzeige.
+    /// "Schritt 2 von 5" für VoiceOver und die Anzeige.
     var stand: String { "Schritt \(karte.rawValue + 1) von \(anzahl)" }
     var istLetzte: Bool { karte == .health }
 
     var nameGueltig: Bool { if case .success = NamenRegel.pruefe(name) { true } else { false } }
-    var passwortGueltig: Bool { passwort.count >= Passwort.mindestLaenge }
 
     var kannWeiter: Bool {
         switch karte {
-        case .willkommen, .ziel, .health: true
-        case .profil: nameGueltig && passwortGueltig
+        case .willkommen, .bereiche, .ziel, .health: true
+        case .profil: nameGueltig
         }
     }
+
+    /// Schaltet einen Bereich der Auswahl; false, wenn es der letzte eingeschaltete wäre.
+    @discardableResult
+    func setzeBereich(_ bereich: AppBereich, an: Bool) -> Bool { bereiche.setze(bereich, an: an) }
+
+    /// Wohin die App nach dem Einrichten geht: mit Gym zu den Plänen (dort "Geführt erstellen" oder ein fertiger Split), sonst bleibt es bei Heute.
+    var startRoute: Route? { bereiche.gymAn ? .gym(.plaene) : nil }
 
     func weiter() {
         guard kannWeiter, let naechste = Karte(rawValue: karte.rawValue + 1) else { return }
@@ -45,9 +53,9 @@ final class ProfilOnboardingFluss {
         karte = vorige
     }
 
-    /// Fragt Health (das System zeigt sein Blatt nur beim ersten Mal). Ohne Zwang: "Später" legt das Profil ohne diese Frage an.
+    /// Fragt Health nur für die gewählten Bereiche (das System zeigt sein Blatt nur beim ersten Mal). Ohne Zwang: "Später" legt das Profil ohne diese Frage an.
     func healthFragen(leser: any HealthLeser) async {
-        _ = await leser.zugriff(fuer: Set(HealthTyp.allCases))
+        _ = await leser.zugriff(fuer: bereiche.healthTypen)
         healthAngefragt = true
     }
 
@@ -59,23 +67,17 @@ final class ProfilOnboardingFluss {
         return NamenRegel.text(f)
     }
 
-    /// Hinweis zum Passwortfeld (leer, solange alles passt).
-    var passwortHinweis: String? {
-        guard !passwort.isEmpty, !passwortGueltig else { return nil }
-        return "Mindestens \(Passwort.mindestLaenge) Zeichen."
-    }
-
     /// Legt das Profil an und schreibt Ziele und Einstellungen in einem Schritt. false mit `fehler`, wenn es nicht ging.
     @discardableResult
     func abschliessen(in umgebung: AppUmgebung) -> Bool {
-        beende(Result { try umgebung.profil.anlegen(name: name, passwort: passwort) }, in: umgebung)
+        beende(Result { try umgebung.profil.anlegen(name: name, passwort: "") }, in: umgebung)
     }
 
-    /// Wie `abschliessen`, aber das Passwort wird abseits des Hauptthreads verarbeitet (die Oberfläche hängt nicht). Die Oberfläche nutzt diese.
+    /// Wie `abschliessen`, aber abseits des Hauptthreads (die Oberfläche hängt nicht). Die Oberfläche nutzt diese.
     @discardableResult
     func abschliessenImHintergrund(in umgebung: AppUmgebung) async -> Bool {
         let ergebnis: Result<Profil, Error>
-        do { ergebnis = .success(try await umgebung.profil.anlegenImHintergrund(name: name, passwort: passwort)) } catch { ergebnis = .failure(error) }
+        do { ergebnis = .success(try await umgebung.profil.anlegenImHintergrund(name: name, passwort: "")) } catch { ergebnis = .failure(error) }
         return beende(ergebnis, in: umgebung)
     }
 
@@ -90,9 +92,6 @@ final class ProfilOnboardingFluss {
                 karte = .profil
             case .nichtErlaubt:
                 fehler = "Weitere Profile sind auf diesem iPhone nicht möglich."
-            case .passwortZuKurz:
-                fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
-                karte = .profil
             default:
                 fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
             }
@@ -103,8 +102,13 @@ final class ProfilOnboardingFluss {
         let ziele = ProfilZielVorschlag.vorschlag(koerper: Koerperdaten(), art: art, gymTage: gymTage, kg: nil, jahr: ProfilZielSpeicher.jahr(jetzt))
         ProfilZielSpeicher.sichere(ziele: ziele, koerper: Koerperdaten(), in: daten, jahr: ProfilZielSpeicher.jahr(jetzt))
         let angefragt = healthAngefragt
-        daten.einstellungen.aendere { $0.healthGefragt = angefragt }
-        passwort = ""
+        let gewaehlt = bereiche
+        daten.einstellungen.aendere {
+            $0.healthGefragt = angefragt
+            $0.gymAn = gewaehlt.gymAn
+            $0.essenAn = gewaehlt.essenAn
+            $0.schlafAn = gewaehlt.schlafAn
+        }
         return true
     }
 }

@@ -100,6 +100,17 @@ final class BereicheHealthTests: XCTestCase {
         XCTAssertEqual(leser.beobachtet.last, [.schlaf], "Einschalten meldet die fehlenden Typen nach")
     }
 
+    func testOnboardingFragtHealthNurFuerGewaehlteBereiche() async {
+        let leser = Aufzeichner()
+        let fluss = ProfilOnboardingFluss()
+        fluss.setzeBereich(.schlaf, an: false)
+        fluss.setzeBereich(.gym, an: false)
+        await fluss.healthFragen(leser: leser)
+        let typen = leser.gefragt.first ?? []
+        XCTAssertFalse(typen.contains(.schlaf) || typen.contains(.training))
+        XCTAssertTrue(typen.contains(.schritte) && typen.contains(.gewicht))
+    }
+
     func testHealthZusammenfassungZaehltNurGewaehlteTypen() {
         let typen = aus(.schlaf).healthTypen
         XCTAssertEqual(ProfilHealthProbe.zusammenfassung(ProfilHealthProbe.Befund(), typen: typen), "0 von \(typen.count) mit Daten")
