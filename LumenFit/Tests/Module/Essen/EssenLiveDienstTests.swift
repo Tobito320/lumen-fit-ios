@@ -129,13 +129,13 @@ final class EssenLiveDienstTests: XCTestCase {
     func testWeggewischtGiltAuchNachEinemNeustart() async throws {
         let speicher = try XCTUnwrap(UserDefaults(suiteName: "essenLive-\(UUID().uuidString)"))
         let erste = EssenLiveTestFabrik()
-        let d1 = EssenLiveDienst(fabrik: erste, uhr: uhr.uhr, speicher: speicher)
+        let d1 = EssenLiveDienst(fabrik: erste, uhr: uhr.uhr, ablage: EssenLiveAblage(werte: speicher))
         await d1.abgleichen(stand(), an: true)
         await erste.wegwischen()
         await d1.abgleichen(stand(kcal: 100), an: true)
         // Neuer Prozess: derselbe Speicher, keine Activity mehr.
         let zweite = EssenLiveTestFabrik()
-        let d2 = EssenLiveDienst(fabrik: zweite, uhr: uhr.uhr, speicher: speicher)
+        let d2 = EssenLiveDienst(fabrik: zweite, uhr: uhr.uhr, ablage: EssenLiveAblage(werte: speicher))
         await d2.abgleichen(stand(kcal: 200), an: true)
         var aufrufe = await zweite.aufrufe
         XCTAssertEqual(aufrufe, [], "heute nicht von selbst wieder")
@@ -146,10 +146,10 @@ final class EssenLiveDienstTests: XCTestCase {
 
     func testWegwischenWaehrendDieAppBeendetWarGiltBeimNaechstenStart() async throws {
         let speicher = try XCTUnwrap(UserDefaults(suiteName: "essenLive-\(UUID().uuidString)"))
-        let d1 = EssenLiveDienst(fabrik: EssenLiveTestFabrik(), uhr: uhr.uhr, speicher: speicher)
+        let d1 = EssenLiveDienst(fabrik: EssenLiveTestFabrik(), uhr: uhr.uhr, ablage: EssenLiveAblage(werte: speicher))
         await d1.abgleichen(stand(), an: true)
         let fabrik = EssenLiveTestFabrik()
-        await EssenLiveDienst(fabrik: fabrik, uhr: uhr.uhr, speicher: speicher).abgleichen(stand(), an: true)
+        await EssenLiveDienst(fabrik: fabrik, uhr: uhr.uhr, ablage: EssenLiveAblage(werte: speicher)).abgleichen(stand(), an: true)
         let aufrufe = await fabrik.aufrufe
         XCTAssertEqual(aufrufe, [])
     }

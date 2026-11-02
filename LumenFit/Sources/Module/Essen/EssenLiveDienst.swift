@@ -14,6 +14,10 @@ protocol EssenLiveFabrik: Sendable {
     func beende() async
 }
 
+/// Tages-Speicher des Dienstes.
+// @unchecked Sendable: UserDefaults ist laut Apple thread-sicher, im SDK aber nicht Sendable.
+struct EssenLiveAblage: @unchecked Sendable { let werte: UserDefaults }
+
 /// Hält die Essen-Live-Activity passend zum Tagebuch: startet sie, aktualisiert sie nur bei geändertem Stand, beendet sie bei Schalter aus, Training oder Tageswechsel.
 /// Hat die Person sie weggewischt, startet sie heute nicht wieder von selbst, auch nicht nach einem App-Neustart (der Tag steht in `speicher`). Aufrufe laufen nacheinander (eine Kette), damit ein Ende nicht vor einem Start überholt.
 actor EssenLiveDienst {
@@ -27,9 +31,10 @@ actor EssenLiveDienst {
     private var letzter: EssenLiveStand?
     private var kette: Task<Void, Never>?
 
-    init(fabrik: any EssenLiveFabrik, uhr: @escaping Uhr = { Date() }, speicher: UserDefaults? = nil) {
+    init(fabrik: any EssenLiveFabrik, uhr: @escaping Uhr = { Date() }, ablage: EssenLiveAblage? = nil) {
         self.fabrik = fabrik
         self.uhr = uhr
+        let speicher = ablage?.werte
         self.speicher = speicher
         gestartetTag = speicher?.string(forKey: Self.gestartetSchluessel)
         beendetTag = speicher?.string(forKey: Self.beendetSchluessel)
