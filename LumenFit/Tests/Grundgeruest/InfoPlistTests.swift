@@ -18,6 +18,14 @@ final class InfoPlistTests: XCTestCase {
         XCTAssertNil(info["NSMotionUsageDescription"], "keine Bewegungsdaten über CoreMotion")
     }
 
+    func testStandortNurBeiNutzungUndOhneDauerzugriff() {
+        let text = info["NSLocationWhenInUseUsageDescription"] as? String ?? ""
+        XCTAssertTrue(text.contains("Studio") && text.contains("nicht gespeichert"), text)
+        for schluessel in ["NSLocationAlwaysAndWhenInUseUsageDescription", "NSLocationAlwaysUsageDescription"] {
+            XCTAssertNil(info[schluessel], schluessel)
+        }
+    }
+
     func testTexteFuerKameraUndBluetooth() {
         for schluessel in ["NSCameraUsageDescription", "NSBluetoothAlwaysUsageDescription"] {
             XCTAssertFalse((info[schluessel] as? String ?? "").isEmpty, schluessel)

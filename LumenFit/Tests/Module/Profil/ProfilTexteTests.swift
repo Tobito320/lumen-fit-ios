@@ -19,6 +19,13 @@ final class ProfilTexteTests: XCTestCase {
         XCTAssertEqual(ProfilTexte.quellen.count, 4)
     }
 
+    func testDatenschutzNenntDieStudioSucheBeiApple() throws {
+        let netz = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel == "Was ins Netz geht" })
+        for wort in ["Suchtext", "Apple Karten", "Standort", "nur der Name"] {
+            XCTAssertTrue(netz.text.contains(wort), wort)
+        }
+    }
+
     func testDatenschutzSagtWasDasGeraetNieVerlaesst() throws {
         let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz(coach: true).first { $0.titel.contains("nie verlässt") })
         for wort in ["Gesundheitsdaten", "Trainings", "Essen", "Gewicht", "kein Konto", "keinen Server"] {
