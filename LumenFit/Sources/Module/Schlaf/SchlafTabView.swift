@@ -17,7 +17,7 @@ struct SchlafAbschnittKopf: View {
     }
 }
 
-/// Der Tab Schlaf: letzte Nacht als Heldenzahl, Phasen, Woche, Erholung mit HRV im eigenen Bereich, Werte-Chips, Schuld, Regelmäßigkeit, Quelle.
+/// Der Tab Schlaf: letzte Nacht als Heldenzahl, Phasen, Woche, Erholung mit HRV im eigenen Bereich; Werte-Chips, Schuld, Regelmäßigkeit, Quelle unter "Details".
 /// `.verlauf` zeigt den Verlauf, `.werte` öffnet den Tab bei den Werten. Ohne Daten steht ein Leerzustand mit einer Handlung da.
 struct SchlafTabView: View {
     var bereich: SchlafBereich = .letzteNacht
@@ -41,6 +41,7 @@ private struct SchlafTabInhalt: View {
     @State private var position: String?
     @State private var version = 0
     @State private var eintragen = false
+    @State private var detailsOffen = false
 
     private static let wertenAnker = "schlaf-werte"
 
@@ -66,6 +67,7 @@ private struct SchlafTabInhalt: View {
         .scrollPosition(id: $position, anchor: .top)
         .task {
             guard zuWerten else { return }
+            detailsOffen = true
             try? await Task.sleep(for: .milliseconds(200))
             position = Self.wertenAnker
         }
@@ -113,10 +115,14 @@ private struct SchlafTabInhalt: View {
         } else {
         phasen(u, letzte)
         wochenAbschnitt(u)
-        erholungsAbschnitt(u)
-        ruheAbschnitt(u)
-        leistungsAbschnitt(u)
-        weiter(u, letzte)
+        erholungKarte(u)
+        // Lumen: Werte, Schuld und Rhythmus, Leistung, Quelle, Ziel und Verlauf unter "Details".
+        MehrKlappe("Details", untertitel: "Werte, Schuld, Rhythmus, Quelle, Verlauf", offen: $detailsOffen) {
+            werteAbschnitt(u)
+            ruheAbschnitt(u)
+            leistungsAbschnitt(u)
+            weiter(u, letzte)
+        }
         }
     }
 
@@ -128,8 +134,18 @@ private struct SchlafTabInhalt: View {
 
     @ViewBuilder
     private func erholungsAbschnitt(_ u: SchlafUebersicht) -> some View {
+        erholungKarte(u)
+        werteAbschnitt(u)
+    }
+
+    @ViewBuilder
+    private func erholungKarte(_ u: SchlafUebersicht) -> some View {
         SchlafAbschnittKopf("Erholung").id(Self.wertenAnker)
         SchlafBereichKarte(hrv: u.hrv, erholung: u.erholung, coachFragen: umgebung.router.coachSichtbar ? { frage in umgebung.router.oeffne(.coach(frage: frage)) } : nil)
+    }
+
+    @ViewBuilder
+    private func werteAbschnitt(_ u: SchlafUebersicht) -> some View {
         SchlafAbschnittKopf("Werte")
         SchlafWerteChips(staende: u.chips)
     }
