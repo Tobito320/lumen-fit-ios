@@ -303,8 +303,10 @@ final class CoachModell {
             // Abgebrochen: nichts merken, nichts zeigen.
         } catch CoachMotorFehler.nichtVerstanden {
             // Kein Modell und keine Regel für diese Frage: ehrlich sagen, nichts merken (ein Wiederholen würde nichts ändern).
+            umgebung.konto.nutzung.fehler(.coachVersteht)
             daten.coach.haenge(nachricht(.coach, CoachPersona.nichtVerstandenText))
         } catch {
+            umgebung.konto.nutzung.fehler(.coachAntwort)
             // Nie ein rohes Fehlerwort: der ruhige Text mit Lumi und ein Chip zum Wiederholen.
             einstellungen?.merkeFrage(frage)
             daten.coach.haenge(nachricht(.coach, CoachPersona.fehlerText, chips: [CoachChip(id: "nochmal", text: "Nochmal", aktion: .antworten(frage))]))

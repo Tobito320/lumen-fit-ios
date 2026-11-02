@@ -121,6 +121,7 @@ struct StudioEditorBlatt: View {
             }
             .navigationTitle("Studio")
             .navigationBarTitleDisplayMode(.inline)
+            .nutzungAblauf(.studio, stufe: "tippen")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -128,6 +129,7 @@ struct StudioEditorBlatt: View {
                         var neu = profil
                         if !festeUhrzeit { neu.slotStart = nil }
                         sitzung.studio?.setze(neu)
+                        umgebung.konto.nutzung.ablaufFertig(.studio)
                         schliessen()
                     }
                 }

@@ -1,14 +1,14 @@
 import Foundation
 import Observation
 
-/// Der Ablauf des Onboardings in fünf Karten (Idee 71): Willkommen, Name (ohne Passwort), Bereiche, ein Ziel (Gym-Tage nur mit Gym), Health (nur gewählte Typen).
+/// Der Ablauf des Onboardings in sechs Karten (Idee 71): Willkommen, Name (ohne Passwort), Bereiche, ein Ziel (Gym-Tage nur mit Gym), die Frage nach der Nutzungsmeldung, Health (nur gewählte Typen).
 /// Alles Eingegebene bleibt hier im Speicher.
 /// Das Profil entsteht erst auf der letzten Karte: `AppRootView` wechselt sofort zu den Tabs, sobald es ein aktives Profil gibt,
 /// und würde die Karten 3 und 4 sonst mitten im Ausfüllen wegnehmen.
 @MainActor @Observable
 final class ProfilOnboardingFluss {
     enum Karte: Int, CaseIterable, Sendable {
-        case willkommen, profil, bereiche, ziel, health
+        case willkommen, profil, bereiche, ziel, nutzung, health
     }
 
     private(set) var karte: Karte = .willkommen
@@ -18,6 +18,8 @@ final class ProfilOnboardingFluss {
     /// Die gewählten Bereiche (Standard alle drei); `setzeBereich` lässt den letzten nie ausschalten.
     private(set) var bereiche = Einstellungen()
     private(set) var healthAngefragt = false
+    /// Die Antwort auf die Frage nach der Nutzungsmeldung; ohne Antwort geht es auf dieser Karte nicht weiter, vorgewählt ist nichts. Health hängt nie daran.
+    private(set) var nutzung: NutzungAntwort = .offen
     private(set) var fehler: String?
 
     var anzahl: Int { Karte.allCases.count }
@@ -31,7 +33,14 @@ final class ProfilOnboardingFluss {
         switch karte {
         case .willkommen, .bereiche, .ziel, .health: true
         case .profil: nameGueltig
+        case .nutzung: nutzung != .offen
         }
+    }
+
+    /// Hält die Antwort fest und geht zur nächsten Karte.
+    func antworteNutzung(_ antwort: NutzungAntwort) {
+        nutzung = antwort
+        weiter()
     }
 
     /// Schaltet einen Bereich der Auswahl; false, wenn es der letzte eingeschaltete wäre.
@@ -103,7 +112,10 @@ final class ProfilOnboardingFluss {
         ProfilZielSpeicher.sichere(ziele: ziele, koerper: Koerperdaten(), in: daten, jahr: ProfilZielSpeicher.jahr(jetzt))
         let angefragt = healthAngefragt
         let gewaehlt = bereiche
+        let antwort = nutzung
+        let tag = Datum.text(jetzt)
         daten.einstellungen.aendere {
+            $0.antworteNutzung(antwort, tag: tag)
             $0.healthGefragt = angefragt
             $0.gymAn = gewaehlt.gymAn
             $0.essenAn = gewaehlt.essenAn

@@ -22,10 +22,13 @@ struct ProfilDatenschutzView: View {
                     .padding(Abstand.l)
                     .lumenKartenFlaeche()
                 }
-                Toggle("Nutzung anonym zählen", isOn: Binding(
-                    get: { umgebung.daten?.einstellungen.werte.nutzungZaehlen ?? true },
-                    set: { an in umgebung.daten?.einstellungen.aendere { $0.nutzungZaehlen = an } }))
+                Toggle(ProfilTexte.NutzungFrage.schalter, isOn: Binding(
+                    get: { umgebung.daten?.einstellungen.werte.nutzungErlaubt ?? false },
+                    set: { an in umgebung.daten?.einstellungen.aendere { $0.antworteNutzung(an ? .ja : .nein, tag: Datum.text(umgebung.uhr())) } }))
                     .frame(minHeight: Abstand.tippflaeche)
+                    .padding(.horizontal, Abstand.l)
+                Text(ProfilTexte.NutzungFrage.schalterFuss)
+                    .font(.footnote).foregroundStyle(palette.text2)
                     .padding(.horizontal, Abstand.l)
             }
             .padding(Abstand.l)
