@@ -2,7 +2,7 @@
 // App-Wege: X-App-Key + X-Konto + X-Geheimnis. Verwaltung (/admin/*): nur X-Admin-Key.
 // Reine fetch(request, env, holen)-Funktion ohne cloudflare:workers-Import -> unter Node testbar.
 import { kiFoto } from "./ki-foto.js";
-import { kiCoach } from "./ki-coach.js";
+import { coachProbe, kiCoach } from "./ki-coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 
 const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false };
@@ -599,6 +599,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig, loveaHolen: holen });
+  if (url.pathname === "/admin/coach-probe" && m === "POST") return adminOk(request, env) ? json(await coachProbe(env, holen)) : unauthorized();
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }

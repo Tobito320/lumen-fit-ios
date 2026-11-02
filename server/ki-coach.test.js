@@ -229,3 +229,17 @@ test("Lovea-Konto: Tageslimit gilt auch über Lovea", async () => {
   assert.equal((await coach(env, { holen })).status, 429);
   assert.equal(holen.aufrufe.length, 0);
 });
+
+test("Selbsttest: meldet Status, Fehlerart und Dauer, nie Inhalte", async () => {
+  const { coachProbe } = await import("./ki-coach.js");
+  const env = { LOVEA: {}, LOVEA_KEY: "k" };
+  const uhr = ((t) => () => (t += 5))(0);
+  assert.deepEqual(await coachProbe({}, null), { ok: false, grund: "nichtEingerichtet" });
+  const gut = await coachProbe(env, async () => Response.json({ ok: true, text: "geheim" }), uhr);
+  assert.deepEqual(gut, { ok: true, status: 200, fehler: null, ms: 5 });
+  const voll = await coachProbe(env, async () => Response.json({ fehler: "budget" }, { status: 429 }), uhr);
+  assert.deepEqual(voll, { ok: false, status: 429, fehler: "budget", ms: 5 });
+  const weg = await coachProbe(env, async () => { throw new Error("x"); }, uhr);
+  assert.deepEqual(weg, { ok: false, grund: "netz", meldung: "x", ms: 5 });
+});
+

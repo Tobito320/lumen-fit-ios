@@ -216,3 +216,21 @@ export async function kiCoach(request, env, hilfen, jetzt = new Date()) {
   }
   return Response.json({ ok: true, text: antwortText, knoepfe: knoepfeBereinigen(ergebnis?.knoepfe), rest: Math.max(0, TAGESLIMIT - gezaehlt.n), modell: MODELL });
 }
+
+// Selbsttest für den Betreiber (/admin/coach-probe): eine kleine feste Frage an den Lovea-Server, Antwort nur Status, Fehlerart und Dauer, nie Inhalte.
+export async function coachProbe(env, holen, uhr = Date.now) {
+  if (!env.LOVEA || !env.LOVEA_KEY) return { ok: false, grund: "nichtEingerichtet" };
+  const start = uhr();
+  try {
+    const res = await holen(`${env.LOVEA_URL ?? "https://lovea.intern"}/agent/ki`, {
+      method: "POST",
+      headers: { "X-Lovea-Key": env.LOVEA_KEY, "X-Lovea-Person": "ahmed", "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "coach", system: "Antworte kurz.", schema: COACH_SCHEMA, verlauf: [{ role: "user", content: "Sag kurz Hallo." }], maxTokens: 100 }),
+      signal: AbortSignal.timeout(25_000),
+    });
+    const j = await res.json().catch(() => null);
+    return { ok: res.ok && typeof j?.text === "string", status: res.status, fehler: typeof j?.fehler === "string" ? j.fehler : null, ms: uhr() - start };
+  } catch (e) {
+    return { ok: false, grund: e?.name === "TimeoutError" ? "zeit" : "netz", meldung: String(e?.message ?? "").slice(0, 200), ms: uhr() - start };
+  }
+}
