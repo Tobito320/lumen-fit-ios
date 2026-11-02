@@ -9,6 +9,12 @@ final class EssenTagebuchLogikTests: XCTestCase {
         XCTAssertEqual(EssenTagebuchLogik.titel(tag: "2026-10-20", heute: "2026-10-29"), Datum.anzeige("2026-10-20"))
     }
 
+    func testFastenIstAusBisEingeschaltetOderBestandMitDaten() {
+        XCTAssertFalse(EssenTagebuchLogik.fastenSichtbar(an: false, hatDaten: false))
+        XCTAssertTrue(EssenTagebuchLogik.fastenSichtbar(an: true, hatDaten: false))
+        XCTAssertTrue(EssenTagebuchLogik.fastenSichtbar(an: false, hatDaten: true), "wer Fasten-Daten hat, behält es an")
+    }
+
     func testLiterMitKomma() {
         XCTAssertEqual(EssenTagebuchLogik.liter(1750), "1,75 l")
         XCTAssertEqual(EssenTagebuchLogik.liter(2000), "2 l")

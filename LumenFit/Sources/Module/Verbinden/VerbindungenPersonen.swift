@@ -36,6 +36,7 @@ struct VerbindungPersonView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
     @State private var fragen = false
+    @State private var einzelnOffen = false
     @State private var fehler: String?
     @State private var zeigtLokal: Set<VerbindungBereich>?
     @State private var ausblendenLokal: Set<VerbindungBereich>?
@@ -54,7 +55,10 @@ struct VerbindungPersonView: View {
                     entfernen(e)
                 }
                 .verbindenFormular()
-                .onAppear { name = e.ich.name }
+                .onAppear {
+                    name = e.ich.name
+                    einzelnOffen = FreigabeStufe.von(e.ich.zeigtBereiche) == nil && !e.ich.zeigtBereiche.isEmpty
+                }
                 .onChange(of: e.ich) { _, neu in
                     zeigtLokal = nil
                     ausblendenLokal = nil
@@ -83,15 +87,28 @@ struct VerbindungPersonView: View {
     private func zeigstAbschnitt(_ e: VerbindungEintrag) -> some View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
         return VerbindenAbschnitt(titel: "Das zeigst du \(e.anzeigeName)",
-                                  fuss: "Neue Personen sehen nur Schritte und Gym. Es gehen nur Zusammenfassungen von heute hinaus.") {
-            ForEach(VerbindungBereich.allCases, id: \.self) { b in
-                Toggle(isOn: Binding(get: { an.contains(b) }, set: { neu in
-                    var n = an
-                    if neu { n.insert(b) } else { n.remove(b) }
-                    zeigtLokal = n
-                    senden(["zeigt": n.map(\.rawValue).sorted()])
-                })) { bereichZeile(b) }
-                .frame(minHeight: Abstand.tippflaeche)
+                                  fuss: "Wenig: Schritte und Gym. Alles: alle Bereiche. Es gehen nur Zusammenfassungen von heute hinaus.") {
+            Picker("Wie viel", selection: Binding<FreigabeStufe?>(
+                get: { FreigabeStufe.von(an) },
+                set: { stufe in
+                    guard let stufe else { return }
+                    zeigtLokal = stufe.bereiche
+                    senden(["zeigt": stufe.bereiche.map(\.rawValue).sorted()])
+                })) {
+                ForEach(FreigabeStufe.allCases, id: \.self) { Text($0.name).tag(Optional($0)) }
+            }
+            .pickerStyle(.segmented)
+            .frame(minHeight: Abstand.tippflaeche)
+            DisclosureGroup("Einzelne Schalter", isExpanded: $einzelnOffen) {
+                ForEach(VerbindungBereich.allCases, id: \.self) { b in
+                    Toggle(isOn: Binding(get: { an.contains(b) }, set: { neu in
+                        var n = an
+                        if neu { n.insert(b) } else { n.remove(b) }
+                        zeigtLokal = n
+                        senden(["zeigt": n.map(\.rawValue).sorted()])
+                    })) { bereichZeile(b) }
+                    .frame(minHeight: Abstand.tippflaeche)
+                }
             }
         }
     }

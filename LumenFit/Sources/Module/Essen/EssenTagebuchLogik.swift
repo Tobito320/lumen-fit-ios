@@ -46,6 +46,9 @@ enum EssenTagebuchLogik {
         return teile.count == 3 ? "Zuletzt am \(teile[2]).\(teile[1])." : "Zuletzt am \(datum)"
     }
 
+    /// Fasten erscheint, wenn man es eingeschaltet hat oder schon Fasten-Daten hat (Bestand behält es).
+    nonisolated static func fastenSichtbar(an: Bool, hatDaten: Bool) -> Bool { an || hatDaten }
+
     /// Neues Gewicht in Zehntel-kg nach einem Schritt (±1), begrenzt auf 30,0 bis 249,9 kg (`Koerpermasse`).
     nonisolated static func gewichtNach(zehntel: Int, schritt: Int) -> Int {
         min(Koerpermasse.gewichtZehntel.upperBound, max(Koerpermasse.gewichtZehntel.lowerBound, zehntel + schritt))

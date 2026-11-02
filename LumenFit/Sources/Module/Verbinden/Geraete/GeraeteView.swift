@@ -12,7 +12,11 @@ struct GeraeteView: View {
         Form {
             VerbindenAbschnitt(fuss: VerbindenDienste.geteilt?.uebernahmeZeile ?? "Was die Apple Watch misst, kommt über Apple Health.") {
                 NavigationLink { BandSeite() } label: {
-                    ProfilListenZeile("Fitness-Tracker", symbol: "applewatch", wert: bandKurz)
+                    if umgebung.daten?.einstellungen.werte.bandEingerichtet == true {
+                        ProfilListenZeile("Fitness-Tracker", symbol: "applewatch", wert: bandKurz)
+                    } else {
+                        ProfilListenZeile("Band einrichten", symbol: "applewatch")
+                    }
                 }
                 NavigationLink { KopfhoererSeite() } label: {
                     ProfilListenZeile("Kopfhörer und AirPods", symbol: "airpods")

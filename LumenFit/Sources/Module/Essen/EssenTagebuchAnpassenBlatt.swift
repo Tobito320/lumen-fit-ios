@@ -47,6 +47,17 @@ struct EssenTagebuchAnpassenBlatt: View {
                         .listRowBackground(palette.flaeche)
                     }
                 }
+                Section {
+                    Toggle("Intervallfasten zeigen", isOn: Binding(
+                        get: { umgebung.daten?.einstellungen.werte.fastenAn ?? false },
+                        set: { neu in umgebung.daten?.einstellungen.aendere { $0.fastenAn = neu } }))
+                        .frame(minHeight: Abstand.tippflaeche)
+                        .listRowBackground(palette.flaeche)
+                } header: {
+                    Text("Fasten")
+                } footer: {
+                    Text("Aus blendet nur aus, deine Fasten-Daten bleiben.")
+                }
                 EssenLiveSchalter()
             }
             .environment(\.editMode, .constant(.active))
