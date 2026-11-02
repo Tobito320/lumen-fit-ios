@@ -19,6 +19,8 @@ final class EssenStore {
     @ObservationIgnored var gewichtQuelle: @MainActor () -> [String: Int] = { [:] }
     /// Schreibt einen Habit-Wert (Protein-Habit abhaken); `DatenSatz` verdrahtet es mit dem `HabitStore`.
     @ObservationIgnored var habitSetzer: @MainActor (_ id: String, _ datum: String, _ wert: Int) -> Void = { _, _, _ in }
+    /// Tageswerte (Zehntel) eines Habits, z. B. "mass.taille"; `DatenSatz` verdrahtet es mit dem `HabitStore`.
+    @ObservationIgnored var massQuelle: @MainActor (_ id: String) -> [String: Int] = { _ in [:] }
     @ObservationIgnored var habitLeser: @MainActor (_ id: String, _ datum: String) -> Int = { _, _ in 0 }
 
     init(raum: LokalerRaum, ziele: ZieleStore, ordner: URL? = nil, ereignisse: EreignisKanal? = nil, uhr: @escaping Uhr = { Date() }) {
@@ -67,7 +69,16 @@ final class EssenStore {
     var fasten: FastenD? { faltung.fasten(ich) }
     var anpassung: TagebuchAnpassung { faltung.anpassung(ich) }
     func mahlzeitName(_ m: Mahlzeit) -> String { anpassung.name(m) }
-    func koerperwert(_ art: KoerperArt, bis tag: String) -> KoerperwertD? { faltung.koerperwert(ich, art, bis: tag) }
+    /// Zehntel je Tag einer Messart: Habit-Werte und ältere Tagebuch-Werte (Op) zusammen, nichts doppelt. Gewicht ist die Gewicht-Reihe.
+    func massReihe(_ art: MessArt) -> [String: Int] {
+        guard let essenArt = art.essenArt else { return gewichtQuelle() }
+        return Koerpermasse.reihe(habit: massQuelle(art.habitId), essen: faltung.koerperreihe(ich, essenArt))
+    }
+
+    func koerperwert(_ art: KoerperArt, bis tag: String) -> KoerperwertD? {
+        massReihe(art.messArt).filter { $0.key <= tag }.max { $0.key < $1.key }
+            .map { KoerperwertD(datum: $0.key, art: art, wert: Double($0.value) / 10, geloescht: nil) }
+    }
     func offline(barcode: String) -> Lebensmittel? { faltung.lebensmittel(barcode: barcode, ich) }
 
     /// Gewicht (Zehntel-kg) an diesem Tag, sonst das letzte davor, mit Datum.
@@ -153,8 +164,11 @@ final class EssenStore {
 
     func anpassungSichern(_ a: TagebuchAnpassung) { raum.senden("food.anpassung", a) }
 
+    /// Schreibt in den Habit-Wert der Messart (derselbe Ort wie "Messung erfassen"); Werte außerhalb des Bereichs werden nicht gespeichert.
     func koerperwertSetzen(_ art: KoerperArt, _ wert: Double, datum: String) {
-        raum.senden("koerper.setzen", KoerperwertD(datum: datum, art: art, wert: wert, geloescht: nil))
+        let zehntel = Int((wert * 10).rounded())
+        guard art.messArt.erlaubt.contains(zehntel) else { return }
+        habitSetzer(art.messArt.habitId, datum, zehntel)
     }
 
     /// Das Gewicht liegt im Gewicht-Habit (Zehntel-kg), damit Heute und Fortschritt dieselbe Reihe lesen.

@@ -11,8 +11,8 @@ final class MessErfassungTests: XCTestCase {
 
     func testKommaUndPunktUndMehrereWerteProTag() {
         let e = MessErfassung.pruefe([.gewicht: "78.4", .taille: "82,5", .koerperfett: "18"])
-        XCTAssertEqual(e.gueltig.map(\.art), [.gewicht, .taille, .koerperfett])
-        XCTAssertEqual(e.gueltig.map(\.zehntel), [784, 825, 180])
+        XCTAssertEqual(e.gueltig.map(\.art), [.gewicht, .koerperfett, .taille])
+        XCTAssertEqual(e.gueltig.map(\.zehntel), [784, 180, 825])
     }
 
     func testTippfehlerUndTextWerdenAbgelehnt() {

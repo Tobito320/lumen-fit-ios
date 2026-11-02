@@ -3,7 +3,7 @@ import Charts
 import SwiftUI
 
 /// Messungen wie in Hevy: letzter Wert, Diagramm, Historie, Plus zum Erfassen. Gewicht ist dasselbe Gewicht wie überall in der App (Gewohnheit "gewicht"),
-/// Umfänge und Körperfett liegen als Tageswerte unter "mass.<art>" in denselben Gewohnheits-Ops. Alle Werte in Zehnteln.
+/// Umfänge und Körperfett liegen als Tageswerte unter "mass.<art>" in denselben Gewohnheits-Ops, dazu ältere Werte aus dem Essen-Tagebuch. Alle Werte in Zehnteln.
 struct MessungenView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -16,7 +16,7 @@ struct MessungenView: View {
     @State private var toast: ToastInhalt?
 
     var body: some View {
-        let punkte = MessLogik.punkte(umgebung.daten?.habits.werte(art.habitId) ?? [:])
+        let punkte = MessLogik.punkte(umgebung.daten?.essen.massReihe(art) ?? [:])
         Group {
             if aufbau == .lovea { loveaListe(punkte) } else { lumenSeite(punkte) }
         }

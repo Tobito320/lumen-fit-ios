@@ -276,7 +276,7 @@ enum CoachMarker {
         return zahl(t.trimmingCharacters(in: .whitespaces))
     }
 
-    /// "81,3", "81.3", "81 kg": 1 bis 3 Ziffern, höchstens ein Trenner mit genau einer Nachkommastelle, 30 bis 300 kg. Sonst `nil`.
+    /// "81,3", "81.3", "81 kg": 1 bis 3 Ziffern, höchstens ein Trenner mit genau einer Nachkommastelle, 30 bis 249,9 kg (`Koerpermasse`). Sonst `nil`.
     static func kilo(_ argument: String) -> Double? {
         var t = argument.lowercased()
         if t.hasSuffix("kg") { t = String(t.dropLast(2)) }
@@ -286,7 +286,7 @@ enum CoachMarker {
         let nachkomma = teile.count == 2 ? teile[1] : "0"
         guard (1...3).contains(teile[0].count), nachkomma.count == 1 else { return nil }
         guard (teile[0] + nachkomma).allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
-        guard let kg = Double("\(teile[0]).\(nachkomma)"), (30.0...300.0).contains(kg) else { return nil }
+        guard let kg = Double("\(teile[0]).\(nachkomma)"), Koerpermasse.gewichtKg.contains(kg) else { return nil }
         return kg
     }
 

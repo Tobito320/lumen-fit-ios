@@ -30,6 +30,7 @@ final class DatenSatz {
         let habits = HabitStore(raum: raum, ziele: ziele, ereignisse: ereignisse, uhr: uhr)
         let essen = EssenStore(raum: raum, ziele: ziele, ordner: ordner, ereignisse: ereignisse, uhr: uhr)
         essen.gewichtQuelle = { habits.werte(Habit.gewicht.id) }
+        essen.massQuelle = { habits.werte($0) }
         essen.habitSetzer = { id, datum, wert in habits.setze(id, datum: datum, wert: wert) }
         essen.habitLeser = { id, datum in habits.wert(id, datum) }
         self.raum = raum

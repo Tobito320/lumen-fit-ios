@@ -190,6 +190,15 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(GeraeteEinstellungDatei.lesen(ordner).eintraege["bank"]?.stufe, "4")
         XCTAssertNil(GeraeteEinstellungDatei.lesen(ordner).eintraege["bank"]?.notiz)
     }
+
+    /// `KoerperArt.schulter` ist neu: alte Körperwerte (Oberarm, Taille) bleiben lesbar, der Oberarm liegt weiter unter `MessArt.bizeps`.
+    func testKoerperwerteMitAlterUndNeuerArtSindLesbar() {
+        func op(_ json: String) -> Op { Op(id: "x", art: "koerper.setzen", von: .testA, zeit: Date(timeIntervalSince1970: 1_790_000_000), d: Data(json.utf8)) }
+        let alt = op(#"{"datum":"2026-10-01","art":"oberarm","wert":36.5}"#).daten(KoerperwertD.self)
+        XCTAssertEqual(alt?.art, .oberarm)
+        XCTAssertEqual(alt?.art.messArt.habitId, "mass.bizeps")
+        XCTAssertEqual(op(#"{"datum":"2026-10-01","art":"schulter","wert":110,"zukunft":1}"#).daten(KoerperwertD.self)?.art, .schulter)
+    }
 }
 
 private extension NamenAenderung {

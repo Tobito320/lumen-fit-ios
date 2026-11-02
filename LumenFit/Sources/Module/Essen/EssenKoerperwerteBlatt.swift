@@ -13,6 +13,7 @@ struct EssenKoerperwerteBlatt: View {
     @State private var werte: [KoerperArt: String] = [:]
     @State private var geladen = false
     @State private var gesichert = 0
+    @State private var pruefen = false
 
     init(tag: String) { self.tag = tag }
 
@@ -25,6 +26,10 @@ struct EssenKoerperwerteBlatt: View {
                     karte {
                         EssenZahlFeld(titel: "Gewicht", einheit: "kg", text: $gewicht)
                         Text("Am besten einmal pro Woche, am selben Tag und zur gleichen Uhrzeit.")
+                            .font(.footnote).foregroundStyle(palette.text2)
+                    }
+                    if pruefen, !ungueltig.isEmpty {
+                        Text("Bitte prüfen, diese Werte passen nicht: \(ungueltig.joined(separator: ", ")). Gespeichert wird erst, wenn alle stimmen.")
                             .font(.footnote).foregroundStyle(palette.text2)
                     }
                     Text("Weitere Körperwerte").font(.headline).foregroundStyle(palette.text)
@@ -75,7 +80,22 @@ struct EssenKoerperwerteBlatt: View {
         }
     }
 
+    /// Ausgefüllte Felder außerhalb des plausiblen Bereichs (`MessArt.erlaubt`); leere Felder bleiben unberührt.
+    private var ungueltig: [String] {
+        var namen: [String] = []
+        if !gewicht.trimmingCharacters(in: .whitespaces).isEmpty, !Koerpermasse.gewichtZehntel.contains(GewichtText.zehntel(gewicht) ?? 0) { namen.append("Gewicht") }
+        for art in KoerperArt.allCases {
+            let roh = (werte[art] ?? "").trimmingCharacters(in: .whitespaces)
+            guard !roh.isEmpty else { continue }
+            let zehntel = EssenMahlzeitenLogik.koerperwert(roh).map { Int(($0 * 10).rounded()) } ?? 0
+            if !art.messArt.erlaubt.contains(zehntel) { namen.append(art.name) }
+        }
+        return namen
+    }
+
     private func speichern() {
+        pruefen = true
+        guard ungueltig.isEmpty else { return }
         if let essen {
             if let zehntel = GewichtText.zehntel(gewicht) { essen.gewichtSetzen(zehntel: zehntel, datum: tag) }
             for art in KoerperArt.allCases {

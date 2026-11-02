@@ -36,7 +36,7 @@ enum PartnerAnsichtsDaten {
         }
         if freigaben.contains(.koerper) {
             var werte: [MessArt: [String: Int]] = [:]
-            for art in MessArt.allCases { werte[art] = daten.habits.werte(art.habitId) }
+            for art in MessArt.allCases { werte[art] = daten.essen.massReihe(art) }
             w.koerper = koerper(werte)
         }
         return w
