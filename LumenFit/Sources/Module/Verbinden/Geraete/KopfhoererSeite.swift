@@ -12,8 +12,7 @@ struct KopfhoererSeite: View {
         Form {
             if let dienst { KopfhoererKopf(status: dienst.status) }
             AnsageAbschnitt(dienst: dienst)
-            VerbindenAbschnitt(titel: "Was iOS nicht erlaubt",
-                               fuss: "Den Akku der AirPods, ihre Sensoren für Hörer und die Einstellungen am Gerät zeigt iOS nur Apple selbst. Lumen Fit zeigt darum nur, ob ein Kopfhörer verbunden ist, und sagt in den Kopfhörer, wenn die Pause vorbei ist.") {
+            VerbindenAbschnitt(fuss: "Akku, Sensoren und Einstellungen der AirPods gibt iOS Apps nicht frei.") {
                 EmptyView()
             }
         }
@@ -24,28 +23,23 @@ struct KopfhoererSeite: View {
     }
 }
 
-/// Der Kopf: Symbol, Titel und Name des Geräts. Das Symbol wechselt weich, wenn der Kopfhörer kommt oder geht.
+/// Der Stand als eine Zeile: Symbol und Titel links, Name des Geräts rechts. Das Symbol wechselt weich, wenn der Kopfhörer kommt oder geht.
 private struct KopfhoererKopf: View {
     let status: KopfhoererStatus
     @Environment(\.bewegungAus) private var ruhig
 
     var body: some View {
-        Section {
-            HeroKarte {
-                HStack(spacing: Abstand.m) {
-                    Image(systemName: KopfhoererLogik.symbol(status))
-                        .font(.largeTitle)
-                        .contentTransition(.symbolEffect(.replace))
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(KopfhoererLogik.titel(status)).font(.headline)
-                        if let name = KopfhoererLogik.name(status) { Text(name).font(.subheadline).opacity(0.8) }
-                    }
+        VerbindenAbschnitt {
+            LabeledContent {
+                if let name = KopfhoererLogik.name(status) { Text(name).lineLimit(1).minimumScaleFactor(0.8) }
+            } label: {
+                Label {
+                    Text(KopfhoererLogik.titel(status)).lineLimit(1).minimumScaleFactor(0.8)
+                } icon: {
+                    Image(systemName: KopfhoererLogik.symbol(status)).contentTransition(.symbolEffect(.replace))
                 }
-                .animation(ruhig ? nil : Feder.weich, value: status)
             }
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
+            .animation(ruhig ? nil : Feder.weich, value: status)
         }
     }
 }
@@ -58,7 +52,7 @@ private struct AnsageAbschnitt: View {
     @AppStorage(AnsageRegel.nurKopfhoererSchluessel) private var nurKopfhoerer = true
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Ansagen im Training", fuss: "Standard aus. Lumen Fit spricht kurz in die Kopfhörer und macht die Musik währenddessen leiser. Das klappt, solange die App läuft (offen oder durch das Training wach); mit gesperrtem iPhone und schlafender App bleibt es still.") {
+        VerbindenAbschnitt(titel: "Ansagen im Training", fuss: "Klappt nur, solange Lumen Fit offen oder durch das Training wach ist.") {
             Toggle(isOn: $pause) { Label("Pause vorbei ansagen", systemImage: "timer") }
                 .frame(minHeight: Abstand.tippflaeche)
             Toggle(isOn: $rekord) { Label("Neuen Rekord ansagen", systemImage: "trophy.fill") }

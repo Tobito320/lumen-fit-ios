@@ -30,6 +30,7 @@ private struct VerbindenFormularStil: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .listSectionSpacing(.compact)
             .scrollContentBackground(.hidden)
             .lumenHintergrund()
             .tint(palette.akzent)
@@ -37,6 +38,6 @@ private struct VerbindenFormularStil: ViewModifier {
 }
 
 extension View {
-    /// Das Formular der Verbinden-Seiten: Hintergrund des Themes, Schalter in der Akzentfarbe.
+    /// Das Formular der Verbinden-Seiten: Hintergrund des Themes, enge Abschnitte, Schalter in der Akzentfarbe.
     func verbindenFormular() -> some View { modifier(VerbindenFormularStil()) }
 }
