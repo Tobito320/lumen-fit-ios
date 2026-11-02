@@ -16,7 +16,7 @@ struct MeilensteineView: View {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 Text("\(erreicht) von \(zaehlung.gesamt) Medaillen").font(.title2.weight(.bold)).fontDesign(.rounded).foregroundStyle(palette.text)
                 if erreicht == 0 {
-                    if einstellungen.zeigt(.gym) {
+                    if einstellungen.zeigt(AppBereich.gym) {
                         LeerZustand(stimmung: .bereit, satz: "Noch keine Medaille. Hake einen Satz ab, Lumi holt die erste.", handlung: "Training starten") {
                             umgebung.router.oeffne(.gym(.training))
                         }

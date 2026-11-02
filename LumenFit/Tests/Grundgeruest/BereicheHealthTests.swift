@@ -4,6 +4,12 @@ import XCTest
 /// Health fragt und beobachtet nur, was gewählt ist.
 @MainActor
 final class BereicheHealthTests: XCTestCase {
+    // @unchecked Sendable: der Test läuft auf dem Hauptakteur, nichts greift parallel zu.
+    private final class WahlBox: @unchecked Sendable {
+        var wert: Einstellungen
+        init(_ wert: Einstellungen) { self.wert = wert }
+    }
+
     /// Merkt, nach welchen Typen gefragt und welche beobachtet wurden.
     private final class Aufzeichner: HealthLeser, @unchecked Sendable {
         private let schloss = NSLock()
@@ -51,8 +57,8 @@ final class BereicheHealthTests: XCTestCase {
 
     func testGesundheitFragtNurGewaehlteTypenUndLiestKeineNaechteOhneSchlaf() async {
         let leser = Aufzeichner()
-        var e = aus(.schlaf)
-        let stand = GesundheitsStand(leser: leser, uhr: { Date() }, typen: { e.healthTypen })
+        let e = WahlBox(aus(.schlaf))
+        let stand = GesundheitsStand(leser: leser, uhr: { Date() }, typen: { e.wert.healthTypen })
         await stand.aktualisiere()
         XCTAssertEqual(leser.gefragt.count, 1)
         XCTAssertFalse(leser.gefragt[0].contains(.schlaf))
@@ -61,7 +67,7 @@ final class BereicheHealthTests: XCTestCase {
         await stand.aktualisiere()
         XCTAssertEqual(leser.gefragt.count, 1, "nichts Neues: keine zweite Frage")
 
-        e.setze(.schlaf, an: true)
+        e.wert.setze(.schlaf, an: true)
         await stand.aktualisiere()
         XCTAssertEqual(leser.gefragt.count, 2, "Einschalten fragt die fehlenden Rechte")
         XCTAssertTrue(leser.gefragt[1].contains(.schlaf))
