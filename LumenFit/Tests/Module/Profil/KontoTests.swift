@@ -11,8 +11,10 @@ final class KontoTests: XCTestCase {
     private func netzfehler() -> SkriptLader.Antwort { .init(status: 0, daten: Data(), fehler: .notConnectedToInternet) }
 
     private func dienst(_ lader: SkriptLader, bund: SpeicherSchluesselbund = SpeicherSchluesselbund(), ordner: URL? = nil, ohneZugang: Bool = false,
-                        uhr: TestUhr = TestUhr()) throws -> KontoDienst {
-        KontoDienst(zugang: ohneZugang ? nil : zugang, schluesselbund: bund, http: lader, ordner: try ordner ?? tempOrdner(), uhr: uhr.uhr, version: "0.0.1")
+                        uhr: TestUhr = TestUhr(), zugestimmt: Bool = true) throws -> KontoDienst {
+        let d = KontoDienst(zugang: ohneZugang ? nil : zugang, schluesselbund: bund, http: lader, ordner: try ordner ?? tempOrdner(), uhr: uhr.uhr, version: "0.0.1")
+        d.nutzung.an = zugestimmt   // die App setzt das aus der Antwort der Person; ohne "Ja" ist es aus
+        return d
     }
 
     private func gespeicherteKennung(_ bund: SpeicherSchluesselbund) throws -> KontoKennung {

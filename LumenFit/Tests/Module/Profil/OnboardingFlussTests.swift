@@ -9,26 +9,48 @@ final class OnboardingFlussTests: XCTestCase {
         f.weiter()
         f.weiter()
         f.weiter()
+        f.antworteNutzung(.nein)   // die Frage nach der Nutzungsmeldung steht vor Health
     }
 
-    func testFuenfKartenInFesterReihenfolge() {
+    func testSechsKartenInFesterReihenfolge() {
         let f = ProfilOnboardingFluss()
-        XCTAssertEqual(f.anzahl, 5)
+        XCTAssertEqual(f.anzahl, 6)
         XCTAssertEqual(f.karte, .willkommen)
-        XCTAssertEqual(f.stand, "Schritt 1 von 5")
+        XCTAssertEqual(f.stand, "Schritt 1 von 6")
         f.weiter()
         XCTAssertEqual(f.karte, .profil)
-        XCTAssertEqual(f.stand, "Schritt 2 von 5")
+        XCTAssertEqual(f.stand, "Schritt 2 von 6")
         f.name = "Mira"
         f.weiter()
         XCTAssertEqual(f.karte, .bereiche)
         f.weiter(); f.weiter()
+        XCTAssertEqual(f.karte, .nutzung)
+        XCTAssertFalse(f.kannWeiter, "ohne Antwort geht es nicht weiter, vorgewählt ist nichts")
+        f.weiter()
+        XCTAssertEqual(f.karte, .nutzung)
+        f.antworteNutzung(.ja)
         XCTAssertEqual(f.karte, .health)
         XCTAssertTrue(f.istLetzte)
         f.weiter()
         XCTAssertEqual(f.karte, .health, "nach der letzten Karte geht es nicht weiter")
         f.zurueck()
-        XCTAssertEqual(f.karte, .ziel)
+        XCTAssertEqual(f.karte, .nutzung)
+    }
+
+    func testAntwortAufDieNutzungsFrageLandetImProfilUndHealthHaengtNichtDaran() async throws {
+        for antwort in [NutzungAntwort.ja, .nein] {
+            let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
+            let f = ProfilOnboardingFluss()
+            f.weiter(); f.name = "Mira"; f.weiter(); f.weiter(); f.weiter()
+            f.antworteNutzung(antwort)
+            await f.healthFragen(leser: u.healthLeser)
+            XCTAssertTrue(f.abschliessen(in: u))
+            let e = try XCTUnwrap(u.daten?.einstellungen.werte)
+            XCTAssertEqual(e.nutzungAntwort, antwort)
+            XCTAssertEqual(e.nutzungErlaubt, antwort == .ja)
+            XCTAssertEqual(e.nutzungJaSeit != nil, antwort == .ja, "den Tag des Ja merkt sich nur ein Ja")
+            XCTAssertTrue(e.healthGefragt, "Health wird bei Ja und bei Nein gleich gefragt")
+        }
     }
 
     func testNurDerNameIstPflichtAufDerZweitenKarte() {

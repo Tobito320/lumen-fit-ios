@@ -18,8 +18,10 @@ final class EinmalLoveaTests: XCTestCase {
 
     private func antwort(_ status: Int, _ json: String = "{}") -> SkriptLader.Antwort { .init(status: status, daten: Data(json.utf8), fehler: nil) }
 
-    private func dienst(_ lader: SkriptLader, bund: SpeicherSchluesselbund = SpeicherSchluesselbund(), ordner: URL? = nil, uhr: TestUhr = TestUhr()) throws -> KontoDienst {
-        KontoDienst(zugang: zugang, schluesselbund: bund, http: lader, ordner: try ordner ?? tempOrdner(), uhr: uhr.uhr, version: "0.0.1")
+    private func dienst(_ lader: SkriptLader, bund: SpeicherSchluesselbund = SpeicherSchluesselbund(), ordner: URL? = nil, uhr: TestUhr = TestUhr(), zugestimmt: Bool = true) throws -> KontoDienst {
+        let d = KontoDienst(zugang: zugang, schluesselbund: bund, http: lader, ordner: try ordner ?? tempOrdner(), uhr: uhr.uhr, version: "0.0.1")
+        d.nutzung.an = zugestimmt   // die App setzt das aus der Antwort der Person; ohne "Ja" ist es aus
+        return d
     }
 
     private func pfade(_ l: SkriptLader) -> [String] { l.anfragen.compactMap { $0.url?.path } }
@@ -82,7 +84,12 @@ final class EinmalLoveaTests: XCTestCase {
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         let nutzung = try XCTUnwrap(lader.anfragen.last { $0.url?.path == "/nutzung" })
         let koerper = try JSONDecoder().decode(NutzungMeldung.self, from: try XCTUnwrap(nutzung.httpBody))
-        XCTAssertEqual(koerper, NutzungMeldung(tag: "2026-09-23", bereiche: ["tab.gym": 1], funktionen: ["training": 1]))
+        XCTAssertEqual(koerper.tag, "2026-09-23")
+        XCTAssertEqual(koerper.bereiche, ["tab.gym": 1])
+        XCTAssertEqual(koerper.funktionen, ["training": 1])
+        XCTAssertEqual(koerper.gruppen?["start"], ["anzahl": 1, "block_mittag": 1])
+        XCTAssertEqual(koerper.gruppen?["erster"], ["tab.gym": 1, "fn.training": 1])
+        XCTAssertEqual(koerper.ios, NutzungGeraet.ios)
         XCTAssertEqual(nutzung.value(forHTTPHeaderField: "X-App-Version"), "0.0.1")
         XCTAssertTrue(d.nutzung.stand.tage["2026-09-23"] == nil, "gesendete Zähler sind weg")
         let vorher = lader.aufrufe
