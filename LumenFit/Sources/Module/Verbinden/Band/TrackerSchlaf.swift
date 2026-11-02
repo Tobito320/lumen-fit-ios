@@ -21,6 +21,8 @@ enum TrackerSchlaf {
 
     /// Frühestens so viele Sekunden zwischen zwei Anfragen (Akku des Bands).
     static let abstand: TimeInterval = 30 * 60
+    /// Nach einer Anfrage ohne gültige Antwort (Band schweigt, halber Rahmen) genügt dieser Abstand bis zur nächsten.
+    static let wiederholung: TimeInterval = 5 * 60
     /// Weniger Schlafminuten als das ist keine Nacht (Mittagsschlaf, Sofa); wie die Mindestnacht der Schlaf-Rechnung.
     static let mindestNacht = 180
     /// So viele Minuten dürfen die Phasen von der Zeit zwischen Einschlafen und Aufwachen abweichen. Geraten, am Gerät ungeprüft:
@@ -31,7 +33,11 @@ enum TrackerSchlaf {
 
     enum Phase {
         static let leicht = 2, tief = 3, rem = 4, wach = 5
-        static let alle = 2...5
+        /// Art 0 kommt am echten Band mitten in sonst stimmigen Nächten vor (Lovea-Log, Summe der Phasen gleich der Zeit): Annahme "keine Daten",
+        /// zählt nicht als Schlaf und erscheint im Diagramm als Lücke (wach). Am Gerät ungeprüft; die Nacht wird deshalb nicht verworfen.
+        static let keineDaten = 0
+        static let alle: Set<Int> = [keineDaten, leicht, tief, rem, wach]
+        static let zaehltNichtAlsSchlaf: Set<Int> = [keineDaten, wach]
     }
 
     // MARK: Rahmen
@@ -179,7 +185,7 @@ enum TrackerSchlaf {
         guard abs(summe - spanne) <= phasenToleranz else {
             return .failure(Verwurf(grund: "Phasen \(summe) min, Zeit zwischen Einschlafen und Aufwachen \(spanne) min"))
         }
-        let schlaf = phasen.filter { $0.art != Phase.wach }.reduce(0) { $0 + $1.minuten }
+        let schlaf = phasen.filter { !Phase.zaehltNichtAlsSchlaf.contains($0.art) }.reduce(0) { $0 + $1.minuten }
         guard schlaf >= TrackerSchlaf.mindestNacht else { return .failure(Verwurf(grund: "nur \(schlaf) min Schlaf, unter der Mindestnacht")) }
         let tag = Datum.addTage(heute, -zurueck)
         let bis = zeitpunkt(tag, minute: ende)
@@ -203,7 +209,7 @@ enum TrackerSchlaf {
         case Phase.leicht: .kern
         case Phase.tief: .tief
         case Phase.rem: .rem
-        case Phase.wach: .wach
+        case Phase.wach, Phase.keineDaten: .wach
         default: nil
         }
     }
@@ -232,13 +238,15 @@ enum TrackerSchlaf {
     // MARK: Wann fragen
 
     /// Ob jetzt gefragt wird: höchstens alle `abstand` Sekunden, und nicht mehr, wenn die Nacht von heute schon gelesen ist, nachdem
-    /// sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig.
-    static func faellig(letzte: Date?, naechte: [String: Nacht], heute: String, jetzt: Date, abstand: TimeInterval = abstand) -> Bool {
+    /// sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig. `ohneAntwort`: die letzte Frage hat
+    /// keinen gültigen Rahmen gebracht; dann gilt nur `wiederholung` und eine gelesene Nacht von heute spricht nicht gegen die Frage.
+    static func faellig(letzte: Date?, naechte: [String: Nacht], heute: String, jetzt: Date, abstand: TimeInterval = abstand,
+                        ohneAntwort: Bool = false) -> Bool {
         guard let letzte else { return true }
         let seitdem = jetzt.timeIntervalSince(letzte)
         guard seitdem >= 0 else { return true }
-        if seitdem < abstand { return false }
-        if let nacht = naechte[heute], letzte >= nacht.bis { return false }
+        if seitdem < (ohneAntwort ? min(abstand, wiederholung) : abstand) { return false }
+        if !ohneAntwort, let nacht = naechte[heute], letzte >= nacht.bis { return false }
         return true
     }
 }
