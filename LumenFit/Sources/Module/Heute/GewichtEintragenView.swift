@@ -70,7 +70,7 @@ struct GewichtEintragenView: View {
     private var eigenerEintrag: Bool { (umgebung.daten?.habits.wert(Habit.gewicht.id, tag) ?? 0) > 0 }
 
     private func setzeRad(_ wert: Int) {
-        let w = min(max(wert, HeuteQuellen.gewichtBereich.lowerBound), HeuteQuellen.gewichtBereich.upperBound - 1)
+        let w = min(max(wert, HeuteQuellen.gewichtBereich.lowerBound), HeuteQuellen.gewichtBereich.upperBound)
         kilo = w / 10
         zehntel = w % 10
     }

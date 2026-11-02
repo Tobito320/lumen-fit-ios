@@ -69,7 +69,7 @@ struct ZieleView: View {
                 ProfilListenZeile("Gewichtsziel")
             }
             if let ziel = ziele.gewichtKg {
-                zeile("Zielgewicht", gewichtText(ziel), Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), 30...250, schritt: 0.5)
+                zeile("Zielgewicht", gewichtText(ziel), Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), Koerpermasse.gewichtKg, schritt: 0.5)
             }
         }
     }

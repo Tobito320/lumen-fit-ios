@@ -45,7 +45,7 @@ final class EssenTagebuchLogikTests: XCTestCase {
 
     func testGewichtSchrittBegrenzt() {
         XCTAssertEqual(EssenTagebuchLogik.gewichtNach(zehntel: 800, schritt: 1), 801)
-        XCTAssertEqual(EssenTagebuchLogik.gewichtNach(zehntel: 200, schritt: -1), 200)
-        XCTAssertEqual(EssenTagebuchLogik.gewichtNach(zehntel: 4000, schritt: 1), 4000)
+        XCTAssertEqual(EssenTagebuchLogik.gewichtNach(zehntel: 300, schritt: -1), 300)
+        XCTAssertEqual(EssenTagebuchLogik.gewichtNach(zehntel: 2499, schritt: 1), 2499)
     }
 }

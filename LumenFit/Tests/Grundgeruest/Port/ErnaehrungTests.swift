@@ -263,6 +263,16 @@ final class ErnaehrungTests: XCTestCase {
         XCTAssertNil(f.koerperwert(.testA, .koerperfett, bis: "2026-09-27"))
         XCTAssertNil(f.koerperwert(.testB, .taille, bis: "2026-09-27"))
     }
+
+    func testKoerperreiheHatEinenWertJeTagOhneGeloeschte() throws {
+        var f = ErnaehrungFaltung()
+        f.anwenden(try op("koerper.setzen", KoerperwertD(datum: "2026-09-20", art: .oberarm, wert: 36, geloescht: nil), sekunde: 1))
+        f.anwenden(try op("koerper.setzen", KoerperwertD(datum: "2026-09-20", art: .oberarm, wert: 37.5, geloescht: nil), sekunde: 2))
+        f.anwenden(try op("koerper.setzen", KoerperwertD(datum: "2026-09-27", art: .oberarm, wert: 38, geloescht: true), sekunde: 3))
+        f.anwenden(try op("koerper.setzen", KoerperwertD(datum: "2026-09-20", art: .taille, wert: 85, geloescht: nil), sekunde: 4))
+        XCTAssertEqual(f.koerperreihe(.testA, .oberarm), ["2026-09-20": 37.5])
+        XCTAssertTrue(f.koerperreihe(.testB, .oberarm).isEmpty)
+    }
     // MARK: - Vitamine und Mineralstoffe
 
     func testMikroAusOpenFoodFactsInMgUndMikrogramm() throws {

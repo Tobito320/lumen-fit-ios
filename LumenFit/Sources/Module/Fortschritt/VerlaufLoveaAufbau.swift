@@ -26,18 +26,17 @@ enum VerlaufLovea {
     }
 
     /// Die Blöcke der Seite "Verlauf" in der Reihenfolge von Lovea (`VerlaufView.swift:267-282`), danach die Karten, die nur Lumen hat.
-    static func verlaufBloecke(highlights: Bool, trainingDa: Bool) -> [VerlaufLoveaBlock] {
+    static func verlaufBloecke(highlights: Bool) -> [VerlaufLoveaBlock] {
         var liste: [VerlaufLoveaBlock] = [.konsistenz]
         if highlights { liste.append(.highlights) }
         liste.append(.alleTrainingstage)
-        if trainingDa { liste.append(.konstanzRaster) }
         liste += [.gewicht, .stimmung, .rueckblick]
         return liste
     }
 }
 
 enum VerlaufLoveaBlock: Hashable, Sendable {
-    case konsistenz, highlights, alleTrainingstage, konstanzRaster, gewicht, stimmung, rueckblick
+    case konsistenz, highlights, alleTrainingstage, gewicht, stimmung, rueckblick
 }
 
 /// Textlink in Rose mit Pfeil (Lovea "Alle Trainingstage" :279, "Plan ansehen und ändern" VerlaufWocheAnsichten.swift:245): nur das Etikett, der Knopf kommt vom Aufrufer.

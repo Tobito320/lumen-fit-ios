@@ -61,6 +61,22 @@ enum CoachText {
         return server ? anfang + " Deine Frage und eine Zusammenfassung deiner Zahlen gehen dafür sicher an den Server." : anfang + " Alles bleibt auf deinem iPhone."
     }
 
+    /// "Wer antwortet" in den Coach-Einstellungen: mit Server-Freigabe das Modell am Server (Regeln nur als Rückfall), sonst Apple Intelligence oder Regeln auf dem iPhone.
+    static func motorText(server: Bool, modellBereit: Bool) -> String {
+        if server { return "Ein Sprachmodell am Lumen-Server. Fällt es aus, antworten Regeln auf deinem iPhone, wenn sie die Frage verstehen." }
+        return modellBereit ? "Apple Intelligence auf deinem iPhone" : "Textbausteine und Regeln auf deinem iPhone (Apple Intelligence ist hier nicht verfügbar)"
+    }
+
+    /// Der Datenschutztext der Coach-Einstellungen: unterscheidet den Weg über den Server vom Weg auf dem iPhone.
+    static func datenschutzText(server: Bool) -> String {
+        let gemerkt = "Gemerkt wird nur, was du im Gedächtnis siehst, und du kannst es jederzeit löschen."
+        if server {
+            return "Deine Frage, das bisherige Gespräch und eine Zusammenfassung gehen für die Antwort an den Lumen-Server: Tageswerte, Essen, Gewicht, Schritte und Schlaf der letzten 14 Tage, deine Ziele und dein Merkzettel. "
+                + "Nie gesendet werden Rohdaten und Bilder. " + gemerkt
+        }
+        return "Alle Antworten entstehen auf deinem iPhone. Deine Fragen, dein Schlaf, dein Training und dein Essen werden nicht gesendet. " + gemerkt
+    }
+
     static func begruessung(stunde: Int) -> String {
         switch stunde {
         case 5..<11: "Guten Morgen"

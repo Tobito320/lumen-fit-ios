@@ -35,7 +35,7 @@ struct CoachBlattAnsicht: View {
     }
 }
 
-/// Suche im Chat von heute und davor (ohne ausgeblendete Tage). Tippen springt zur Nachricht und hebt sie hervor.
+/// Suche im Chat von heute und davor (ohne ausgeblendete Tage). Tippen springt zur Nachricht und hebt sie hervor; ein Treffer aus einem älteren Tag öffnet diesen Tag.
 struct CoachSucheBlatt: View {
     let modell: CoachModell
     let waehle: (String) -> Void
@@ -44,6 +44,7 @@ struct CoachSucheBlatt: View {
 
     var body: some View {
         let treffer = CoachLokal.suche(modell.sichtbarerVerlauf, begriff: begriff)
+        let tage = modell.vergangeneTage
         List {
             if begriff.trimmingCharacters(in: .whitespaces).isEmpty {
                 LeerZustand(stimmung: .denkt, satz: "Suche in deinem Chat mit dem Coach.").listRowBackground(Color.clear)
@@ -51,18 +52,16 @@ struct CoachSucheBlatt: View {
                 LeerZustand(stimmung: .denkt, satz: "Dazu finde ich nichts.").listRowBackground(Color.clear)
             } else {
                 ForEach(treffer.reversed()) { nachricht in
-                    Button { waehle(nachricht.id) } label: {
-                        VStack(alignment: .leading, spacing: Abstand.xs) {
-                            Text("\(nachricht.rolle == .nutzer ? "Du" : "Coach"), \(CoachAnzeige.zeitText(nachricht.zeit))")
-                                .font(.caption).foregroundStyle(palette.text2)
-                            Text(CoachText.vorschau(nachricht.text)).font(.body).foregroundStyle(palette.text).lineLimit(3)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
-                        .contentShape(.rect)
+                    if let tag = CoachTage.tag(mit: nachricht.id, in: tage) {
+                        NavigationLink { CoachTagLeser(tag: tag, modell: modell) } label: { zeile(nachricht) }
+                            .listRowBackground(palette.flaeche)
+                            .accessibilityHint("Öffnet den Tag")
+                    } else {
+                        Button { waehle(nachricht.id) } label: { zeile(nachricht) }
+                            .buttonStyle(.plain)
+                            .listRowBackground(palette.flaeche)
+                            .accessibilityHint("Springt zur Nachricht")
                     }
-                    .buttonStyle(.plain)
-                    .listRowBackground(palette.flaeche)
-                    .accessibilityHint("Springt zur Nachricht")
                 }
             }
         }
@@ -71,6 +70,16 @@ struct CoachSucheBlatt: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $begriff, placement: .navigationBarDrawer(displayMode: .always), prompt: "Im Chat suchen")
         .lumenHintergrund()
+    }
+
+    private func zeile(_ nachricht: CoachNachricht) -> some View {
+        VStack(alignment: .leading, spacing: Abstand.xs) {
+            Text("\(nachricht.rolle == .nutzer ? "Du" : "Coach"), \(CoachAnzeige.zeitText(nachricht.zeit))")
+                .font(.caption).foregroundStyle(palette.text2)
+            Text(CoachText.vorschau(nachricht.text)).font(.body).foregroundStyle(palette.text).lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+        .contentShape(.rect)
     }
 }
 

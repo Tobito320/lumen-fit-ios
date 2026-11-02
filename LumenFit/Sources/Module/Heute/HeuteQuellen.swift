@@ -40,8 +40,8 @@ enum HeuteQuellen {
         return werte
     }
 
-    /// Das Eingabe-Gewicht von heute in Zehntel-kg; ein Zahlenrad steht in 0,1-kg-Schritten (30,0 bis 250,0 kg).
-    static let gewichtBereich = 300...2500
+    /// Das Eingabe-Gewicht in Zehntel-kg; ein Zahlenrad steht in 0,1-kg-Schritten (30,0 bis 249,9 kg, `Koerpermasse`).
+    static let gewichtBereich = Koerpermasse.gewichtZehntel
 
     /// "1.234" mit deutschem Tausenderpunkt.
     static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Locale(identifier: "de_DE"))) }

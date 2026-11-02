@@ -46,6 +46,8 @@ enum EssenTagebuchLogik {
         return teile.count == 3 ? "Zuletzt am \(teile[2]).\(teile[1])." : "Zuletzt am \(datum)"
     }
 
-    /// Neues Gewicht in Zehntel-kg nach einem Schritt (±1), begrenzt auf 20,0 bis 400,0 kg.
-    nonisolated static func gewichtNach(zehntel: Int, schritt: Int) -> Int { min(4000, max(200, zehntel + schritt)) }
+    /// Neues Gewicht in Zehntel-kg nach einem Schritt (±1), begrenzt auf 30,0 bis 249,9 kg (`Koerpermasse`).
+    nonisolated static func gewichtNach(zehntel: Int, schritt: Int) -> Int {
+        min(Koerpermasse.gewichtZehntel.upperBound, max(Koerpermasse.gewichtZehntel.lowerBound, zehntel + schritt))
+    }
 }

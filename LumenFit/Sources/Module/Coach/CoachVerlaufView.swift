@@ -12,7 +12,7 @@ struct CoachVerlaufView: View {
         let treffer = CoachLokal.suche(modell.sichtbarerVerlauf, begriff: suche)
         ScrollView {
             if !suche.trimmingCharacters(in: .whitespaces).isEmpty {
-                suchergebnis(treffer)
+                suchergebnis(treffer, tage: tage)
             } else if tage.isEmpty {
                 LeerZustand(stimmung: .schlaeft, satz: "Noch kein Verlauf. Frag deinen Coach etwas, dann steht es hier.")
                     .padding(.top, Abstand.xxl)
@@ -69,24 +69,36 @@ struct CoachVerlaufView: View {
     }
 
     @ViewBuilder
-    private func suchergebnis(_ treffer: [CoachNachricht]) -> some View {
+    private func suchergebnis(_ treffer: [CoachNachricht], tage: [CoachTage.Tag]) -> some View {
         if treffer.isEmpty {
             LeerZustand(stimmung: .denkt, satz: "Dazu finde ich nichts im Verlauf.").padding(.top, Abstand.xxl)
         } else {
             ListenKarte {
                 ForEach(Array(treffer.enumerated()), id: \.element.id) { index, nachricht in
                     if index > 0 { Haarlinie() }
-                    VStack(alignment: .leading, spacing: Abstand.xs) {
-                        Text("\(CoachAnzeige.tag(nachricht.zeit)), \(CoachAnzeige.uhrzeit(nachricht.zeit))").font(.caption).foregroundStyle(palette.text2)
-                        Text(CoachText.vorschau(nachricht.text)).font(.body).foregroundStyle(palette.text)
+                    if let tag = CoachTage.tag(mit: nachricht.id, in: tage) {
+                        NavigationLink { CoachTagLeser(tag: tag, modell: modell) } label: { trefferZeile(nachricht) }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Öffnet den Tag")
+                    } else {
+                        trefferZeile(nachricht)
                     }
-                    .padding(Abstand.l)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityElement(children: .combine)
                 }
             }
             .padding(Abstand.l)
         }
+    }
+}
+
+extension CoachVerlaufView {
+    fileprivate func trefferZeile(_ nachricht: CoachNachricht) -> some View {
+        VStack(alignment: .leading, spacing: Abstand.xs) {
+            Text("\(CoachAnzeige.tag(nachricht.zeit)), \(CoachAnzeige.uhrzeit(nachricht.zeit))").font(.caption).foregroundStyle(palette.text2)
+            Text(CoachText.vorschau(nachricht.text)).font(.body).foregroundStyle(palette.text)
+        }
+        .padding(Abstand.l)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
     }
 }
 

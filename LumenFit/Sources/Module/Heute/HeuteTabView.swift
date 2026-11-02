@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Bereit-Score, Hinweise, Plan, Energie-Bank, Gewohnheiten,
+/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Hinweise, Plan, Energie-Bank, Gewohnheiten,
 /// Gewicht, Schritte und der Wochenstreifen. Die Partner-Karte erscheint nur mit Verbindung. Ohne Health zeigt er statt der Health-Karten einen Leerzustand
 /// mit "Health erlauben"; Plan, Gewohnheiten und Gewicht gehen auch ohne.
 struct HeuteTabView: View {
@@ -92,7 +92,6 @@ struct HeuteTabView: View {
     private func heuteInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
         if s.hatGesundheit {
             Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-            ScoreKarte(score: s.score) { blatt = .score }
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
@@ -116,7 +115,6 @@ struct HeuteTabView: View {
         if s.hatTagesdaten {
             if s.hatGesundheit {
                 Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-                ScoreKarte(score: s.score) { blatt = .score }
             }
             if let daten = umgebung.daten { HeuteTagZeilen(tag: s.tag, daten: daten) }
         } else {
@@ -167,7 +165,6 @@ struct HeuteTabView: View {
     @ViewBuilder
     private func blattInhalt(_ blatt: HeuteBlatt, _ s: HeuteStand) -> some View {
         switch blatt {
-        case .score: BereitScoreDetail(score: s.score)
         case .energie: EnergieDetail(energie: s.energie) { modell?.speichereGefuehl($0) }
         case .schritte: SchritteDetailView()
         case .gewicht: NavigationStack { GewichtEintragenView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Schließen") { self.blatt = nil } } } }
@@ -191,12 +188,11 @@ struct HeuteTabView: View {
 
 /// Welches Blatt über dem Heute-Tab liegt.
 enum HeuteBlatt: Identifiable {
-    case score, energie, schritte, gewicht, habits, kalender
+    case energie, schritte, gewicht, habits, kalender
     case tag(String)
 
     var id: String {
         switch self {
-        case .score: "score"
         case .energie: "energie"
         case .schritte: "schritte"
         case .gewicht: "gewicht"

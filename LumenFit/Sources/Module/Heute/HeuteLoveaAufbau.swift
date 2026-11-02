@@ -232,13 +232,12 @@ struct HeuteLoveaInhalt: View {
 
     // MARK: Mehr aus Lumen Fit
 
-    /// Was Lovea nicht hat und Lumen Fit schon: Bereit-Score, Hinweise des Tages, Energie über den Tag, Plan-Karte mit Start, Schritte, Gewicht mit Verlauf und die Woche in Bögen.
+    /// Was Lovea nicht hat und Lumen Fit schon: Hinweise des Tages, Energie über den Tag, Plan-Karte mit Start, Schritte, Gewicht mit Verlauf und die Woche in Bögen.
     @ViewBuilder
     private var mehr: some View {
         let unten = stand.istHeute || stand.hatTagesdaten
         if unten {
             abschnitt("Mehr aus Lumen Fit") {
-                if stand.hatGesundheit { ScoreKarte(score: stand.score) { oeffneBlatt(.score) } }
                 if stand.istHeute, !stand.hinweise.isEmpty { HinweiseKarte(hinweise: stand.hinweise) { modell.wischeHinweis($0) } }
                 if stand.istHeute {
                     ListenKarte { EnergieVerlaufDiagramm(energie: stand.energie).padding(Abstand.l) }

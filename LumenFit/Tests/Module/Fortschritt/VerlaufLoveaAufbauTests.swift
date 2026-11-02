@@ -4,17 +4,17 @@ import XCTest
 /// Reihenfolge und Zeichen der Verlauf-Seite im Lovea-Aufbau.
 final class VerlaufLoveaAufbauTests: XCTestCase {
     func testVerlaufReihenfolgeMitAllem() {
-        XCTAssertEqual(VerlaufLovea.verlaufBloecke(highlights: true, trainingDa: true),
-                       [.konsistenz, .highlights, .alleTrainingstage, .konstanzRaster, .gewicht, .stimmung, .rueckblick])
+        XCTAssertEqual(VerlaufLovea.verlaufBloecke(highlights: true),
+                       [.konsistenz, .highlights, .alleTrainingstage, .gewicht, .stimmung, .rueckblick])
     }
 
-    func testVerlaufOhneHighlightsUndTraining() {
-        XCTAssertEqual(VerlaufLovea.verlaufBloecke(highlights: false, trainingDa: false),
+    func testVerlaufOhneHighlights() {
+        XCTAssertEqual(VerlaufLovea.verlaufBloecke(highlights: false),
                        [.konsistenz, .alleTrainingstage, .gewicht, .stimmung, .rueckblick])
     }
 
     func testLoveaBloeckeStehenVorDenLumenKarten() {
-        let b = VerlaufLovea.verlaufBloecke(highlights: true, trainingDa: true)
+        let b = VerlaufLovea.verlaufBloecke(highlights: true)
         XCTAssertLessThan(b.firstIndex(of: .alleTrainingstage)!, b.firstIndex(of: .gewicht)!)
     }
 

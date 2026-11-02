@@ -314,7 +314,7 @@ struct ErnaehrungsZiele: Equatable, Sendable {
 
 /// Körperwerte neben dem Gewicht (das Gewicht bleibt im Gewicht-Habit). Op `koerper.setzen`, einer pro Tag und Art.
 enum KoerperArt: String, Codable, Sendable, CaseIterable, Identifiable {
-    case koerperfett, taille, huefte, brust, oberarm, oberschenkel
+    case koerperfett, taille, huefte, brust, schulter, oberarm, oberschenkel
 
     var id: String { rawValue }
 
@@ -324,6 +324,7 @@ enum KoerperArt: String, Codable, Sendable, CaseIterable, Identifiable {
         case .taille: "Taille"
         case .huefte: "Hüfte"
         case .brust: "Brust"
+        case .schulter: "Schulter"
         case .oberarm: "Oberarm"
         case .oberschenkel: "Oberschenkel"
         }
@@ -498,6 +499,13 @@ struct ErnaehrungFaltung: Sendable {
     func fasten(_ p: ProfilID) -> FastenD? { fastenStand[p]?.wert }
 
     func anpassung(_ p: ProfilID) -> TagebuchAnpassung { anpassungen[p]?.wert ?? .standard }
+
+    /// Alle Werte dieser Art je Tag (gelöschte fehlen).
+    func koerperreihe(_ p: ProfilID, _ art: KoerperArt) -> [String: Double] {
+        var reihe: [String: Double] = [:]
+        for w in (koerper[p] ?? [:]).values.map(\.wert) where w.art == art && w.geloescht != true { reihe[w.datum] = w.wert }
+        return reihe
+    }
 
     /// Neuester Körperwert dieser Art bis einschließlich `tag`.
     func koerperwert(_ p: ProfilID, _ art: KoerperArt, bis tag: String) -> KoerperwertD? {

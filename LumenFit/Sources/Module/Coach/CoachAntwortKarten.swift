@@ -231,30 +231,7 @@ struct CoachAufgabeZeile: View {
     }
 }
 
-// MARK: - Weg und Ziel
-
-/// Link in einen Bereich der App.
-struct CoachWeg: View {
-    let route: Route
-    let beschriftung: String
-    @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-
-    var body: some View {
-        Button { umgebung.router.oeffne(route) } label: {
-            HStack(spacing: Abstand.xs) {
-                Text(beschriftung).font(.subheadline.weight(.semibold))
-                Image(systemName: "chevron.right").font(.caption.weight(.bold)).accessibilityHidden(true)
-            }
-            .foregroundStyle(palette.text)
-            .padding(.horizontal, Abstand.m)
-            .frame(minHeight: Abstand.tippflaeche)
-            .contentShape(.capsule)
-        }
-        .buttonStyle(.federnd)
-        .lumenFlaeche(.capsule)
-    }
-}
+// MARK: - Ziel
 
 /// "Als Ziel merken" unter einer Antwort mit `[[ziel: ...]]`. Das Ziel steht danach im Menü unter "Mein Ziel".
 struct CoachZielKnopf: View {

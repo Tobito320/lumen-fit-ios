@@ -15,18 +15,24 @@ protocol EssenLiveFabrik: Sendable {
 }
 
 /// Hält die Essen-Live-Activity passend zum Tagebuch: startet sie, aktualisiert sie nur bei geändertem Stand, beendet sie bei Schalter aus, Training oder Tageswechsel.
-/// Hat die Person sie weggewischt, startet sie heute nicht wieder von selbst. Aufrufe laufen nacheinander (eine Kette), damit ein Ende nicht vor einem Start überholt.
+/// Hat die Person sie weggewischt, startet sie heute nicht wieder von selbst, auch nicht nach einem App-Neustart (der Tag steht in `speicher`). Aufrufe laufen nacheinander (eine Kette), damit ein Ende nicht vor einem Start überholt.
 actor EssenLiveDienst {
     private let fabrik: any EssenLiveFabrik
     private let uhr: Uhr
-    private var gestartetTag: String?
-    private var beendetTag: String?
+    private let speicher: UserDefaults?
+    nonisolated static let gestartetSchluessel = "lumenfit.essenLive.gestartetTag"
+    nonisolated static let beendetSchluessel = "lumenfit.essenLive.beendetTag"
+    private var gestartetTag: String? { didSet { speicher?.set(gestartetTag, forKey: Self.gestartetSchluessel) } }
+    private var beendetTag: String? { didSet { speicher?.set(beendetTag, forKey: Self.beendetSchluessel) } }
     private var letzter: EssenLiveStand?
     private var kette: Task<Void, Never>?
 
-    init(fabrik: any EssenLiveFabrik, uhr: @escaping Uhr = { Date() }) {
+    init(fabrik: any EssenLiveFabrik, uhr: @escaping Uhr = { Date() }, speicher: UserDefaults? = nil) {
         self.fabrik = fabrik
         self.uhr = uhr
+        self.speicher = speicher
+        gestartetTag = speicher?.string(forKey: Self.gestartetSchluessel)
+        beendetTag = speicher?.string(forKey: Self.beendetSchluessel)
     }
 
     func abgleichen(_ stand: EssenLiveStand, an: Bool) async {
@@ -58,7 +64,7 @@ actor EssenLiveDienst {
 
     private func verarbeite(_ stand: EssenLiveStand, an: Bool) async {
         let laufend = await fabrik.laufenderTag()
-        // shortcut: "weggewischt" merkt sich nur dieser Prozess; nach einem App-Neustart startet der nächste Abgleich sie wieder, bei Bedarf in UserDefaults legen.
+        // Lief sie heute und ist weg, hat die Person sie beendet (das gilt auch nach einem Neustart: der Tag steht im Speicher).
         if laufend == nil, gestartetTag == stand.tag { beendetTag = stand.tag }
         if !an { beendetTag = nil; gestartetTag = nil }
         let training = await fabrik.trainingLaeuft()

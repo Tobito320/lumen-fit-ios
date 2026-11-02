@@ -46,38 +46,6 @@ struct EssenSchilderZeile: View {
     }
 }
 
-/// Eine Zeile des Tagebuchs: Name, Menge, Energie und Protein.
-struct EssenEintragZeile: View {
-    let eintrag: EssenEintrag
-    let aktion: @MainActor () -> Void
-    @Environment(\.palette) private var palette
-
-    var body: some View {
-        let n = eintrag.naehrwerte
-        Button { aktion() } label: {
-            HStack(alignment: .firstTextBaseline, spacing: Abstand.m) {
-                VStack(alignment: .leading, spacing: Abstand.xs) {
-                    Text(eintrag.lebensmittel.anzeigeName).font(.body).foregroundStyle(palette.text).multilineTextAlignment(.leading)
-                    Text(ErnaehrungLogik.mengeText(eintrag.menge, eintrag.einheit, eintrag.lebensmittel))
-                        .font(.subheadline).foregroundStyle(palette.text2)
-                }
-                Spacer(minLength: Abstand.s)
-                VStack(alignment: .trailing, spacing: Abstand.xs) {
-                    Text("\(Int(n.kcal.rounded())) kcal").font(.body.weight(.semibold)).fontDesign(.rounded).monospacedDigit().foregroundStyle(palette.text)
-                    Text("\(Int(n.protein.rounded())) g Protein").font(.footnote).monospacedDigit().foregroundStyle(palette.text2)
-                }
-            }
-            .padding(.horizontal, Abstand.l)
-            .padding(.vertical, Abstand.m)
-            .frame(minHeight: Abstand.tippflaeche)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Öffnet den Eintrag zum Ändern")
-    }
-}
-
 /// Eine Zeile in Suchlisten: Name, Marke und Energie je 100 g; Quelle als kleine Zeile.
 struct EssenLebensmittelZeile: View {
     let lebensmittel: Lebensmittel
