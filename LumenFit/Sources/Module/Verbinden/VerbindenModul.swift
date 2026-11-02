@@ -82,7 +82,7 @@ final class VerbindenDienste {
                               alarmBruecke: umgebung.alarmBruecke,
                               alarmAn: { [weak umgebung] in umgebung?.daten?.einstellungen.werte.alarmWeckt ?? false },
                               modell: { [weak umgebung] in
-                                  TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum { umgebung?.daten?.raum }, uhr: uhr)
+                                  TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum({ umgebung?.daten?.raum }, geschrieben: { umgebung?.ereignisse.senden(.healthAktualisiert) }), uhr: uhr)
                               })
         umgebung.band = band
         umgebung.alarmWecker.beobachte()

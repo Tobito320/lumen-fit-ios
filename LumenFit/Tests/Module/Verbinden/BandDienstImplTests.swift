@@ -21,11 +21,14 @@ final class BandDienstImplTests: XCTestCase {
         var tage: BandOpsSammler
     }
 
-    private func aufbau(bruecke: FakePartnerAustausch = FakePartnerAustausch()) -> Aufbau {
+    private final class AnstossZaehler { var anzahl = 0 }
+
+    private func aufbau(bruecke: FakePartnerAustausch = FakePartnerAustausch(), anstoss: @escaping @MainActor () -> Void = {}) -> Aufbau {
         let fabrik = FakeFunkFabrik()
         let sammler = BandOpsSammler()
         let d = defaults!
-        let senke = BandSenke(bisher: { sammler.bisher }, tag: { sammler.tage.append($0); sammler.bisher[$0.tag] = $0 }, schlaf: { sammler.schlaf.append($0) })
+        let senke = BandSenke(bisher: { sammler.bisher }, tag: { sammler.tage.append($0); sammler.bisher[$0.tag] = $0 }, schlaf: { sammler.schlaf.append($0) },
+                              geschrieben: anstoss)
         let dienst = BandDienstImpl(aktiv: { [unowned self] in self.schalter }, bruecke: bruecke, defaults: d, uhr: { VerbindenTest.jetzt }, sende: { _ in },
                                     modell: { TrackerModell(funk: { fabrik.baue($0) }, senke: senke, defaults: d, uhr: { VerbindenTest.jetzt }) })
         return Aufbau(dienst: dienst, fabrik: fabrik, bruecke: bruecke, tage: sammler)
@@ -248,6 +251,52 @@ final class BandDienstImplTests: XCTestCase {
         XCTAssertEqual(uhrPakete(a).count, 2)
     }
 
+    func testNeueBandZahlenStossenEinmalDieAnzeigenAnUndNichtOhneNeueOps() async throws {
+        let zaehler = AnstossZaehler()
+        let a = aufbau(anstoss: { zaehler.anzahl += 1 })
+        await verbunden(a)
+        // Eine Schritte-Zeile (Datum BCD 26-10-29, Viertelstunde 0x44, 128 Schritte), dann reißt die Verbindung: `abbrechen` schreibt, was neu ist.
+        a.fabrik.melde(.daten(TrackerProtokoll.paket(.schritte, [0x26, 0x10, 0x29, 0x44, 0x00, 0x01, 0xCD, 0x01, 0x80, 0x00, 0x4D, 0x00])))
+        a.fabrik.melde(.getrennt)
+        await warte { zaehler.anzahl == 1 }
+        XCTAssertEqual(zaehler.anzahl, 1)
+        XCTAssertEqual(a.tage.tage.map(\.schritte), [128])
+        a.fabrik.melde(.verbunden(name: "H59 Test"))
+        a.fabrik.melde(.getrennt)
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(zaehler.anzahl, 1, "nichts Neues: kein neuer Anstoß")
+    }
+
+    // MARK: Verbindungsweg
+
+    func testDerVerbindungswegStehtJeAppStartEinmalImLogUndAlsEigeneZeile() async throws {
+        let text = "Band war schon mit dem iPhone verbunden"
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.bandLog(art: "weg", text: text))
+        a.fabrik.melde(.bandLog(art: "weg", text: text))
+        await warte { a.dienst.modell?.verbindungsWeg == text }
+        try? await Task.sleep(for: .milliseconds(100)) // das zweite Ereignis läuft ebenfalls über den Hauptakteur
+        XCTAssertEqual(try XCTUnwrap(a.dienst.modell).bandLog.filter { $0.hasSuffix("weg: \(text)") }.count, 1, "derselbe Weg zweimal: eine Zeile")
+        // App-Neustart mit denselben UserDefaults: die Zeile ist wieder da (früher merkte sich das `UserDefaults` und die Seite blieb leer).
+        let neu = aufbau()
+        await verbunden(neu)
+        neu.fabrik.melde(.bandLog(art: "weg", text: text))
+        await warte { neu.dienst.modell?.verbindungsWeg == text }
+        XCTAssertTrue(try XCTUnwrap(neu.dienst.modell).bandLog.contains { $0.hasSuffix("weg: \(text)") })
+    }
+
+    func testEinPaketOhneEigeneAnfrageWirdIgnoriertUndEinmalGelogt() async throws {
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.schlafDaten(Data([0xBC, 0x27, 0x01, 0x00, 0xFF, 0x00])))
+        a.fabrik.melde(.schlafDaten(Data([0x01, 0x02])))
+        try? await Task.sleep(for: .milliseconds(100))
+        let modell = try XCTUnwrap(a.dienst.modell)
+        XCTAssertEqual(modell.bandLog.filter { $0.contains("ohne-anfrage: Dienst-2-Paket ohne offene eigene Anfrage") }.count, 1)
+        XCTAssertEqual(modell.schlafStand, 0, "nichts wurde ausgewertet")
+    }
+
     // MARK: Ops
 
     func testBandOpsLandenImRaumUndGesundheitsStandNimmtDasMaximum() async throws {
@@ -275,6 +324,25 @@ final class BandDienstImplTests: XCTestCase {
         BandSenke.raum { raum }.schlaf(op)
         let gelesen = raum.ops(arten: ["fit.band.schlaf"]).compactMap { $0.daten(BandSchlafOp.self) }
         XCTAssertEqual(gelesen.map(\.tag), ["2026-10-29"])
+    }
+
+    func testNachEinemNeustartSchreibenDieselbenNaechteKeineNeuenOps() throws {
+        let raum = LokalerRaum(ordner: try tempOrdner(), profil: TestDaten.profilID, uhr: { VerbindenTest.jetzt })
+        let senke = BandSenke.raum { raum }
+        let von = VerbindenTest.jetzt.addingTimeInterval(-9 * 3600)
+        let nacht = TrackerSchlaf.Nacht(tag: "2026-10-29", von: von, bis: von.addingTimeInterval(400 * 60), minuten: 400,
+                                        phasen: [.init(art: 2, minuten: 200), .init(art: 3, minuten: 200)])
+        for op in TrackerSchlaf.neueOps([nacht], bisher: senke.bisherSchlaf()) { senke.schlaf(op) }
+        XCTAssertEqual(raum.ops(arten: ["fit.band.schlaf"]).count, 1)
+        // Neustart: das Modell hat nichts im Speicher, der Raum aber die Op von vorhin. Dieselbe Nacht schreibt nichts mehr (Zeiten überstehen das Speichern genau).
+        XCTAssertTrue(TrackerSchlaf.neueOps([nacht], bisher: senke.bisherSchlaf()).isEmpty)
+        // Eine gewachsene Nacht ist neu; ohne Wissen über den Raum (`nil`) wird geschrieben.
+        var laenger = nacht
+        laenger.bis = nacht.bis.addingTimeInterval(600)
+        laenger.minuten = 410
+        laenger.phasen = [.init(art: 2, minuten: 200), .init(art: 3, minuten: 210)]
+        XCTAssertEqual(TrackerSchlaf.neueOps([nacht, laenger], bisher: senke.bisherSchlaf()).count, 1)
+        XCTAssertEqual(TrackerSchlaf.neueOps([nacht], bisher: nil).count, 1)
     }
 
     func testOhneRaumSchreibtDieSenkeNichts() {

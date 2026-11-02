@@ -99,6 +99,10 @@ final class TrackerModell {
 
     /// Warum ein Band-Ereignis es nicht in die Oberfläche schafft, steht in `bandLog` (Fehlersuche, nur im Speicher).
     private(set) var bandLog: [String] = []
+    /// Auf welchem Weg die letzte Verbindung entstand (`BandVerbindungsweg`), nur im Speicher: die Rohdaten-Seite zeigt es als eigene Zeile, auch wenn die
+    /// Log-Zeile längst aus den letzten `bandLogMaximum` gerutscht ist. Nach jedem App-Start wieder da (kein Merken in `UserDefaults`).
+    private(set) var verbindungsWeg: String?
+    @ObservationIgnored private var fremdesPaketGemeldet = false
     /// Ab hier hört das Modell auf Ereignisse des Funks; `funkFabrik` legt den Funk erst bei `verbinden` an (kein Bluetooth-Objekt davor).
     @ObservationIgnored private let funkFabrik: (@escaping @Sendable (TrackerEreignis) -> Void) -> any BandFunk
     @ObservationIgnored private let senke: BandSenke
@@ -422,7 +426,14 @@ final class TrackerModell {
         case .daten(let daten):
             antwortVerarbeiten(daten)
         case .bandLog(let art, let text):
-            bandLogSchreiben(art: art, text: text, nurWennNeu: art == "dienste" || art == "weg")
+            if art == "weg" {
+                // Je App-Start die erste Zeile, danach nur bei anderem Weg; über `UserDefaults` fehlte sie nach jedem Neustart auf der Seite.
+                guard verbindungsWeg != text else { break }
+                verbindungsWeg = text
+                bandLogSchreiben(art: art, text: text, nurWennNeu: false)
+            } else {
+                bandLogSchreiben(art: art, text: text, nurWennNeu: art == "dienste")
+            }
         case .schlafBereit:
             schlafBereit = true
             schlafLesenFallsFaellig()
@@ -585,7 +596,14 @@ final class TrackerModell {
     /// Ein Paket der Antwort: zusammensetzen, bei fertigem Rahmen auswerten. Pakete ohne offene Anfrage sind nicht von Lumen Fit
     /// angefragt und werden ignoriert.
     private func schlafAntwort(_ daten: Data) {
-        guard var sammler = schlafSammler else { return }
+        guard var sammler = schlafSammler else {
+            // Nur zur Fehlersuche, einmal je App-Start. Kein Beleg für eine zweite App: dieselbe Lage entsteht, wenn die eigene Antwort nach den 15 s oder einem "ungültig" eintrifft.
+            if !fremdesPaketGemeldet {
+                fremdesPaketGemeldet = true
+                bandLogSchreiben(art: "ohne-anfrage", text: "Dienst-2-Paket ohne offene eigene Anfrage (\(daten.count) Byte), ignoriert: \(Self.hex(daten.prefix(8)))", nurWennNeu: false)
+            }
+            return
+        }
         let stand = sammler.aufnehmen(daten)
         switch stand {
         case .wartet:
@@ -616,7 +634,10 @@ final class TrackerModell {
         guard bandSchlaf.aufnehmen(ergebnis.naechte) else { return }
         bandSchlaf.kuerzen(heute: Datum.text(jetzt))
         schlafStand += 1
-        for nacht in ergebnis.naechte { if let op = TrackerSchlaf.op(nacht) { senke.schlaf(op) } }
+        // Nur was der Raum noch nicht hat: die Nächte im Speicher sind nach einem Neustart leer, die Ops stehen aber schon da.
+        let neueOps = TrackerSchlaf.neueOps(ergebnis.naechte, bisher: senke.bisherSchlaf())
+        for op in neueOps { senke.schlaf(op) }
+        if !neueOps.isEmpty { senke.geschrieben() }
     }
 
     /// Eine Zeile ins Fehlersuche-Log (nur im Speicher, die letzten `bandLogMaximum`). `nurWennNeu`: gleicher Text wie beim letzten Mal derselben
@@ -754,7 +775,9 @@ final class TrackerModell {
         let bisher = senke.bisher()
         guard let bisher else { return }
         ungemeldet = false
-        for op in schritteTageFuerOps().ops(bisher: bisher) { senke.tag(op) }
+        let neueOps = schritteTageFuerOps().ops(bisher: bisher)
+        for op in neueOps { senke.tag(op) }
+        if !neueOps.isEmpty { senke.geschrieben() }
     }
 
     /// Nur die Tage, die in die Schritte eingehen sollen (Schalter "Band-Schritte zählen").

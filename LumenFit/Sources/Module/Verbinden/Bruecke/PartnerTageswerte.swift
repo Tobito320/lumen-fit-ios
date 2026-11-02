@@ -20,9 +20,10 @@ enum PartnerTageswerte {
         let heute = Datum.text(jetzt)
         let woche = HabitLogik.wochenTage(heute: heute).filter { $0 <= heute }
         var w = Werte()
+        let naechte = TagesformQuellen.naechte(daten: daten, gesundheit: gesundheit)
         for tag in woche {
             if let s = gesundheit.tage[tag]?.schritte, s > 0 { w.schritteWoche[tag] = s }
-            if let n = TagesformQuellen.nacht(tag, daten: daten, gesundheit: gesundheit) { w.schlafWoche[tag] = n.minuten }
+            if let n = naechte[tag] { w.schlafWoche[tag] = n.minuten }
         }
         let gymAlle = WochenStreifenLogik.gymTage(sessions: daten.training.sessions, haken: daten.habits.werte(Habit.gym.id))
         w.gymTage = gymAlle.intersection(woche)

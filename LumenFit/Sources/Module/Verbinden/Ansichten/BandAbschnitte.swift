@@ -104,7 +104,7 @@ struct BandVerbindungAbschnitt: View {
                 ? "Lumen Fit verbindet sich von selbst wieder, auch im Hintergrund, sobald das Band sendet."
                 : "Aus: Lumen Fit hält keine Verbindung offen, bis du auf Verbinden tippst."
         }
-        return umgebung.konto.loveaErlaubt ? "Das Band kann nur eine App gleichzeitig halten. Hält Lovea es noch, lass es dort verbunden und das hier aus." : "Das Band kann nur eine App gleichzeitig halten."
+        return umgebung.konto.loveaErlaubt ? "Ob das iPhone die Verbindung zum Band mit Lovea teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen: fehlen Daten, schalte eine der beiden aus." : "Ob das iPhone die Verbindung zum Band mit anderen Apps teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen."
     }
 
     @ViewBuilder private var aktion: some View {

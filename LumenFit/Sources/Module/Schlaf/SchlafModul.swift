@@ -37,16 +37,10 @@ enum SchlafModul {
 enum SchlafDaten {
     /// Die Band-Nächte des aktiven Profils in der Reihenfolge des Eingangs. Der Raum meldet Änderungen nicht an die Oberfläche,
     /// darum liest die Ansicht beim Öffnen und bei Health-Ereignissen neu.
-    static func bandOps(_ umgebung: AppUmgebung) -> [BandSchlafOp] {
-        guard let raum = umgebung.daten?.raum else { return [] }
-        return raum.ops(arten: [SchlafModul.bandArt]).compactMap { $0.daten(BandSchlafOp.self) }
-    }
+    static func bandOps(_ umgebung: AppUmgebung) -> [BandSchlafOp] { SchlafEigeneQuellen.bandOps(umgebung.daten?.raum) }
 
     /// Die Nächte von Hand (Op `fit.schlaf.hand`), je Aufwachtag die zuletzt eingetroffene.
-    static func eingetragen(_ umgebung: AppUmgebung) -> [String: SchlafNacht] {
-        guard let raum = umgebung.daten?.raum else { return [:] }
-        return SchlafHandLogik.naechte(ops: raum.ops(arten: [SchlafHandLogik.art]))
-    }
+    static func eingetragen(_ umgebung: AppUmgebung) -> [String: SchlafNacht] { SchlafEigeneQuellen.handNaechte(umgebung.daten?.raum) }
 
     static func zielExtra(_ umgebung: AppUmgebung) -> SchlafZielExtra {
         guard let raum = umgebung.daten?.raum else { return SchlafZielExtra() }
@@ -54,7 +48,8 @@ enum SchlafDaten {
     }
 
     static func uebersicht(_ umgebung: AppUmgebung, band: [BandSchlafOp]) -> SchlafUebersicht {
-        SchlafUebersicht.bauen(health: umgebung.gesundheit.naechte, band: band, vitale: umgebung.gesundheit.vitale,
+        // Nur Health (mit Import): Band und Hand gibt die Quellenwahl selbst dazu, sonst stünden sie doppelt und als "Uhr" oder "Handy" da.
+        SchlafUebersicht.bauen(health: umgebung.gesundheit.naechteAusHealth, band: band, vitale: umgebung.gesundheit.vitale,
                                zielMinuten: umgebung.daten?.ziele.ziele.schlafMinuten ?? 480, heute: Datum.text(umgebung.uhr()),
                                eingetragen: eingetragen(umgebung), zielExtra: zielExtra(umgebung))
     }

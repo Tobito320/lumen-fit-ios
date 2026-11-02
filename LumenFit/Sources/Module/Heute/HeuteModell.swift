@@ -164,12 +164,13 @@ final class HeuteModell {
         let trainiert = gymTage.contains(heute)
         let folge = EnergieLogik.inFolge(heute: heute) { gymTage.contains($0) }
 
-        // Schlaf der Woche (je Aufwachtag), Band vor Health
+        // Schlaf der Woche (je Aufwachtag): Hand, Band, Health
+        let naechte = TagesformQuellen.naechte(daten: daten, gesundheit: gesundheit)
         var schlafWoche: [String: Int] = [:]
         for tag in HabitLogik.wochenTage(heute: heute) {
-            if let n = TagesformQuellen.nacht(tag, daten: daten, gesundheit: gesundheit) { schlafWoche[tag] = n.minuten }
+            if let n = naechte[tag] { schlafWoche[tag] = n.minuten }
         }
-        let nacht = TagesformQuellen.nacht(heute, daten: daten, gesundheit: gesundheit)
+        let nacht = naechte[heute]
 
         // Morgen-Check von heute
         var stimmungsWert: Int?
