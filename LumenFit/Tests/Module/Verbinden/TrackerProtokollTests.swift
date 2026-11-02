@@ -195,12 +195,12 @@ final class TrackerProtokollTests: XCTestCase {
     }
 
     func testZeitSetzenPaketIstBcdInBerlinerZeitMitPruefsumme() {
-        // Winterzeit: 29.10.2026 10:00:00 Berlin. Summe 1 + 0x26 + 0x10 + 0x29 + 0x10 = 0x70.
+        // Winterzeit: 29.10.2026 10:00:00 Berlin. Sprach-Byte 1. Summe 1 + 0x26 + 0x10 + 0x29 + 0x10 + 1 = 0x71.
         let winter = TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 10, 29, 10, 0, 0))
-        XCTAssertEqual(winter, daten(hex: "01261029100000" + nullen(16) + "70"))
-        // Sommerzeit: 12:30:45 Berlin (10:30:45 UTC), Summe 0xCA.
+        XCTAssertEqual(winter, daten(hex: "0126102910000001" + nullen(14) + "71"))
+        // Sommerzeit: 12:30:45 Berlin (10:30:45 UTC), Summe 0xCB.
         let sommer = TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 7, 15, 12, 30, 45))
-        XCTAssertEqual(sommer, daten(hex: "01260715123045" + nullen(16) + "ca"))
+        XCTAssertEqual(sommer, daten(hex: "0126071512304501" + nullen(14) + "cb"))
         XCTAssertTrue(TrackerProtokoll.istGueltig(winter))
         XCTAssertTrue(TrackerProtokoll.istGueltig(sommer))
     }
@@ -213,8 +213,8 @@ final class TrackerProtokollTests: XCTestCase {
     }
 
     func testZeitSetzenUeberJahreswechsel() {
-        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 12, 31, 23, 59, 58)), daten(hex: "01261231235958" + nullen(16) + "3e"))
-        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2027, 1, 1, 0, 0, 1)), daten(hex: "01270101000001" + nullen(16) + "2b"))
+        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 12, 31, 23, 59, 58)), daten(hex: "0126123123595801" + nullen(14) + "3f"))
+        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2027, 1, 1, 0, 0, 1)), daten(hex: "0127010100000101" + nullen(14) + "2c"))
     }
 
     func testAntwortAufDieUhrIstEineZeitQuittung() {

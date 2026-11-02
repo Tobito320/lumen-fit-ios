@@ -215,7 +215,7 @@ final class BandDienstImplTests: XCTestCase {
         let modell = try XCTUnwrap(a.dienst.modell)
         XCTAssertEqual(a.fabrik.funk.gesendet, [TrackerProtokoll.zeitSetzenAnfrage(VerbindenTest.jetzt)], "als Erstes die Uhr, der Akku erst nach ihrer Antwort")
         XCTAssertFalse(a.fabrik.funk.aufrufe.contains("schlaf"), "die Schlaf-Anfrage kommt erst am Rundenende")
-        XCTAssertTrue(modell.bandLog.contains { $0.hasSuffix("zeit: gesendet 01 26 10 29 10 00 00 00 00 00 00 00 00 00 00 70") })
+        XCTAssertTrue(modell.bandLog.contains { $0.hasSuffix("zeit: gesendet 01 26 10 29 10 00 00 01 00 00 00 00 00 00 00 71") })
     }
 
     func testDieAntwortAufDieUhrSchiebtDieRundeWeiterUndWirdGelogt() async throws {

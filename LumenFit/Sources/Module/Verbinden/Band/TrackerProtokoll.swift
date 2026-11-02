@@ -102,9 +102,9 @@ enum TrackerProtokoll {
 
     static let akkuAnfrage = paket(.akku)
 
-    /// Stellt die Uhr des Bands (Befehl 0x01, Byte 1 bis 6 = Jahr ab 2000, Monat, Tag, Stunde, Minute, Sekunde als BCD, Byte 7 bis 14 leer).
-    /// Gadgetbridge (`YawellRingDeviceSupport.setDateTime`, Grad B, dieselbe Familie) schickt genau das bei jeder Verbindung, in Ortszeit,
-    /// ohne Sprach-Byte; die Antwort ist laut colmi_r02_client ein Merkmalspaket (Grad B), kein Löschen oder Zurücksetzen. Das Band kennt keine
+    /// Stellt die Uhr des Bands (Befehl 0x01, Byte 1 bis 6 = Jahr ab 2000, Monat, Tag, Stunde, Minute, Sekunde als BCD, Byte 7 = Sprache, Rest leer).
+    /// Gadgetbridge (`YawellRingDeviceSupport.setDateTime`, Grad B, dieselbe Familie) schickt genau das bei jeder Verbindung, in Ortszeit;
+    /// colmi_r02_client setzt Byte 7 auf 1 (Englisch, 0 wäre Chinesisch), das übernehmen wir. Die Antwort ist laut colmi_r02_client ein Merkmalspaket (Grad B), kein Löschen oder Zurücksetzen. Das Band kennt keine
     /// Sommerzeit und lief nach dem 25.10.2026 60 Minuten vor: Schlaf, Puls und Schritte hängen an dieser Uhr. Berliner Zeit, wie
     /// `TrackerSchlaf` die Bandminuten liest. Am Gerät ungeprüft: ob das H59MAX den Befehl annimmt (siehe Log-Art "zeit").
     static func zeitSetzenAnfrage(_ jetzt: Date, kalender: Calendar = Datum.kalender) -> Data {
@@ -113,7 +113,7 @@ enum TrackerProtokoll {
             let z = min(max(wert ?? 0, 0), 99)
             return UInt8(((z / 10) << 4) | (z % 10)) // Klammern nötig: in Swift bindet << stärker als /
         }
-        return paket(.zeitSetzen, [ziffern((t.year ?? 2000) - 2000), ziffern(t.month), ziffern(t.day), ziffern(t.hour), ziffern(t.minute), ziffern(t.second)])
+        return paket(.zeitSetzen, [ziffern((t.year ?? 2000) - 2000), ziffern(t.month), ziffern(t.day), ziffern(t.hour), ziffern(t.minute), ziffern(t.second), 1])
     }
     /// 0x16 mit Byte 1 = 1 liest die Einstellung (am Gerät belegt: Antwort "an, 10 Minuten").
     static let pulsEinstellungAnfrage = paket(.pulsEinstellung, [1])
