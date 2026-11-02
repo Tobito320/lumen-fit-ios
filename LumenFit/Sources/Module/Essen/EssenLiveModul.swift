@@ -27,7 +27,7 @@ final class EssenLiveLaufzeit {
     init(_ umgebung: AppUmgebung, fabrik: any EssenLiveFabrik, speicher: UserDefaults) {
         self.umgebung = umgebung
         self.speicher = speicher
-        self.dienst = EssenLiveDienst(fabrik: fabrik, uhr: umgebung.uhr)
+        self.dienst = EssenLiveDienst(fabrik: fabrik, uhr: umgebung.uhr, speicher: speicher)
         // Erst abonnieren (synchron), dann zuhören: der Kanal liefert nur, was nach dem Abonnieren gesendet wird.
         let strom = umgebung.ereignisse.strom()
         ereignisse = Task { @MainActor [weak self] in
