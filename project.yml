@@ -38,6 +38,7 @@ targets:
         NSHealthShareUsageDescription: "Lumen Fit liest deine Schritte, Aktivität, Herzfrequenz, Schlaf und Erholung aus Health, damit du deinen Fortschritt siehst."
         NSHealthUpdateUsageDescription: "Lumen Fit speichert dein Training und dein Gewicht in Health, wenn du das einschaltest."
         NSBluetoothAlwaysUsageDescription: "Lumen Fit verbindet sich auf deinen Wunsch mit deinem Fitness-Band, liest Schritte und Puls und zeigt den Akku."
+        NSLocationWhenInUseUsageDescription: "Lumen Fit sucht Studios in deiner Nähe, wenn du dein Studio einträgst. Der Standort wird nicht gespeichert."
         NSCameraUsageDescription: "Lumen Fit nutzt die Kamera, um Barcodes von Lebensmitteln und QR-Codes zum Verbinden mit Personen zu scannen und dein Essen zu fotografieren."
         UIBackgroundModes:
           - bluetooth-central

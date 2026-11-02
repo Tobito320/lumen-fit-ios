@@ -181,6 +181,8 @@ struct EinheitNachlesenView: View {
 enum GymAnzeige {
     static let satzzeitSchluessel = "lumen.gym.satzzeit"
     static let rpeSpalteSchluessel = "lumen.gym.rpeSpalte"
+    /// RPE ist im Lumen-Aufbau von Anfang an aus; wer den Schalter schon angefasst hat, behält seine Wahl (der Standard gilt nur ohne gespeicherten Wert).
+    static let rpeSpalteStandard = false
 }
 
 /// Die Sätze einer Übung in einer beendeten Einheit korrigieren oder nachtragen: Gewicht und Wiederholungen mit Plus und Minus, Haken, Typ, Satz

@@ -26,8 +26,11 @@ struct UebungsKarte: View {
         return ListenKarte {
             kopf(u, gruen)
             Haarlinie()
-            DefektAbschnitt(sitzung: sitzung, index: index)
-            GeraeteAbschnitt(sitzung: sitzung, index: index)
+            // Defekt, "Meine Einstellung" und "So geht's" hängen am Studio: erst sichtbar, wenn eins eingetragen ist.
+            if sitzung.studio?.profil.hatStudio == true {
+                DefektAbschnitt(sitzung: sitzung, index: index)
+                GeraeteAbschnitt(sitzung: sitzung, index: index)
+            }
             if u.planUebung.istCardio {
                 cardioZeile(u, gruen)
             } else if u.ausgelassen {
@@ -76,22 +79,27 @@ struct UebungsKarte: View {
             }
             Spacer(minLength: Abstand.s)
             Menu {
+                // Oben nur das Häufige; Pause, Supersatz, Rekorde und Entfernen eine Ebene tiefer.
                 Button { blatt = .notiz } label: { Label("Notiz", systemImage: "note.text") }
-                Button { blatt = .pause } label: { Label("Pause dieser Übung", systemImage: "timer") }
                 if !u.planUebung.istCardio {
-                    Button { blatt = .rechner } label: { Label("Scheiben und Aufwärmen", systemImage: "scalemass") }
-                    Button { sitzung.supersatz(index, an: u.planUebung.supersatz != true) } label: {
-                        Label(u.planUebung.supersatz == true ? "Supersatz lösen" : "Supersatz mit der nächsten", systemImage: "link")
-                    }
                     if AusweichLogik.tauschbar(u, saetze: u.saetze) {
                         Button { blatt = .tausch } label: { Label("Gerät besetzt: tauschen", systemImage: "arrow.left.arrow.right") }
                     }
+                    Button { blatt = .rechner } label: { Label("Scheiben und Aufwärmen", systemImage: "scalemass") }
                     Button { sitzung.auslassen(index) } label: { Label("Auslassen", systemImage: "forward.fill") }
                 }
-                NavigationLink(value: Route.uebung(id: u.planUebung.uebung)) { Label("Rekorde und Verlauf", systemImage: "medal.fill") }
-                if u.extra {
-                    Button(role: .destructive) { sitzung.uebungWeg(index) } label: { Label("Entfernen", systemImage: "trash") }
-                }
+                Menu {
+                    Button { blatt = .pause } label: { Label("Pause dieser Übung", systemImage: "timer") }
+                    if !u.planUebung.istCardio {
+                        Button { sitzung.supersatz(index, an: u.planUebung.supersatz != true) } label: {
+                            Label(u.planUebung.supersatz == true ? "Supersatz lösen" : "Supersatz mit der nächsten", systemImage: "link")
+                        }
+                    }
+                    NavigationLink(value: Route.uebung(id: u.planUebung.uebung)) { Label("Rekorde und Verlauf", systemImage: "medal.fill") }
+                    if u.extra {
+                        Button(role: .destructive) { sitzung.uebungWeg(index) } label: { Label("Entfernen", systemImage: "trash") }
+                    }
+                } label: { Label("Mehr", systemImage: "ellipsis") }
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.title2)

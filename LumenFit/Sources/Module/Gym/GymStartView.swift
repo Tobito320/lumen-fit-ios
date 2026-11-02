@@ -23,6 +23,9 @@ struct GymStartView: View {
     /// Lovea-Aufbau: wohin das Menü ⋯ oder "Diese Woche anderes Split testen" führt (Push, wie Lovea `GymMenuZiel`).
     @State private var menueZiel: GymMenueZiel?
     @State private var freiGestartet = 0
+    /// Lumen-Aufbau: "Mehr" unten ist zu, bis man es öffnet.
+    @State private var mehrOffen = false
+    @State private var studioEintragen = false
 
     var body: some View {
         ScrollView {
@@ -44,6 +47,7 @@ struct GymStartView: View {
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
         .sheet(item: $uebungenTag) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
+        .sheet(isPresented: $studioEintragen) { StudioEditorBlatt(sitzung: sitzung) }
         .toolbar {
             if aufbau == .lovea {
                 ToolbarItem(placement: .topBarTrailing) { loveaMenue }
@@ -62,32 +66,78 @@ struct GymStartView: View {
         let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt, slotMinuten: ZeitSchaetzung.slot(profil))
         let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
         return VStack(alignment: .leading, spacing: Abstand.l) {
+            // Lumen-Aufbau: der große Start ganz oben, dann Woche und Tag, Letzte Einheiten; alles Seltene unter "Mehr".
+            if aufbau == .lumen, let knopf = stand.knopf { startKnopf(knopf, training: training).frame(maxWidth: .infinity) }
             wochenleiste(stand)
             if aufbau == .lovea { werZeile(stand, jetzt: jetzt) }
             // Lovea-Aufbau (`GymStartView.swift:89-95`): Wochenleiste, "Auschecken vergessen?", dann Kopf mit Start, dann die Abweichung (Testwoche, Verlegen).
             if aufbau == .lovea, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             tagesKarte(stand, training: training, anderer: anderer)
             if aufbau == .lumen, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
-            verlegenKarte(stand, training: training)
-            if aufbau == .lovea { uebungenUndSplit(stand, tag: anderer ?? stand.tag) }
-            HStack(spacing: Abstand.s) {
-                Button { cardioGeraet = .laufband } label: {
-                    Label("Laufband", systemImage: "figure.walk.treadmill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                }
-                Button { cardioGeraet = .stairmaster } label: {
-                    Label("Stairmaster", systemImage: "figure.stair.stepper").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                }
+            if aufbau == .lovea {
+                verlegenKarte(stand, training: training)
+                uebungenUndSplit(stand, tag: anderer ?? stand.tag)
+                cardioKnoepfe
+                einstellungenKnopf
             }
-            .buttonStyle(.bordered)
-            .accessibilityHint("Cardio eintragen")
-            .gymTipp(.cardioSchnell, GymTippKontext())
-            Button { einstellungen = true } label: {
-                Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            .buttonStyle(.bordered)
             letzte(training, jetzt: jetzt)
-            StudioKarte(sitzung: sitzung) { heuteStarten(training) }
+            // Lumen: Studio-Karte erst, wenn ein Studio eingetragen ist; vorher steht der Einstieg unter "Mehr".
+            if aufbau == .lovea || profil.hatStudio { StudioKarte(sitzung: sitzung) { heuteStarten(training) } }
             PartnerKarte(bereich: .gym)
+            if aufbau == .lumen { mehrBereich(stand, training: training, hatStudio: profil.hatStudio) }
+        }
+    }
+
+    // MARK: Mehr (Lumen-Aufbau)
+
+    private var cardioKnoepfe: some View {
+        HStack(spacing: Abstand.s) {
+            Button { cardioGeraet = .laufband } label: {
+                Label("Laufband", systemImage: "figure.walk.treadmill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+            Button { cardioGeraet = .stairmaster } label: {
+                Label("Stairmaster", systemImage: "figure.stair.stepper").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+        }
+        .buttonStyle(.bordered)
+        .accessibilityHint("Cardio eintragen")
+        .gymTipp(.cardioSchnell, GymTippKontext())
+    }
+
+    private var einstellungenKnopf: some View {
+        Button { einstellungen = true } label: {
+            Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+        }
+        .buttonStyle(.bordered)
+    }
+
+    /// Eine Zeile "Mehr", darunter (aufgeklappt) Diese Woche mit Verlegen und Testwoche, Cardio, Einstellungen, Nachtragen und der Studio-Einstieg.
+    @ViewBuilder
+    private func mehrBereich(_ stand: GymStartStand, training: TrainingStore, hatStudio: Bool) -> some View {
+        ListenKarte {
+            Button { mehrOffen.toggle() } label: {
+                GymZeile(titel: "Mehr", untertitel: "Diese Woche, Cardio, nachtragen\(hatStudio ? "" : ", Studio")") {
+                    Image(systemName: mehrOffen ? "chevron.up" : "chevron.down")
+                        .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(mehrOffen ? "Klappt zu" : "Klappt auf")
+        }
+        if mehrOffen {
+            verlegenKarte(stand, training: training)
+            cardioKnoepfe
+            einstellungenKnopf
+            Button { nachtragen = true } label: {
+                Label("Training nachtragen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+            }
+            .buttonStyle(.bordered)
+            if !hatStudio {
+                Button { studioEintragen = true } label: {
+                    Label("Studio eintragen", systemImage: "building.2").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 
@@ -250,7 +300,7 @@ struct GymStartView: View {
                 }
                 if stand.knopf != nil {
                     HStack(spacing: Abstand.s) {
-                        if let knopf = stand.knopf { startKnopf(knopf, training: training) }
+                        if aufbau == .lovea, let knopf = stand.knopf { startKnopf(knopf, training: training) }
                         andereTageMenue(training: training, aktuell: tag)
                     }
                     .frame(minHeight: Abstand.tippflaeche)
@@ -379,13 +429,15 @@ struct GymStartView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                Haarlinie()
-                Button { nachtragen = true } label: {
-                    GymZeile(titel: "Training nachtragen", untertitel: "Start, Ende und Trainingstag von Hand eintragen") {
-                        Image(systemName: "plus").accessibilityHidden(true)
+                if aufbau == .lovea {
+                    Haarlinie()
+                    Button { nachtragen = true } label: {
+                        GymZeile(titel: "Training nachtragen", untertitel: "Start, Ende und Trainingstag von Hand eintragen") {
+                            Image(systemName: "plus").accessibilityHidden(true)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
     }

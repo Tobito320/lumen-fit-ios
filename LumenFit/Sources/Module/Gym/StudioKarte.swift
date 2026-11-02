@@ -51,19 +51,36 @@ struct StudioKarte: View {
     }
 }
 
-/// Studio, Öffnungszeiten und feste Uhrzeit eintragen. Vorschläge aus `PrivateDaten.json` (nur Name und Zeiten), sonst Textfeld.
+/// Studio, Öffnungszeiten und feste Uhrzeit eintragen. Beim Tippen zeigt die Ortssuche die nächsten Studios (nur der Name wird übernommen);
+/// dazu Vorschläge aus `PrivateDaten.json` (nur Name und Zeiten). Ohne Standort oder Netz bleibt es ein freies Textfeld.
 struct StudioEditorBlatt: View {
     let sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
     @State private var profil = StudioProfil.standard
     @State private var festeUhrzeit = false
+    @State private var suche = StudioSucheModell(port: AppleStudioSuche())
+    @FocusState private var feldFokus: Bool
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Studio") {
-                    TextField("Name deines Studios", text: $profil.name)
+                Section {
+                    TextField("Name deines Studios", text: $profil.name).focused($feldFokus)
+                    ForEach(suche.treffer) { t in
+                        Button {
+                            profil.name = suche.uebernehme(t)
+                            feldFokus = false
+                        } label: {
+                            HStack {
+                                Label(t.name, systemImage: "mappin.and.ellipse")
+                                Spacer(minLength: Abstand.s)
+                                if let m = t.entfernungM { Text(StudioSucheLogik.entfernungText(m)).foregroundStyle(.secondary).monospacedDigit() }
+                            }
+                        }
+                        .frame(minHeight: Abstand.tippflaeche)
+                        .accessibilityElement(children: .combine)
+                    }
                     ForEach(StudioVorgaben.vorschlaege(profilName: umgebung.profil.aktiv?.name ?? "")) { v in
                         Button {
                             profil.name = v.name
@@ -73,6 +90,10 @@ struct StudioEditorBlatt: View {
                         }
                         .frame(minHeight: Abstand.tippflaeche)
                     }
+                } header: {
+                    Text("Studio")
+                } footer: {
+                    Text("Tipp ein paar Buchstaben, Lumen zeigt Studios in deiner Nähe. Die Suche läuft über Apple Karten, gespeichert wird nur der Name.")
                 }
                 Section {
                     Toggle("Rund um die Uhr offen", isOn: $profil.oeffnung.rund)
@@ -83,7 +104,7 @@ struct StudioEditorBlatt: View {
                 } header: {
                     Text("Öffnungszeiten")
                 } footer: {
-                    Text("Ohne Zeiten gilt das Studio als immer offen und Lumi warnt nie.")
+                    Text("Freiwillig. Ohne Zeiten gilt das Studio als immer offen und Lumi warnt nie.")
                 }
                 Section {
                     Toggle("Feste Uhrzeit", isOn: $festeUhrzeit)
@@ -114,6 +135,17 @@ struct StudioEditorBlatt: View {
             .onAppear {
                 profil = sitzung.studio?.profil ?? .standard
                 festeUhrzeit = profil.slotStart != nil
+            }
+            // Neues Studio: gleich ins Feld, die Standort-Frage kommt erst mit der ersten Suche.
+            .task {
+                try? await Task.sleep(for: .milliseconds(400))
+                if !profil.hatStudio { feldFokus = true }
+            }
+            .task(id: feldFokus ? profil.name : nil) {
+                guard feldFokus else { suche.leeren(); return }
+                try? await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled else { return }
+                await suche.aktualisiere(text: profil.name)
             }
         }
     }
