@@ -61,15 +61,20 @@ struct KontoView: View {
         .sheet(item: $blatt) { art in
             switch art {
             case .passwortAendern:
-                ProfilPasswortBlatt(titel: "Passwort ändern", erklaerung: "Gib dein aktuelles und dein neues Passwort ein.", knopf: "Passwort ändern",
-                                    neuTitel: "Neues Passwort") { alt, neu in
+                let festlegen = aktiv?.ohnePasswort ?? false
+                ProfilPasswortBlatt(titel: festlegen ? "Passwort festlegen" : "Passwort ändern",
+                                    erklaerung: festlegen ? "Mit einem Passwort fragt die App beim Wechseln und bei Alles löschen danach. Beim Start nie."
+                                                          : "Gib dein aktuelles und dein neues Passwort ein.",
+                                    knopf: festlegen ? "Passwort festlegen" : "Passwort ändern",
+                                    neuTitel: festlegen ? "Passwort" : "Neues Passwort", ohneAlt: festlegen) { alt, neu in
                     let ok = await umgebung.profil.aenderePasswortImHintergrund(alt: alt, neu: neu)
-                    if ok { toast = ToastInhalt(titel: "Passwort geändert", zeile: nil, stimmung: .stolz) }
+                    if ok { toast = ToastInhalt(titel: festlegen ? "Passwort festgelegt" : "Passwort geändert", zeile: nil, stimmung: .stolz) }
                     return ok
                 }
             case .wechseln(let ziel):
-                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln", erklaerung: "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
-                                    zuruecksetzen: ziel) { passwort, _ in
+                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln",
+                                    erklaerung: ziel.ohnePasswort ? "\(ziel.name) hat kein Passwort. Wechseln?" : "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
+                                    ohneAlt: ziel.ohnePasswort, zuruecksetzen: ziel) { passwort, _ in
                     await umgebung.profil.wechsleImHintergrund(zu: ziel.id, passwort: passwort)
                 }
             case .anlegen:
@@ -113,7 +118,10 @@ struct KontoView: View {
 
     private var kontoGruppe: some View {
         ProfilAbschnitt {
-            Button { blatt = .passwortAendern } label: { ProfilListenZeile("Passwort ändern", symbol: "key.fill") }
+            Button { blatt = .passwortAendern } label: {
+                ProfilListenZeile(aktiv?.ohnePasswort == true ? "Passwort festlegen" : "Passwort ändern", symbol: "key.fill",
+                                  wert: aktiv?.ohnePasswort == true ? "freiwillig" : nil)
+            }
             if !andere.isEmpty {
                 Button { profilWahl = true } label: { ProfilListenZeile("Profil wechseln", symbol: "person.2.fill", wert: "\(andere.count + 1) Profile") }
             }

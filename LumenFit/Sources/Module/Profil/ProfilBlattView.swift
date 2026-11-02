@@ -8,6 +8,7 @@ struct ProfilBlattView: View {
 
     var body: some View {
         List {
+            ProfilBereicheAbschnitt()
             ProfilAbschnitt {
                 link("Konto", symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
             }
@@ -112,7 +113,7 @@ struct ProfilAnlegenBlatt: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: Abstand.l) {
-                Text("Ein zweites Profil hat eigene Trainings, eigenes Essen und eigene Ziele. Du wechselst später mit dem Passwort des Profils.")
+                Text("Ein zweites Profil hat eigene Trainings, eigenes Essen und eigene Ziele. Ein Passwort ist freiwillig: mit einem fragt die App beim Wechseln danach.")
                     .font(.body).foregroundStyle(palette.text2)
                 TextField("Name", text: $name)
                     .textInputAutocapitalization(.words)
@@ -122,7 +123,7 @@ struct ProfilAnlegenBlatt: View {
                 if let hinweis = ProfilOnboardingFluss.nameHinweis(name) {
                     Text(hinweis).font(.footnote).foregroundStyle(palette.text2)
                 }
-                SecureField("Passwort (mindestens \(Passwort.mindestLaenge) Zeichen)", text: $passwort)
+                SecureField("Passwort (freiwillig, mindestens \(Passwort.mindestLaenge) Zeichen)", text: $passwort)
                     .textContentType(.newPassword)
                     .padding(Abstand.m).frame(minHeight: Abstand.tippflaeche)
                     .background(palette.flaeche, in: .rect(cornerRadius: Rundung.feld, style: .continuous))
@@ -175,8 +176,11 @@ struct ProfilLoeschenBlatt: View {
 
     var body: some View {
         if weiter {
-            ProfilPasswortBlatt(titel: "Alles löschen", erklaerung: "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen.",
-                                knopf: "Alles löschen", zerstoererisch: true, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
+            let ohne = umgebung.profil.aktiv?.ohnePasswort ?? false
+            ProfilPasswortBlatt(titel: "Alles löschen",
+                                erklaerung: ohne ? "Zur Bestätigung tippe auf Alles löschen. Das lässt sich nicht rückgängig machen."
+                                                 : "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen.",
+                                knopf: "Alles löschen", zerstoererisch: true, ohneAlt: ohne, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
                 await ProfilLoeschen.fuehreAusImHintergrund(umgebung, passwort: passwort)
             }
         } else {

@@ -3,24 +3,25 @@ import XCTest
 
 @MainActor
 final class OnboardingFlussTests: XCTestCase {
-    private func bisZurHealthKarte(_ f: ProfilOnboardingFluss, name: String = "Mira", passwort: String = "abcd") {
+    private func bisZurHealthKarte(_ f: ProfilOnboardingFluss, name: String = "Mira") {
         f.weiter()
         f.name = name
-        f.passwort = passwort
+        f.weiter()
         f.weiter()
         f.weiter()
     }
 
-    func testVierKartenInFesterReihenfolge() {
+    func testFuenfKartenInFesterReihenfolge() {
         let f = ProfilOnboardingFluss()
-        XCTAssertEqual(f.anzahl, 4)
+        XCTAssertEqual(f.anzahl, 5)
         XCTAssertEqual(f.karte, .willkommen)
-        XCTAssertEqual(f.stand, "Schritt 1 von 4")
+        XCTAssertEqual(f.stand, "Schritt 1 von 5")
         f.weiter()
         XCTAssertEqual(f.karte, .profil)
-        XCTAssertEqual(f.stand, "Schritt 2 von 4")
+        XCTAssertEqual(f.stand, "Schritt 2 von 5")
         f.name = "Mira"
-        f.passwort = "abcd"
+        f.weiter()
+        XCTAssertEqual(f.karte, .bereiche)
         f.weiter(); f.weiter()
         XCTAssertEqual(f.karte, .health)
         XCTAssertTrue(f.istLetzte)
@@ -30,25 +31,19 @@ final class OnboardingFlussTests: XCTestCase {
         XCTAssertEqual(f.karte, .ziel)
     }
 
-    func testNameUndPasswortSindPflichtAufDerZweitenKarte() {
+    func testNurDerNameIstPflichtAufDerZweitenKarte() {
         let f = ProfilOnboardingFluss()
         f.weiter()
         XCTAssertFalse(f.kannWeiter)
         f.name = "   "
-        f.passwort = "abcd"
         XCTAssertFalse(f.kannWeiter, "ein Name nur aus Leerzeichen zählt nicht")
         f.name = "Mira"
-        f.passwort = "abc"
-        XCTAssertFalse(f.kannWeiter)
-        XCTAssertNotNil(f.passwortHinweis)
-        f.passwort = "abcd"
-        XCTAssertTrue(f.kannWeiter)
-        XCTAssertNil(f.passwortHinweis)
+        XCTAssertTrue(f.kannWeiter, "kein Passwort nötig")
         f.weiter()
-        XCTAssertEqual(f.karte, .ziel)
+        XCTAssertEqual(f.karte, .bereiche)
     }
 
-    func testDasProfilEntstehtErstAmEnde() throws {
+    func testDasProfilEntstehtErstAmEndeUndOhnePasswort() throws {
         let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         let f = ProfilOnboardingFluss()
         bisZurHealthKarte(f)
@@ -56,7 +51,7 @@ final class OnboardingFlussTests: XCTestCase {
         XCTAssertTrue(f.abschliessen(in: u))
         XCTAssertTrue(u.profil.hatProfil)
         XCTAssertEqual(u.profil.aktiv?.name, "Mira")
-        XCTAssertEqual(f.passwort, "", "das Passwort bleibt nicht im Speicher")
+        XCTAssertEqual(u.profil.aktiv?.ohnePasswort, true)
     }
 
     func testNachDemNeustartKeinePasswortEingabe() throws {
@@ -71,6 +66,7 @@ final class OnboardingFlussTests: XCTestCase {
         let neu = ProfilTestWelt.umgebung(ordner: ordner, bund: bund)
         XCTAssertTrue(neu.profil.hatProfil)
         XCTAssertEqual(neu.profil.aktiv?.name, "Mira")
+        XCTAssertEqual(neu.profil.aktiv?.ohnePasswort, true, "das Profil ohne Passwort übersteht den Neustart")
         XCTAssertFalse(neu.neuinstallationErkannt)
         XCTAssertNotNil(neu.daten)
     }
@@ -90,6 +86,27 @@ final class OnboardingFlussTests: XCTestCase {
         XCTAssertEqual(daten.essen.ernaehrungsZiele.kcal, daten.ziele.ziele.kalorien, "beide Orte sagen dasselbe")
     }
 
+    func testGewaehlteBereicheLandenInDenEinstellungenUndMindestensEinerBleibt() throws {
+        let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
+        let f = ProfilOnboardingFluss()
+        XCTAssertTrue(f.bereiche.gymAn && f.bereiche.essenAn && f.bereiche.schlafAn, "Standard: alles")
+        XCTAssertTrue(f.setzeBereich(.schlaf, an: false))
+        XCTAssertTrue(f.setzeBereich(.essen, an: false))
+        XCTAssertFalse(f.setzeBereich(.gym, an: false), "der letzte bleibt an")
+        bisZurHealthKarte(f)
+        XCTAssertTrue(f.abschliessen(in: u))
+        let e = try XCTUnwrap(u.daten?.einstellungen.werte)
+        XCTAssertTrue(e.gymAn)
+        XCTAssertFalse(e.essenAn || e.schlafAn)
+    }
+
+    func testStartRouteNurMitGym() {
+        let f = ProfilOnboardingFluss()
+        XCTAssertEqual(f.startRoute, .gym(.plaene), "mit Gym direkt zu den Plänen")
+        f.setzeBereich(.gym, an: false)
+        XCTAssertNil(f.startRoute)
+    }
+
     func testHealthOhneZwang() async throws {
         let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         let f = ProfilOnboardingFluss()
@@ -106,18 +123,14 @@ final class OnboardingFlussTests: XCTestCase {
         XCTAssertEqual(v.daten?.einstellungen.werte.healthGefragt, true)
     }
 
-    func testZuKurzesPasswortLegtNichtsAnUndSpringtZurueck() throws {
+    func testLeererNameLegtNichtsAnUndSpringtZurueck() throws {
         let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         let f = ProfilOnboardingFluss()
         bisZurHealthKarte(f)
-        f.passwort = "ab"
+        f.name = ""
         XCTAssertFalse(f.abschliessen(in: u))
         XCTAssertFalse(u.profil.hatProfil)
         XCTAssertEqual(f.karte, .profil)
-        XCTAssertEqual(f.fehler, "Das Passwort braucht mindestens 4 Zeichen.")
-        f.passwort = "abcd"
-        f.name = ""
-        XCTAssertFalse(f.abschliessen(in: u))
         XCTAssertEqual(f.fehler, "Wie soll Lumi dich nennen?")
     }
 }

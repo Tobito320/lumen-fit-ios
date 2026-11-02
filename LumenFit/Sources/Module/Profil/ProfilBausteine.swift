@@ -75,7 +75,7 @@ struct ProfilSchuettel: GeometryEffect {
     }
 }
 
-/// Fragt ein Passwort ab und führt bei richtigem Passwort die Handlung `pruefen` aus (true, wenn alles geklappt hat). Mit `neuTitel` kommt ein zweites Feld
+/// Fragt ein Passwort ab und führt bei richtigem Passwort die Handlung `pruefen` aus (true, wenn alles geklappt hat). Mit `ohneAlt` (Profil ohne Passwort) fragt es nichts ab. Mit `neuTitel` kommt ein zweites Feld
 /// dazu (neues Passwort). Falsch: Wackeln, Haptik `.fehler`, "Passwort stimmt nicht. Versuch es nochmal." Es gibt keine Anmeldung: das Blatt erscheint
 /// nur bei Handlungen, die es verlangen.
 struct ProfilPasswortBlatt: View {
@@ -84,6 +84,8 @@ struct ProfilPasswortBlatt: View {
     let knopf: String
     var zerstoererisch = false
     var neuTitel: String?
+    /// Das Profil hat kein (aktuelles) Passwort: kein Feld dafür, das Blatt verlangt nur die Bestätigung (oder bei `neuTitel` das neue Passwort).
+    var ohneAlt = false
     /// Mit einem Profil zeigt das Blatt "Passwort vergessen?" und öffnet das Zurücksetzen dieses Profils (ohne Passwort, nach zwei Bestätigungen).
     var zuruecksetzen: Profil?
     let pruefen: @MainActor (_ passwort: String, _ neu: String) async -> Bool
@@ -100,14 +102,14 @@ struct ProfilPasswortBlatt: View {
     @State private var rechnet = false
     @FocusState private var fokus: Bool
 
-    private var bereit: Bool { !rechnet && !passwort.isEmpty && (neuTitel == nil || neu.count >= Passwort.mindestLaenge) }
+    private var bereit: Bool { !rechnet && (ohneAlt || !passwort.isEmpty) && (neuTitel == nil || neu.count >= Passwort.mindestLaenge) }
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 Text(erklaerung).font(.body).foregroundStyle(palette.text2)
                 VStack(spacing: Abstand.m) {
-                    feld("Passwort", text: $passwort).focused($fokus)
+                    if !ohneAlt { feld("Passwort", text: $passwort).focused($fokus) }
                     if let neuTitel {
                         feld(neuTitel, text: $neu)
                         if !neu.isEmpty, neu.count < Passwort.mindestLaenge {
@@ -127,7 +129,7 @@ struct ProfilPasswortBlatt: View {
                 .buttonStyle(.borderedProminent)
                 .foregroundStyle(zerstoererisch ? Color.white : palette.aufAkzent)
                 .disabled(!bereit)
-                if zuruecksetzen != nil {
+                if zuruecksetzen != nil, !ohneAlt {
                     Button { zeigeZuruecksetzen = true } label: {
                         Text("Passwort vergessen?").font(.subheadline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
@@ -142,7 +144,7 @@ struct ProfilPasswortBlatt: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() }.disabled(rechnet) } }
             .interactiveDismissDisabled(rechnet) // die Prüfung läuft unabhängig vom Blatt: während sie rechnet, lässt sich nichts mehr abbrechen
-            .onAppear { fokus = true }
+            .onAppear { fokus = !ohneAlt }
             .haptik(.fehler, bei: versuche)
             .sheet(isPresented: $zeigeZuruecksetzen) {
                 if let zuruecksetzen { ProfilZuruecksetzenBlatt(profil: zuruecksetzen) { dismiss() } }

@@ -196,18 +196,23 @@ final class HeuteModell {
         let gymWoche = WochenStreifenLogik.gymTageDerWoche(heute: heute, sessions: sessions, haken: gymHaken).count
         let gymZiel = max(1, ziele.gymTageProWoche)
         let schlafMin = nacht?.minuten ?? 0
-        let boegen: [BogenWert] = [
+        // Nur die gewählten Bereiche: ein ausgeschalteter Bogen fehlt hier, in der Ansage und in der Rechnung "alle voll".
+        let bereiche = daten.einstellungen.werte
+        var boegen: [BogenWert] = [
             BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
                       beschriftung: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))"),
-            BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: "\(gymWoche) von \(gymZiel)", beschriftung: "Gym-Tage der Woche"),
-            BogenWert(id: .erholen, anteil: anteil(schlafMin, schlafZiel), zahl: nacht == nil ? "–" : BereitScore.stunden(schlafMin),
-                      beschriftung: "Schlaf von \(BereitScore.stunden(schlafZiel))"),
         ]
-        let boegenSatz = [
-            "Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))",
-            "Gym: \(gymWoche) von \(gymZiel) Tagen",
-            nacht == nil ? "Schlaf: keine Daten" : "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))",
-        ].joined(separator: ". ") + "."
+        var boegenTexte = ["Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))"]
+        if bereiche.gymAn {
+            boegen.append(BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: "\(gymWoche) von \(gymZiel)", beschriftung: "Gym-Tage der Woche"))
+            boegenTexte.append("Gym: \(gymWoche) von \(gymZiel) Tagen")
+        }
+        if bereiche.schlafAn {
+            boegen.append(BogenWert(id: .erholen, anteil: anteil(schlafMin, schlafZiel), zahl: nacht == nil ? "–" : BereitScore.stunden(schlafMin),
+                                    beschriftung: "Schlaf von \(BereitScore.stunden(schlafZiel))"))
+            boegenTexte.append(nacht == nil ? "Schlaf: keine Daten" : "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))")
+        }
+        let boegenSatz = boegenTexte.joined(separator: ". ") + "."
         let voll = boegen.allSatisfy { $0.anteil >= 1 }
 
         // Lumis Satz und Stimmung
@@ -228,7 +233,8 @@ final class HeuteModell {
                                    gefuehl: k.gefuehl.eintrag(heute)?.gefuehl, vergleich: TagesformGefuehl.vergleich(k.gefuehl.eintraege, bis: heute))
 
         // Gewohnheiten
-        let habits: [HeuteHabitZeile] = daten.habits.sichtbar.map { h in
+        // Gym- und Protein-Gewohnheit gehören zu ihrem Bereich und fehlen mit ihm (die Werte bleiben gespeichert).
+        let habits: [HeuteHabitZeile] = daten.habits.sichtbar.filter { ($0.id != Habit.gym.id || bereiche.gymAn) && ($0.id != Habit.protein.id || bereiche.essenAn) }.map { h in
             let wert = daten.habits.wert(h.id, heute)
             let ziel = daten.habits.habitZiel(h.id)
             let werte = daten.habits.werte(h.id)
@@ -265,6 +271,8 @@ final class HeuteModell {
         regelEingabe.gewichtTage = Array(gw.keys)
         let einsichten = HeuteHinweisLogik.alle(HeuteHinweisEingabe(sessions: sessions, schlafMinuten: schlafAlle, wasser: daten.habits.werte(Habit.wasser.id),
                                                                     gymTage: gymTage, stimmungTage: stimmungsTage.count, prio: MuskelGruppe.standardPrio, heute: heute))
+            .filter { $0.bereich.map(bereiche.zeigt) ?? true }
+        regelEingabe.bereiche = bereiche
         let hinweise = TagesHinweisLogik.zeige(TagesHinweisLogik.regeln(regelEingabe),
                                                weggewischt: k.hinweise.ids)
 
@@ -276,7 +284,7 @@ final class HeuteModell {
         let hatNacht: Bool = nacht != nil
         let hatTagesdaten: Bool = istHeute || hatNacht || trainiert || hatStimmung || hatGewicht || habitGesetzt || gesundheitTag
         let stimmungAnzeige: LumiStimmung = istHeute ? satz.stimmung : (voll ? .stolz : .denkt)
-        let satzAnzeige = istHeute ? satz.satz : (voll ? "An diesem Tag waren alle drei Bögen voll." : "So sah dieser Tag aus.")
+        let satzAnzeige = istHeute ? satz.satz : (voll ? "An diesem Tag waren alle Bögen voll." : "So sah dieser Tag aus.")
 
         stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
                            healthGeprueft: gesundheit.letzteAktualisierung != nil || gesundheit.zugriff == .nichtVerfuegbar, boegen: boegen, boegenSatz: boegenSatz,
@@ -287,7 +295,7 @@ final class HeuteModell {
                            hinweise: hinweise,
                            woche: WochenStreifenLogik.woche(heute: heute, schritte: tage.mapValues { $0.schritte }, schlafMinuten: schlafWoche,
                                                             gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten),
-                           einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten)
+                           einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten, bereiche: bereiche)
     }
 
     private func anteil(_ ist: Int, _ ziel: Int) -> Double { ziel > 0 ? min(1, max(0, Double(ist) / Double(ziel))) : 0 }

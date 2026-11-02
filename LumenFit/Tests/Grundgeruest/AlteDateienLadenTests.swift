@@ -42,6 +42,17 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("einstellungen.json.defekt").path))
     }
 
+    func testEinstellungenOhneBereicheZeigenAllesUndBehaltenGewaehlteBereiche() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"thema":"wald"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
+        let alt = EinstellungenStore(ordner: ordner)
+        XCTAssertTrue(alt.werte.gymAn && alt.werte.essenAn && alt.werte.schlafAn, "Bestandsprofil: alle Bereiche an")
+        alt.aendere { $0.setze(.schlaf, an: false) }
+        let neu = EinstellungenStore(ordner: ordner)
+        XCTAssertFalse(neu.werte.schlafAn, "die Wahl übersteht den Neustart")
+        XCTAssertEqual(neu.werte.thema, .wald)
+    }
+
     func testAlterKontoStandOhneCoachSichtbarBleibtLesbarUndZeigtKeinenCoach() throws {
         let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3},"loveaErlaubt":true}"#.utf8))
         XCTAssertTrue(alt.config.profilAnlegenErlaubt)
@@ -131,7 +142,22 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(store.aktiv?.id, profil.id, "ohne konto.aktiv gilt das erste Profil")
         XCTAssertTrue(store.pruefe(passwort: "abcd", fuer: profil.id))
         XCTAssertFalse(store.pruefe(passwort: "abce", fuer: profil.id))
+        XCTAssertFalse(profil.ohnePasswort, "ein altes Profil behält sein Passwort (das Feld fehlt dort)")
         XCTAssertEqual(bund.lese(ProfilStore.profileSchluessel), Data(Self.ersterStand.utf8), "Lesen schreibt nichts")
+    }
+
+    func testProfilOhnePasswortLaedtNeuUndAltBleibtMitPasswort() throws {
+        let neu = Self.ersterStand.replacingOccurrences(of: #""name":"Eins""#, with: #""name":"Eins","ohnePasswort":true"#)
+        let (store, _) = try storeMit(json: neu)
+        let profil = try XCTUnwrap(store.profile.first)
+        XCTAssertTrue(profil.ohnePasswort)
+        XCTAssertTrue(store.wechsle(zu: profil.id, passwort: ""), "ohne Passwort genügt die Bestätigung")
+
+        let ohneFeld = Self.ersterStand.replacingOccurrences(of: #""name":"Eins""#, with: #""name":"Eins","ohnePasswort":"kaputt""#)
+        let (alt, _) = try storeMit(json: ohneFeld)
+        XCTAssertEqual(alt.profile.count, 1, "ein falscher Typ im Feld kostet das Profil nicht")
+        XCTAssertFalse(try XCTUnwrap(alt.profile.first).ohnePasswort, "und lässt das Passwort bestehen")
+        XCTAssertFalse(alt.wechsle(zu: try XCTUnwrap(alt.profile.first).id, passwort: "falsch"))
     }
 
     func testProfilMitUnbekanntemZusatzfeldBleibtLesbar() throws {

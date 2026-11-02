@@ -22,39 +22,32 @@ final class ProfilHintergrundWegeTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.path))
     }
 
-    private func bisZurHealthKarte(_ f: ProfilOnboardingFluss, name: String = "Mira", passwort: String = "abcd") {
+    private func bisZurHealthKarte(_ f: ProfilOnboardingFluss, name: String = "Mira") {
         f.weiter()
         f.name = name
-        f.passwort = passwort
+        f.weiter()
         f.weiter()
         f.weiter()
     }
 
-    func testOnboardingLegtImHintergrundDasProfilAnUndLeertDasPasswort() async throws {
+    func testOnboardingLegtImHintergrundDasProfilOhnePasswortAn() async throws {
         let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         let f = ProfilOnboardingFluss()
         bisZurHealthKarte(f)
         let ok = await f.abschliessenImHintergrund(in: u)
         XCTAssertTrue(ok)
         XCTAssertEqual(u.profil.aktiv?.name, "Mira")
-        XCTAssertTrue(u.profil.pruefe(passwort: "abcd", fuer: try XCTUnwrap(u.profil.aktiv).id))
-        XCTAssertEqual(f.passwort, "")
+        XCTAssertEqual(u.profil.aktiv?.ohnePasswort, true)
     }
 
-    func testOnboardingImHintergrundMeldetNameUndZuKurzesPasswort() async throws {
+    func testOnboardingImHintergrundMeldetDenLeerenNamen() async throws {
         let u = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         let f = ProfilOnboardingFluss()
         bisZurHealthKarte(f)
-        f.passwort = "ab"
-        let kurz = await f.abschliessenImHintergrund(in: u)
-        XCTAssertFalse(kurz)
-        XCTAssertFalse(u.profil.hatProfil)
-        XCTAssertEqual(f.karte, .profil)
-        XCTAssertEqual(f.fehler, "Das Passwort braucht mindestens 4 Zeichen.")
-        f.passwort = "abcd"
         f.name = ""
         let leer = await f.abschliessenImHintergrund(in: u)
         XCTAssertFalse(leer)
+        XCTAssertFalse(u.profil.hatProfil)
         XCTAssertEqual(f.fehler, "Wie soll Lumi dich nennen?")
         XCTAssertEqual(f.karte, .profil)
     }

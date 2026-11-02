@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Das Onboarding in vier Karten (Idee 71): Willkommen mit Lumi, Name und Passwort, ein Ziel, Health. Danach nie wieder ein Passwort beim Start.
+/// Das Onboarding in fünf Karten (Idee 71): Willkommen mit Lumi, Name (ohne Passwort), Bereiche, ein Ziel, Health. Es gibt nie ein Passwort beim Start;
+/// freiwillig legt man eines später unter Konto fest.
 /// Das Profil entsteht erst auf der letzten Karte (`ProfilOnboardingFluss.abschliessen`).
 struct OnboardingView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -10,7 +11,7 @@ struct OnboardingView: View {
     @State private var arbeitet = false
     @FocusState private var fokus: Feld?
 
-    private enum Feld { case name, passwort }
+    private enum Feld { case name }
 
     var body: some View {
         VStack(spacing: Abstand.l) {
@@ -19,7 +20,8 @@ struct OnboardingView: View {
                 VStack(spacing: Abstand.xl) {
                     switch fluss.karte {
                     case .willkommen: willkommen
-                    case .profil: profil(name: Bindable(fluss).name, passwort: Bindable(fluss).passwort)
+                    case .profil: profil(name: Bindable(fluss).name)
+                    case .bereiche: bereiche
                     case .ziel: ziel
                     case .health: health
                     }
@@ -73,7 +75,7 @@ struct OnboardingView: View {
             switch fluss.karte {
             case .willkommen:
                 knopf("Los geht's") { fluss.weiter() }
-            case .profil, .ziel:
+            case .profil, .bereiche, .ziel:
                 knopf("Weiter") { fokus = nil; fluss.weiter() }.disabled(!fluss.kannWeiter)
             case .health:
                 knopf("Health erlauben") { fertig(mitHealth: true) }.disabled(arbeitet)
@@ -103,35 +105,44 @@ struct OnboardingView: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func profil(name: Binding<String>, passwort: Binding<String>) -> some View {
+    private func profil(name: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: Abstand.l) {
-            karteTitel("Wie soll ich dich nennen?", "Dein Passwort und deine Daten bleiben auf deinem iPhone. Nur dein Name geht an den Lumen-Server, damit Einstellungen ohne Update änderbar sind.")
+            karteTitel("Wie soll ich dich nennen?", "Deine Daten bleiben auf deinem iPhone. Nur dein Name geht an den Lumen-Server, damit Einstellungen ohne Update änderbar sind.")
             VStack(spacing: Abstand.m) {
                 TextField("Dein Name", text: name)
                     .textContentType(.givenName)
                     .textInputAutocapitalization(.words)
-                    .submitLabel(.next)
+                    .submitLabel(.done)
                     .focused($fokus, equals: .name)
-                    .onSubmit { fokus = .passwort }
+                    .onSubmit { fokus = nil }
                     .eingabeFeld(palette)
                 if let hinweis = fluss.nameHinweis {
                     Text(hinweis).font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
                 }
-                SecureField("Passwort (mindestens \(Passwort.mindestLaenge) Zeichen)", text: passwort)
-                    .textContentType(.newPassword)
-                    .submitLabel(.done)
-                    .focused($fokus, equals: .passwort)
-                    .onSubmit { fokus = nil }
-                    .eingabeFeld(palette)
-                if let hinweis = fluss.passwortHinweis {
-                    Text(hinweis).font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
-                }
             }
             Label {
-                Text("Du meldest dich nie wieder an. Das Passwort fragt nur nach, wenn du etwas Wichtiges tust: Profil wechseln, Passwort ändern oder alles löschen.")
+                Text("Du brauchst kein Passwort. Wenn du eines willst, legst du es später unter Konto fest.")
                     .font(.subheadline).foregroundStyle(palette.text2)
             } icon: {
                 Image(systemName: "lock.open.fill").foregroundStyle(palette.text)
+            }
+        }
+    }
+
+    private var bereiche: some View {
+        VStack(alignment: .leading, spacing: Abstand.l) {
+            karteTitel("Was willst du nutzen?", "Was du ausschaltest, siehst du nicht mehr. \(ProfilBereiche.erklaerung) Ändern geht jederzeit im Profil.")
+            ListenKarte {
+                ForEach(Array(AppBereich.allCases.enumerated()), id: \.element) { index, bereich in
+                    if index > 0 { Haarlinie() }
+                    let an = fluss.bereiche.zeigt(bereich)
+                    let letzter = an && AppBereich.allCases.filter { fluss.bereiche.zeigt($0) }.count == 1
+                    Toggle(isOn: Binding(get: { an }, set: { fluss.setzeBereich(bereich, an: $0) })) {
+                        ProfilListenZeile(ProfilBereiche.titel(bereich), symbol: ProfilBereiche.symbol(bereich))
+                    }
+                    .padding(.trailing, Abstand.l)
+                    .disabled(letzter)
+                }
             }
         }
     }
@@ -146,26 +157,34 @@ struct OnboardingView: View {
                 Haarlinie()
                 ProfilAuswahlZeile(titel: "Muskeln aufbauen", hinweis: "Mehr essen, mehr Protein, stärker werden", an: fluss.art == .aufbauen) { fluss.art = .aufbauen }
             }
-            ListenKarte {
-                Stepper(value: Bindable(fluss).gymTage, in: 1...7) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Gym-Tage pro Woche").font(.body).foregroundStyle(palette.text)
-                        Text(fluss.gymTage == 1 ? "1 Tag" : "\(fluss.gymTage) Tage").font(.footnote.monospacedDigit()).foregroundStyle(palette.text2)
+            if fluss.bereiche.gymAn {
+                ListenKarte {
+                    Stepper(value: Bindable(fluss).gymTage, in: 1...7) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Gym-Tage pro Woche").font(.body).foregroundStyle(palette.text)
+                            Text(fluss.gymTage == 1 ? "1 Tag" : "\(fluss.gymTage) Tage").font(.footnote.monospacedDigit()).foregroundStyle(palette.text2)
+                        }
                     }
+                    .padding(Abstand.l)
+                    .frame(minHeight: Abstand.tippflaeche)
                 }
-                .padding(Abstand.l)
-                .frame(minHeight: Abstand.tippflaeche)
             }
         }
     }
 
     private var health: some View {
         VStack(alignment: .leading, spacing: Abstand.l) {
-            karteTitel("Health dazunehmen?", "Lumen Fit liest Schritte, Schlaf, Training und mehr aus Health. So ist dein erster Tag schon voll. Alles bleibt auf deinem iPhone.")
+            karteTitel("Health dazunehmen?", "Lumen Fit liest nur, was du gewählt hast, aus Health. So ist dein erster Tag schon voll. Alles bleibt auf deinem iPhone.")
             ListenKarte {
                 ProfilZeile(symbol: "figure.walk", titel: "Schritte und Bewegung", zeile: "Für deinen Tagesbogen", pfeil: false)
-                Haarlinie()
-                ProfilZeile(symbol: "bed.double.fill", titel: "Schlaf und Erholung", zeile: "Für deine Nächte und die Bereitschaft", pfeil: false)
+                if fluss.bereiche.schlafAn {
+                    Haarlinie()
+                    ProfilZeile(symbol: "bed.double.fill", titel: "Schlaf und Erholung", zeile: "Für deine Nächte und die Bereitschaft", pfeil: false)
+                }
+                if fluss.bereiche.gymAn {
+                    Haarlinie()
+                    ProfilZeile(symbol: "dumbbell.fill", titel: "Training", zeile: "Damit Training von der Uhr zählt", pfeil: false)
+                }
                 Haarlinie()
                 ProfilZeile(symbol: "scalemass.fill", titel: "Gewicht", zeile: "Für Verlauf und Ziel", pfeil: false)
             }
@@ -188,8 +207,10 @@ struct OnboardingView: View {
         arbeitet = true
         Task {
             if mitHealth { await fluss.healthFragen(leser: umgebung.healthLeser) }
-            await fluss.abschliessenImHintergrund(in: umgebung)
+            let ok = await fluss.abschliessenImHintergrund(in: umgebung)
             arbeitet = false
+            // Mit Gym geht es direkt zu den Plänen: "Geführt erstellen" oder ein fertiger Split.
+            if ok, let start = fluss.startRoute { umgebung.router.oeffne(start) }
         }
     }
 }

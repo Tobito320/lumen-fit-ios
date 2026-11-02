@@ -214,6 +214,7 @@ struct CoachAntwortZeile: View {
     let letzte: Bool
     var hervor = false
 
+    @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var zeitSichtbar = false
@@ -299,7 +300,7 @@ struct CoachAntwortZeile: View {
         if let f = zerlegt.fortschritt {
             CoachFortschritt(label: f.label, aktuell: f.aktuell, ziel: f.ziel, weg: CoachMarker.Ziel.fuer(label: f.label)?.route)
         }
-        if let nacht = zerlegt.schlafNacht { CoachSchlafKarte(tag: nacht) }
+        if let nacht = zerlegt.schlafNacht, umgebung.router.einstellungen.schlafAn { CoachSchlafKarte(tag: nacht) }
         if let ziel = zerlegt.vorgeschlagenesZiel { CoachZielKnopf(text: ziel, modell: modell) }
     }
 }
@@ -351,11 +352,20 @@ struct CoachFehlerZeile: View {
 struct CoachChipLeiste: View {
     let nachricht: CoachNachricht
     let modell: CoachModell
+    @Environment(AppUmgebung.self) private var umgebung
+
+    /// "Zeig mir" auf einen ausgeschalteten Bereich (Essen, Schlaf, Gym) ergibt keinen Chip; die Daten bleiben.
+    private var chips: [CoachChip] {
+        nachricht.chips.filter { chip in
+            if case .oeffne(let route) = chip.aktion { return umgebung.router.einstellungen.zeigt(route) }
+            return true
+        }
+    }
 
     var body: some View {
-        if !nachricht.chips.isEmpty {
+        if !chips.isEmpty {
             CoachChipFluss(zentriert: false) {
-                ForEach(nachricht.chips) { chip in
+                ForEach(chips) { chip in
                     let benutzt = modell.istBenutzt(chip, in: nachricht)
                     CoachVorschlagChip(frage: chip.text, symbol: benutzt ? "checkmark" : CoachAnzeige.symbol(chip.aktion)) {
                         modell.tippe(chip, in: nachricht)

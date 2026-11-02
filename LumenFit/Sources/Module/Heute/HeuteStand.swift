@@ -30,6 +30,8 @@ struct HeuteStand {
     var istHeute = true
     /// Gibt es an diesem Tag irgendeinen Wert (Health, Schlaf, Haken, Gewicht, Training)? Sonst zeigt der Tab "Keine Daten für diesen Tag".
     var hatTagesdaten = true
+    /// Welche Bereiche die Person gewählt hat; die Karten fragen hier (`bereiche.zeigt(.gym)`), statt selbst die Einstellungen zu lesen.
+    var bereiche = Einstellungen()
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {

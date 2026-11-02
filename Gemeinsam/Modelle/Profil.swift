@@ -51,10 +51,14 @@ struct Profil: Codable, Hashable, Identifiable, Sendable {
     var passwort: PasswortSpur
     /// Wann der Name zuletzt geändert wurde (für die Sperre "alle 7 Tage"); nil, solange er nie geändert wurde.
     var nameGeaendert: Date?
+    /// Das Profil wurde ohne Passwort angelegt (Passwort ist freiwillig): Wechseln und Alles löschen fragen nur nach einer Bestätigung. `passwort` ist dann leer.
+    /// Fehlt das Feld in einem alten Eintrag, gilt false: ein Profil mit Passwort behält es.
+    var ohnePasswort: Bool
 
-    enum CodingKeys: String, CodingKey { case id, name, erstellt, passwort, nameGeaendert }
+    enum CodingKeys: String, CodingKey { case id, name, erstellt, passwort, nameGeaendert, ohnePasswort }
 
-    init(id: ProfilID, name: String, erstellt: Date, passwort: PasswortSpur, nameGeaendert: Date? = nil) {
+    init(id: ProfilID, name: String, erstellt: Date, passwort: PasswortSpur, nameGeaendert: Date? = nil, ohnePasswort: Bool = false) {
+        self.ohnePasswort = ohnePasswort
         self.id = id
         self.name = name
         self.erstellt = erstellt
@@ -69,5 +73,6 @@ struct Profil: Codable, Hashable, Identifiable, Sendable {
         erstellt = (try? c.decodeIfPresent(Date.self, forKey: .erstellt)) ?? Date(timeIntervalSince1970: 0)
         passwort = (try? c.decodeIfPresent(PasswortSpur.self, forKey: .passwort)) ?? PasswortSpur(salz: Data(), hash: Data(), runden: 1)
         nameGeaendert = try? c.decodeIfPresent(Date.self, forKey: .nameGeaendert)
+        ohnePasswort = (try? c.decodeIfPresent(Bool.self, forKey: .ohnePasswort)) ?? false
     }
 }

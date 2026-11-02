@@ -28,7 +28,7 @@ struct HeuteLoveaInhalt: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             kopf
-            if stand.istHeute { plantag }
+            if stand.istHeute, stand.bereiche.gymAn { plantag }
             tagesform
             abschnitt(stand.istHeute ? "Dein Tag" : Datum.anzeige(stand.tag)) {
                 raster
@@ -36,8 +36,8 @@ struct HeuteLoveaInhalt: View {
             }
             if stand.istHeute, !stand.einsichten.isEmpty { EinsichtenKarte(einsichten: stand.einsichten) }
             if stand.istHeute, umgebung.router.coachSichtbar { CoachSicherheitZeile { umgebung.router.schiebe(.coach(frage: nil)) } }
-            if stand.istHeute { abschnitt("Körper") { koerper } }
-            verlaufZeile
+            if stand.istHeute, stand.bereiche.gymAn { abschnitt("Körper") { koerper } }
+            if stand.bereiche.gymAn { verlaufZeile }
             mehr
         }
         .navigationDestination(isPresented: $schritteSeite) { SchritteDetailView(eingebettet: true) }
@@ -105,7 +105,7 @@ struct HeuteLoveaInhalt: View {
                     guard abs(zug.translation.width) > abs(zug.translation.height) else { return }
                     blaettere(zug.translation.width < 0 ? 7 : -7)
                 })
-            if stand.istHeute || stand.hatGesundheit { TagesformLoveaKarte(energie: stand.energie, bearbeitbar: stand.istHeute,
+            if stand.bereiche.schlafAn, stand.istHeute || stand.hatGesundheit { TagesformLoveaKarte(energie: stand.energie, bearbeitbar: stand.istHeute,
                                                                           detail: { oeffneBlatt(.energie) }, gefuehl: { modell.speichereGefuehl($0) }) }
         }
         .lumenKartenFlaeche()
@@ -240,12 +240,12 @@ struct HeuteLoveaInhalt: View {
             abschnitt("Mehr aus Lumen Fit") {
                 if stand.istHeute, !stand.hinweise.isEmpty { HinweiseKarte(hinweise: stand.hinweise) { modell.wischeHinweis($0) } }
                 if stand.istHeute {
-                    ListenKarte { EnergieVerlaufDiagramm(energie: stand.energie).padding(Abstand.l) }
-                    PlanKarte(plan: stand.plan) { starte(stand.plan) }
+                    if stand.bereiche.schlafAn { ListenKarte { EnergieVerlaufDiagramm(energie: stand.energie).padding(Abstand.l) } }
+                    if stand.bereiche.gymAn { PlanKarte(plan: stand.plan) { starte(stand.plan) } }
                 }
                 if stand.hatGesundheit { SchritteKarte(schritte: stand.schritte) { schritteSeite = true } }
                 GewichtKarte(gewicht: stand.gewicht, wiege: { oeffneBlatt(.gewicht) }, eintragbar: stand.istHeute)
-                if stand.istHeute, stand.hatGesundheit { WochenStreifen(woche: stand.woche) { oeffneBlatt(.tag($0)) } }
+                if stand.istHeute, stand.hatGesundheit { WochenStreifen(woche: stand.woche, bereiche: stand.bereiche) { oeffneBlatt(.tag($0)) } }
                 if stand.istHeute { PartnerKarte(bereich: .heute) }
             }
         }

@@ -20,11 +20,18 @@ final class GesundheitsStand {
     @ObservationIgnored private let band: @MainActor () -> [BandTagOp]
     @ObservationIgnored private let importVerlauf: @MainActor () -> ImportVerlaufStand
     @ObservationIgnored private var erstGeholt = false
+    /// Für diese Typen wurde schon nach den Rechten gefragt; kommt ein Bereich dazu, fragt `aktualisiere` nur die fehlenden.
+    @ObservationIgnored private var erfragt: Set<HealthTyp> = []
+    /// Die Nächte wurden schon einmal ganz geholt; wer Schlaf erst später einschaltet, bekommt beim ersten Mal die vollen 60 Tage.
+    @ObservationIgnored private var naechteGeholt = false
+    @ObservationIgnored private let typen: @MainActor () -> Set<HealthTyp>
 
     /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
     /// `importVerlauf` liefert den Stand der importierten Lovea-Ops (Schritte, Schlaf); er füllt nur, was Health nicht hat (`ImportVerlaufLogik`).
     init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] },
-         importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() }) {
+         importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() },
+         typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) }) {
+        self.typen = typen
         self.leser = leser
         self.uhr = uhr
         self.band = band
@@ -55,10 +62,14 @@ final class GesundheitsStand {
         let heute = Datum.text(uhr())
         let anzahl = erstGeholt ? Self.nachladeTage : Self.ersteTage
         let von = Datum.addTage(heute, -(anzahl - 1))
-        if !erstGeholt { zugriff = await leser.zugriff(fuer: Set(HealthTyp.allCases)) }
+        let gewollt = typen()
+        if !gewollt.isSubset(of: erfragt) {
+            zugriff = await leser.zugriff(fuer: gewollt)
+            erfragt.formUnion(gewollt)
+        }
         guard zugriff != .nichtVerfuegbar else { return }
         async let neueTage = leser.tagesWerte(von: von, bis: heute)
-        async let neueNaechte = leser.schlafNaechte(von: von, bis: heute)
+        async let neueNaechte = naechte(lesen: gewollt.contains(.schlaf), von: naechteGeholt ? von : Datum.addTage(heute, -(Self.ersteTage - 1)), bis: heute)
         async let neueGewichte = leser.gewichte(von: von, bis: heute)
         async let ruhepuls = leser.vitalwerte(.ruhepuls, von: von, bis: heute)
         async let hrv = leser.vitalwerte(.hrv, von: von, bis: heute)
@@ -73,8 +84,14 @@ final class GesundheitsStand {
         for n in naechteNeu { healthNaechte[n.tag] = n }
         gewichte = Self.zusammen(gewichte, gewichteNeu, von: von)
         for (art, liste) in vitalNeu { vitale[art] = Self.zusammenV(vitale[art] ?? [], liste, von: von) }
+        if gewollt.contains(.schlaf) { naechteGeholt = true }
         erstGeholt = true
         letzteAktualisierung = uhr()
+    }
+
+    /// Ohne Schlaf-Bereich fragt die App Health nach keiner Nacht.
+    private func naechte(lesen: Bool, von: String, bis: String) async -> [SchlafNacht] {
+        lesen ? await leser.schlafNaechte(von: von, bis: bis) : []
     }
 
     /// Alte Werte vor `von` bleiben, ab `von` gilt die neue Abfrage.

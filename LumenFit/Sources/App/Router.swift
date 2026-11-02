@@ -12,6 +12,8 @@ final class Router {
     var coachEntwurf: String?
     /// Vom Server pro Konto (`coachSichtbar`); ohne wird jede Coach-Seite zu Heute.
     var coachSichtbar = false
+    /// Von den Einstellungen des Profils (`AppBereich`): ausgeschaltete Bereiche haben keinen Tab und keine Seite.
+    var einstellungen = Einstellungen()
 
     /// Stellt die Sichtbarkeit ein; wird sie weggenommen, verlässt ein offener oder gemerkter Coach-Tab die Seite.
     func setzeCoachSichtbar(_ sichtbar: Bool) {
@@ -21,8 +23,16 @@ final class Router {
         if tab == .coach { tab = .heute }
     }
 
+    /// Nimmt neue Einstellungen an; zeigt der offene oder gemerkte Tab einen ausgeschalteten Bereich, landet er auf Heute (die Daten bleiben).
+    func setze(einstellungen neu: Einstellungen) {
+        einstellungen = neu
+        for tab in LumenFitTab.allCases where !neu.zeigt(tab) { pfade[tab] = nil }
+        if !neu.zeigt(tab) { tab = .heute }
+    }
+
     func oeffne(_ route: Route) {
         if !coachSichtbar, case .coach = route { return wechsle(.heute, []) }
+        if !einstellungen.zeigt(route) { return wechsle(.heute, []) }
         switch route {
         case .profil(.zyklus):
             // Zyklus gehört nur in Lovea: ein alter Link oder ein gespeicherter Stand landet auf Heute.
@@ -42,6 +52,7 @@ final class Router {
     /// Lovea-Aufbau: legt eine Seite auf den Stapel des Heute-Tabs (wie `pfad.append` im Health-Tab von Lovea), ohne den Tab zu wechseln.
     func schiebe(_ route: Route) {
         if !coachSichtbar, case .coach = route { return }
+        if !einstellungen.zeigt(route) { return }
         blatt = nil
         pfade[.heute, default: []].append(route)
     }

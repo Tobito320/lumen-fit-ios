@@ -25,6 +25,16 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         }
     }
 
+    /// Der wählbare Bereich des Tabs; nil bei Heute und Coach (die bleiben immer).
+    var bereich: AppBereich? {
+        switch self {
+        case .gym: .gym
+        case .essen: .essen
+        case .schlaf: .schlaf
+        case .heute, .coach: nil
+        }
+    }
+
     /// Der Tab, auf dem eine Route liegt; nil für Blätter (Profil, Freunde), die über dem Tab erscheinen.
     static func fuer(_ route: Route) -> LumenFitTab? {
         switch route {
@@ -36,4 +46,12 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         case .profil, .freund: nil
         }
     }
+}
+
+extension Einstellungen {
+    /// Zeigt die App diesen Tab? Heute und Coach immer (der Coach folgt zusätzlich dem Server).
+    func zeigt(_ tab: LumenFitTab) -> Bool { tab.bereich.map(zeigt) ?? true }
+
+    /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) und Heute-Seiten immer.
+    func zeigt(_ route: Route) -> Bool { LumenFitTab.fuer(route).map(zeigt) ?? true }
 }
