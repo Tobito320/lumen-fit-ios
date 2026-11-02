@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Der Verlauf (Ideen 35 und 36), oben der Umschalter Woche | Verlauf | Plan.
+/// Der Verlauf (Ideen 35 und 36), oben der Umschalter Woche | Verlauf.
 /// Woche: Besuche, Minuten, Sätze, der Start von heute und die Muskelgruppen als Liste mit Balken und Erholungszeichen.
-/// Verlauf: Konsistenz-Karte mit Kategorien, Konstanz-Raster, Gewichtsverlauf, Rekorde und Plateaus.
-/// Plan: die Trainingstage. Tipp auf eine Gruppe oder Übung öffnet ihre Seite; "Besuche ohne Sätze" führt zu den Trainingstagen.
+/// Verlauf: Konsistenz-Karte mit Kategorien, Gewichtsverlauf, Rekorde und Plateaus.
+/// Tipp auf eine Gruppe oder Übung öffnet ihre Seite; "Besuche ohne Sätze" führt zu den Trainingstagen.
 struct VerlaufView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -27,7 +27,6 @@ struct VerlaufView: View {
                 switch seite {
                 case .woche: woche(q)
                 case .verlauf: verlauf(q)
-                case .plan: plan(q)
                 }
             }
             .padding(.horizontal, Abstand.l)
@@ -164,16 +163,14 @@ struct VerlaufView: View {
 
     @ViewBuilder
     private func verlauf(_ q: FortschrittQuelle) -> some View {
-        let gitter = KonstanzRaster.gitter(q.sessions, gym: q.gym, heute: q.heute)
         let trend = GewichtVerlauf.trend(werte: q.gewicht, zielKg: q.gewichtZielKg, heute: q.heute)
         let highlights = VerlaufHighlights.berechnen(VerlaufLogik.laeufe(q.sessions), heute: q.heute)
         if aufbau == .lovea {
-            loveaVerlauf(q, gitter: gitter, trend: trend, highlights: highlights)
+            loveaVerlauf(q, trend: trend, highlights: highlights)
         } else {
         VStack(alignment: .leading, spacing: Abstand.l) {
             if q.hatTraining || !q.gym.isEmpty {
                 KonsistenzKarte(sessions: q.sessions)
-                KonstanzRasterKarte(gitter: gitter)
             } else {
                 LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
                     umgebung.router.oeffne(.gym(.training))
@@ -204,11 +201,11 @@ struct VerlaufView: View {
     }
 
     /// Lovea VerlaufView.swift:267-282: Konsistenz (immer dunkel), Highlights, Textlink "Alle Trainingstage". Danach, was nur Lumen hat:
-    /// Konstanz-Raster, Gewichtsverlauf, Stimmungsverlauf und der Rückblick (als Textlink im selben Stil).
-    private func loveaVerlauf(_ q: FortschrittQuelle, gitter: KonstanzRaster.Gitter, trend: GewichtTrend,
+    /// Gewichtsverlauf, Stimmungsverlauf und der Rückblick (als Textlink im selben Stil).
+    private func loveaVerlauf(_ q: FortschrittQuelle, trend: GewichtTrend,
                               highlights: [VerlaufHighlights.Eintrag]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(VerlaufLovea.verlaufBloecke(highlights: !highlights.isEmpty, trainingDa: q.hatTraining || !q.gym.isEmpty), id: \.self) { block in
+            ForEach(VerlaufLovea.verlaufBloecke(highlights: !highlights.isEmpty), id: \.self) { block in
                 switch block {
                 case .konsistenz: KonsistenzKarte(sessions: q.sessions)
                 case .highlights:
@@ -222,7 +219,6 @@ struct VerlaufView: View {
                         ziel = .trainingstage
                     } label: { VerlaufLoveaTextlink(text: "Alle Trainingstage") }
                         .buttonStyle(.federnd)
-                case .konstanzRaster: KonstanzRasterKarte(gitter: gitter)
                 case .gewicht: GewichtVerlaufKarte(trend: trend) { umgebung.router.oeffne(.gewichtEintragen) }
                 case .stimmung: StimmungVerlaufKarte()
                 case .rueckblick:
@@ -230,15 +226,6 @@ struct VerlaufView: View {
                         .buttonStyle(.federnd)
                 }
             }
-        }
-    }
-
-    // MARK: Plan
-
-    private func plan(_ q: FortschrittQuelle) -> some View {
-        VerlaufPlan(plan: q.plan) {
-            tipp += 1
-            umgebung.router.oeffne(.gym(.plaene))
         }
     }
 }

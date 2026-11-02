@@ -2,19 +2,18 @@
 import SwiftUI
 import UIKit
 
-// Bausteine der ruhigen Verlauf-Seite: Zahlenzeile, Start-Knopf, Gruppenliste mit Balken und Erholungspunkt, Highlights, Plan. Ohne Timer und Hintergrundarbeit,
+// Bausteine der ruhigen Verlauf-Seite: Zahlenzeile, Start-Knopf, Gruppenliste mit Balken und Erholungspunkt, Highlights. Ohne Timer und Hintergrundarbeit,
 // Ziele mindestens 44 pt, Bewegung nur bei Ereignissen und nie unter "Bewegung reduzieren".
 
-/// Die drei Ansichten oben (Umschalter).
+/// Die zwei Ansichten oben (Umschalter).
 enum VerlaufSeite: String, CaseIterable, Identifiable {
-    case woche, verlauf, plan
+    case woche, verlauf
     var id: String { rawValue }
 
     var titel: String {
         switch self {
         case .woche: "Woche"
         case .verlauf: "Verlauf"
-        case .plan: "Plan"
         }
     }
 }
@@ -382,82 +381,5 @@ struct VerlaufHighlightsListe: View {
     private func untertitel(_ e: VerlaufHighlights.Eintrag) -> String {
         let kg = "e1RM \(VerlaufLogik.zahl(e.e1rm)) kg"
         return e.art == .rekord ? "Neuer Rekord, \(kg)" : "Plateau bei \(kg), seit drei Einheiten nicht gesteigert"
-    }
-}
-
-/// Der Plan in einer Liste: Split, Tage mit Wochentagen. Tipp öffnet die Gym-Seite zum Ändern.
-struct VerlaufPlan: View {
-    let plan: TrainingsPlan
-    let oeffnen: () -> Void
-    @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
-
-    var body: some View {
-        if aufbau == .lovea { loveaPlan } else { lumenPlan }
-    }
-
-    /// Lovea VerlaufWocheAnsichten.swift:232-257: flache Liste mit Trennlinien, Split als graue Zeile, Textlink in Rose.
-    private var loveaPlan: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if plan.tage.isEmpty {
-                Text("Noch kein Plan. Such dir in der Gym-Seite einen Split aus.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 8)
-            } else {
-                if let split = plan.splitName {
-                    Text(split).font(.footnote.weight(.semibold)).foregroundStyle(.secondary).padding(.bottom, 4)
-                }
-                ForEach(plan.tage) { t in
-                    VStack(spacing: 0) {
-                        HStack(spacing: 8) {
-                            Text(t.name.isEmpty ? "Training" : t.name).font(.subheadline.weight(.semibold)).lineLimit(1)
-                            Spacer(minLength: 8)
-                            Text(Self.untertitel(t)).font(.subheadline).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
-                        }
-                        .frame(minHeight: Abstand.tippflaeche)
-                        Divider()
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
-            Button(action: oeffnen) { VerlaufLoveaTextlink(text: plan.tage.isEmpty ? "Gym öffnen" : "Plan ansehen und ändern") }
-                .buttonStyle(.federnd)
-        }
-    }
-
-    private var lumenPlan: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            if plan.tage.isEmpty {
-                Text("Noch kein Plan. Such dir in der Gym-Seite einen Split aus.").font(.subheadline).foregroundStyle(palette.text2)
-            } else {
-                if let split = plan.splitName { GymAbschnitt(titel: split) }
-                ListenKarte {
-                    ForEach(plan.tage) { t in
-                        zeile(t)
-                        if t.id != plan.tage.last?.id { Haarlinie() }
-                    }
-                }
-            }
-            Button(action: oeffnen) {
-                Label(plan.tage.isEmpty ? "Gym öffnen" : "Plan ansehen und ändern", systemImage: "chevron.right")
-                    .labelStyle(.titleAndIcon)
-                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-
-    /// "Mo, Do · 6 Übungen".
-    static func untertitel(_ t: TrainingsTag) -> String {
-        let tage = t.wochentage.sorted().compactMap { w -> String? in HabitLogik.wochentagKuerzel.indices.contains(w - 1) ? HabitLogik.wochentagKuerzel[w - 1] : nil }
-        let n = t.uebungen.count
-        let umfang = n == 1 ? "1 Übung" : "\(n) Übungen"
-        return tage.isEmpty ? umfang : tage.joined(separator: ", ") + " · " + umfang
-    }
-
-    private func zeile(_ t: TrainingsTag) -> some View {
-        GymZeile(titel: t.name.isEmpty ? "Training" : t.name, untertitel: Self.untertitel(t))
-            .accessibilityElement(children: .combine)
     }
 }
