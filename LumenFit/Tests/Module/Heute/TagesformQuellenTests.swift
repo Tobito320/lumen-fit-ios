@@ -247,6 +247,25 @@ final class TagesformQuellenAdapterTests: XCTestCase {
         XCTAssertNil(TagesformQuellen.nacht("2026-10-11", daten: daten, gesundheit: stand))
     }
 
+    /// Wie in Lovea (`automatikVorrang`) und im Schlaf-Tab (`SchlafQuellenWahl`): das Band, das selbst misst, gilt vor Health; sonst zeigte Heute die
+    /// Schätzung des iPhones, während der Schlaf-Tab die Nacht vom Band zeigt.
+    func testBandSchlafGiltVorHealthUndNurHandGiltVorDemBand() async throws {
+        let daten = satz(try tempOrdner())
+        let ende = Datum.datum("2026-10-12").addingTimeInterval(7 * 3600)
+        let start = ende.addingTimeInterval(-450 * 60)
+        let phasen = [SchlafAbschnitt(phase: .kern, von: start, bis: ende)]
+        daten.raum.senden("fit.band.schlaf", BandSchlafOp(tag: "2026-10-12", start: start, ende: ende, phasen: phasen))
+        let stand = gesundheitsStand(FakeHealthLeser(naechte: [nacht("2026-10-12", minuten: 400, mitPhasen: false), nacht("2026-10-11", minuten: 430, mitPhasen: false)]))
+        await stand.aktualisiere()
+        let n = TagesformQuellen.nacht("2026-10-12", daten: daten, gesundheit: stand)
+        XCTAssertEqual(n?.minuten, 450)
+        XCTAssertEqual(n?.quelle, .armband)
+        XCTAssertEqual(TagesformQuellen.nacht("2026-10-11", daten: daten, gesundheit: stand)?.minuten, 430, "ohne Band-Nacht zählt Health")
+        let von = ende.addingTimeInterval(-300 * 60)
+        daten.raum.senden(SchlafHandLogik.art, SchlafHandD(tag: "2026-10-12", bett: von, auf: ende))
+        XCTAssertEqual(TagesformQuellen.nacht("2026-10-12", daten: daten, gesundheit: stand)?.quelle, .eingetragen)
+    }
+
     func testWasserUndSchritteAusDemDatensatz() async throws {
         let daten = satz(try tempOrdner())
         daten.habits.setze(Habit.wasser.id, datum: "2026-10-11", wert: 6)

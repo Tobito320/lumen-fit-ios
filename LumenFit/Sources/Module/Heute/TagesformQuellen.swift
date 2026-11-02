@@ -1,7 +1,7 @@
 // Quelle: Lovea Health/Heute/Tagesform/TagesformQuellen.swift
 import Foundation
 
-/// Der Schlaf einer Nacht für die Rechnungen des Heute-Tabs: Health (mit der Quelle Watch oder iPhone) oder, wenn Health nichts hat, das Band.
+/// Der Schlaf einer Nacht für die Rechnungen des Heute-Tabs: das Band, wenn es die Nacht kennt, sonst Health (mit der Quelle Watch oder iPhone).
 struct HeuteNacht: Equatable, Sendable {
     var tag: String
     var minuten: Int
@@ -31,7 +31,8 @@ enum TagesformQuellen {
         return e
     }
 
-    /// Eine Nacht je Aufwachtag: Von Hand (Op `fit.schlaf.hand`), sonst Health, sonst das Band (Op `fit.band.schlaf`). nil ohne Schlaf.
+    /// Eine Nacht je Aufwachtag: Von Hand (Op `fit.schlaf.hand`), sonst das Band (Op `fit.band.schlaf`, es misst selbst: Lovea `automatikVorrang`, im Schlaf-Tab
+    /// `SchlafQuellenWahl`), sonst Health. nil ohne Schlaf.
     static func nacht(_ tag: String, daten: DatenSatz, gesundheit: GesundheitsStand) -> HeuteNacht? {
         // Eine Nacht von Hand gilt vor allem anderen.
         var hand: SchlafNacht?
@@ -39,20 +40,19 @@ enum TagesformQuellen {
             if let d = op.daten(SchlafHandD.self), d.tag == tag { hand = SchlafHandLogik.nacht(d) }
         }
         if let h = hand { return HeuteNacht(tag: tag, minuten: h.schlafMinuten, einschlafen: h.von, quelle: .eingetragen) }
-        if let n = gesundheit.naechte[tag], n.schlafMinuten > 0 {
-            let quelle: TagesformSchlafQuelle = n.phasen.contains(where: { $0.gestuft }) ? .appleWatch : .iPhone
-            return HeuteNacht(tag: tag, minuten: n.schlafMinuten, einschlafen: n.von, quelle: quelle)
-        }
         var band: BandSchlafOp?
         for op in daten.raum.ops(arten: ["fit.band.schlaf"]) {
             if let b = op.daten(BandSchlafOp.self), b.tag == tag { band = b }
         }
-        guard let b = band else { return nil }
-        let phasen = b.phasen.filter { $0.phase.schlaeft }.reduce(0.0) { $0 + $1.bis.timeIntervalSince($1.von) }
-        let sekunden: TimeInterval = phasen > 0 ? phasen : b.ende.timeIntervalSince(b.start)
-        let minuten = Int(sekunden / 60)
-        guard minuten > 0 else { return nil }
-        return HeuteNacht(tag: tag, minuten: minuten, einschlafen: b.start, quelle: .armband)
+        if let b = band {
+            let phasen = b.phasen.filter { $0.phase.schlaeft }.reduce(0.0) { $0 + $1.bis.timeIntervalSince($1.von) }
+            let sekunden: TimeInterval = phasen > 0 ? phasen : b.ende.timeIntervalSince(b.start)
+            let minuten = Int(sekunden / 60)
+            if minuten > 0 { return HeuteNacht(tag: tag, minuten: minuten, einschlafen: b.start, quelle: .armband) }
+        }
+        guard let n = gesundheit.naechte[tag], n.schlafMinuten > 0 else { return nil }
+        let quelle: TagesformSchlafQuelle = n.phasen.contains(where: { $0.gestuft }) ? .appleWatch : .iPhone
+        return HeuteNacht(tag: tag, minuten: n.schlafMinuten, einschlafen: n.von, quelle: quelle)
     }
 
     private static func schlaf(_ e: inout TagesformEingabe, _ daten: DatenSatz, _ gesundheit: GesundheitsStand, _ tag: String) {
