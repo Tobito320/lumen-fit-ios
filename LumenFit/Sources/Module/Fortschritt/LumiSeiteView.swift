@@ -7,7 +7,7 @@ struct LumiSeiteView: View {
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
-        let stand = LumiPfad.stand(erreicht: q.medaillen.count, serieWochen: q.serieWochen)
+        let stand = LumiPfad.stand(erreicht: q.stufenZahl, serieWochen: q.serieWochen)
         let ziel = LumiPfad.naechstesZiel(q.zahlen, schon: q.erreichteIds)
         ScrollView {
             VStack(spacing: Abstand.l) {

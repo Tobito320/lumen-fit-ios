@@ -10,7 +10,7 @@ struct RueckblickView: View {
         let q = FortschrittQuelle(umgebung: umgebung)
         let daten = Rueckblick.bauen(zeitraum, bezug: q.heute, sessions: q.sessions, gym: q.gym, schlafMinuten: q.schlaf)
         let passport = FitPassport.bauen(name: umgebung.profil.aktiv?.name, sessions: q.sessions, gym: q.gym, schlafMinuten: q.schlaf,
-                                         medaillen: q.medaillen.count, heute: q.heute)
+                                         medaillen: q.medaillen.count, stufe: q.stufe, heute: q.heute)
         ScrollView {
             VStack(spacing: Abstand.l) {
                 Picker("Zeitraum", selection: $zeitraum) {

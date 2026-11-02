@@ -79,6 +79,12 @@ enum LumiPfad {
         case ("tagebuch", _): return (Double(z.essenTage), ziel, "Tagen")
         case ("schlaf", "schlaf-7"): return (Double(z.schlafSerie), ziel, "Nächten in Folge")
         case ("schlaf", "schlaf-30"): return (Double(z.schlafNaechteImZiel), ziel, "Nächten")
+        case ("wochenziel", _): return (Double(z.wochenzielSerie), ziel, "Wochen im Ziel")
+        case ("schritte", "schritte-7"): return (Double(z.schrittSerie), ziel, "Tagen in Folge")
+        case ("schritte", "schritte-30"): return (Double(z.schrittTage), ziel, "Tagen")
+        case ("protein", "protein-7"): return (Double(z.proteinSerie), ziel, "Tagen in Folge")
+        case ("protein", "protein-30"): return (Double(z.proteinTage), ziel, "Tagen")
+        case ("kalorien", _): return (Double(z.kalorienTage), ziel, "Tagen")
         default: return nil
         }
     }
@@ -86,7 +92,8 @@ enum LumiPfad {
     /// Die zählbare Medaille, die am weitesten gediehen ist (größter Anteil, bei Gleichstand die erste im Katalog). Nil, wenn keine mehr offen ist.
     static func naechstesZiel(_ z: MeilensteinZahlen, schon: Set<String>) -> MeilensteinZiel? {
         var beste: MeilensteinZiel?
-        for m in MeilensteinKatalog.alle where !schon.contains(m.id) {
+        // Nur die Medaillen, die Lumis Stufe zählt: ein Ziel-Medaillen-Balken stünde sonst als "nächstes Ziel" vor einer Stufe, die er nicht bewegt.
+        for m in MeilensteinKatalog.alle where !schon.contains(m.id) && !MeilensteinKatalog.neueIds.contains(m.id) {
             guard let c = zaehler(m.id, z), c.aktuell < c.ziel else { continue }
             let kandidat = MeilensteinZiel(meilenstein: m, aktuell: c.aktuell, ziel: c.ziel, einheit: c.einheit)
             if kandidat.anteil > (beste?.anteil ?? -1) { beste = kandidat }

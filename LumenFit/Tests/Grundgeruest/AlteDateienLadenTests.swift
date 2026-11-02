@@ -232,6 +232,21 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertNil(GeraeteEinstellungDatei.lesen(ordner).eintraege["bank"]?.notiz)
     }
 
+    /// Acht Ziel-Medaillen sind neu im Katalog: bereits erreichte bleiben nach dem Update, und Lumis Stufe ändert sich weder durch sie noch durch den Neustart.
+    func testErreichteMedaillenBleibenUndLumisStufeBleibtMitZielMedaillen() throws {
+        let ordner = try tempOrdner()
+        let alte = MeilensteinKatalog.alle.map(\.id).filter { !MeilensteinKatalog.neueIds.contains($0) }
+        let vorher = DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: TestUhr().uhr)
+        for id in alte.prefix(11) { vorher.meilensteine.markiere(id) }
+        XCTAssertEqual(vorher.meilensteine.stufe, 6)
+        let nachher = DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: TestUhr().uhr)
+        XCTAssertEqual(nachher.meilensteine.erreicht.count, 11)
+        XCTAssertEqual(nachher.meilensteine.stufe, 6)
+        for id in MeilensteinKatalog.neueIds { nachher.meilensteine.markiere(id) }
+        XCTAssertEqual(nachher.meilensteine.erreicht.count, 19)
+        XCTAssertEqual(nachher.meilensteine.stufe, 6, "Ziel-Medaillen heben die Stufe nicht")
+    }
+
     /// `KoerperArt.schulter` ist neu: alte Körperwerte (Oberarm, Taille) bleiben lesbar, der Oberarm liegt weiter unter `MessArt.bizeps`.
     func testKoerperwerteMitAlterUndNeuerArtSindLesbar() {
         func op(_ json: String) -> Op { Op(id: "x", art: "koerper.setzen", von: .testA, zeit: Date(timeIntervalSince1970: 1_790_000_000), d: Data(json.utf8)) }
