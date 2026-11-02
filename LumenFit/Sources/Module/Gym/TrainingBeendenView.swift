@@ -120,7 +120,7 @@ struct GymEinstellungenBlatt: View {
     @Environment(\.dismiss) private var schliessen
     @AppStorage(GymPulsMessung.schluessel) private var pulsAn = false
     @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
-    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = true
+    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = GymAnzeige.rpeSpalteStandard
 
     var body: some View {
         NavigationStack {

@@ -12,7 +12,7 @@ struct SatzZeile: View {
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
     @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
-    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = true
+    @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = GymAnzeige.rpeSpalteStandard
     @State private var rpeBlatt = false
 
     var body: some View {
