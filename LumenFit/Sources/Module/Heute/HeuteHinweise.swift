@@ -26,6 +26,17 @@ struct HeuteHinweisEingabe: Sendable {
     var heute: String
 }
 
+extension HeuteHinweis {
+    /// Zu welchem wählbaren Bereich die Zeile gehört; ohne Bereich bleibt sie immer. Wasser vergleicht Gym- und Ruhetage, gehört also zum Gym.
+    var bereich: AppBereich? {
+        switch art {
+        case .stillstand, .vergessen, .wasser: .gym
+        case .schlaf: .schlaf
+        case .gesperrt: id.hasSuffix("schlaf") || id.hasSuffix("stimmung") ? .schlaf : nil
+        }
+    }
+}
+
 enum HeuteHinweisLogik {
     private static let sperreTage = 14
 

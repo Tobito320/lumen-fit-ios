@@ -97,14 +97,14 @@ struct HeuteTabView: View {
         }
         if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
         if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-        PlanKarte(plan: s.plan) { starte(s.plan) }
-        if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
+        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
+        if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
         SchreibKarte(modell: m)
         if umgebung.router.coachSichtbar { CoachKachelView() }
         habitsKarte(s, m)
         GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
         if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
-        WochenStreifen(woche: s.woche) { blatt = .tag($0) }
+        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
         PartnerKarte(bereich: .heute)
     }
 

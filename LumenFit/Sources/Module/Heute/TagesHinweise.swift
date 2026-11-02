@@ -11,6 +11,8 @@ struct TagesHinweis: Identifiable, Equatable, Sendable {
     var titel: String
     var text: String
     var ziel: Ziel? = nil
+    /// Gehört die Karte zu einem wählbaren Bereich, verschwindet sie mit ihm; nil = immer.
+    var bereich: AppBereich? = nil
 }
 
 /// Die Regeln der Hinweise des Tages. Reine Logik; jede Regel nennt ihre echte Zahl. Höchstens `hoechstens` Karten, wichtigste zuerst.
@@ -31,6 +33,7 @@ enum TagesHinweisLogik {
         var wasserZiel = 8
         /// Tage mit Gewichtseintrag.
         var gewichtTage: [String] = []
+        var bereiche = Einstellungen()
     }
 
     static let kurzeNachtBis = 360
@@ -42,11 +45,11 @@ enum TagesHinweisLogik {
         liste += rueckblickKarten(e)
         if let heute = e.schlafMinuten[e.heute], let davor = e.schlafMinuten[gestern], heute < kurzeNachtBis, davor < kurzeNachtBis {
             liste.append(TagesHinweis(id: "schlaf-kurz-\(e.heute)", symbol: "bed.double.fill", titel: "Zweimal unter 6 Stunden",
-                                      text: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett."))
+                                      text: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett.", bereich: .schlaf))
         }
         if e.gymInFolge >= 3 {
             liste.append(TagesHinweis(id: "gym-folge-\(e.heute)", symbol: "dumbbell.fill", titel: "\(e.gymInFolge) Tage Gym am Stück",
-                                      text: "Plane einen Ruhetag ein, dann bleibt die Kraft."))
+                                      text: "Plane einen Ruhetag ein, dann bleibt die Kraft.", bereich: .gym))
         }
         let woche = HabitLogik.wochenTage(heute: e.heute)
         let gym = e.gymTage.intersection(Set(woche)).count
@@ -54,7 +57,7 @@ enum TagesHinweisLogik {
         if e.gymZielWoche > 0, gym < e.gymZielWoche, Datum.wochentag(e.heute) >= 5 {
             let fehlt = e.gymZielWoche - gym
             liste.append(TagesHinweis(id: "gym-woche-\(woche[0])", symbol: "calendar", titel: "Noch \(fehlt) \(fehlt == 1 ? "Gym-Tag" : "Gym-Tage") bis zum Wochenziel",
-                                      text: "\(gym) von \(e.gymZielWoche) Tagen, noch \(uebrig) \(uebrig == 1 ? "Tag" : "Tage") in der Woche."))
+                                      text: "\(gym) von \(e.gymZielWoche) Tagen, noch \(uebrig) \(uebrig == 1 ? "Tag" : "Tage") in der Woche.", bereich: .gym))
         }
         if e.wasserZiel > 0, e.stunde >= 16, e.wasserHeute * 2 < e.wasserZiel {
             liste.append(TagesHinweis(id: "wasser-\(e.heute)", symbol: "drop.fill", titel: "Wenig Wasser bisher",
@@ -69,7 +72,7 @@ enum TagesHinweisLogik {
             liste.append(TagesHinweis(id: "schritte-serie-\(e.heute)", symbol: "figure.walk", titel: "Drei Tage über dem Schrittziel",
                                       text: "Das hält dein Herz fit. Weiter so."))
         }
-        return liste
+        return liste.filter { $0.bereich.map(e.bereiche.zeigt) ?? true }
     }
 
     /// Die Sonntagskarte (Idee 39): sonntags der Wochenrückblick, am letzten Tag des Monats der Monatsrückblick. Ein Tipp öffnet den Rückblick.
@@ -80,7 +83,7 @@ enum TagesHinweisLogik {
         if Datum.wochentag(e.heute) == 7 {
             let gym = e.gymTage.intersection(Set(woche)).count
             karten.append(TagesHinweis(id: "rueckblick-woche-\(woche[0])", symbol: "calendar", titel: "Dein Wochenrückblick ist da",
-                                       text: "\(gym) \(gym == 1 ? "Gym-Tag" : "Gym-Tage") diese Woche. Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
+                                       text: (e.bereiche.gymAn ? "\(gym) \(gym == 1 ? "Gym-Tag" : "Gym-Tage") diese Woche. " : "") + "Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
         }
         if Datum.addTage(e.heute, 1).prefix(7) != e.heute.prefix(7) {
             karten.append(TagesHinweis(id: "rueckblick-monat-\(e.heute.prefix(7))", symbol: "calendar.badge.clock", titel: "Dein Monatsrückblick ist da",

@@ -426,7 +426,7 @@ struct TagesFormenReihe<Coach: View>: View {
                                 zusatz: stand.schritte.ziel > 0 ? "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))" : nil, aktion: { oeffne(.schritte) })
             }
             habitKachel(.wasser, Habit.wasser.id)
-            if let b = stand.boegen.first(where: { $0.id == .erholen }) {
+            if stand.bereiche.schlafAn, let b = stand.boegen.first(where: { $0.id == .erholen }) {
                 TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil, aktion: { oeffne(.schlaf) })
             }
             if !stand.habits.isEmpty {
@@ -435,19 +435,21 @@ struct TagesFormenReihe<Coach: View>: View {
                                 fuellung: Double(erledigt) / Double(stand.habits.count), aktion: { oeffne(.habits) })
             }
             if stand.istHeute { coach() }
-            TagesFormKachel(form: .protein, titel: "Food", wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
-                            fuellung: essen.ziel > 0 ? Double(essen.kcal) / Double(essen.ziel) : 0, aktion: { oeffne(.protein) })
+            if stand.bereiche.essenAn {
+                TagesFormKachel(form: .protein, titel: "Food", wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
+                                fuellung: essen.ziel > 0 ? Double(essen.kcal) / Double(essen.ziel) : 0, aktion: { oeffne(.protein) })
+            }
             TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
                             einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0,
                             zusatz: stand.gewicht.punkte.last.map { "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))" },
                             aktion: stand.istHeute ? { oeffne(.gewicht) } : nil)
-            if let b = stand.boegen.first(where: { $0.id == .trainieren }) {
+            if stand.bereiche.gymAn, let b = stand.boegen.first(where: { $0.id == .trainieren }) {
                 TagesFormKachel(form: .training, titel: "Gym", wert: b.anteil > 0 ? "Gym" : "Pause", einheit: "", fuellung: b.anteil > 0 ? 1 : 0, aktion: { oeffne(.training) })
             }
             habitKachel(.creatin, Habit.creatin.id)
             habitKachel(.koffein, Habit.koffein.id)
             // Lumen Fit mehr als Lovea: der Protein-Zähler (Lovea hat "Food" statt seiner) und die Stimmung (Lovea hat sie 15.10. aus dem Raster genommen).
-            habitKachel(.protein, Habit.protein.id)
+            if stand.bereiche.essenAn { habitKachel(.protein, Habit.protein.id) }
             if let stimmung = stand.stimmungsWert {
                 // 1 bis 2 traurig, 3 neutral, 4 bis 5 froh.
                 TagesFormKachel(form: .stimmung, titel: "Stimmung", wert: String(stimmung), einheit: "von 5", fuellung: Double(stimmung) / 5,
