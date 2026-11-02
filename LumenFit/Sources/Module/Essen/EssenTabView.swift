@@ -40,6 +40,7 @@ struct EssenTabView: View {
     @State private var kalenderOffen = false
     @State private var anpassenOffen = false
     @State private var koerperOffen = false
+    @State private var mehrOffen = false
     @Environment(\.bewegungAus) private var bewegungAus
 
     private var heute: String { Datum.text(umgebung.uhr()) }
@@ -115,15 +116,23 @@ struct EssenTabView: View {
                     if aufbau != .lovea {
                         EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
                     }
-                    ForEach(essen.anpassung.sichtbar, id: \.self) { abschnitt($0, daten, summe, ziele) }
+                    ForEach(essen.anpassung.sichtbar.filter { aufbau == .lovea || $0 != "koerper" }, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
                         LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
                                     handlung: "Etwas eintragen") { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
-                    } else {
-                        donutKarte(summe)
                     }
-                    proteinKarte(woche)
-                    EssenFastenKarte(essen: essen)
+                    if aufbau == .lovea {
+                        if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
+                        proteinKarte(woche)
+                    } else {
+                        // Lumen: Körperwerte, Donut und Protein der Woche hinter "Mehr".
+                        MehrKlappe(untertitel: "Körperwerte, Makros, Protein der Woche", offen: $mehrOffen) {
+                            if essen.anpassung.sichtbar.contains("koerper") { abschnitt("koerper", daten, summe, ziele) }
+                            if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
+                            proteinKarte(woche)
+                        }
+                    }
+                    if fastenSichtbar(essen) { EssenFastenKarte(essen: essen) }
                     favoritenAbschnitt(essen)
                     EssenZielKarte(daten: daten, jetzt: jetzt) {
                         toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .stolz)
@@ -209,12 +218,17 @@ struct EssenTabView: View {
             Button("Auswertung", systemImage: "chart.bar") { auswertungOffen = true }
             Button("Nährwerte des Tages", systemImage: "list.bullet.rectangle") { naehrwerteOffen = true }
             Button("Wochenanalyse", systemImage: "chart.bar.fill") { wochenOffen = true }
-            Button("Intervallfasten", systemImage: "timer") { fastenOffen = true }
+            if let essen = umgebung.daten?.essen, fastenSichtbar(essen) { Button("Intervallfasten", systemImage: "timer") { fastenOffen = true } }
             Button("Tagebuch anpassen", systemImage: "slider.horizontal.3") { anpassenOffen = true }
         } label: {
             Image(systemName: "ellipsis").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
         }
         .accessibilityLabel("Mehr")
+    }
+
+    /// Fasten: Lovea-Aufbau wie bisher; sonst erst nach dem Schalter in "Tagebuch anpassen" oder mit vorhandenen Fasten-Daten.
+    private func fastenSichtbar(_ essen: EssenStore) -> Bool {
+        aufbau == .lovea || EssenTagebuchLogik.fastenSichtbar(an: umgebung.daten?.einstellungen.werte.fastenAn ?? false, hatDaten: !essen.fastenEintraege.isEmpty)
     }
 
     // MARK: - Tag, Gewicht, Health

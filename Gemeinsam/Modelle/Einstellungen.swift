@@ -27,6 +27,8 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var gymAn = true
     var essenAn = true
     var schlafAn = true
+    /// Intervallfasten im Essen-Tab: aus, bis man es einschaltet (Bestand mit Fasten-Daten behält es, siehe `EssenTagebuchLogik.fastenSichtbar`).
+    var fastenAn = false
 
     init() {}
 
@@ -52,7 +54,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungZaehlen, gymAn, essenAn, schlafAn
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungZaehlen, gymAn, essenAn, schlafAn, fastenAn
     }
 
     init(from decoder: Decoder) throws {
@@ -72,6 +74,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         gymAn = (try? c.decodeIfPresent(Bool.self, forKey: .gymAn)) ?? true
         essenAn = (try? c.decodeIfPresent(Bool.self, forKey: .essenAn)) ?? true
         schlafAn = (try? c.decodeIfPresent(Bool.self, forKey: .schlafAn)) ?? true
+        fastenAn = (try? c.decodeIfPresent(Bool.self, forKey: .fastenAn)) ?? false
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }
