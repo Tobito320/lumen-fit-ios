@@ -182,9 +182,43 @@ final class TrackerProtokollTests: XCTestCase {
         XCTAssertEqual(TrackerProtokoll.findenAnfrage, daten(hex: "5055aa" + nullen(24) + "4f"))
         // Nur diese Befehle kann Lumen Fit überhaupt bauen (0x15 liest nur den Pulsverlauf): Ausschalten (0x08) und Werksreset (0xFF) sind nicht dabei.
         // 0x37 und 0x39 lesen nur den Verlauf von Stress und HRV, 0x69 startet eine Pulsmessung (alle nach Gadgetbridge, Grad B).
+        // 0x01 stellt nur die Uhr (Gadgetbridge `setDateTime`, jede Verbindung).
         XCTAssertEqual(Set(TrackerProtokoll.Befehl.allCases.map(\.rawValue)),
-                       [0x03, 0x15, 0x16, 0x2C, 0x36, 0x37, 0x38, 0x39, 0x43, 0x50, 0x69])
+                       [0x01, 0x03, 0x15, 0x16, 0x2C, 0x36, 0x37, 0x38, 0x39, 0x43, 0x50, 0x69])
         XCTAssertFalse(TrackerProtokoll.Befehl.allCases.contains { $0.rawValue == 0x08 || $0.rawValue == 0xFF })
+    }
+
+    // MARK: Uhr des Bands stellen (Gadgetbridge `setDateTime`, am Gerät ungeprüft)
+
+    private func berlin(_ j: Int, _ m: Int, _ t: Int, _ h: Int, _ min: Int, _ s: Int) -> Date {
+        Datum.kalender.date(from: DateComponents(year: j, month: m, day: t, hour: h, minute: min, second: s))!
+    }
+
+    func testZeitSetzenPaketIstBcdInBerlinerZeitMitPruefsumme() {
+        // Winterzeit: 29.10.2026 10:00:00 Berlin. Summe 1 + 0x26 + 0x10 + 0x29 + 0x10 = 0x70.
+        let winter = TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 10, 29, 10, 0, 0))
+        XCTAssertEqual(winter, daten(hex: "01261029100000" + nullen(16) + "70"))
+        // Sommerzeit: 12:30:45 Berlin (10:30:45 UTC), Summe 0xCA.
+        let sommer = TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 7, 15, 12, 30, 45))
+        XCTAssertEqual(sommer, daten(hex: "01260715123045" + nullen(16) + "ca"))
+        XCTAssertTrue(TrackerProtokoll.istGueltig(winter))
+        XCTAssertTrue(TrackerProtokoll.istGueltig(sommer))
+    }
+
+    func testZeitSetzenNimmtDenGegebenenKalenderNichtDieZeitzoneDesGeraets() {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = .gmt
+        let paket = bytes(TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 7, 15, 12, 30, 45), kalender: utc))
+        XCTAssertEqual(Array(paket[1...6]), [0x26, 0x07, 0x15, 0x10, 0x30, 0x45])
+    }
+
+    func testZeitSetzenUeberJahreswechsel() {
+        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2026, 12, 31, 23, 59, 58)), daten(hex: "01261231235958" + nullen(16) + "3e"))
+        XCTAssertEqual(TrackerProtokoll.zeitSetzenAnfrage(berlin(2027, 1, 1, 0, 0, 1)), daten(hex: "01270101000001" + nullen(16) + "2b"))
+    }
+
+    func testAntwortAufDieUhrIstEineZeitQuittung() {
+        XCTAssertEqual(TrackerProtokoll.lesen(TrackerProtokoll.paket(.zeitSetzen, [0, 1, 0, 5])), .zeitQuittung)
     }
 
     // MARK: Verlauf von Stress und HRV, Pulsmessung (Gadgetbridge, am Gerät ungeprüft)

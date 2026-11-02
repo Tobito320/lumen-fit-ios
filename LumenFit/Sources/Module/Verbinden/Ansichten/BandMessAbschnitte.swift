@@ -228,6 +228,12 @@ struct BandHilfeAbschnitt: View {
                     Text(modell.rohLog.isEmpty ? "Noch nichts gelesen." : modell.rohLog.joined(separator: "\n"))
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
+                    if !modell.bandLog.isEmpty {
+                        // Wege, Dienste, Uhr stellen ("zeit") und die Schlaf-Rohantwort ("schlaf-roh"): ohne diese Zeilen sieht man nicht, was das Band beantwortet.
+                        Text(modell.bandLog.joined(separator: "\n"))
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                    }
                     Text("Akku: Byte 1 = Prozent, Byte 2 = lädt. Ob das Ladebit dieses Band beim Laden setzt, ist nicht belegt. Zeigt die Seite 100 % ohne Blitz, steht hier, was das Band wirklich schickt.")
                         .font(.subheadline)
                         .foregroundStyle(palette.text2)
@@ -235,7 +241,7 @@ struct BandHilfeAbschnitt: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
             DisclosureGroup("Was Lumen Fit am Band nicht ändert") {
-                Text("Anzeige, Zifferblatt, Erinnerungen, Uhrzeit, Ziele, Zurücksetzen und Ausschalten laufen weiter über QWatch Pro. Lumen Fit schickt dem Band nur Lesebefehle, Vibrieren, eine einzelne Pulsmessung und das Ein- und Ausschalten der Messungen; Letzteres ist am Gerät noch nicht getestet.")
+                Text("Anzeige, Zifferblatt, Erinnerungen, Ziele, Zurücksetzen und Ausschalten laufen weiter über QWatch Pro. Lumen Fit schickt dem Band nur Lesebefehle, Vibrieren, eine einzelne Pulsmessung, das Ein- und Ausschalten der Messungen und einmal je Verbindung die Uhrzeit (Berliner Zeit, das Band kennt keine Sommerzeit); Letzteres ist am Gerät noch nicht getestet.")
                     .font(.subheadline)
                     .foregroundStyle(palette.text2)
                     .fixedSize(horizontal: false, vertical: true)
