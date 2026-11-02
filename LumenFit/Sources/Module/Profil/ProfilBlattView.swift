@@ -8,6 +8,7 @@ struct ProfilBlattView: View {
 
     var body: some View {
         List {
+            ProfilBereicheAbschnitt()
             ProfilAbschnitt {
                 link("Konto", symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
             }

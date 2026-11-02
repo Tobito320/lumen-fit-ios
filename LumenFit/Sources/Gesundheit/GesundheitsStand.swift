@@ -22,6 +22,8 @@ final class GesundheitsStand {
     @ObservationIgnored private var erstGeholt = false
     /// Für diese Typen wurde schon nach den Rechten gefragt; kommt ein Bereich dazu, fragt `aktualisiere` nur die fehlenden.
     @ObservationIgnored private var erfragt: Set<HealthTyp> = []
+    /// Die Nächte wurden schon einmal ganz geholt; wer Schlaf erst später einschaltet, bekommt beim ersten Mal die vollen 60 Tage.
+    @ObservationIgnored private var naechteGeholt = false
     @ObservationIgnored private let typen: @MainActor () -> Set<HealthTyp>
 
     /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
@@ -67,7 +69,7 @@ final class GesundheitsStand {
         }
         guard zugriff != .nichtVerfuegbar else { return }
         async let neueTage = leser.tagesWerte(von: von, bis: heute)
-        async let neueNaechte = naechte(lesen: gewollt.contains(.schlaf), von: von, bis: heute)
+        async let neueNaechte = naechte(lesen: gewollt.contains(.schlaf), von: naechteGeholt ? von : Datum.addTage(heute, -(Self.ersteTage - 1)), bis: heute)
         async let neueGewichte = leser.gewichte(von: von, bis: heute)
         async let ruhepuls = leser.vitalwerte(.ruhepuls, von: von, bis: heute)
         async let hrv = leser.vitalwerte(.hrv, von: von, bis: heute)
@@ -82,6 +84,7 @@ final class GesundheitsStand {
         for n in naechteNeu { healthNaechte[n.tag] = n }
         gewichte = Self.zusammen(gewichte, gewichteNeu, von: von)
         for (art, liste) in vitalNeu { vitale[art] = Self.zusammenV(vitale[art] ?? [], liste, von: von) }
+        if gewollt.contains(.schlaf) { naechteGeholt = true }
         erstGeholt = true
         letzteAktualisierung = uhr()
     }

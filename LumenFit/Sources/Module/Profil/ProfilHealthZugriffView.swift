@@ -13,15 +13,15 @@ struct ProfilHealthZugriffView: View {
         let einstellungen = umgebung.daten?.einstellungen.werte ?? Einstellungen()
         List {
             ProfilAbschnitt(fuss: "Health verrät nicht, ob Lesen gesperrt ist; du siehst nur, ob Daten ankommen.") {
-                NavigationLink { ProfilHealthTypenView(befund: befund) } label: {
-                    ProfilListenZeile("Was Lumen Fit liest", symbol: "heart.text.square.fill", wert: lesenWert)
+                NavigationLink { ProfilHealthTypenView(befund: befund, typen: einstellungen.healthTypen) } label: {
+                    ProfilListenZeile("Was Lumen Fit liest", symbol: "heart.text.square.fill", wert: lesenWert(einstellungen))
                 }
             }
             ProfilAbschnitt(fuss: "Weg: \(ProfilHealthProbe.wegText).") {
                 if !einstellungen.healthGefragt {
                     Button {
                         Task {
-                            _ = await umgebung.healthLeser.zugriff(fuer: Set(HealthTyp.allCases))
+                            _ = await umgebung.healthLeser.zugriff(fuer: einstellungen.healthTypen)
                             umgebung.daten?.einstellungen.aendere { $0.healthGefragt = true }
                             await pruefe()
                         }
@@ -48,8 +48,8 @@ struct ProfilHealthZugriffView: View {
     }
 
     /// "9 von 14 mit Daten"; solange die Prüfung läuft, nichts.
-    private var lesenWert: String? {
-        befund.map(ProfilHealthProbe.zusammenfassung)
+    private func lesenWert(_ einstellungen: Einstellungen) -> String? {
+        befund.map { ProfilHealthProbe.zusammenfassung($0, typen: einstellungen.healthTypen) }
     }
 
     private func pruefe() async {
@@ -61,12 +61,14 @@ struct ProfilHealthZugriffView: View {
 /// Je Datentyp eine Zeile: Name links, Stand rechts. Der Grund steht als kurze zweite Zeile darunter (reine Info-Liste, keine Einstellung).
 private struct ProfilHealthTypenView: View {
     let befund: ProfilHealthProbe.Befund?
+    /// Nur die Typen der gewählten Bereiche.
+    let typen: Set<HealthTyp>
     @Environment(\.palette) private var palette
 
     var body: some View {
         List {
             ProfilAbschnitt {
-                ForEach(HealthTyp.allCases, id: \.self) { typ in zeile(typ) }
+                ForEach(HealthTyp.allCases.filter { typen.contains($0) }, id: \.self) { typ in zeile(typ) }
             }
         }
         .profilListe()

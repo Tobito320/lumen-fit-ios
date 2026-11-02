@@ -62,9 +62,11 @@ enum ProfilHealthProbe {
     }
 
     /// Kurzer Wert für die Einstellungszeile: "2 von 14 mit Daten".
-    static func zusammenfassung(_ b: Befund) -> String {
-        let mitDaten = HealthTyp.allCases.filter { zeile($0, b) == .datenDa }.count
-        return "\(mitDaten) von \(HealthTyp.allCases.count) mit Daten"
+    /// `typen`: nur die Typen der gewählten Bereiche zählen.
+    static func zusammenfassung(_ b: Befund, typen: Set<HealthTyp> = Set(HealthTyp.allCases)) -> String {
+        let aktiv = HealthTyp.allCases.filter { typen.contains($0) }
+        let mitDaten = aktiv.filter { zeile($0, b) == .datenDa }.count
+        return "\(mitDaten) von \(aktiv.count) mit Daten"
     }
 
     static func text(_ zeile: ProfilHealthZeile) -> String {
