@@ -48,10 +48,10 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
         case .schlaf: "Wie lange du diese Woche geschlafen hast, deine Energie heute und wenn du gut geschlafen hast."
         case .essen: "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast."
         case .plan: "Name deines Plans, Trainingstage und Namen der Übungen. Keine Gewichte."
-        case .verlauf: "Ob du im Gym bist und deine letzten zehn Trainings als Zusammenfassung. Keine Gewichte."
+        case .verlauf: "Ob du im Gym bist und deine letzten zehn Trainings. Zusammen mit Gym auch Sätze und Gewichte."
         case .tagebuch: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien, Makros. Keine Fotos."
         case .koerper: "Gewicht und Körpermaße mit dem Verlauf der letzten Monate."
-        case .stimmung: "Deine Antwort auf den Morgen-Check und der Verlauf der Woche."
+        case .stimmung: "Deine Antwort auf den Morgen-Check von heute."
         case .gewohnheiten: "Alle Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind."
         }
     }

@@ -93,4 +93,16 @@ final class FreigabenTests: XCTestCase {
         XCTAssertEqual(Set(FreigabeArt.allCases.map(FreigabenVorschau.name)).count, FreigabeArt.allCases.count, "jede Art hat ihren eigenen Namen")
         XCTAssertEqual(Set(FreigabeArt.allCases.map(FreigabenVorschau.symbol)).count, FreigabeArt.allCases.count, "und ihr eigenes Symbol")
     }
+
+    func testVerlaufUndStimmungSagenDieWahrheit() {
+        for text in [FreigabenVorschau.erklaerung(.verlauf), VerbindungBereich.verlauf.erklaerung] {
+            XCTAssertTrue(text.contains("Zusammen mit Gym"), text)
+            XCTAssertTrue(text.contains("Gewichte"), text)
+            XCTAssertFalse(text.contains("Keine Gewichte"), text)
+        }
+        for text in [FreigabenVorschau.erklaerung(.stimmung), VerbindungBereich.stimmung.erklaerung] {
+            XCTAssertTrue(text.contains("von heute"), text)
+            XCTAssertFalse(text.contains("Woche"), text)
+        }
+    }
 }

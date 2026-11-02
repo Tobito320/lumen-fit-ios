@@ -17,11 +17,12 @@ final class GewohnheitenVergleichTests: XCTestCase {
 
     func testBauerGibtStimmungUndGewohnheitenNurMitFreigabe() {
         var e = ZusammenfassungBauer.Eingabe(name: "Ich", jetzt: jetzt, freigaben: [.schritte], schritte: 1, gymTageWoche: nil, schlafMinuten: nil, kcal: nil, ereignisse: [])
-        e.stimmung = 4; e.stimmungWoche = ["2026-10-29": 4]; e.gewohnheiten = [gym]
+        e.stimmung = 4; e.gewohnheiten = [gym]
         XCTAssertNil(ZusammenfassungBauer.baue(e).heute.stimmung)
         XCTAssertNil(ZusammenfassungBauer.baue(e).heute.gewohnheiten)
         e.freigaben = [.stimmung]
         XCTAssertEqual(ZusammenfassungBauer.baue(e).heute.stimmung, 4)
+        XCTAssertNil(ZusammenfassungBauer.baue(e).heute.stimmungWoche)
         XCTAssertNil(ZusammenfassungBauer.baue(e).heute.gewohnheiten)
         e.freigaben = [.gewohnheiten]
         XCTAssertEqual(ZusammenfassungBauer.baue(e).heute.gewohnheiten, [gym])

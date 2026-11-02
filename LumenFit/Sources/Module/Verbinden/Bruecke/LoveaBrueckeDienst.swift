@@ -124,7 +124,7 @@ final class LoveaBrueckeDienst {
             schlafWoche: zusatz.schlafWoche, schlafZiel: ziele.schlafMinuten, energieStufe: zusatz.energie?.stufe.rawValue,
             energieGym: zusatz.energie?.gym, habitsFertig: zusatz.habitsFertig, wasserGlaeser: zusatz.wasserGlaeser,
             plan: ansichten.plan, verlauf: ansichten.verlauf, tagebuch: ansichten.tagebuch, tagebuchZiele: ansichten.tagebuchZiele, koerper: ansichten.koerper,
-            stimmung: zusatz.stimmung, stimmungWoche: zusatz.stimmungWoche, gewohnheiten: zusatz.gewohnheiten)
+            stimmung: zusatz.stimmung, gewohnheiten: zusatz.gewohnheiten)
     }
 
     /// Die Datei, wie sie jetzt geschrieben würde (Vorschau "das sieht dein Partner", Idee 84). Schreibt und merkt nichts.

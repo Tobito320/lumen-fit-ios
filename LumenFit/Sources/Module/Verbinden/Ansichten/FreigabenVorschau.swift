@@ -56,10 +56,10 @@ enum FreigabenVorschau {
         case .schlaf: "Wie lange du diese Woche geschlafen hast, wie viel Energie du heute hast und wenn du gut geschlafen hast."
         case .essen: "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast, nie was du gegessen hast."
         case .plan: "Name deines Plans, deine Trainingstage und die Namen der Übungen. Keine Gewichte, keine Sätze."
-        case .verlauf: "Ob du gerade im Gym bist und eine Zusammenfassung deiner letzten zehn Trainings: Tag, Dauer, Zahl der Sätze. Keine Gewichte."
+        case .verlauf: "Ob du gerade im Gym bist und deine letzten zehn Trainings: Tag, Dauer, Zahl der Sätze. Zusammen mit Gym auch die Sätze mit Gewichten."
         case .tagebuch: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien und Makros. Keine Fotos, keine Mengen."
         case .koerper: "Dein Gewicht und deine Körpermaße mit dem Verlauf der letzten Monate."
-        case .stimmung: "Deine Antwort auf den Morgen-Check von heute und die Tage dieser Woche."
+        case .stimmung: "Deine Antwort auf den Morgen-Check von heute."
         case .gewohnheiten: "Alle deine Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind."
         }
     }

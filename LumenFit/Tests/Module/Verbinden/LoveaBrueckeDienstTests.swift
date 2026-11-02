@@ -253,7 +253,7 @@ final class LoveaBrueckeDienstTests: XCTestCase {
         a.dienst.schreibe()
         let heute = try XCTUnwrap(a.fake.serverStaende.last?.heute)
         XCTAssertEqual(heute.stimmung, 4)
-        XCTAssertEqual(heute.stimmungWoche, ["2026-10-29": 4])
+        XCTAssertNil(heute.stimmungWoche, "die Woche geht nicht mehr hinaus, nur heute")
         let wasser = try XCTUnwrap(heute.gewohnheiten?.first { $0.id == Habit.wasser.id })
         XCTAssertTrue(wasser.heute)
         XCTAssertEqual(wasser.serie, 1)

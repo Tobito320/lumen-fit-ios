@@ -33,7 +33,6 @@ enum ZusammenfassungBauer {
         var koerper: [String: [PartnerMesspunkt]] = [:]
         // Stimmung (Morgen-Check) und alle Gewohnheiten mit Serie und Quote: je mit ihrer Freigabe.
         var stimmung: Int? = nil
-        var stimmungWoche: [String: Int] = [:]
         var gewohnheiten: [GewohnheitStand] = []
     }
 
@@ -90,7 +89,6 @@ enum ZusammenfassungBauer {
         if e.freigaben.contains(.koerper) { heute.koerper = e.koerper.isEmpty ? nil : e.koerper }
         if e.freigaben.contains(.stimmung) {
             heute.stimmung = e.stimmung
-            heute.stimmungWoche = e.stimmungWoche.isEmpty ? nil : e.stimmungWoche
         }
         if e.freigaben.contains(.gewohnheiten) { heute.gewohnheiten = e.gewohnheiten.isEmpty ? nil : e.gewohnheiten }
     }
