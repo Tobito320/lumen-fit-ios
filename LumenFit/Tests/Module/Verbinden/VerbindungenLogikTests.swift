@@ -35,6 +35,27 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertNil(FreigabeStufe.von([]))
     }
 
+    func testEinzelnerSchalterAendertNurSeinenBereichUndDieStufeFolgt() {
+        let wenig = FreigabeStufe.wenig.bereiche
+        let mitSchlaf = FreigabeStufe.schalte(wenig, .schlaf, ein: true)
+        XCTAssertEqual(mitSchlaf, [.schritte, .gym, .schlaf])
+        XCTAssertNil(FreigabeStufe.von(mitSchlaf), "eigene Auswahl: im Segment ist nichts aktiv")
+        XCTAssertEqual(FreigabeStufe.schalte(mitSchlaf, .schlaf, ein: false), wenig)
+        XCTAssertEqual(FreigabeStufe.von(FreigabeStufe.schalte(mitSchlaf, .schlaf, ein: false)), .wenig)
+        XCTAssertEqual(FreigabeStufe.schalte(wenig, .gym, ein: true), wenig, "schon an bleibt an")
+        // Alle zehn Schalter an ist genau "Alles" (es gibt keinen elften Bereich).
+        let alle = VerbindungBereich.allCases.reduce(Set<VerbindungBereich>()) { FreigabeStufe.schalte($0, $1, ein: true) }
+        XCTAssertEqual(FreigabeStufe.von(alle), .alles)
+        XCTAssertTrue(FreigabeStufe.schalte([.schritte], .schritte, ein: false).isEmpty, "auch alles aus ist erlaubt")
+    }
+
+    func testFeldFuerDenServerIstSortiertUndOhneZyklus() {
+        let felder = FreigabeStufe.felder([.schlaf, .gym, .schritte])
+        XCTAssertEqual(felder["zeigt"] as? [String], ["gym", "schlaf", "schritte"])
+        XCTAssertEqual(felder.count, 1)
+        XCTAssertEqual((FreigabeStufe.felder(FreigabeStufe.alles.bereiche)["zeigt"] as? [String])?.count, 10)
+    }
+
     func testEintragIstNurMitStatusAktivAktiv() throws {
         let json = #"{"verbindungen":[{"id":"a","name":"Person","status":"aktiv"},{"id":"b","name":"Zukunft","status":"neuerStatus"},{"kaputt":true},{"id":"c","name":"Wartet","status":"anfrageEingehend"}],"teilen":["schritte","irgendwas"]}"#
         let a = try LoveaVertrag.decoder().decode(VerbindungenAntwort.self, from: Data(json.utf8))

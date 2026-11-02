@@ -15,4 +15,14 @@ enum FreigabeStufe: CaseIterable, Sendable {
     }
 
     static func von(_ gezeigt: Set<VerbindungBereich>) -> FreigabeStufe? { allCases.first { $0.bereiche == gezeigt } }
+
+    /// Die Auswahl, nachdem ein einzelner Schalter umgelegt wurde.
+    static func schalte(_ an: Set<VerbindungBereich>, _ bereich: VerbindungBereich, ein: Bool) -> Set<VerbindungBereich> {
+        var neu = an
+        if ein { neu.insert(bereich) } else { neu.remove(bereich) }
+        return neu
+    }
+
+    /// Das Feld für den Server (`PATCH /verbindungen/<id>`): die Namen der gezeigten Bereiche, sortiert.
+    static func felder(_ gezeigt: Set<VerbindungBereich>) -> [String: Any] { ["zeigt": gezeigt.map(\.rawValue).sorted()] }
 }
