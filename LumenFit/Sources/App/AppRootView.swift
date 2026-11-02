@@ -38,6 +38,7 @@ struct AppRootView: View {
                 await auffrischen()
             }
             // Nutzung: nur Zähler, welcher Tab, welche Seite, welche Funktion (nie Inhalte); gesendet wird gebündelt einmal je Start.
+            .onChange(of: einstellungen.nutzungZaehlen, initial: true) { _, neu in umgebung.konto.nutzung.an = neu }
             .onChange(of: umgebung.router.tab) { _, neu in umgebung.konto.nutzung.bereich(NutzungName.tab(neu)) }
             .onChange(of: umgebung.router.blatt) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.blatt(neu)) } }
             .onChange(of: umgebung.router.pfade[umgebung.router.tab]?.last) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.seite(neu)) } }

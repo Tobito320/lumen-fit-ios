@@ -19,11 +19,13 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var alarmWeckt = true                // Lumen Alarm darf das Band wecken (Gerät, Standard an)
     var mitteilungen: [String: Bool] = [:]
     var healthGefragt = false
+    /// Die anonyme Nutzungsmeldung an den Server (Datenschutz). Aus = es geht kein Zähler raus.
+    var nutzungZaehlen = true
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungZaehlen
     }
 
     init(from decoder: Decoder) throws {
@@ -39,5 +41,6 @@ struct Einstellungen: Codable, Equatable, Sendable {
         alarmWeckt = (try? c.decodeIfPresent(Bool.self, forKey: .alarmWeckt)) ?? true
         mitteilungen = (try? c.decodeIfPresent([String: Bool].self, forKey: .mitteilungen)) ?? [:]
         healthGefragt = (try? c.decodeIfPresent(Bool.self, forKey: .healthGefragt)) ?? false
+        nutzungZaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .nutzungZaehlen)) ?? true
     }
 }

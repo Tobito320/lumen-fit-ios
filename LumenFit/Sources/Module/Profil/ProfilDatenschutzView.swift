@@ -22,6 +22,11 @@ struct ProfilDatenschutzView: View {
                     .padding(Abstand.l)
                     .lumenKartenFlaeche()
                 }
+                Toggle("Nutzung anonym zählen", isOn: Binding(
+                    get: { umgebung.daten?.einstellungen.werte.nutzungZaehlen ?? true },
+                    set: { an in umgebung.daten?.einstellungen.aendere { $0.nutzungZaehlen = an } }))
+                    .frame(minHeight: Abstand.tippflaeche)
+                    .padding(.horizontal, Abstand.l)
             }
             .padding(Abstand.l)
         }

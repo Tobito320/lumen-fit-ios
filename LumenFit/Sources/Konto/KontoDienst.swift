@@ -337,6 +337,7 @@ final class KontoDienst {
 
     /// Sendet die gesammelten Zähler: einmal je Start (auch leer, das ist der "aktive Tag") und ältere Tage, die noch offen sind.
     private func nutzungUebertragen(_ kennung: KontoKennung) async {
+        guard nutzung.an else { return }
         let heute = Datum.text(uhr())
         let tage = nutzung.faellig(heute: heute, ersterInSitzung: !nutzungGesendetInSitzung)
         guard !tage.isEmpty else { return }

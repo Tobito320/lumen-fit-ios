@@ -97,6 +97,22 @@ final class KontoTests: XCTestCase {
         XCTAssertFalse(frisch.loveaErlaubt)
     }
 
+    // MARK: - Nutzung
+
+    func testAusgeschalteteNutzungsZaehlungSendetNichtsUndZaehltNichts() async throws {
+        let lader = SkriptLader([antwort(201), antwort(200, configJson), antwort(200, freigabeJson)])
+        let d = try dienst(lader, bund: SpeicherSchluesselbund())
+        d.nutzung.bereich("tab.heute")
+        d.nutzung.an = false
+        XCTAssertTrue(d.nutzung.stand.tage.isEmpty, "Offenes wird beim Ausschalten verworfen")
+        d.nutzung.bereich("tab.gym")
+        d.nutzung.funktion("training")
+        XCTAssertTrue(d.nutzung.stand.tage.isEmpty)
+        await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
+        XCTAssertFalse(lader.anfragen.compactMap { $0.url?.path }.contains("/nutzung"), "aus heißt: kein Zähler geht raus")
+        XCTAssertTrue(lader.anfragen.compactMap { $0.url?.path }.contains("/config"), "die Geräteanmeldung bleibt")
+    }
+
     // MARK: - Registrierung
 
     func testRegistrierungWirdNachNetzfehlerWiederholt() async throws {

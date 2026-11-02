@@ -112,6 +112,10 @@ final class NutzungSpeicher {
     nonisolated static let datei = "nutzung-offen.json"
 
     private(set) var stand: NutzungStand
+    /// Aus (Schalter im Datenschutz): nichts wird gezählt, Offenes wird verworfen, nichts geht raus.
+    var an = true {
+        didSet { if !an, oldValue { stand = NutzungStand(); sichere() } }
+    }
     private let ablage: URL
     private let uhr: Uhr
 
@@ -121,8 +125,8 @@ final class NutzungSpeicher {
         stand = (try? Data(contentsOf: ablage)).flatMap { try? JSONDecoder().decode(NutzungStand.self, from: $0) } ?? NutzungStand()
     }
 
-    func bereich(_ name: String) { stand.zaehleBereich(name, tag: Datum.text(uhr())); sichere() }
-    func funktion(_ name: String) { stand.zaehleFunktion(name, tag: Datum.text(uhr())); sichere() }
+    func bereich(_ name: String) { guard an else { return }; stand.zaehleBereich(name, tag: Datum.text(uhr())); sichere() }
+    func funktion(_ name: String) { guard an else { return }; stand.zaehleFunktion(name, tag: Datum.text(uhr())); sichere() }
     func faellig(heute: String, ersterInSitzung: Bool) -> [(String, NutzungZaehler)] { stand.faellig(heute: heute, ersterInSitzung: ersterInSitzung) }
     func abgeschickt(tag: String) { stand.abgeschickt(tag: tag); sichere() }
 
