@@ -51,6 +51,8 @@ final class TrackerModell {
     private static let akkuGewarntSchluessel = "fit.band.akkugewarnt"
     /// Wann zuletzt die Schlaf-Anfrage ging (Sekunden seit 1970) und der Hex der letzten Antwort (nur Neues kommt ins Log).
     private static let schlafVersuchSchluessel = "fit.band.schlaf.versuch"
+    /// `true`, solange die letzte Anfrage keinen gültigen Rahmen gebracht hat: dann gilt der kurze Abstand `TrackerSchlaf.wiederholung`.
+    private static let schlafOhneAntwortSchluessel = "fit.band.schlaf.ohneantwort"
     /// So lange auf die ganze Antwort warten, dann gilt sie als abgebrochen (halb angekommen: das Log hat die Rohbytes).
     private static let schlafWarten: Duration = .seconds(15)
     /// So lange auf das Ergebnis einer einzelnen Pulsmessung warten.
@@ -203,6 +205,7 @@ final class TrackerModell {
         akkuVerlauf = TrackerAkkuVerlauf()
         TrackerAkkuVerlauf.loeschen(defaults)
         defaults.removeObject(forKey: Self.schlafVersuchSchluessel)
+        defaults.removeObject(forKey: Self.schlafOhneAntwortSchluessel)
         akkuVorher = nil
         ladenVermutet = false
         letzterPuls = nil
@@ -545,8 +548,10 @@ final class TrackerModell {
         guard schlafBereit, schlafSammler == nil, !abfrageLaeuft, zustand == .verbunden else { return }
         let jetzt = uhr()
         let letzte = (defaults.object(forKey: Self.schlafVersuchSchluessel) as? Double).map(Date.init(timeIntervalSince1970:))
-        guard TrackerSchlaf.faellig(letzte: letzte, naechte: bandSchlaf.naechte, heute: Datum.text(jetzt), jetzt: jetzt) else { return }
+        let ohneAntwort = defaults.bool(forKey: Self.schlafOhneAntwortSchluessel)
+        guard TrackerSchlaf.faellig(letzte: letzte, naechte: bandSchlaf.naechte, heute: Datum.text(jetzt), jetzt: jetzt, ohneAntwort: ohneAntwort) else { return }
         defaults.set(jetzt.timeIntervalSince1970, forKey: Self.schlafVersuchSchluessel)
+        defaults.set(true, forKey: Self.schlafOhneAntwortSchluessel)
         schlafSammler = TrackerSchlaf.Sammler()
         schlafNr += 1
         let nr = schlafNr
@@ -574,6 +579,7 @@ final class TrackerModell {
         case .fertig(let nutzdaten):
             schlafSammler = nil
             schlafNr += 1
+            defaults.set(false, forKey: Self.schlafOhneAntwortSchluessel)
             schlafAuswerten(roh: sammler.hex, nutzdaten: nutzdaten)
         }
     }

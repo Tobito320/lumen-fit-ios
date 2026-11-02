@@ -21,6 +21,8 @@ enum TrackerSchlaf {
 
     /// Frühestens so viele Sekunden zwischen zwei Anfragen (Akku des Bands).
     static let abstand: TimeInterval = 30 * 60
+    /// Nach einer Anfrage ohne gültige Antwort (Band schweigt, halber Rahmen) genügt dieser Abstand bis zur nächsten.
+    static let wiederholung: TimeInterval = 5 * 60
     /// Weniger Schlafminuten als das ist keine Nacht (Mittagsschlaf, Sofa); wie die Mindestnacht der Schlaf-Rechnung.
     static let mindestNacht = 180
     /// So viele Minuten dürfen die Phasen von der Zeit zwischen Einschlafen und Aufwachen abweichen. Geraten, am Gerät ungeprüft:
@@ -236,13 +238,15 @@ enum TrackerSchlaf {
     // MARK: Wann fragen
 
     /// Ob jetzt gefragt wird: höchstens alle `abstand` Sekunden, und nicht mehr, wenn die Nacht von heute schon gelesen ist, nachdem
-    /// sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig.
-    static func faellig(letzte: Date?, naechte: [String: Nacht], heute: String, jetzt: Date, abstand: TimeInterval = abstand) -> Bool {
+    /// sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig. `ohneAntwort`: die letzte Frage hat
+    /// keinen gültigen Rahmen gebracht; dann gilt nur `wiederholung` und eine gelesene Nacht von heute spricht nicht gegen die Frage.
+    static func faellig(letzte: Date?, naechte: [String: Nacht], heute: String, jetzt: Date, abstand: TimeInterval = abstand,
+                        ohneAntwort: Bool = false) -> Bool {
         guard let letzte else { return true }
         let seitdem = jetzt.timeIntervalSince(letzte)
         guard seitdem >= 0 else { return true }
-        if seitdem < abstand { return false }
-        if let nacht = naechte[heute], letzte >= nacht.bis { return false }
+        if seitdem < (ohneAntwort ? min(abstand, wiederholung) : abstand) { return false }
+        if !ohneAntwort, let nacht = naechte[heute], letzte >= nacht.bis { return false }
         return true
     }
 }

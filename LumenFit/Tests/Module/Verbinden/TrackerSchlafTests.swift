@@ -236,6 +236,24 @@ final class TrackerSchlafTests: XCTestCase {
         XCTAssertTrue(TrackerSchlaf.faellig(letzte: jetzt.addingTimeInterval(-31 * 60), naechte: [:], heute: heute, jetzt: jetzt))
     }
 
+    /// Das echte Band antwortet auf die Schlaf-Anfrage oft gar nicht (Lovea-Log: etwa jede dritte bis zweite Anfrage "0 Byte nach 15 s"). Eine
+    /// Anfrage ohne Antwort darf nicht 30 Minuten sperren; nach `wiederholung` geht die nächste raus.
+    func testAnfrageOhneAntwortWirdFrueherWiederholt() {
+        XCTAssertEqual(TrackerSchlaf.wiederholung, 5 * 60)
+        XCTAssertFalse(TrackerSchlaf.faellig(letzte: jetzt.addingTimeInterval(-4 * 60), naechte: [:], heute: heute, jetzt: jetzt, ohneAntwort: true))
+        XCTAssertTrue(TrackerSchlaf.faellig(letzte: jetzt.addingTimeInterval(-6 * 60), naechte: [:], heute: heute, jetzt: jetzt, ohneAntwort: true))
+        XCTAssertFalse(TrackerSchlaf.faellig(letzte: jetzt.addingTimeInterval(-6 * 60), naechte: [:], heute: heute, jetzt: jetzt, ohneAntwort: false),
+                       "nach einer Antwort bleibt es bei 30 Minuten")
+    }
+
+    func testEineAnfrageOhneAntwortBeweistNichtDassDieNachtFertigIst() {
+        let bis = zeit(14, 6, 40)
+        let gelesen = nachtHeute(bis: bis)
+        let spaet = bis.addingTimeInterval(3600)
+        XCTAssertFalse(TrackerSchlaf.faellig(letzte: spaet, naechte: gelesen, heute: heute, jetzt: spaet.addingTimeInterval(40 * 60)))
+        XCTAssertTrue(TrackerSchlaf.faellig(letzte: spaet, naechte: gelesen, heute: heute, jetzt: spaet.addingTimeInterval(40 * 60), ohneAntwort: true))
+    }
+
     func testSpringendeUhrSperrtNichtFuerImmer() {
         XCTAssertTrue(TrackerSchlaf.faellig(letzte: jetzt.addingTimeInterval(3600), naechte: [:], heute: heute, jetzt: jetzt))
     }
