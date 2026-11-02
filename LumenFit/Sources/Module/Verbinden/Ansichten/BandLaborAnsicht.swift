@@ -1,6 +1,8 @@
 // Quelle: Lovea Health/Tracker/BandLaborAnsicht.swift
 import SwiftUI
 
+#if DEBUG   // Entwicklerwerkzeug: im Release-Bau gibt es das Labor nicht (die Auswertung und der Speicher in BandLabor.swift bleiben).
+
 /// Das Band-Labor: Befehl senden, beim Spüren auf Start und beim Ende auf Vorbei tippen, Ergebnis speichern. Nichts läuft von allein
 /// (Akku): jeder Befehl kommt von einem Tipp. Gesendet wird nur der Finden-Befehl, den das Protokoll belegt; sonst wird nur gelesen.
 struct BandLaborAnsicht: View {
@@ -217,3 +219,4 @@ struct BandLaborAnsicht: View {
         String(format: "%.1f", wert).replacingOccurrences(of: ".", with: ",") + " s"
     }
 }
+#endif

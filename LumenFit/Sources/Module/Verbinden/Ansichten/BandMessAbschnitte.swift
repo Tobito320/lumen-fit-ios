@@ -163,7 +163,7 @@ struct BandFunktionenAbschnitt: View {
     }
 }
 
-/// Die Vibrationsregeln und das Band-Labor. Die Regeln selbst (Quellen, Ruhezeiten, Akku-Wächter, Sitz-Erinnerung) stehen im Blatt "Band-Vibration".
+/// Die Vibrationsregeln und (nur im Debug-Bau) das Band-Labor. Die Regeln selbst (Quellen, Ruhezeiten, Akku-Wächter, Sitz-Erinnerung) stehen im Blatt "Band-Vibration".
 struct BandVibrationAbschnitt: View {
     let modell: TrackerModell
 
@@ -171,8 +171,10 @@ struct BandVibrationAbschnitt: View {
         VerbindenAbschnitt(titel: "Vibration", fuss: "Wann das Band vibriert: Wünsche von Lovea, Partner-Ereignisse, Gym, Sitzen, Ruhezeiten. Anrufe und Mitteilungen anderer Apps sieht Lumen Fit nicht (iOS).") {
             NavigationLink { BandRegelnBlatt() } label: { Label("Band-Vibration", systemImage: "waveform") }
                 .frame(minHeight: Abstand.tippflaeche)
+            #if DEBUG
             NavigationLink { BandLaborAnsicht(modell: modell) } label: { Label("Band-Labor", systemImage: "waveform.path") }
                 .frame(minHeight: Abstand.tippflaeche)
+            #endif
         }
     }
 }
