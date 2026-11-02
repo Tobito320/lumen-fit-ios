@@ -185,7 +185,8 @@ struct UebungsSucheView: View {
                 }
             }
         } else {
-            NavigationLink(value: Route.uebung(id: u.id)) { inhaltsZeile(u) }
+            // Der Katalog selbst ist ohne Route geöffnet; ein Route-Link hier änderte den Tab-Pfad darunter, und die Ansicht sprang.
+            NavigationLink { UebungDetailView(id: u.id) } label: { inhaltsZeile(u) }
         }
     }
 
