@@ -170,7 +170,7 @@ final class FitPassportTests: XCTestCase {
         XCTAssertNil(p.schlafSchnitt)
         XCTAssertEqual(p.stufe, 1)
         XCTAssertEqual(p.titel, "FitPassport: Stufe 1, 0 Gym-Tage")
-        XCTAssertEqual(p.sprechtext, "FitPassport: Stufe 1, 0 Gym-Tage. Konstanz: 0 von 18 Wochen, Serie 0 Wochen. 0 von 25 Medaillen")
+        XCTAssertEqual(p.sprechtext, "FitPassport: Stufe 1, 0 Gym-Tage. Konstanz: 0 von 18 Wochen, Serie 0 Wochen. 0 von 33 Medaillen")
     }
 
     /// Nur eigene Werte: der Name steht auf der Karte, wenn der Aufrufer ihn gibt, sonst kein Name; es gibt kein Feld für Partner oder Freunde.

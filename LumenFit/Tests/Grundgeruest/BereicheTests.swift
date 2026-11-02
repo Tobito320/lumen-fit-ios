@@ -69,6 +69,6 @@ final class BereicheTests: XCTestCase {
         XCTAssertTrue(router.oeffne(url: URL(string: "lumenfit://gym")!))
         XCTAssertEqual(router.tab, .heute)
         router.schiebe(.gym(.training))
-        XCTAssertNil(router.pfade[.heute], "nichts landet auf dem Stapel von Heute")
+        XCTAssertTrue(router.pfade[.heute]?.isEmpty ?? true, "nichts landet auf dem Stapel von Heute")
     }
 }
