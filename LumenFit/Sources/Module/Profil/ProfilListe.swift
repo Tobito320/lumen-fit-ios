@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Kompakte Einstellungsseiten (Ahmed 02.11.2026): eine Zeile je Einstellung, Titel links, Wert rechts, wenige Abschnitte, kurze Fußtexte.
+/// Kompakte Einstellungsseiten (Wunsch 02.11.2026): eine Zeile je Einstellung, Titel links, Wert rechts, wenige Abschnitte, kurze Fußtexte.
 /// Systemliste `.insetGrouped` mit `.listSectionSpacing(.compact)`; Zeilen auf der flachen `flaeche` des Themes, Seite auf dem Theme-Grund.
 private struct ProfilListenStil: ViewModifier {
     func body(content: Content) -> some View {
