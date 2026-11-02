@@ -37,7 +37,7 @@ test("Beweis: verbotene Felder, Werte und Freitext kommen am Server nicht durch"
   await registrieren(env);
   const r = await senden(env, {
     tag: heute(),
-    bereiche: { "tab.gym": 1, gewicht_82: 3, "seite.profil.einstellungen": 1 },
+    bereiche: { "tab.gym": 1, gewicht_82: 3, "seite.profil.gibtesnicht": 1 },
     funktionen: { training: 1, training_bankdruecken: 2 },
     gruppen: {
       fehler: { speichern: 2, datei_users_ahmed_nicht_gefunden: 1 },
