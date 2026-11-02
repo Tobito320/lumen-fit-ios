@@ -19,6 +19,7 @@ final class GesundheitsStand {
     @ObservationIgnored private let uhr: Uhr
     @ObservationIgnored private let band: @MainActor () -> [BandTagOp]
     @ObservationIgnored private let importVerlauf: @MainActor () -> ImportVerlaufStand
+    @ObservationIgnored private let eigeneNaechte: @MainActor () -> SchlafEigeneQuellen
     @ObservationIgnored private var erstGeholt = false
     /// Für diese Typen wurde schon nach den Rechten gefragt; kommt ein Bereich dazu, fragt `aktualisiere` nur die fehlenden.
     @ObservationIgnored private var erfragt: Set<HealthTyp> = []
@@ -28,10 +29,13 @@ final class GesundheitsStand {
 
     /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
     /// `importVerlauf` liefert den Stand der importierten Lovea-Ops (Schritte, Schlaf); er füllt nur, was Health nicht hat (`ImportVerlaufLogik`).
+    /// `eigeneNaechte` liefert die Nächte von Hand und vom Band des aktiven Profils (`AppUmgebung` verdrahtet es); ohne sie gilt nur Health.
     init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] },
          importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() },
+         eigeneNaechte: @escaping @MainActor () -> SchlafEigeneQuellen = { SchlafEigeneQuellen() },
          typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) }) {
         self.typen = typen
+        self.eigeneNaechte = eigeneNaechte
         self.leser = leser
         self.uhr = uhr
         self.band = band
@@ -43,8 +47,26 @@ final class GesundheitsStand {
         ImportVerlaufLogik.tage(bandUndHealth, stand: importVerlauf())
     }
 
-    /// Nächte je Aufwachtag: eigener Eintrag, Health, dann importierte Nächte nur an Tagen ohne Health.
-    var naechte: [String: SchlafNacht] { ImportVerlaufLogik.naechte(health: healthNaechte, stand: importVerlauf()) }
+    /// Nächte je Aufwachtag, wie sie überall gelten (Heute, Wochenstreifen, Coach, Widget, Lovea-Brücke, Freundeskarte, Medaillen, Upload):
+    /// Hand, Band, dann Health (`gewaehlteNaechte`). Nie nur Health.
+    var naechte: [String: SchlafNacht] {
+        Dictionary(gewaehlteNaechte(eigene: eigeneNaechte()).map { ($0.nacht.tag, $0.nacht) }, uniquingKeysWith: { $1 })
+    }
+
+    /// Nur Health: eigener Eintrag aus Lovea, Health, dann importierte Nächte nur an Tagen ohne Health. Ohne Band und ohne Nächte von Hand;
+    /// der Schlaf-Tab gibt sie der Quellenwahl getrennt, damit jede Nacht ihre Quelle behält.
+    var naechteAusHealth: [String: SchlafNacht] { ImportVerlaufLogik.naechte(health: healthNaechte, stand: importVerlauf()) }
+
+    /// Die eine Wahl für Schlaf (`SchlafQuellenWahl.waehle`): von Hand vor Band vor Health (Phasen zählen mehr als jeder Rang, ein Band mit Phasen
+    /// gilt vor der Uhr), je Nacht die genaueste Quelle. `eigene` sind die Nächte von Hand und vom Band des Profils (`SchlafEigeneQuellen.lesen`).
+    /// Tage, die der Lovea-Import gesperrt hat, bleiben leer, außer der Nutzer trägt sie selbst ein.
+    func gewaehlteNaechte(eigene: SchlafEigeneQuellen) -> [SchlafGewaehlteNacht] {
+        let stand = importVerlauf()
+        var eingetragen = stand.schlafEigen
+        eingetragen.merge(eigene.hand) { _, neu in neu }
+        let liste = SchlafQuellenWahl.waehle(health: naechteAusHealth, band: eigene.band, eingetragen: eingetragen)
+        return liste.filter { !stand.schlafGesperrt.contains($0.nacht.tag) || eigene.hand[$0.nacht.tag] != nil }
+    }
 
     private var bandUndHealth: [String: TagesWerte] {
         var ergebnis = healthTage

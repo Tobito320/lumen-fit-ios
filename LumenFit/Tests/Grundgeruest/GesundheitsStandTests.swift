@@ -63,6 +63,53 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.tage[Datum.addTage(heute, -2)]?.schritte, 4000, "Tag nur vom Band")
     }
 
+    // MARK: Schlaf: Hand, Band, Health
+
+    private func bandOp(_ n: SchlafNacht, minuten: Int) -> BandSchlafOp {
+        let bis = n.bis
+        let von = bis.addingTimeInterval(-Double(minuten) * 60)
+        return BandSchlafOp(tag: n.tag, start: von, ende: bis, phasen: [SchlafAbschnitt(phase: .kern, von: von, bis: bis)])
+    }
+
+    func testNaechteGeltenInDerReihenfolgeHandBandHealth() async {
+        let gestern = Datum.addTage(heute, -1)
+        let vorgestern = Datum.addTage(heute, -2)
+        let healthHeute = SchlafTestBau.nacht(heute, minuten: 400)
+        let leser = FakeHealthLeser(naechte: [healthHeute, SchlafTestBau.nacht(gestern, minuten: 430), SchlafTestBau.nacht(vorgestern, minuten: 410, phasen: true)])
+        let handGestern = SchlafTestBau.nacht(gestern, minuten: 300)
+        let eigene = SchlafEigeneQuellen(hand: [gestern: handGestern], band: [bandOp(healthHeute, minuten: 450), bandOp(SchlafTestBau.nacht(gestern, minuten: 0), minuten: 480)])
+        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr, eigeneNaechte: { eigene })
+        await stand.aktualisiere()
+        XCTAssertEqual(stand.naechte[heute]?.schlafMinuten, 450, "Band vor Health")
+        XCTAssertEqual(stand.naechte[gestern]?.schlafMinuten, 300, "von Hand vor Band und Health")
+        XCTAssertEqual(stand.naechte[vorgestern]?.schlafMinuten, 410, "ohne Band und Hand zählt Health")
+        XCTAssertEqual(stand.naechteAusHealth[heute]?.schlafMinuten, 400, "der Schlaf-Tab bekommt Health getrennt")
+        XCTAssertEqual(stand.gewaehlteNaechte(eigene: eigene).first { $0.nacht.tag == heute }?.quelle, .band)
+        XCTAssertEqual(stand.gewaehlteNaechte(eigene: eigene).first { $0.nacht.tag == gestern }?.quelle, .eingetragen)
+    }
+
+    func testOhneEigeneNaechteGiltNurHealthWieBisher() async {
+        let n = SchlafTestBau.nacht(heute, minuten: 400)
+        let stand = GesundheitsStand(leser: FakeHealthLeser(naechte: [n]), uhr: uhr.uhr)
+        await stand.aktualisiere()
+        XCTAssertEqual(stand.naechte, [heute: n])
+    }
+
+    func testEinGesperrterTagBleibtLeerAuchMitBandAberEigeneEintragGiltWieder() async {
+        var verlauf = ImportVerlaufStand()
+        verlauf.schlafGesperrt = [heute]
+        let health = SchlafTestBau.nacht(heute, minuten: 400)
+        let band = BandSchlafOp(tag: heute, start: health.von, ende: health.bis, phasen: [SchlafAbschnitt(phase: .kern, von: health.von, bis: health.bis)])
+        var eigene = SchlafEigeneQuellen(hand: [:], band: [band])
+        let stand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { eigene })
+        await stand.aktualisiere()
+        XCTAssertNil(stand.naechte[heute], "in Lovea gelöscht: weder Health noch Band holen die Nacht zurück")
+        eigene.hand[heute] = SchlafTestBau.nacht(heute, minuten: 360)
+        let mitHand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { eigene })
+        await mitHand.aktualisiere()
+        XCTAssertEqual(mitHand.naechte[heute]?.schlafMinuten, 360)
+    }
+
     func testGewichtUndVitalwerteKommenMitUndWerdenZusammengefuehrt() async {
         let gestern = Datum.addTage(heute, -1)
         let leser = FakeHealthLeser(gewichte: [GewichtsMesswert(tag: gestern, kg: 80.4), GewichtsMesswert(tag: heute, kg: 80.1)])

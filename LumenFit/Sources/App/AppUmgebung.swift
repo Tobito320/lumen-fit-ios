@@ -77,7 +77,7 @@ final class AppUmgebung {
         self.profil = profile
         let anker = UmgebungsAnker()
         self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() },
-                                         typen: { anker.healthTypen() })
+                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -197,6 +197,8 @@ final class AppUmgebung {
     func healthTypen() -> Set<HealthTyp> { (umgebung?.daten?.einstellungen.werte ?? Einstellungen()).healthTypen }
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
+
+    func eigeneNaechte() -> SchlafEigeneQuellen { SchlafEigeneQuellen.lesen(umgebung?.daten?.raum) }
 
     func bandTage() -> [BandTagOp] {
         guard let raum = umgebung?.daten?.raum else { return [] }

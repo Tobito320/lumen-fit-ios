@@ -14,8 +14,9 @@ struct SchlafDoppelKarte: View {
     private var meine: [String: Int] {
         guard let daten = umgebung.daten else { return [:] }
         var werte: [String: Int] = [:]
+        let naechte = TagesformQuellen.naechte(daten: daten, gesundheit: umgebung.gesundheit)
         for tag in HabitLogik.wochenTage(heute: heute) where tag <= heute {
-            if let n = TagesformQuellen.nacht(tag, daten: daten, gesundheit: umgebung.gesundheit) { werte[tag] = n.minuten }
+            if let n = naechte[tag] { werte[tag] = n.minuten }
         }
         return werte
     }

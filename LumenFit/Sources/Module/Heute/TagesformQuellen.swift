@@ -9,6 +9,18 @@ struct HeuteNacht: Equatable, Sendable {
     var quelle: TagesformSchlafQuelle
 }
 
+extension SchlafQuelle {
+    /// Die Quelle, wie Heute sie nennt (Hinweis "Quelle: ..." und Sicherheit der Schlafzahl).
+    var heuteQuelle: TagesformSchlafQuelle {
+        switch self {
+        case .eingetragen: .eingetragen
+        case .band: .armband
+        case .uhr: .appleWatch
+        case .handy: .iPhone
+        }
+    }
+}
+
 /// Sammelt die Rohwerte eines Tages aus dem Datensatz des Profils und dem Gesundheitsstand (`TagesformEingabe`). Liest nur und rechnet nichts:
 /// die Regeln stehen in `TagesformRechnung` und `TagesformQuellenLogik`. Für `tag` zählt, was an diesem Tag schon bekannt war: Einheiten und
 /// Essen nach dem Tag fließen nicht ein, ein Tag in der Zukunft hat keine Werte.
@@ -31,33 +43,26 @@ enum TagesformQuellen {
         return e
     }
 
-    /// Eine Nacht je Aufwachtag: Von Hand (Op `fit.schlaf.hand`), sonst das Band (Op `fit.band.schlaf`, es misst selbst: Lovea `automatikVorrang`, im Schlaf-Tab
-    /// `SchlafQuellenWahl`), sonst Health. nil ohne Schlaf.
+    /// Eine Nacht je Aufwachtag aus der einen Wahl `GesundheitsStand.gewaehlteNaechte`: von Hand (Op `fit.schlaf.hand`), sonst das Band (Op `fit.band.schlaf`,
+    /// es misst selbst: Lovea `automatikVorrang`), sonst Health. Hand und Band liest sie aus dem Raum von `daten`. Kein Eintrag ohne Schlaf.
+    static func naechte(daten: DatenSatz, gesundheit: GesundheitsStand) -> [String: HeuteNacht] {
+        var ergebnis: [String: HeuteNacht] = [:]
+        for gewaehlt in gesundheit.gewaehlteNaechte(eigene: SchlafEigeneQuellen.lesen(daten.raum)) where gewaehlt.nacht.schlafMinuten > 0 {
+            let n = gewaehlt.nacht
+            ergebnis[n.tag] = HeuteNacht(tag: n.tag, minuten: n.schlafMinuten, einschlafen: n.von, quelle: gewaehlt.quelle.heuteQuelle)
+        }
+        return ergebnis
+    }
+
+    /// Eine einzelne Nacht; wer mehrere braucht, ruft `naechte` einmal (jeder Aufruf liest den Raum neu).
     static func nacht(_ tag: String, daten: DatenSatz, gesundheit: GesundheitsStand) -> HeuteNacht? {
-        // Eine Nacht von Hand gilt vor allem anderen.
-        var hand: SchlafNacht?
-        for op in daten.raum.ops(arten: [SchlafHandLogik.art]) {
-            if let d = op.daten(SchlafHandD.self), d.tag == tag { hand = SchlafHandLogik.nacht(d) }
-        }
-        if let h = hand { return HeuteNacht(tag: tag, minuten: h.schlafMinuten, einschlafen: h.von, quelle: .eingetragen) }
-        var band: BandSchlafOp?
-        for op in daten.raum.ops(arten: ["fit.band.schlaf"]) {
-            if let b = op.daten(BandSchlafOp.self), b.tag == tag { band = b }
-        }
-        if let b = band {
-            let phasen = b.phasen.filter { $0.phase.schlaeft }.reduce(0.0) { $0 + $1.bis.timeIntervalSince($1.von) }
-            let sekunden: TimeInterval = phasen > 0 ? phasen : b.ende.timeIntervalSince(b.start)
-            let minuten = Int(sekunden / 60)
-            if minuten > 0 { return HeuteNacht(tag: tag, minuten: minuten, einschlafen: b.start, quelle: .armband) }
-        }
-        guard let n = gesundheit.naechte[tag], n.schlafMinuten > 0 else { return nil }
-        let quelle: TagesformSchlafQuelle = n.phasen.contains(where: { $0.gestuft }) ? .appleWatch : .iPhone
-        return HeuteNacht(tag: tag, minuten: n.schlafMinuten, einschlafen: n.von, quelle: quelle)
+        naechte(daten: daten, gesundheit: gesundheit)[tag]
     }
 
     private static func schlaf(_ e: inout TagesformEingabe, _ daten: DatenSatz, _ gesundheit: GesundheitsStand, _ tag: String) {
         let naechte: [String] = TagesformQuellenLogik.tage(ab: tag, anzahl: schlafNaechte)
-        let alle: [HeuteNacht?] = naechte.map { nacht($0, daten: daten, gesundheit: gesundheit) }
+        let gewaehlt: [String: HeuteNacht] = Self.naechte(daten: daten, gesundheit: gesundheit)
+        let alle: [HeuteNacht?] = naechte.map { gewaehlt[$0] }
         e.schlafZiel = daten.ziele.ziele.schlafMinuten
         e.schlaf = alle.map { $0?.minuten }
         e.bett = alle.prefix(bettNaechte).map { (n: HeuteNacht?) -> Int? in n?.einschlafen.map { TagesformRechnung.bettMinuten($0) } }

@@ -52,6 +52,28 @@ struct SchlafGewaehlteNacht: Equatable, Sendable, Identifiable {
     }
 }
 
+/// Die eigenen Quellen neben Health, aus dem Raum des Profils: Nächte von Hand (Op `fit.schlaf.hand`) und vom Band (Op `fit.band.schlaf`, in der
+/// Reihenfolge des Eingangs). Eine Stelle, die Schlaf zeigt oder hochlädt, liest beides hier und gibt es an `SchlafQuellenWahl.waehle`
+/// (über `GesundheitsStand.gewaehlteNaechte`): Hand, Band, Health, nie nur Health.
+struct SchlafEigeneQuellen: Sendable {
+    var hand: [String: SchlafNacht] = [:]
+    var band: [BandSchlafOp] = []
+
+    @MainActor static func handNaechte(_ raum: LokalerRaum?) -> [String: SchlafNacht] {
+        guard let raum else { return [:] }
+        return SchlafHandLogik.naechte(ops: raum.ops(arten: [SchlafHandLogik.art]))
+    }
+
+    @MainActor static func bandOps(_ raum: LokalerRaum?) -> [BandSchlafOp] {
+        guard let raum else { return [] }
+        return raum.ops(arten: [SchlafModul.bandArt]).compactMap { $0.daten(BandSchlafOp.self) }
+    }
+
+    @MainActor static func lesen(_ raum: LokalerRaum?) -> SchlafEigeneQuellen {
+        SchlafEigeneQuellen(hand: handNaechte(raum), band: bandOps(raum))
+    }
+}
+
 /// Idee 60, beste Schlafquelle: doppelte Nächte erscheinen einmal, die genaueste Quelle gewinnt.
 /// Genauer ist, was Phasen kennt; bei Gleichstand Band vor Uhr vor Handy.
 enum SchlafQuellenWahl {
