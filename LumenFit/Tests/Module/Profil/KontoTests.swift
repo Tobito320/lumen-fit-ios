@@ -49,6 +49,15 @@ final class KontoTests: XCTestCase {
         XCTAssertNil(ServerConfig.zusammen(basis, antwort: Data(#"{"fehler":"x"}"#.utf8)), "ohne Objekt config bleibt alles")
     }
 
+    func testCoachSichtbarStehtStandardAusUndFolgtDemServerOhneBeiFunklochZuVerschwinden() throws {
+        XCTAssertFalse(ServerConfig.standard.coachSichtbar)
+        let an = try XCTUnwrap(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"coachSichtbar":true}}"#.utf8)))
+        XCTAssertTrue(an.coachSichtbar)
+        XCTAssertTrue(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"coachSichtbar":"ja"}}"#.utf8))).coachSichtbar, "falscher Typ lässt den Wert")
+        XCTAssertNil(ServerConfig.zusammen(an, antwort: Data("kein json".utf8)), "Funkloch: gemerkter Stand bleibt")
+        XCTAssertFalse(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"coachSichtbar":false}}"#.utf8))).coachSichtbar)
+    }
+
     func testTageWerdenBegrenztUndBruchzahlenAbgelehnt() throws {
         func tage(_ wert: String) throws -> Int {
             try XCTUnwrap(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"nameAendernTage":\#(wert)}}"#.utf8))).nameAendernTage

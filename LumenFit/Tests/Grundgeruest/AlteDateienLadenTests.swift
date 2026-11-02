@@ -41,6 +41,13 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("einstellungen.json.defekt").path))
     }
 
+    func testAlterKontoStandOhneCoachSichtbarBleibtLesbarUndZeigtKeinenCoach() throws {
+        let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3},"loveaErlaubt":true}"#.utf8))
+        XCTAssertTrue(alt.config.profilAnlegenErlaubt)
+        XCTAssertTrue(alt.loveaErlaubt)
+        XCTAssertFalse(alt.config.coachSichtbar)
+    }
+
     func testEinUnbekanntesThemeErgibtDenStandardUndBehaeltDenRest() throws {
         let ordner = try tempOrdner()
         try Data(#"{"thema":"neonpink","haptik":false,"gewichtsEinheit":"stone"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))

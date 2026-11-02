@@ -129,7 +129,7 @@ private struct SchlafTabInhalt: View {
     @ViewBuilder
     private func erholungsAbschnitt(_ u: SchlafUebersicht) -> some View {
         SchlafAbschnittKopf("Erholung").id(Self.wertenAnker)
-        SchlafBereichKarte(hrv: u.hrv, erholung: u.erholung, coachFragen: { frage in umgebung.router.oeffne(.coach(frage: frage)) })
+        SchlafBereichKarte(hrv: u.hrv, erholung: u.erholung, coachFragen: umgebung.router.coachSichtbar ? { frage in umgebung.router.oeffne(.coach(frage: frage)) } : nil)
         SchlafAbschnittKopf("Werte")
         SchlafWerteChips(staende: u.chips)
     }

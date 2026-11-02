@@ -8,6 +8,7 @@ final class RouterCoachLinkTests: XCTestCase {
 
     func testFremderLinkWirdZumEntwurfUndOeffnetNurDenTab() {
         let router = Router()
+        router.coachSichtbar = true
         XCTAssertTrue(router.oeffne(url: link))
         XCTAssertEqual(router.coachEntwurf, "Wie lief meine Woche")
         XCTAssertEqual(router.tab, .coach)
@@ -16,6 +17,7 @@ final class RouterCoachLinkTests: XCTestCase {
 
     func testVertrauterStartGehtDenAltenWegMitFrage() {
         let router = Router()
+        router.coachSichtbar = true
         XCTAssertTrue(router.oeffne(url: link, vertraut: true))
         XCTAssertNil(router.coachEntwurf)
         XCTAssertEqual(router.pfade[.coach] ?? [], [.coach(frage: "Wie lief meine Woche")])
@@ -23,6 +25,7 @@ final class RouterCoachLinkTests: XCTestCase {
 
     func testInterneRouteMitFrageBleibtUnveraendert() {
         let router = Router()
+        router.coachSichtbar = true
         router.oeffne(.coach(frage: "Warum so müde?"))
         XCTAssertNil(router.coachEntwurf)
         XCTAssertEqual(router.pfade[.coach] ?? [], [.coach(frage: "Warum so müde?")])
@@ -30,8 +33,32 @@ final class RouterCoachLinkTests: XCTestCase {
 
     func testLinkOhneFrageOeffnetNurDenCoach() {
         let router = Router()
+        router.coachSichtbar = true
         XCTAssertTrue(router.oeffne(url: URL(string: "lumenfit://coach")!))
         XCTAssertNil(router.coachEntwurf)
         XCTAssertEqual(router.tab, .coach)
+    }
+
+    func testOhneSichtbarkeitFuehrtJederCoachWegAufHeute() {
+        let router = Router()
+        router.oeffne(.gym(.training))
+        XCTAssertTrue(router.oeffne(url: link))
+        XCTAssertEqual(router.tab, .heute)
+        XCTAssertNil(router.coachEntwurf, "kein Entwurf für einen Coach, den es nicht gibt")
+        XCTAssertTrue(router.oeffne(url: link, vertraut: true))
+        XCTAssertEqual(router.tab, .heute)
+        router.oeffne(.coach(frage: "x"))
+        router.schiebe(.coach(frage: nil))
+        XCTAssertEqual(router.pfade[.heute] ?? [], [])
+        XCTAssertNil(router.pfade[.coach])
+    }
+
+    func testWirdDerCoachWeggenommenVerlaesstEinGemerkterTabDieSeite() {
+        let router = Router()
+        router.setzeCoachSichtbar(true)
+        router.oeffne(.coach(frage: nil))
+        XCTAssertEqual(router.tab, .coach)
+        router.setzeCoachSichtbar(false)
+        XCTAssertEqual(router.tab, .heute)
     }
 }

@@ -35,7 +35,7 @@ struct HeuteLoveaInhalt: View {
                 if stand.istHeute { SchreibKarte(modell: modell) }
             }
             if stand.istHeute, !stand.einsichten.isEmpty { EinsichtenKarte(einsichten: stand.einsichten) }
-            if stand.istHeute { CoachSicherheitZeile { umgebung.router.schiebe(.coach(frage: nil)) } }
+            if stand.istHeute, umgebung.router.coachSichtbar { CoachSicherheitZeile { umgebung.router.schiebe(.coach(frage: nil)) } }
             if stand.istHeute { abschnitt("Körper") { koerper } }
             verlaufZeile
             mehr
@@ -161,7 +161,7 @@ struct HeuteLoveaInhalt: View {
         let essen = umgebung.daten?.essen
         let kost = TagesFormEssen(kcal: Int((essen?.summe(tag).kcal ?? 0).rounded()), ziel: essen?.ernaehrungsZiele(tag: tag).kcal ?? 0)
         return TagesFormenReihe(stand: stand, essen: kost, tippe: { modell.tippe($0) }, oeffne: { oeffne($0) }) {
-            CoachKachelView(alsKachel: true, oeffne: { umgebung.router.schiebe(.coach(frage: nil)) })
+            if umgebung.router.coachSichtbar { CoachKachelView(alsKachel: true, oeffne: { umgebung.router.schiebe(.coach(frage: nil)) }) }
         }
     }
 

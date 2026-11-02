@@ -10,8 +10,19 @@ final class Router {
     var blatt: Route?
     /// Ein Coach-Text aus einem Link von außen (Annahme 34): landet im Eingabefeld und wird nie von selbst gesendet.
     var coachEntwurf: String?
+    /// Vom Server pro Konto (`coachSichtbar`); ohne wird jede Coach-Seite zu Heute.
+    var coachSichtbar = false
+
+    /// Stellt die Sichtbarkeit ein; wird sie weggenommen, verlässt ein offener oder gemerkter Coach-Tab die Seite.
+    func setzeCoachSichtbar(_ sichtbar: Bool) {
+        coachSichtbar = sichtbar
+        guard !sichtbar else { return }
+        pfade[.coach] = nil
+        if tab == .coach { tab = .heute }
+    }
 
     func oeffne(_ route: Route) {
+        if !coachSichtbar, case .coach = route { return wechsle(.heute, []) }
         switch route {
         case .profil(.zyklus):
             // Zyklus gehört nur in Lovea: ein alter Link oder ein gespeicherter Stand landet auf Heute.
@@ -30,6 +41,7 @@ final class Router {
 
     /// Lovea-Aufbau: legt eine Seite auf den Stapel des Heute-Tabs (wie `pfad.append` im Health-Tab von Lovea), ohne den Tab zu wechseln.
     func schiebe(_ route: Route) {
+        if !coachSichtbar, case .coach = route { return }
         blatt = nil
         pfade[.heute, default: []].append(route)
     }
@@ -39,7 +51,7 @@ final class Router {
     @discardableResult
     func oeffne(url: URL, vertraut: Bool = false) -> Bool {
         guard let route = RouteURL.route(aus: url) else { return false }
-        if !vertraut, case .coach(let frage?) = route {
+        if !vertraut, coachSichtbar, case .coach(let frage?) = route {
             coachEntwurf = frage
             oeffne(.coach(frage: nil))
         } else {

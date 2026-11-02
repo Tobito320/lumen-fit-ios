@@ -10,11 +10,12 @@ enum ProfilTexte {
 
     // MARK: - Datenschutz
 
-    static let datenschutz: [Abschnitt] = [
+    /// `coach`: nur Konten mit Coach lesen von Gesprächen; für alle anderen gibt es sie nicht.
+    static func datenschutz(coach: Bool) -> [Abschnitt] { [
         Abschnitt(titel: "Was gespeichert wird",
                   text: "Auf deinem iPhone: dein Name, die Spur deines Passworts (nie das Passwort selbst), deine Trainings, dein Essenstagebuch, Gewohnheiten, Ziele, Körperdaten und Einstellungen. Der Name und die Passwort-Spur liegen im Schlüsselbund, alles andere in der App."),
         Abschnitt(titel: "Was dein iPhone nie verlässt",
-                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht und deine Gespräche mit dem Coach. Lumen Fit hat keinen Server für deine Daten, kein Konto mit Anmeldung, keine Werbung und kein Tracking. Es geht nur etwas hinaus, wenn du es selbst teilst: eine Datensicherung, eine Tabelle, eine Wochenkarte oder die Zusammenfassung, die du deinem Partner einzeln freigibst."),
+                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht\(coach ? " und deine Gespräche mit dem Coach" : ""). Lumen Fit hat keinen Server für deine Daten, kein Konto mit Anmeldung, keine Werbung und kein Tracking. Es geht nur etwas hinaus, wenn du es selbst teilst: eine Datensicherung, eine Tabelle, eine Wochenkarte oder die Zusammenfassung, die du deinem Partner einzeln freigibst."),
         Abschnitt(titel: "Was ins Netz geht",
                   text: "Nur das Nötige: beim Scannen oder Suchen fragt die App Open Food Facts nach dem Barcode oder deinem Suchtext, und Übungsbilder werden geladen und gemerkt. Dabei gehen nie dein Name, deine Gesundheitsdaten oder dein Training mit."),
         Abschnitt(titel: "Was an den Lumen-Server geht",
@@ -25,7 +26,7 @@ enum ProfilTexte {
                   text: "Das Passwort schützt nur Handlungen auf diesem iPhone: Profil wechseln, Passwort ändern, Daten löschen. Es gibt keinen Anmeldebildschirm. Wer es vergisst, bekommt keine Rücksetzung per Mail, weil es kein Konto mit Anmeldung gibt. Beim Wechseln und beim Löschen steht dafür „Passwort vergessen?“: Das Profil und seine Daten werden nach zwei Bestätigungen gelöscht, und du fängst neu an (mit einer Datensicherung wieder mit deinen Daten)."),
         Abschnitt(titel: "Alles löschen",
                   text: "Löscht dein Profil und alle Daten dieser App auf diesem iPhone, mit deinem Passwort. Beim letzten Profil gehen auch die Dateien für Lovea, der Stand der Widgets und die Spuren des Bands weg. Daten in Health bleiben unberührt. Eine Datensicherung, die du geteilt hast, bleibt dort, wo du sie abgelegt hast."),
-    ]
+    ] }
 
     // MARK: - Quellen
 
@@ -52,7 +53,7 @@ enum ProfilTexte {
 
     static func zuruecksetzenTitel(name: String) -> String { "\(name) zurücksetzen?" }
     static let zuruecksetzenText = "Ohne Passwort kommst du nicht an dieses Profil. Lumen Fit hat keinen Server für Passwörter und kann dir nichts per Mail schicken. Du kannst das Profil löschen und neu anfangen."
-    static let zuruecksetzenWarnung = "Das Profil und alle seine Daten auf diesem iPhone werden gelöscht: Trainings, Essen, Gewicht, Coach-Chat, Meilensteine. Daten in Health bleiben. Das lässt sich nicht rückgängig machen."
+    static let zuruecksetzenWarnung = "Das Profil und alle seine Daten auf diesem iPhone werden gelöscht: Trainings, Essen, Gewicht, Meilensteine. Daten in Health bleiben. Das lässt sich nicht rückgängig machen."
     static func zuruecksetzenFrage(name: String) -> String { "\(name) endgültig löschen?" }
     static let ladeProblemLesefehler = "Die Profile konnten gerade nicht gelesen werden. Nichts ist gelöscht. Versuch es gleich nochmal, zum Beispiel nach dem Entsperren des iPhones."
     static let ladeProblemKaputt = "Der gespeicherte Eintrag deiner Profile ist beschädigt. Nichts wurde überschrieben. Du kannst ihn verwerfen und neu anfangen; eine Kopie bleibt auf diesem iPhone."
@@ -71,7 +72,7 @@ enum ProfilTexte {
             zeile(einheiten, "Training", "Trainings"),
             zeile(essenstage, "Tag im Essenstagebuch", "Tage im Essenstagebuch"),
             zeile(meilensteine, "Meilenstein", "Meilensteine"),
-            zeile(coachNachrichten, "Nachricht im Coach-Verlauf", "Nachrichten im Coach-Verlauf"),
+        ] + (coachNachrichten > 0 ? [zeile(coachNachrichten, "Nachricht im Coach-Verlauf", "Nachrichten im Coach-Verlauf")] : []) + [
             Loeschzeile(text: "Ziele, Körperdaten, Einstellungen und Gewohnheiten"),
         ]
     }

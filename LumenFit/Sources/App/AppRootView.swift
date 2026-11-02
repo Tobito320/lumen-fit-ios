@@ -110,7 +110,7 @@ private struct TabsAnsicht: View {
     var body: some View {
         @Bindable var router = umgebung.router
         TabView(selection: $router.tab) {
-            ForEach(LumenFitTab.allCases) { tab in
+            ForEach(LumenFitTab.allCases.filter { $0 != .coach || router.coachSichtbar }) { tab in
                 Tab(tab.titel, systemImage: tab.symbolName, value: tab) {
                     NavigationStack(path: Binding(get: { router.pfade[tab] ?? [] }, set: { router.pfade[tab] = $0 })) {
                         RouteAnsicht.wurzel(tab)
@@ -120,6 +120,7 @@ private struct TabsAnsicht: View {
             }
         }
         .lumenTabLeiste()
+        .onChange(of: umgebung.konto.coachSichtbar, initial: true) { _, neu in router.setzeCoachSichtbar(neu) }
         // Medaillen aus Gym und Heute zeigen ihren Toast auf jedem Tab (die Seiten im Fortschritt hängen ihn auch an, gezeigt wird er nur einmal).
         .fortschrittToast()
         .sheet(isPresented: Binding(get: { router.blatt != nil }, set: { if !$0 { router.blatt = nil } })) {

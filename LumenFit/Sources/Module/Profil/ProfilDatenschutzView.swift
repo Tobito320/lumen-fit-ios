@@ -3,6 +3,7 @@ import SwiftUI
 /// Datenschutz in Klartext (Idee 79): was gespeichert wird, was das iPhone nie verlässt, was ins Netz geht.
 struct ProfilDatenschutzView: View {
     @Environment(\.palette) private var palette
+    @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
         ScrollView {
@@ -12,7 +13,7 @@ struct ProfilDatenschutzView: View {
                     Text("Deine Daten gehören dir. Hier steht, was mit ihnen passiert.").font(.title3.bold()).foregroundStyle(palette.text)
                 }
                 .accessibilityElement(children: .combine)
-                ForEach(ProfilTexte.datenschutz) { abschnitt in
+                ForEach(ProfilTexte.datenschutz(coach: umgebung.router.coachSichtbar)) { abschnitt in
                     VStack(alignment: .leading, spacing: Abstand.s) {
                         Text(abschnitt.titel).font(.headline).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
                         Text(abschnitt.text).font(.body).foregroundStyle(palette.text2)

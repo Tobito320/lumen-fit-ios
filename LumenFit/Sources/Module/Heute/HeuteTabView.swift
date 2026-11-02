@@ -101,7 +101,7 @@ struct HeuteTabView: View {
         PlanKarte(plan: s.plan) { starte(s.plan) }
         if s.hatGesundheit { EnergieBank(energie: s.energie) { blatt = .energie } }
         SchreibKarte(modell: m)
-        CoachKachelView()
+        if umgebung.router.coachSichtbar { CoachKachelView() }
         habitsKarte(s, m)
         GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
         if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }

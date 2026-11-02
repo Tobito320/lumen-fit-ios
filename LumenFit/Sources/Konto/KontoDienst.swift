@@ -90,6 +90,8 @@ final class KontoDienst {
     var config: ServerConfig { stand.config }
     /// Lovea verbinden und der Import sind nur sichtbar, wenn der Server das Konto freigibt (nur Debug-Demo darf es erzwingen).
     var loveaErlaubt: Bool { LoveaFreigabe.erlaubt(freigegeben: stand.loveaErlaubt, demo: LoveaFreigabe.demoAktiv) }
+    /// Der Coach zeigt sich nur, wenn der Server es dem Konto sagt (zwei Lovea-Konten); der gemerkte Stand gilt bei Funkloch. Nur Debug-Demo darf es erzwingen.
+    var coachSichtbar: Bool { stand.config.coachSichtbar || LoveaFreigabe.demoAktiv }
     /// Die Lovea-Person des Kontos, nur mit echter Server-Freigabe (nie in der Demo); sonst nil.
     var loveaPerson: String? { stand.loveaErlaubt ? stand.loveaPerson : nil }
     /// Der Server gibt das Konto frei und der einmalige Import ist noch nicht gelaufen (nie in der Demo).

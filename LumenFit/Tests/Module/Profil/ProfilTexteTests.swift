@@ -20,15 +20,22 @@ final class ProfilTexteTests: XCTestCase {
     }
 
     func testDatenschutzSagtWasDasGeraetNieVerlaesst() throws {
-        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz.first { $0.titel.contains("nie verlässt") })
+        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz(coach: true).first { $0.titel.contains("nie verlässt") })
         for wort in ["Gesundheitsdaten", "Trainings", "Essen", "Gewicht", "kein Konto", "keinen Server"] {
             XCTAssertTrue(verlaesst.text.contains(wort) || verlaesst.text.lowercased().contains(wort.lowercased()), wort)
         }
         XCTAssertTrue(verlaesst.text.contains("selbst teilst"), "Teilen von Hand ist die einzige Ausnahme und steht dabei")
-        let titel = ProfilTexte.datenschutz.map(\.titel)
+        let titel = ProfilTexte.datenschutz(coach: true).map(\.titel)
         XCTAssertTrue(titel.contains("Was gespeichert wird"))
         XCTAssertTrue(titel.contains("Alles löschen"))
         XCTAssertEqual(Set(titel).count, titel.count, "jeder Abschnitt hat einen eigenen Titel")
+    }
+
+    func testOhneCoachNenntDerDatenschutzKeineGespraecheUndDieListeKeinenVerlauf() throws {
+        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel.contains("nie verlässt") })
+        XCTAssertFalse(verlaesst.text.contains("Coach"))
+        XCTAssertTrue(verlaesst.text.contains("dein Gewicht. Lumen Fit"))
+        XCTAssertFalse(ProfilTexte.loeschliste(einheiten: 1, essenstage: 1, meilensteine: 1, coachNachrichten: 0).map(\.text).contains { $0.contains("Coach") })
     }
 
     func testLoeschlisteEinzahlUndMehrzahl() {
