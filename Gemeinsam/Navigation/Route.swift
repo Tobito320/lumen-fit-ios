@@ -4,7 +4,7 @@ enum GymBereich: String, Codable, Sendable { case training, plaene, fortschritt 
 enum EssenBereich: String, Codable, Sendable { case heute, scan, favoriten }
 enum SchlafBereich: String, Codable, Sendable { case letzteNacht, verlauf, werte }
 enum ProfilBereich: String, Codable, Sendable {
-    case uebersicht, einstellungen, aussehen, ziele, verbindungen, datensicherung, quellen, meilensteine, lumi, zyklus
+    case uebersicht, einstellungen, aussehen, ziele, verbindungen, datensicherung, quellen, meilensteine, lumi
 }
 
 /// Jede Seite der App hat genau eine Route (und einen Link, `RouteURL`).

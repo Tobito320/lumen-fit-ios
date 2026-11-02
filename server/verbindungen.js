@@ -11,7 +11,9 @@ const EINLADUNG_MS = 10 * 60 * 1000;
 const TOKEN_FORM = /^[A-Za-z0-9_-]{43}$/;
 const ID_FORM = /^[a-f0-9]{32}$/;
 const STANDARD_ZEIGT = ["schritte", "gym"];
-const ALLE_ZEIGT = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten", "zyklus"];
+const ALLE_ZEIGT = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"];
+// Ältere App-Builds schicken noch "zyklus" in zeigt/ausblenden: wird ohne Fehler verworfen, nie gespeichert und nie ausgegeben.
+const ALT_BEREICH = "zyklus";
 const MAX_AKTIV = 50;
 const MAX_ANFRAGEN = 10;
 // Abruf gedrosselt: je Konto höchstens so viele Einladungs-Wege (anlegen, ansehen, anfragen) je Minute.
@@ -68,7 +70,7 @@ async function datenFuer(env, besitzerId, erlaubt, mitteilungen, h) {
   return daten ? { daten, aktualisiert: z.aktualisiert } : null;
 }
 
-// Die zwei Lovea-Konten: Verbindung ohne Scan, beide Richtungen, alle Bereiche an (Zyklus kommt trotzdem nur, wenn die Person ihn in der App erlaubt).
+// Die zwei Lovea-Konten: Verbindung ohne Scan, beide Richtungen, alle Bereiche an.
 // Wer sie entfernt hat, bekommt sie nicht neu: es bleibt eine Zeile "entfernt" zwischen den zwei Personen; per QR geht sie wieder.
 export async function autoVerbinden(env, k, h) {
   if (!h.freigegeben(k)) return;
@@ -204,8 +206,9 @@ function aendernPruefen(b, h) {
   const aus = {};
   for (const [feld, wert] of Object.entries(b)) {
     if (feld === "zeigt" || feld === "ausblenden") {
-      if (!Array.isArray(wert) || wert.length > ALLE_ZEIGT.length || wert.some((x) => !ALLE_ZEIGT.includes(x))) return { fehler: `${feld}: Liste bekannter Bereiche` };
-      aus[feld] = [...new Set(wert)];
+      const liste = Array.isArray(wert) ? wert.filter((x) => x !== ALT_BEREICH) : wert;
+      if (!Array.isArray(liste) || liste.length > ALLE_ZEIGT.length || liste.some((x) => !ALLE_ZEIGT.includes(x))) return { fehler: `${feld}: Liste bekannter Bereiche` };
+      aus[feld] = [...new Set(liste)];
     } else if (BOOL.includes(feld)) {
       if (typeof wert !== "boolean") return { fehler: `${feld}: true oder false` };
       aus[feld] = wert;

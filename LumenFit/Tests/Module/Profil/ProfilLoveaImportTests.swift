@@ -135,8 +135,8 @@ final class ProfilLoveaImportTests: XCTestCase {
         func b(_ art: String) -> ProfilLoveaBehandlung { ProfilLoveaArten.behandlung(art: art, d: leer) }
         for art in ["gym.plan", "gym.checkin", "gym.uebung", "gym.checkout", "gym.loeschen", "cardio.setzen", "essen.setzen", "lebensmittel.favorit",
                     "koerper.setzen", "habit.setzen", "habit.anlegen", "habit.loeschen",
-                    "schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen", "zyklus.tag", "zyklus.einstellung"] { XCTAssertEqual(b(art), .uebernehmen, art) }
-        for art in ["coach.nachricht", "wecker.setzen"] { XCTAssertEqual(b(art), .rohBehalten, art) }
+                    "schlaf.setzen", "schlaf.zeiten", "schritte.setzen", "stimmung.setzen"] { XCTAssertEqual(b(art), .uebernehmen, art) }
+        for art in ["coach.nachricht", "wecker.setzen", "zyklus.tag", "zyklus.einstellung"] { XCTAssertEqual(b(art), .rohBehalten, art) }
         XCTAssertEqual(b("nachricht.neu"), .ausschliessen("Chat"))
         XCTAssertEqual(b("entwurf.setzen"), .ausschliessen("Chat"))
         XCTAssertEqual(b("notizbuch.setzen"), .ausschliessen("Notizen"))

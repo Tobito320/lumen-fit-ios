@@ -34,9 +34,6 @@ final class Router {
         if !coachSichtbar, case .coach = route { return wechsle(.heute, []) }
         if !einstellungen.zeigt(route) { return wechsle(.heute, []) }
         switch route {
-        case .profil(.zyklus):
-            // Zyklus gehört nur in Lovea: ein alter Link oder ein gespeicherter Stand landet auf Heute.
-            wechsle(.heute, [])
         case .profil, .freund:
             blatt = route
         case .heute: wechsle(.heute, [])

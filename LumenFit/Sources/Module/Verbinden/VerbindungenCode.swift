@@ -141,14 +141,14 @@ struct VerbindungCodeBlatt: View {
     }
 }
 
-/// "Verbunden mit NAME": die Wahl "Wenig" oder "Alles" (Standard Wenig, wie es der Server setzt), ein Knopf zur Person und "Fertig".
-/// Für beide Seiten, im Blatt "Kollegen verbinden" und im Scan-Blatt.
+/// "Verbunden mit NAME": die Wahl "Wenig" oder "Alles" und darunter jeder Bereich einzeln (Standard Schritte und Gym, wie es der Server setzt),
+/// ein Knopf zur Person und "Fertig". Die Liste scrollt, "Fertig" bleibt unten stehen. Für beide Seiten, im Blatt "Kollegen verbinden" und im Scan-Blatt.
 struct VerbindungVerbundenAnsicht: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
-    @State private var stufe: FreigabeStufe = .wenig
+    @State private var an: Set<VerbindungBereich> = VerbindungenLogik.standardZeigt
     @State private var speichernFehler = false
 
     private var eintrag: VerbindungEintrag? { umgebung.konto.verbindungen.eintraege.first { $0.id == id } }
@@ -156,35 +156,32 @@ struct VerbindungVerbundenAnsicht: View {
     var body: some View {
         let name = eintrag?.anzeigeName ?? "der Person"
         VStack(spacing: Abstand.m) {
-            Image(systemName: "checkmark.circle").font(.system(size: 48)).foregroundStyle(palette.text2).accessibilityHidden(true)
-            Text("Verbunden mit \(name)").font(.headline).multilineTextAlignment(.center)
-            Text("Was soll \(name) von dir sehen?").font(.footnote).foregroundStyle(palette.text2)
-            Picker("Wie viel", selection: Binding<FreigabeStufe>(get: { stufe }, set: { wahl($0) })) {
-                ForEach(FreigabeStufe.allCases, id: \.self) { Text($0.name).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .frame(minHeight: Abstand.tippflaeche)
-            Text(stufe == .wenig ? "Wenig: Schritte und Gym." : "Alles: alle Bereiche. Zyklus nie.")
-                .font(.footnote).foregroundStyle(palette.text2)
-            if speichernFehler {
-                Text("Das ließ sich nicht speichern. Prüfe das Netz und versuche es nochmal.").font(.footnote).foregroundStyle(palette.text2)
-            }
-            if eintrag != nil {
-                NavigationLink { VerbindungPersonView(id: id) } label: { Label("Zur Person", systemImage: "person.crop.circle") }
-                    .frame(minHeight: Abstand.tippflaeche)
+            ScrollView {
+                VStack(spacing: Abstand.m) {
+                    Image(systemName: "checkmark.circle").font(.system(size: 48)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                    Text("Verbunden mit \(name)").font(.headline).multilineTextAlignment(.center)
+                    Text("Was soll \(name) von dir sehen?").font(.footnote).foregroundStyle(palette.text2)
+                    FreigabeAuswahl(an: an, einklappbar: nil) { wahl($0) }
+                    if speichernFehler {
+                        Text("Das ließ sich nicht speichern. Prüfe das Netz und versuche es nochmal.").font(.footnote).foregroundStyle(palette.text2)
+                    }
+                    if eintrag != nil {
+                        NavigationLink { VerbindungPersonView(id: id) } label: { Label("Zur Person", systemImage: "person.crop.circle") }
+                            .frame(minHeight: Abstand.tippflaeche)
+                    }
+                }
             }
             Button("Fertig") { dismiss() }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
         }
-        .onAppear { if let e = eintrag, let s = FreigabeStufe.von(e.ich.zeigtBereiche) { stufe = s } }
+        .onAppear { if let e = eintrag { an = e.ich.zeigtBereiche } }
     }
 
-    private func wahl(_ neu: FreigabeStufe) {
-        let alt = stufe
-        stufe = neu
+    private func wahl(_ neu: Set<VerbindungBereich>) {
+        let alt = an
+        an = neu
         speichernFehler = false
-        let felder: [String: Any] = ["zeigt": neu.bereiche.map(\.rawValue).sorted()]
         Task {
-            if !(await umgebung.konto.verbindungAendern(id, felder)) { stufe = alt; speichernFehler = true }
+            if !(await umgebung.konto.verbindungAendern(id, FreigabeStufe.felder(neu))) { an = alt; speichernFehler = true }
         }
     }
 }

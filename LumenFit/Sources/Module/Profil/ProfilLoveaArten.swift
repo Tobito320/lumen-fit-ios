@@ -20,14 +20,14 @@ enum ProfilLoveaArten {
         "koerper.setzen", "food.anpassung",
         "habit.setzen", "habit.anlegen", "habit.aendern", "habit.ausblenden", "habit.loeschen",
         "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen",
-        "zyklus.tag", "zyklus.einstellung",
     ]
 
     /// Arten, die Lumen Fit nicht selbst liest, aber nicht verlieren darf. Roh im Log, im Bericht genannt (`ProfilLoveaUebernahme`: `coach.nachricht` wird dazu
     /// als `fit.coach.nachricht` sichtbar). `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank) aus älteren Lovea-Fassungen: keine
     /// Ansicht hier. `wecker.setzen` ist die Weckzeit, die Lovea dem Partner zeigt: Wecker gehören zu Lumen Alarm, Lumen Fit ist nur Health (Umfang-Gate), und
     /// beim Entfernen in Lovea darf diese Zeit nicht verschwinden.
-    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen"]
+    /// `zyklus.tag` und `zyklus.einstellung`: der Zyklus ist aus Lumen Fit entfernt (02.11.2026), nichts liest die Ops mehr; sie bleiben roh im Log, wie sie waren.
+    static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen", "zyklus.tag", "zyklus.einstellung"]
 
     /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach, die Konsistenz-Kategorien und die Abgabe aus Lovea
     /// (`abgabe.*`: was nur auf dem Lovea-Gerät lag, siehe `ProfilLoveaUebernahme`). Der Rest ist Lovea-Oberfläche.

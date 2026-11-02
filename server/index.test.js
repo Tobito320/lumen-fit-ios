@@ -438,7 +438,7 @@ test("Partner: zu große Zusammenfassung wird abgewiesen, Grenzen je Liste halte
   assert.ok(JSON.stringify(gespeichert).length < 100000, "bleibt weit unter der Zeilengrenze");
 });
 
-test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur mit ihrer Freigabe an", async () => {
+test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten kommen nur mit ihrer Freigabe an", async () => {
   const env = umgebung();
   await registrieren(env);
   await registrieren(env, ID2, GEHEIM2, "Zweites Gerät");
@@ -448,7 +448,7 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur m
   const wert = {
     tag, schritteZiel: 9000, schritteWoche: { [tag]: 8000, kaputt: 5 }, gymTage: [tag, "x"], gymZiel: 4, schlafZiel: 480, schlafWoche: { [tag]: 450 },
     energieStufe: "hoch", energieGym: "mittel", habitsFertig: ["gym", "wasser", "fremd"], wasserGlaeser: 5,
-    zyklus: { phase: "folikular", tag: 3, wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"] },
+    zyklus: { phase: "folikular", tag: 3, wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"] },   // alter Build: wird verworfen
   };
   const lies = async (freigaben) => {
     const body = { version: 1, geschrieben: new Date().toISOString(), profilName: "Ahmed", freigaben, heute: wert, ereignisse: [] };
@@ -456,7 +456,7 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur m
     return (await ruf(env, "GET", "/partner", { headers: app2() })).json.partner.heute;
   };
   const ohne = await lies([]);
-  assert.deepEqual(Object.keys(ohne).sort(), ["tag", "zyklus"], "ohne Freigabe nur der Tag und der (separat erlaubte) Zyklus");
+  assert.deepEqual(Object.keys(ohne).sort(), ["tag"], "ohne Freigabe nur der Tag");
   const schritte = await lies(["schritte"]);
   assert.deepEqual([schritte.schritteZiel, schritte.schritteWoche], [9000, { [tag]: 8000 }]);
   const gym = await lies(["gym"]);
@@ -468,5 +468,5 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten und Zyklus kommen nur m
   wert.wasserGlaeser = 5000;
   assert.equal((await lies(["essen"])).wasserGlaeser, undefined, "unsinnig große Zahl fällt weg");
   wert.wasserGlaeser = 5;
-  assert.deepEqual(alle.zyklus, { phase: "folikular", wunsch: "ruhig", satz: "Satz", tipps: ["a", "b"], tag: 3 });
+  assert.equal(alle.zyklus, undefined, "ein Zyklus aus einem alten Build wird nie ausgegeben");
 });

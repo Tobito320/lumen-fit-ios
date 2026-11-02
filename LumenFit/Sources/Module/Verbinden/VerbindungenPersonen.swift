@@ -88,27 +88,9 @@ struct VerbindungPersonView: View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
         return VerbindenAbschnitt(titel: "Das zeigst du \(e.anzeigeName)",
                                   fuss: "Wenig: Schritte und Gym. Alles: alle Bereiche. Es gehen nur Zusammenfassungen von heute hinaus.") {
-            Picker("Wie viel", selection: Binding<FreigabeStufe?>(
-                get: { FreigabeStufe.von(an) },
-                set: { stufe in
-                    guard let stufe else { return }
-                    zeigtLokal = stufe.bereiche
-                    senden(["zeigt": stufe.bereiche.map(\.rawValue).sorted()])
-                })) {
-                ForEach(FreigabeStufe.allCases, id: \.self) { Text($0.name).tag(Optional($0)) }
-            }
-            .pickerStyle(.segmented)
-            .frame(minHeight: Abstand.tippflaeche)
-            DisclosureGroup("Einzelne Schalter", isExpanded: $einzelnOffen) {
-                ForEach(VerbindungBereich.allCases, id: \.self) { b in
-                    Toggle(isOn: Binding(get: { an.contains(b) }, set: { neu in
-                        var n = an
-                        if neu { n.insert(b) } else { n.remove(b) }
-                        zeigtLokal = n
-                        senden(["zeigt": n.map(\.rawValue).sorted()])
-                    })) { bereichZeile(b) }
-                    .frame(minHeight: Abstand.tippflaeche)
-                }
+            FreigabeAuswahl(an: an, einklappbar: $einzelnOffen) { neu in
+                zeigtLokal = neu
+                senden(FreigabeStufe.felder(neu))
             }
         }
     }
@@ -146,7 +128,7 @@ struct VerbindungPersonView: View {
                         if neu { n.remove(b) } else { n.insert(b) }
                         ausblendenLokal = n
                         senden(["ausblenden": n.map(\.rawValue).sorted()])
-                    })) { bereichZeile(b, erklaerung: false) }
+                    })) { BereichZeile(b, erklaerung: false) }
                     .frame(minHeight: Abstand.tippflaeche)
                 }
                 let zeilen = e.daten.map(FreigabenVorschau.zeilen) ?? []
@@ -195,16 +177,6 @@ struct VerbindungPersonView: View {
     }
 
     // MARK: Hilfen
-
-    private func bereichZeile(_ b: VerbindungBereich, erklaerung: Bool = true) -> some View {
-        HStack(spacing: Abstand.m) {
-            Image(systemName: b.symbol).frame(width: 28).foregroundStyle(palette.text2).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(b.name)
-                if erklaerung { Text(b.erklaerung).font(.footnote).foregroundStyle(palette.text2) }
-            }
-        }
-    }
 
     private func senden(_ felder: [String: Any]) {
         Task {

@@ -4,18 +4,17 @@ import XCTest
 /// Dateien aus älteren oder neueren Ständen dürfen nie dazu führen, dass der Store leer startet oder Daten verliert.
 @MainActor
 final class AlteDateienLadenTests: XCTestCase {
-    func testAlteZyklusDatenBleibenLesbarObwohlLumenFitDenZyklusNichtMehrZeigt() throws {
-        // Zyklus gehört nur in Lovea. Lumen Fit zeigt und schickt ihn nicht mehr, aber gespeicherte Werte, Ops und alte Server-Antworten bleiben lesbar.
+    func testAlteZyklusFelderStoerenNichtObwohlLumenFitDenZyklusNichtMehrHat() throws {
+        // Der Zyklus ist aus Lumen Fit entfernt. Alte Dateien, Ops und Server-Antworten mit Zyklus-Feldern müssen weiter laden, der Rest bleibt.
         let ordner = try tempOrdner()
-        try Data(#"{"aktiv":true,"sperre":false,"partnerZeigen":true,"gibtEsNochNicht":1}"#.utf8).write(to: ordner.appendingPathComponent("zyklus-lokal.json"))
+        try Data(#"{"aktiv":true,"sperre":false,"partnerZeigen":true}"#.utf8).write(to: ordner.appendingPathComponent("zyklus-lokal.json"))
+        try Data(#"{"thema":"wald","haptik":false,"zyklus":{"aktiv":true}}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
         let raum = LokalerRaum(ordner: ordner, profil: .testA)
-        var tag = ZyklusTag(id: "2026-10-29")
-        tag.blutung = .mittel
-        ZyklusStore(raum: raum, ordner: ordner).setze(tag)
-        let store = ZyklusStore(raum: raum, ordner: ordner)
-        XCTAssertTrue(store.aktiv, "der alte Schalter bleibt gespeichert")
-        XCTAssertFalse(store.werte.sperre)
-        XCTAssertEqual(store.tage["2026-10-29"]?.blutung, .mittel, "die Ops bleiben im Log")
+        raum.senden("zyklus.tag", ["id": "2026-10-29"])
+        let satz = DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: { Date() })
+        XCTAssertEqual(satz.einstellungen.werte.thema, .wald, "andere Daten bleiben erhalten")
+        XCTAssertFalse(satz.einstellungen.werte.haptik)
+        XCTAssertEqual(satz.raum.ops(arten: ["zyklus.tag"]).count, 1, "die Op bleibt im Log, wird nur nicht mehr gelesen")
 
         let einstellung = try LoveaVertrag.decoder().decode(VerbindungEinstellung.self, from: Data(#"{"zeigt":["schritte","zyklus"],"ausblenden":["zyklus"]}"#.utf8))
         XCTAssertEqual(einstellung.zeigt, ["schritte", "zyklus"], "der Text bleibt, nur der Bereich ist unbekannt")
@@ -25,8 +24,7 @@ final class AlteDateienLadenTests: XCTestCase {
         let heute = try LoveaVertrag.decoder().decode(
             TagesZusammenfassung.self,
             from: Data(#"{"tag":"2026-10-29","schritte":12,"zyklus":{"phase":"follikel","tag":3,"wunsch":"a","satz":"b","tipps":[]}}"#.utf8))
-        XCTAssertEqual(heute.schritte, 12)
-        XCTAssertEqual(heute.zyklus?.tag, 3, "eine alte Partner-Datei mit Zyklus bleibt lesbar")
+        XCTAssertEqual(heute.schritte, 12, "eine alte Partner-Datei mit Zyklus-Feld lädt, das Feld wird ignoriert")
     }
 
     func testEinstellungenMitNurEinemFeldUndFremdenFeldernSindLesbar() throws {
