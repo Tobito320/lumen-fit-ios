@@ -64,7 +64,7 @@ private struct VerbindungenInhalt: View {
                     Text("\(a.name) möchte sich mit dir verbinden").foregroundStyle(palette.text)
                     HStack(spacing: Abstand.m) {
                         Button("Annehmen") { Task { if !(await umgebung.konto.anfrageAnnehmen(a.id)) { fehler = "Das ließ sich nicht annehmen. Versuche es nochmal." } } }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.lumenHauptknopf)
                         Button("Ablehnen", role: .destructive) { Task { if !(await umgebung.konto.anfrageAblehnen(a.id)) { fehler = "Das ließ sich nicht ablehnen. Versuche es nochmal." } } }
                             .buttonStyle(.bordered)
                     }

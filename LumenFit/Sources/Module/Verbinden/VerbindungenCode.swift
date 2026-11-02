@@ -65,7 +65,7 @@ struct VerbindungCodeBlatt: View {
                 } else {
                     VStack(spacing: Abstand.s) {
                         Text("Der Code ist abgelaufen.").foregroundStyle(palette.text2)
-                        Button("Neuen Code zeigen") { Task { await erzeugen() } }.buttonStyle(.borderedProminent)
+                        Button("Neuen Code zeigen") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
                     }
                 }
             }
@@ -73,7 +73,7 @@ struct VerbindungCodeBlatt: View {
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
         } else if fehlgeschlagen {
             FehlerKarte(titel: "Kein Code möglich", hilfe: "Die App konnte dein Konto nicht erreichen. Prüfe das Netz und versuche es nochmal.")
-            Button("Nochmal") { Task { await erzeugen() } }.buttonStyle(.borderedProminent)
+            Button("Nochmal") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
         } else {
             ProgressView()
         }
@@ -96,7 +96,7 @@ struct VerbindungCodeBlatt: View {
             Text("\(a.name) möchte sich verbinden").font(.headline).multilineTextAlignment(.center)
             Text("Erst nach Annehmen sieht die Person etwas, zuerst nur Schritte und Gym.")
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
-            Button("Annehmen") { Task { await annehmen(a.id) } }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+            Button("Annehmen") { Task { await annehmen(a.id) } }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
             Button("Ablehnen", role: .destructive) { Task { await ablehnen(a.id) } }.frame(minHeight: Abstand.tippflaeche)
         }
     }
@@ -173,7 +173,7 @@ struct VerbindungVerbundenAnsicht: View {
                 NavigationLink { VerbindungPersonView(id: id) } label: { Label("Zur Person", systemImage: "person.crop.circle") }
                     .frame(minHeight: Abstand.tippflaeche)
             }
-            Button("Fertig") { dismiss() }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+            Button("Fertig") { dismiss() }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
         }
         .onAppear { if let e = eintrag, let s = FreigabeStufe.von(e.ich.zeigtBereiche) { stufe = s } }
     }
@@ -229,10 +229,10 @@ struct VerbindungScanBlatt: View {
                 case .abgelehnt(let name):
                     Image(systemName: "xmark.circle").font(.system(size: 48)).foregroundStyle(palette.text2).accessibilityHidden(true)
                     Text("\(name) hat die Anfrage abgelehnt.").font(.headline).multilineTextAlignment(.center)
-                    Button("Fertig") { dismiss() }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+                    Button("Fertig") { dismiss() }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
                 case .fehler(let text):
                     FehlerKarte(titel: "Das hat nicht geklappt", hilfe: text)
-                    Button("Nochmal") { aktuell = nil; phase = .scannen }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+                    Button("Nochmal") { aktuell = nil; phase = .scannen }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
                 }
                 Spacer(minLength: 0)
             }
@@ -275,7 +275,7 @@ struct VerbindungScanBlatt: View {
             Text("Mit \(name) verbinden?").font(.headline).multilineTextAlignment(.center)
             Text("\(name) bekommt eine Anfrage und muss sie annehmen. Du zeigst zuerst nur Schritte und Gym; das änderst du danach.")
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
-            Button("Anfrage senden") { Task { await senden(name) } }.buttonStyle(.borderedProminent).frame(minHeight: Abstand.tippflaeche)
+            Button("Anfrage senden") { Task { await senden(name) } }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
             Button("Abbrechen", role: .cancel) { dismiss() }.frame(minHeight: Abstand.tippflaeche)
         }
     }

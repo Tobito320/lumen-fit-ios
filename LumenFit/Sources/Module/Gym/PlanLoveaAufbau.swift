@@ -377,8 +377,7 @@ struct PlanLoveaHinweisZeile: View {
             }
             if hinweis.tausch != nil {
                 Button("Übernehmen", action: uebernehmen)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.regular)
+                    .buttonStyle(.lumenHauptknopf)
             }
         }
         .padding(.vertical, 4)

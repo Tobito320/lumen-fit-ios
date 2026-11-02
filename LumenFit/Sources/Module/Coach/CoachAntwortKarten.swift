@@ -298,7 +298,7 @@ struct CoachEintragsKarte: View {
                 }
                 HStack {
                     Button("Eintragen") { modell.vorschlagBestaetigen() }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.lumenHauptknopf)
                         .accessibilityHint("Trägt das ein. Danach kannst du es zurücknehmen")
                     Button("Verwerfen") { modell.vorschlagVerwerfen() }
                         .buttonStyle(.bordered)
@@ -313,7 +313,7 @@ struct CoachEintragsKarte: View {
                 HStack {
                     if wecker.contains(where: { $0.zustand == .wartet }) {
                         Button("Lumen Alarm öffnen") { Self.alarmOeffnen() }
-                            .buttonStyle(.borderedProminent)
+                            .buttonStyle(.lumenHauptknopf)
                             .accessibilityHint("Öffnet Lumen Alarm, damit es den Auftrag ausführt")
                     }
                     Button("Schließen") { modell.weckerKarteSchliessen() }
