@@ -18,8 +18,8 @@ final class InfoPlistTests: XCTestCase {
     }
 
     func testHealthTextNenntKeinenZyklusMehr() {
-        // Zyklus gehört nur in Lovea. Der Face-ID-Text bleibt, solange der alte Zyklus-Code im Ziel liegt.
-        XCTAssertFalse((info["NSFaceIDUsageDescription"] as? String ?? "").isEmpty)
+        // Zyklus gehört nur in Lovea: keine Oberfläche, keine Face-ID-Sperre dafür.
+        XCTAssertNil(info["NSFaceIDUsageDescription"])
         let health = info["NSHealthShareUsageDescription"] as? String ?? ""
         XCTAssertFalse(health.contains("Zyklus"))
         XCTAssertFalse(health.contains("Menstruationsfluss"))

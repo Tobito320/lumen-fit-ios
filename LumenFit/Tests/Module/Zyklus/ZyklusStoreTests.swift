@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Store, Ops, Sperre, Health-Abbildung, Ring und die Zusammenfassung für den Partner.
+/// Store, Ops und die Zusammenfassung für den Partner (die Oberfläche des Zyklus gibt es in Lumen Fit nicht mehr).
 @MainActor
 final class ZyklusStoreTests: XCTestCase {
     private let heute = "2026-10-30"
@@ -145,117 +145,6 @@ final class ZyklusStoreTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(TagesZusammenfassung.self, from: JSONEncoder().encode(t)).zyklus, z)
     }
 
-    // MARK: Sperre
-
-    func testSperreSchliesstUndOeffnet() async throws {
-        let (store, _, _) = try aufbau()
-        let sperre = ZyklusSperre(store: store, pruefer: { true })
-        XCTAssertTrue(sperre.gesperrt)
-        await sperre.entsperren()
-        XCTAssertFalse(sperre.gesperrt)
-        sperre.sperren()
-        XCTAssertTrue(sperre.gesperrt)
-    }
-
-    func testSperreMitFehlschlagBleibtZu() async throws {
-        let (store, _, _) = try aufbau()
-        let sperre = ZyklusSperre(store: store, pruefer: { false })
-        await sperre.entsperren()
-        XCTAssertTrue(sperre.gesperrt)
-        XCTAssertTrue(sperre.fehlgeschlagen)
-    }
-
-    func testSperreAusMachtNieEineSperre() throws {
-        let (store, _, _) = try aufbau()
-        let sperre = ZyklusSperre(store: store, pruefer: { false })
-        sperre.aktiv = false
-        XCTAssertFalse(sperre.gesperrt)
-        XCTAssertFalse(store.werte.sperre)
-        XCTAssertFalse(ZyklusSperreLogik.gesperrt(aktiv: false, entsperrt: false))
-        XCTAssertTrue(ZyklusSperreLogik.gesperrt(aktiv: true, entsperrt: false))
-        XCTAssertFalse(ZyklusSperreLogik.gesperrt(aktiv: true, entsperrt: true))
-    }
-
-    // MARK: Health
-
-    func testFlussAbbildung() {
-        XCTAssertEqual(ZyklusHealthImport.blutung(vonRohwert: 2), .leicht)
-        XCTAssertEqual(ZyklusHealthImport.blutung(vonRohwert: 3), .mittel)
-        XCTAssertEqual(ZyklusHealthImport.blutung(vonRohwert: 4), .stark)
-        XCTAssertEqual(ZyklusHealthImport.blutung(vonRohwert: 1), .mittel, "unspecified heißt Blutung ohne Stärke")
-        XCTAssertNil(ZyklusHealthImport.blutung(vonRohwert: 5), "none ist keine Blutung")
-        XCTAssertNil(ZyklusHealthImport.blutung(vonRohwert: 99))
-    }
-
-    func testTageswerteNimmtStaerksteBlutungLetzteTemperaturUndVerwirftUnmoegliches() {
-        let tag = Datum.datum(heute)
-        let fruehMittag = tag.addingTimeInterval(3_600), spaet = tag.addingTimeInterval(7_200)
-        let w = ZyklusHealthImport.tageswerte(
-            fluss: [(fruehMittag, 2), (spaet, 4)],
-            temperatur: [(fruehMittag, 36.41), (spaet, 36.57), (spaet, 99)],
-            gewichte: [GewichtsMesswert(tag: heute, kg: 58.46), GewichtsMesswert(tag: "2026-10-29", kg: 5)])
-        XCTAssertEqual(w[heute]?.blutung, .stark)
-        XCTAssertEqual(w[heute]?.temperatur, 36.6)
-        XCTAssertEqual(w[heute]?.gewicht, 58.5)
-        XCTAssertNil(w["2026-10-29"], "5 kg ist kein Gewicht")
-    }
-
-    func testZusammenfuehrenFuelltNurLeereFelder() {
-        var vorhanden = ZyklusTag(id: heute)
-        vorhanden.blutung = .leicht
-        let gelesen = [heute: ZyklusHealthImport.Gelesen(blutung: .stark, temperatur: 36.5, gewicht: nil),
-                       "2026-10-29": ZyklusHealthImport.Gelesen(blutung: .mittel, temperatur: nil, gewicht: nil)]
-        let neu = ZyklusHealthImport.zusammenfuehren(bestehend: [heute: vorhanden], gelesen: gelesen)
-        XCTAssertEqual(neu.map(\.id), ["2026-10-29", heute])
-        let heutiger = neu.first { $0.id == heute }
-        XCTAssertEqual(heutiger?.blutung, .leicht, "was die Person eingetragen hat, bleibt")
-        XCTAssertEqual(heutiger?.temperatur, 36.5)
-        XCTAssertTrue(ZyklusHealthImport.zusammenfuehren(bestehend: [:], gelesen: [heute: .init()]).isEmpty, "nichts Neues, keine Änderung")
-    }
-
-    func testStartpunktUndRueckblick() {
-        let jetzt = Date(timeIntervalSince1970: 10_000_000)
-        XCTAssertEqual(ZyklusHealthImport.startpunkt(letzter: nil, jetzt: jetzt), jetzt.addingTimeInterval(-60 * 86_400))
-        let gestern = jetzt.addingTimeInterval(-86_400 * 3)
-        XCTAssertEqual(ZyklusHealthImport.startpunkt(letzter: gestern, jetzt: jetzt), gestern.addingTimeInterval(-86_400))
-        let uralt = jetzt.addingTimeInterval(-86_400 * 400)
-        XCTAssertEqual(ZyklusHealthImport.startpunkt(letzter: uralt, jetzt: jetzt), jetzt.addingTimeInterval(-60 * 86_400))
-    }
-
-    func testImportOhneSchalterTutNichts() async throws {
-        let (store, _, _) = try aufbau()
-        let n = await ZyklusHealthImport.importieren(zyklus: store, leser: LeererHealthLeser())
-        XCTAssertEqual(n, 0)
-        XCTAssertTrue(store.tage.isEmpty)
-    }
-
-    // MARK: Ring und Texte
-
-    func testRingAbschnitteDeckenDenGanzenRingAb() {
-        let a = ZyklusRingLogik.abschnitte(laenge: 28, periodenLaenge: 5)
-        XCTAssertEqual(a.first?.von, 0)
-        XCTAssertEqual(a.last?.bis, 1)
-        XCTAssertEqual(a.map(\.tage).reduce(0, +), 28)
-        for (vorher, nachher) in zip(a, a.dropFirst()) { XCTAssertEqual(vorher.bis, nachher.von, accuracy: 1e-9) }
-        XCTAssertEqual(a.first?.phase, .periode)
-        XCTAssertEqual(a.first?.tage, 5)
-    }
-
-    func testEinstellungenWerdenBegrenzt() {
-        var e = ZyklusEinstellung()
-        e.zyklusLaenge = 99; e.periodenLaenge = 0
-        let b = ZyklusEinstellungenLogik.begrenzt(e)
-        XCTAssertEqual(b.zyklusLaenge, 45)
-        XCTAssertEqual(b.periodenLaenge, 2)
-    }
-
-    func testReiterJeModus() {
-        XCTAssertEqual(ZyklusRootLogik.reiter(.zyklus), [.heute, .kalender, .insights])
-        XCTAssertEqual(ZyklusRootLogik.reiter(.pille), [.modus, .kalender, .insights])
-        XCTAssertEqual(ZyklusRootLogik.gueltig(.heute, modus: .pille), .modus)
-        XCTAssertEqual(ZyklusRootLogik.titel(.modus, modus: .schwanger), "Schwanger")
-    }
-
     func testUebersetzerBleibtNeutralUndSagtKlarWasHilft() throws {
         var t = ZyklusTag(id: heute)
         t.symptome = [.kraempfe]
@@ -264,12 +153,5 @@ final class ZyklusStoreTests: XCTestCase {
         let alles = ([b.satz, b.wunsch] + b.tipps).joined(separator: " ")
         XCTAssertTrue(alles.contains("Person") || !alles.isEmpty, "Texte sind da und person-neutral (Namen prüft das Namen-Gate)")
         XCTAssertNil(ZyklusUebersetzer.fuer(phase: nil, tag: nil))
-    }
-
-    func testExportNenntLumenFit() {
-        var t = ZyklusTag(id: heute); t.notiz = "Test"
-        let text = ZyklusEinstellungenLogik.export(tage: [heute: t], einstellung: ZyklusEinstellung())
-        XCTAssertTrue(text.hasPrefix("Lumen Fit Zyklus"))
-        XCTAssertTrue(text.contains("\(heute): Notiz: Test"))
     }
 }
