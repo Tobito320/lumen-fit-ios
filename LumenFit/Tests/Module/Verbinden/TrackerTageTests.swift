@@ -135,4 +135,20 @@ final class BandTagOpsTests: XCTestCase {
         tage.aufnehmen(zeile("2026-10-10", slot: 40, schritte: 0))
         XCTAssertEqual(tage.ops(bisher: [:]), [])
     }
+
+    /// Eine Uhr, die 60 Minuten vorgeht, legt 23:00 bis 24:00 auf die Viertelstunden 0 bis 3 des Folgetags. Nach dem Stellen der Uhr liefert das Band dieselben
+    /// Schritte unter dem richtigen Tag (Viertelstunden 92 bis 95): der richtige Tag wächst und wird nie kleiner; die Geister-Viertelstunden des Folgetags bleiben
+    /// stehen, bis das Band sie vergisst (shortcut: ob das Band sie beim Stellen umbucht, zeigt nur das Gerät; höchstens eine Nachtstunde zu viel an einem Tag).
+    func testEineVorgehendeUhrLegtDieLetzteStundeAufDenFolgetagUndDasStellenGleichtDenRichtigenTagAus() {
+        var tage = BandTage()
+        tage.aufnehmen(zeile("2026-10-10", slot: 60, schritte: 4_000))
+        tage.aufnehmen(zeile("2026-10-11", slot: 0, schritte: 90)) // um 23:00 gelaufen, die Uhr zeigte schon 00:00
+        var bisher = Dictionary(uniqueKeysWithValues: tage.ops(bisher: [:]).map { ($0.tag, $0) })
+        XCTAssertEqual(bisher["2026-10-10"]?.schritte, 4_000)
+        XCTAssertEqual(bisher["2026-10-11"]?.schritte, 90)
+        tage.aufnehmen(zeile("2026-10-10", slot: 92, schritte: 90)) // gestellte Uhr: dieselben Schritte am richtigen Tag
+        for op in tage.ops(bisher: bisher) { bisher[op.tag] = op }
+        XCTAssertEqual(bisher["2026-10-10"]?.schritte, 4_090)
+        XCTAssertEqual(tage.ops(bisher: bisher), [], "ein zweiter Durchlauf schreibt nichts mehr")
+    }
 }
