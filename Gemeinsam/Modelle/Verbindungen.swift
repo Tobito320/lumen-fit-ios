@@ -1,7 +1,7 @@
 import Foundation
 
-/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die zehn Freigaben. Die Namen sind die des Servers. Der Zyklus gehört nur in Lovea:
-/// ein "zyklus" vom Server ist hier ein unbekannter Bereich und fällt beim Lesen weg (`init(rawValue:)` liefert nil).
+/// Die Bereiche, die eine Verbindung einzeln zeigen kann: die zehn Freigaben. Die Namen sind die des Servers.
+/// Ein unbekannter Name vom Server (auch ein alter) ist hier kein Bereich und fällt beim Lesen weg (`init(rawValue:)` liefert nil).
 enum VerbindungBereich: String, CaseIterable, Sendable {
     case schritte, gym, schlaf, essen, plan, verlauf, tagebuch, koerper, stimmung, gewohnheiten
 
@@ -209,7 +209,7 @@ enum VerbindungenLogik {
         return Set(eintrag.ich.zeigtBereiche.compactMap(\.freigabe))
     }
 
-    /// Die Bereiche, die diese App hochladen darf, als Freigaben. Nie der Zyklus, auch wenn der Server ihn noch nennt: er gehört nur in Lovea.
+    /// Die Bereiche, die diese App hochladen darf, als Freigaben. Unbekannte Namen vom Server fallen weg.
     /// Ein ausgeschalteter Bereich (`Einstellungen`) wird auch dann nicht hochgeladen, wenn eine Verbindung ihn zeigen darf.
     nonisolated static func hochladen(_ antwort: VerbindungenAntwort?, einstellungen: Einstellungen = Einstellungen()) -> Set<FreigabeArt> {
         guard let antwort else { return [] }
@@ -286,7 +286,7 @@ enum VerbindungenLogik {
         if d.freigaben.contains(.koerper) { h.koerper = alt.koerper }
         if d.freigaben.contains(.stimmung) { h.stimmung = alt.stimmung; h.stimmungWoche = alt.stimmungWoche }
         if d.freigaben.contains(.gewohnheiten) { h.gewohnheiten = alt.gewohnheiten }
-        d.heute = h   // Zyklus fällt immer weg: er gehört nur in Lovea
+        d.heute = h
         d.ereignisse = datei.ereignisse.filter { d.freigaben.contains(ereignisFreigabe($0.art)) }
         return d
     }

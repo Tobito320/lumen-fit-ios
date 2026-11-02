@@ -8,7 +8,7 @@ final class RouteURLTests: XCTestCase {
         liste += [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
         liste += [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
         liste += [SchlafBereich.letzteNacht, .verlauf, .werte].map { Route.schlaf($0) }
-        liste += [ProfilBereich.uebersicht, .einstellungen, .aussehen, .ziele, .verbindungen, .datensicherung, .quellen, .meilensteine, .lumi, .zyklus].map { Route.profil($0) }
+        liste += [ProfilBereich.uebersicht, .einstellungen, .aussehen, .ziele, .verbindungen, .datensicherung, .quellen, .meilensteine, .lumi].map { Route.profil($0) }
         return liste
     }()
 

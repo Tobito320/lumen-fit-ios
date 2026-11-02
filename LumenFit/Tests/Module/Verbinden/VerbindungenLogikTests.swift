@@ -72,7 +72,6 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertNil(kurz.heute.kcal)
         XCTAssertEqual(kurz.heute.habitsFertig, ["gym"], "Wasser gehört zu Essen")
         XCTAssertEqual(kurz.ereignisse.map(\.id), ["e1"])
-        XCTAssertNil(VerbindungenLogik.begrenze(datei, auf: Set(FreigabeArt.allCases)).heute.zyklus, "Zyklus kommt nie aus einer Datei")
     }
 
     func testZuletztText() {

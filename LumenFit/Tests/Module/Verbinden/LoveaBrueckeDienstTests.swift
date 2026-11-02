@@ -212,25 +212,6 @@ final class LoveaBrueckeDienstTests: XCTestCase {
         XCTAssertEqual(stand.heute.schritte, 8_200)
         XCTAssertNil(stand.heute.kcal, "Essen zeigt keine Verbindung")
         XCTAssertNil(stand.heute.schlafMinuten)
-        XCTAssertNil(stand.heute.zyklus)
-    }
-
-    func testZyklusGehtNieHinausAuchWennErInDerAppErlaubtIst() async throws {
-        // Zyklus gehört nur in Lovea: selbst mit alten Zyklus-Daten und alter Erlaubnis schickt Lumen Fit ihn weder an den Server noch an Lovea.
-        let a = try await aufbau(freigaben: Set(FreigabeArt.allCases))
-        for i in 0..<2 {
-            var t = ZyklusTag(id: Datum.addTage("2026-10-29", -i))
-            t.blutung = .mittel
-            a.daten.zyklus.setze(t)
-        }
-        a.daten.zyklus.aendere { $0.aktiv = true; $0.partnerZeigen = true }
-        XCTAssertNotNil(a.daten.zyklus.partnerZusammenfassung(), "Vorbedingung: der Zyklus wäre früher teilbar gewesen")
-        a.dienst.hochladen = { Set(FreigabeArt.allCases) }
-        XCTAssertTrue(a.dienst.schreibe())
-        XCTAssertNotNil(a.fake.serverStaende.last)
-        XCTAssertNil(a.fake.serverStaende.last?.heute.zyklus, "nie an den Server")
-        XCTAssertNil(a.fake.zusammenfassungen.last?.heute.zyklus, "nie in die Datei für Lovea")
-        XCTAssertNil(a.dienst.vorschau()?.heute.zyklus, "nie in der Vorschau")
     }
 
     func testDateiFuerLoveaBleibtBeiDenFreigabenDesProfils() async throws {

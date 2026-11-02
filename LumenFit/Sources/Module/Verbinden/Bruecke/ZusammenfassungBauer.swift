@@ -100,7 +100,6 @@ enum ZusammenfassungBauer {
         if e.freigaben.contains(.schlaf) { heute.schlafMinuten = e.schlafMinuten }
         if e.freigaben.contains(.essen) { heute.kcal = e.kcal }
         erweitere(&heute, e)
-        // Kein Zyklus: er gehört nur in Lovea, Lumen Fit schickt ihn weder an Lovea noch an den Server.
         let erlaubt = e.ereignisse
             .filter { e.freigaben.contains(freigabe(fuer: $0.art)) && e.jetzt.timeIntervalSince($0.zeit) <= ereignisFrist }
             .sorted { $0.zeit < $1.zeit }
