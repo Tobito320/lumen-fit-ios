@@ -26,6 +26,15 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertEqual(VerbindungEinstellung().zeigtBereiche, [], "ohne Angabe zeigt der Eintrag nichts")
     }
 
+    func testFreigabeStufenWenigAllesUndEigene() {
+        XCTAssertEqual(FreigabeStufe.wenig.bereiche, [.schritte, .gym])
+        XCTAssertEqual(FreigabeStufe.alles.bereiche, Set(VerbindungBereich.allCases))
+        XCTAssertEqual(FreigabeStufe.von([.schritte, .gym]), .wenig)
+        XCTAssertEqual(FreigabeStufe.von(Set(VerbindungBereich.allCases)), .alles)
+        XCTAssertNil(FreigabeStufe.von([.schritte, .schlaf]), "eigene Auswahl bleibt, wie sie ist")
+        XCTAssertNil(FreigabeStufe.von([]))
+    }
+
     func testEintragIstNurMitStatusAktivAktiv() throws {
         let json = #"{"verbindungen":[{"id":"a","name":"Person","status":"aktiv"},{"id":"b","name":"Zukunft","status":"neuerStatus"},{"kaputt":true},{"id":"c","name":"Wartet","status":"anfrageEingehend"}],"teilen":["schritte","irgendwas"]}"#
         let a = try LoveaVertrag.decoder().decode(VerbindungenAntwort.self, from: Data(json.utf8))
