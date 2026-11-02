@@ -42,6 +42,17 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("einstellungen.json.defekt").path))
     }
 
+    func testEinstellungenOhneBereicheZeigenAllesUndBehaltenGewaehlteBereiche() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"thema":"wald"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
+        let alt = EinstellungenStore(ordner: ordner)
+        XCTAssertTrue(alt.werte.gymAn && alt.werte.essenAn && alt.werte.schlafAn, "Bestandsprofil: alle Bereiche an")
+        alt.aendere { $0.setze(.schlaf, an: false) }
+        let neu = EinstellungenStore(ordner: ordner)
+        XCTAssertFalse(neu.werte.schlafAn, "die Wahl übersteht den Neustart")
+        XCTAssertEqual(neu.werte.thema, .wald)
+    }
+
     func testAlterKontoStandOhneCoachSichtbarBleibtLesbarUndZeigtKeinenCoach() throws {
         let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3},"loveaErlaubt":true}"#.utf8))
         XCTAssertTrue(alt.config.profilAnlegenErlaubt)
