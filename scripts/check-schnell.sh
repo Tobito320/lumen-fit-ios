@@ -8,7 +8,7 @@ fehler=0
 if [ "${1:-}" = "--alle" ]; then
   dateien=$(git ls-files --cached --others --exclude-standard -- '*.swift')
 else
-  dateien=$( { git diff --name-only HEAD -- '*.swift'; git ls-files --others --exclude-standard -- '*.swift'; } | sort -u )
+  dateien=$( { git diff --name-only --diff-filter=d HEAD -- '*.swift'; git ls-files --others --exclude-standard -- '*.swift'; } | sort -u )
 fi
 if [ -n "$dateien" ]; then
   echo "$dateien" | tr '\n' '\0' | xargs -0 swift-syntax-check || fehler=1
