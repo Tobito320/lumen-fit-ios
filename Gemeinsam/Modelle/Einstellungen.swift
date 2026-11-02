@@ -6,6 +6,9 @@ enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
 /// Die wählbaren Bereiche. Heute (und der Coach, den der Server steuert) bleiben immer.
 enum AppBereich: String, Codable, CaseIterable, Sendable { case gym, essen, schlaf }
 
+/// Die Antwort auf die Frage nach der Nutzungsmeldung. Nur `.ja` erlaubt das Senden; "noch nicht gefragt" und "nein" senden nichts.
+enum NutzungAntwort: String, Codable, Sendable { case offen, ja, nein }
+
 /// Alle Felder haben Standardwerte; `init(from:)` nutzt `decodeIfPresent`, damit neue Felder alte Dateien nie unlesbar machen.
 /// Ein unbekannter oder falsch getippter Wert (zum Beispiel ein Theme, das es später nicht mehr gibt) ergibt den Standard statt einer unlesbaren Datei.
 struct Einstellungen: Codable, Equatable, Sendable {
@@ -21,8 +24,11 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var alarmWeckt = true                // Lumen Alarm darf das Band wecken (Gerät, Standard an)
     var mitteilungen: [String: Bool] = [:]
     var healthGefragt = false
-    /// Die anonyme Nutzungsmeldung an den Server (Datenschutz). Aus = es geht kein Zähler raus.
-    var nutzungZaehlen = true
+    /// Die Nutzungsmeldung an den Server (Datenschutz, hängt am Konto, ist nicht anonym). Nur nach einem "Ja" geht etwas raus; ein altes `nutzungZaehlen: true`
+    /// aus früheren Versionen zählt nicht als Einwilligung und wird beim Lesen ignoriert.
+    var nutzungAntwort: NutzungAntwort = .offen
+    /// Tag (yyyy-MM-dd) des "Ja": Diagnosen, die davor lagen, werden nicht übernommen.
+    var nutzungJaSeit: String?
     /// Bereiche wählen: aus = Tab, Karten und Einträge verschwinden, die Daten bleiben. Bestandsprofile behalten alles (Standard an).
     var gymAn = true
     var essenAn = true
@@ -31,6 +37,14 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var fastenAn = false
 
     init() {}
+
+    var nutzungErlaubt: Bool { nutzungAntwort == .ja }
+
+    /// Hält die Antwort fest; das "Ja" merkt sich den Tag, ein Wechsel auf "Nein" oder "offen" löscht ihn.
+    mutating func antworteNutzung(_ antwort: NutzungAntwort, tag: String) {
+        if antwort == .ja { if nutzungAntwort != .ja { nutzungJaSeit = tag } } else { nutzungJaSeit = nil }
+        nutzungAntwort = antwort
+    }
 
     /// Das Band ist eingerichtet, wenn es an ist oder je bewusst ausgeschaltet wurde; sonst steht unter Geräte nur "Band einrichten".
     var bandEingerichtet: Bool { bandAktiv || bandBewusstAus }
@@ -57,7 +71,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungZaehlen, gymAn, essenAn, schlafAn, fastenAn
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn
     }
 
     init(from decoder: Decoder) throws {
@@ -73,7 +87,8 @@ struct Einstellungen: Codable, Equatable, Sendable {
         alarmWeckt = (try? c.decodeIfPresent(Bool.self, forKey: .alarmWeckt)) ?? true
         mitteilungen = (try? c.decodeIfPresent([String: Bool].self, forKey: .mitteilungen)) ?? [:]
         healthGefragt = (try? c.decodeIfPresent(Bool.self, forKey: .healthGefragt)) ?? false
-        nutzungZaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .nutzungZaehlen)) ?? true
+        nutzungAntwort = (try? c.decodeIfPresent(NutzungAntwort.self, forKey: .nutzungAntwort)) ?? .offen
+        nutzungJaSeit = (try? c.decodeIfPresent(String.self, forKey: .nutzungJaSeit)) ?? nil
         gymAn = (try? c.decodeIfPresent(Bool.self, forKey: .gymAn)) ?? true
         essenAn = (try? c.decodeIfPresent(Bool.self, forKey: .essenAn)) ?? true
         schlafAn = (try? c.decodeIfPresent(Bool.self, forKey: .schlafAn)) ?? true

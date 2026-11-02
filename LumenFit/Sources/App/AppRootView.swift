@@ -34,21 +34,44 @@ struct AppRootView: View {
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))
             .task(id: umgebung.profil.aktiv?.id) {
-                if umgebung.profil.hatProfil { umgebung.konto.nutzung.bereich(NutzungName.tab(umgebung.router.tab)) }
+                nutzungAbgleichen()
+                if umgebung.profil.hatProfil {
+                    umgebung.konto.nutzung.bereich(NutzungName.tab(umgebung.router.tab))
+                    umgebung.konto.nutzung.startdauer(NutzungMass.sekunden(ContinuousClock.now - NutzungStart.beginn))
+                }
                 await auffrischen()
             }
-            // Nutzung: nur Zähler, welcher Tab, welche Seite, welche Funktion (nie Inhalte); gesendet wird gebündelt einmal je Start.
-            .onChange(of: einstellungen.nutzungZaehlen, initial: true) { _, neu in umgebung.konto.nutzung.an = neu }
+            // Nutzung: nur nach einem "Ja" und nur Zähler mit festen Namen (nie Inhalte); gesendet wird gebündelt einmal je Start und beim Wechsel in den Hintergrund.
+            .onChange(of: einstellungen.nutzungAntwort, initial: true) { _, _ in nutzungAbgleichen() }
             .onChange(of: umgebung.router.tab) { _, neu in umgebung.konto.nutzung.bereich(NutzungName.tab(neu)) }
             .onChange(of: umgebung.router.blatt) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.blatt(neu)) } }
             .onChange(of: umgebung.router.pfade[umgebung.router.tab]?.last) { _, neu in if let neu { umgebung.konto.nutzung.bereich(NutzungName.seite(neu)) } }
             .task {
                 for await ereignis in umgebung.ereignisse.strom() {
                     if let funktion = NutzungName.funktion(ereignis) { umgebung.konto.nutzung.funktion(funktion) }
-                    if case .vordergrund = ereignis { await auffrischen() }
-                    if case .speichernFehlgeschlagen = ereignis { speicherFehler = true }
+                    if case .vordergrund = ereignis { umgebung.konto.nutzung.vordergrund(); await auffrischen() }
+                    if case .mahlzeitGespeichert = ereignis { umgebung.konto.nutzung.ablaufFertig(.essen) }
+                    if case .speichernFehlgeschlagen = ereignis { speicherFehler = true; umgebung.konto.nutzung.fehler(.speichern) }
                 }
             }
+            // Die Frage nach der Nutzungsmeldung für Konten, die schon vor dem Update da waren (neue Konten fragt das Onboarding). Nur mit Antwort zu schließen.
+            .sheet(isPresented: Binding(get: { nutzungFrageOffen }, set: { _ in })) { NutzungFrageBlatt() }
+    }
+
+    private var nutzungFrageOffen: Bool {
+        umgebung.profil.hatProfil && !LoveaFreigabe.demoAktiv && umgebung.daten?.einstellungen.werte.nutzungAntwort == .offen
+    }
+
+    /// Hängt den Zähler an die Antwort der Person: nur "Ja" zählt und sendet; bei "Nein" und ohne Antwort ist alles Offene weg, auch eine alte Datei.
+    private func nutzungAbgleichen() {
+        let werte = umgebung.daten?.einstellungen.werte
+        let erlaubt = umgebung.profil.hatProfil && werte?.nutzungErlaubt == true
+        umgebung.konto.nutzung.an = erlaubt
+        NutzungMetrik.schalte(erlaubt, seit: werte?.nutzungJaSeit, nutzung: umgebung.konto.nutzung)
+        if erlaubt, let werte {
+            umgebung.konto.nutzung.einstellungen(werte)
+            umgebung.konto.nutzung.vordergrund()
+        }
     }
 
     @ViewBuilder
@@ -83,6 +106,9 @@ struct AppRootView: View {
         Task { await kontoAbgleichen() }   // Netz darf Health nicht aufhalten
         umgebung.beobachteHealth()
         await umgebung.gesundheit.aktualisiere()
+        if umgebung.gesundheit.zugriff == .nichtVerfuegbar, umgebung.daten?.einstellungen.werte.healthGefragt == true {
+            umgebung.konto.nutzung.fehler(.healthNichtVerfuegbar)
+        }
     }
 
     /// Meldet das Gerät beim Server an, holt Einstellungen, Lovea-Freigabe und den Partner. Gibt der Server das Konto für Lovea frei, ist die Partner-Verbindung

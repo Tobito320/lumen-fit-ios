@@ -116,6 +116,7 @@ final class KontoDienst {
     @ObservationIgnored private var partnerAusstehend: Data?
     @ObservationIgnored private var letzterPartnerUpload: Date?
     @ObservationIgnored private var nutzungGesendetInSitzung = false
+    @ObservationIgnored private var letzterNutzungsUpload: Date?
     @ObservationIgnored private let version: String
     @ObservationIgnored private var laeuft = false
     @ObservationIgnored private var letzterVersuch: Date?
@@ -194,8 +195,13 @@ final class KontoDienst {
     }
 
     /// Status und Antwort; nil bei einem Netzfehler.
+    /// Misst jeden Aufruf des Lumen-Servers (feste Routennamen, Status, Dauer als Bereich) für die Nutzungsmeldung, wenn die Person zugestimmt hat.
     private func sende(_ anfrage: URLRequest?) async -> (status: Int, daten: Data)? {
-        guard let anfrage, let antwort = try? await http.lade(anfrage) else { return nil }
+        guard let anfrage else { return nil }
+        let beginn = ContinuousClock.now
+        let antwort = try? await http.lade(anfrage)
+        nutzung.route(methode: anfrage.httpMethod, pfad: anfrage.url?.path, status: antwort?.1.statusCode, dauer: NutzungMass.sekunden(ContinuousClock.now - beginn))
+        guard let antwort else { return nil }
         return (antwort.1.statusCode, antwort.0)
     }
 
@@ -353,18 +359,33 @@ final class KontoDienst {
     // MARK: - Nutzung
 
     /// Sendet die gesammelten Zähler: einmal je Start (auch leer, das ist der "aktive Tag") und ältere Tage, die noch offen sind.
-    private func nutzungUebertragen(_ kennung: KontoKennung) async {
+    private func nutzungUebertragen(_ kennung: KontoKennung, zwischendurch: Bool = false) async {
         guard nutzung.an else { return }
         let heute = Datum.text(uhr())
-        let tage = nutzung.faellig(heute: heute, ersterInSitzung: !nutzungGesendetInSitzung)
+        let tage = nutzung.faellig(heute: heute, ersterInSitzung: !nutzungGesendetInSitzung && !zwischendurch, zwischendurch: zwischendurch)
         guard !tage.isEmpty else { return }
         for (tag, zaehler) in tage {
-            let koerper = try? JSONEncoder().encode(NutzungMeldung(tag: tag, bereiche: zaehler.bereiche, funktionen: zaehler.funktionen))
+            guard nutzung.an else { return }   // zwischen zwei Tagen ausgeschaltet: nichts Weiteres senden
+            let gruppen = zaehler.mehr.filter { !$0.value.isEmpty }
+            let koerper = try? JSONEncoder().encode(NutzungMeldung(tag: tag, bereiche: zaehler.bereiche, funktionen: zaehler.funktionen,
+                                                                   gruppen: gruppen.isEmpty ? nil : gruppen, ios: NutzungGeraet.ios, geraet: NutzungGeraet.typ))
             guard let r = await sendeMitKonto("/nutzung", methode: "POST", body: koerper, kennung: kennung) else { continue }
             // 200 gesendet; 400: der Server nimmt den Tag nicht (zu alt): verwerfen, nicht endlos wiederholen.
             if r.status == 200 || r.status == 400 { nutzung.abgeschickt(tag: tag) }
             if r.status == 200 { nutzungGesendetInSitzung = true }
         }
+    }
+
+    /// So selten gehen die Zähler zwischendurch raus (Wechsel in den Hintergrund), damit Fehler nicht erst beim nächsten Start ankommen.
+    nonisolated static let nutzungPause: TimeInterval = 300
+
+    /// Beim Wechsel in den Hintergrund: Zähler von heute senden, höchstens alle 5 Minuten, nur mit Zustimmung und angemeldetem Gerät. Best effort, kein Wiederholen.
+    func nutzungHochladen() async {
+        guard nutzung.an, case .da(let kennung) = liesKennung(), kennung.registriert else { return }
+        let jetzt = uhr()
+        if let letzter = letzterNutzungsUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.nutzungPause { return }
+        letzterNutzungsUpload = jetzt
+        await nutzungUebertragen(kennung, zwischendurch: true)
     }
 
     /// Der Server verlangt 1 bis 40 Zeichen.
