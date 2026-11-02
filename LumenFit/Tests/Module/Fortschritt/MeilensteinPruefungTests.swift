@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Die 25 Medaillen (Idee 37): Katalog als Daten, Prüfung als Funktion von den Daten zur Liste der Kennungen.
+/// Die Medaillen (Idee 37), 25 alte und 8 Ziel-Medaillen: Katalog als Daten, Prüfung als Funktion von den Daten zur Liste der Kennungen.
 final class MeilensteinPruefungTests: XCTestCase {
     /// Mittwoch 14.10.2026; die Woche geht vom 12. bis 18.10.
     private let heute = "2026-10-14"
@@ -23,15 +23,15 @@ final class MeilensteinPruefungTests: XCTestCase {
 
     // MARK: Katalog
 
-    func testKatalogHatFuenfundzwanzigMedaillenMitEindeutigenKennungen() {
-        XCTAssertEqual(MeilensteinKatalog.alle.count, 25)
-        XCTAssertEqual(Set(MeilensteinKatalog.alle.map(\.id)).count, 25)
+    func testKatalogHatDreiunddreissigMedaillenMitEindeutigenKennungen() {
+        XCTAssertEqual(MeilensteinKatalog.alle.count, 33)
+        XCTAssertEqual(Set(MeilensteinKatalog.alle.map(\.id)).count, 33)
         for m in MeilensteinKatalog.alle {
             XCTAssertFalse(m.titel.isEmpty, m.id)
             XCTAssertFalse(m.bedingung.isEmpty, m.id)
             XCTAssertFalse(m.symbol.isEmpty, m.id)
         }
-        XCTAssertEqual(MeilensteinKatalog.nachId.count, 25)
+        XCTAssertEqual(MeilensteinKatalog.nachId.count, 33)
     }
 
     /// Die Demo legt diese drei an (`Demo.swift`); fehlt eine im Katalog, zählt sie in Lumis Stufe, hat aber keine Medaille.
@@ -45,7 +45,8 @@ final class MeilensteinPruefungTests: XCTestCase {
         var alles = MeilensteinZahlen()
         alles.gezaehlteSaetze = 1; alles.gymTage = 500; alles.volumenKg = 1_000_000; alles.serieWochen = 100; alles.rekorde = 100
         alles.wochenZielErreicht = true; alles.ganzerKoerperInEinerWoche = true; alles.langeEinheit = true; alles.schlafSerie = 30
-        alles.schlafNaechteImZiel = 100; alles.gewichtGewogen = true; alles.gewichtZielErreicht = true; alles.essenTage = 100; alles.fruehstueck = true
+        alles.schlafNaechteImZiel = 100; alles.wochenzielSerie = 30; alles.schrittSerie = 7; alles.schrittTage = 30; alles.proteinSerie = 7
+        alles.proteinTage = 30; alles.kalorienTage = 7; alles.gewichtGewogen = true; alles.gewichtZielErreicht = true; alles.essenTage = 100; alles.fruehstueck = true
         for m in MeilensteinKatalog.alle { XCTAssertTrue(MeilensteinPruefung.erfuellt(m.id, alles), m.id) }
         XCTAssertFalse(MeilensteinPruefung.erfuellt("gibt-es-nicht", alles))
     }

@@ -32,6 +32,6 @@ final class MeilensteinStore {
         ereignisse?.senden(.meilensteinErreicht(id: id))
     }
 
-    /// Lumis Stufe 1 bis 9.
-    var stufe: Int { LumiStufe.stufe(erreicht: stand.count) }
+    /// Lumis Stufe 1 bis 9; die Ziel-Medaillen zählen nicht mit (`MeilensteinKatalog.neueIds`).
+    var stufe: Int { LumiStufe.stufe(erreicht: MeilensteinKatalog.stufenZahl(stand.keys)) }
 }

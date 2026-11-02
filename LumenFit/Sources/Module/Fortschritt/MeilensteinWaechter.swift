@@ -45,27 +45,29 @@ final class MeilensteinWaechter {
     /// Prüft das aktive Profil; ohne Profil nichts. Auch die Meilensteine-Seite ruft es beim Öffnen.
     func pruefeAlles() {
         guard let umgebung, let daten = umgebung.daten else { return }
-        pruefe(daten, naechte: umgebung.gesundheit.naechte, heute: Datum.text(umgebung.uhr()))
+        let einstellungen = umgebung.router.einstellungen
+        pruefe(daten, naechte: umgebung.gesundheit.naechte, schritte: umgebung.gesundheit.tage.mapValues(\.schritte), heute: Datum.text(umgebung.uhr()),
+               sichtbar: { gruppe in gruppe.bereich.map { einstellungen.zeigt($0) } ?? true })
     }
 
-    /// Prüft und vergibt. Gibt die neu vergebenen Kennungen zurück.
+    /// Prüft und vergibt. Gibt die neu vergebenen Kennungen zurück. Ausgeblendete Bereiche vergeben still weiter (die Daten bleiben), zeigen aber keinen Toast;
+    /// Ziel-Medaillen, die schon aus früheren Tagen erfüllt waren, ebenso (kein Medaillen-Regen nach dem Update).
     @discardableResult
-    func pruefe(_ daten: DatenSatz, naechte: [String: SchlafNacht], heute: String) -> [String] {
+    func pruefe(_ daten: DatenSatz, naechte: [String: SchlafNacht], schritte: [String: Int] = [:], heute: String,
+                sichtbar: (MedaillenGruppe) -> Bool = { _ in true }) -> [String] {
         let vorher = daten.meilensteine.erreicht.map(\.id)
         let schon = Set(vorher)
         guard schon.count < MeilensteinKatalog.anzahl else { return [] }
-        let ziele = daten.ziele.ziele
-        let eingabe = MeilensteinDaten(
-            sessions: daten.training.sessions, gymTage: daten.habits.werte(Habit.gym.id), gymTageProWoche: ziele.gymTageProWoche, heute: heute,
-            schlafMinuten: naechte.mapValues(\.schlafMinuten), schlafZiel: ziele.schlafMinuten,
-            gewicht: daten.habits.werte(Habit.gewicht.id), gewichtZielKg: ziele.gewichtKg,
-            essenTage: daten.essen.tage, fruehstueckTage: schon.contains("fruehstueck") ? 0 : fruehstueckTage(daten))
+        let eingabe = MeilensteinDaten.aus(daten, naechte: naechte, schritte: schritte, heute: heute,
+                                           fruehstueckTage: schon.contains("fruehstueck") ? 0 : fruehstueckTage(daten))
         let neu = MeilensteinPruefung.faellig(eingabe, schon: schon)
         guard !neu.isEmpty else { return [] }
         let stufeVorher = daten.meilensteine.stufe
         for id in neu { daten.meilensteine.markiere(id) }
         let stufeNachher = daten.meilensteine.stufe
-        zeige(neu, neueStufe: stufeNachher > stufeVorher ? stufeNachher : nil)
+        let stumm = MeilensteinPruefung.stumm(neu, eingabe)
+        let zeigen = neu.filter { id in !stumm.contains(id) && (MeilensteinKatalog.nachId[id].map { sichtbar($0.gruppe) } ?? true) }
+        zeige(zeigen, neueStufe: stufeNachher > stufeVorher ? stufeNachher : nil)
         return neu
     }
 

@@ -16,6 +16,33 @@ struct MeilensteinDaten: Sendable {
     var essenTage: Set<String> = []
     /// Tage mit mindestens einem Frühstück-Eintrag.
     var fruehstueckTage = 0
+    /// Tag zu Schritten (Health und Band).
+    var schritte: [String: Int] = [:]
+    var schrittZiel = 10_000
+    /// Tag zu Kalorien und Protein samt dem Ziel dieses Tages (flexible Tage ändern es).
+    var essenWerte: [String: EssenTagWerte] = [:]
+    /// Hat die Person ihre Essensziele eingerichtet? Ohne sie gibt es keine Protein- und Kalorien-Medaillen.
+    var essenZielDa = false
+
+    /// Dieselben Daten ohne heute und später: so war der Stand gestern.
+    var ohneHeute: MeilensteinDaten {
+        var d = self
+        d.sessions = sessions.filter { Datum.text($0.start) < heute }
+        d.gymTage = gymTage.filter { $0.key < heute }
+        d.schlafMinuten = schlafMinuten.filter { $0.key < heute }
+        d.gewicht = gewicht.filter { $0.key < heute }
+        d.essenTage = essenTage.filter { $0 < heute }
+        d.schritte = schritte.filter { $0.key < heute }
+        d.essenWerte = essenWerte.filter { $0.key < heute }
+        return d
+    }
+}
+
+struct EssenTagWerte: Equatable, Sendable {
+    var kcal: Double
+    var protein: Double
+    var zielKcal: Int
+    var zielProtein: Int
 }
 
 /// Die Zahlen hinter den Medaillen, einmal aus den Daten gerechnet.
@@ -34,6 +61,13 @@ struct MeilensteinZahlen: Equatable, Sendable {
     var gewichtZielErreicht = false
     var essenTage = 0
     var fruehstueck = false
+    /// Längste Folge von Wochen, in denen das Gym-Wochenziel erreicht war.
+    var wochenzielSerie = 0
+    var schrittSerie = 0
+    var schrittTage = 0
+    var proteinSerie = 0
+    var proteinTage = 0
+    var kalorienTage = 0
 }
 
 /// Idee 37: welche Medaillen sind fällig? Eine Funktion von den Daten zur Liste der Kennungen; vergeben wird einmal je Kennung (`MeilensteinStore.markiere`).
@@ -76,6 +110,14 @@ enum MeilensteinPruefung {
         case "fruehstueck": z.fruehstueck
         case "tagebuch-7": z.essenTage >= 7
         case "tagebuch-30": z.essenTage >= 30
+        case "wochenziel-4": z.wochenzielSerie >= 4
+        case "wochenziel-12": z.wochenzielSerie >= 12
+        case "wochenziel-26": z.wochenzielSerie >= 26
+        case "schritte-7": z.schrittSerie >= 7
+        case "schritte-30": z.schrittTage >= 30
+        case "protein-7": z.proteinSerie >= 7
+        case "protein-30": z.proteinTage >= 30
+        case "kalorien-7": z.kalorienTage >= 7
         default: false
         }
     }
@@ -87,6 +129,7 @@ enum MeilensteinPruefung {
         z.serieWochen = serieWochen(tage: tage, heute: d.heute)
         let proWoche = Dictionary(grouping: tage, by: { Datum.montagDerWoche($0) }).mapValues(\.count)
         z.wochenZielErreicht = proWoche.values.contains { $0 >= max(1, d.gymTageProWoche) }
+        z.wochenzielSerie = laengsteFolge(proWoche.filter { $0.value >= max(1, d.gymTageProWoche) }.keys.sorted(), abstand: 7)
 
         let laeufe = d.sessions.flatMap(\.laeufe)
         z.gezaehlteSaetze = laeufe.reduce(0) { $0 + KonstanzRaster.gezaehlteSaetze($1) }
@@ -111,7 +154,43 @@ enum MeilensteinPruefung {
 
         z.essenTage = d.essenTage.count
         z.fruehstueck = d.fruehstueckTage >= 1
+
+        let schrittTage = d.schrittZiel > 0 ? d.schritte.filter { $0.value >= d.schrittZiel }.keys.sorted() : []
+        z.schrittTage = schrittTage.count
+        z.schrittSerie = laengsteFolge(schrittTage, abstand: 1)
+        if d.essenZielDa {
+            let protein = d.essenWerte.filter { $0.value.zielProtein > 0 && $0.value.protein >= Double($0.value.zielProtein) }.keys.sorted()
+            z.proteinTage = protein.count
+            z.proteinSerie = laengsteFolge(protein, abstand: 1)
+            // Im Rahmen heißt 85 bis 115 Prozent des Ziels, in beide Richtungen gleich. Heute zählt nie: der Tag ist noch nicht zu Ende.
+            z.kalorienTage = d.essenWerte.filter {
+                $0.key < d.heute && $0.value.zielKcal > 0 && (0.85...1.15).contains($0.value.kcal / Double($0.value.zielKcal))
+            }.count
+        }
         return z
+    }
+
+    /// Medaillen, die es ohne das nötige Ziel nicht gibt (Protein und Kalorien brauchen eingerichtete Essensziele).
+    static func ohneZiel(essenZielDa: Bool) -> Set<String> { essenZielDa ? [] : ["protein-7", "protein-30", "kalorien-7"] }
+
+    /// Ziel-Medaillen, die beim Prüfen schon aus früheren Tagen erfüllt waren (Update, neues Gerät, Health liefert spät Altdaten): sie werden vergeben, aber ohne Toast.
+    static func stumm(_ neu: [String], _ d: MeilensteinDaten) -> Set<String> {
+        let ziele = neu.filter { MeilensteinKatalog.neueIds.contains($0) }
+        guard !ziele.isEmpty else { return [] }
+        let gestern = zahlen(d.ohneHeute)
+        return Set(ziele.filter { erfuellt($0, gestern) })
+    }
+
+    /// Längste Folge von Schlüsseln (Tage oder Wochenmontage, aufsteigend sortiert), die je `abstand` Tage auseinander liegen.
+    static func laengsteFolge(_ sortiert: [String], abstand: Int) -> Int {
+        var beste = 0, aktuell = 0
+        var vorher: String?
+        for tag in sortiert {
+            if let v = vorher, Datum.addTage(v, abstand) == tag { aktuell += 1 } else { aktuell = 1 }
+            beste = max(beste, aktuell)
+            vorher = tag
+        }
+        return beste
     }
 
     /// Tage mit Training: Einheiten und Gym-Häkchen zusammen, jeder Tag einmal.
@@ -164,14 +243,29 @@ enum MeilensteinPruefung {
     /// Längste Folge von Tagen hintereinander mit mindestens `ziel` Minuten Schlaf.
     static func schlafSerie(_ minuten: [String: Int], ziel: Int) -> Int {
         guard ziel > 0 else { return 0 }
-        let gut = minuten.filter { $0.value >= ziel }.keys.sorted()
-        var beste = 0, aktuell = 0
-        var vorher: String?
-        for tag in gut {
-            if let v = vorher, Datum.addTage(v, 1) == tag { aktuell += 1 } else { aktuell = 1 }
-            beste = max(beste, aktuell)
-            vorher = tag
+        return laengsteFolge(minuten.filter { $0.value >= ziel }.keys.sorted(), abstand: 1)
+    }
+}
+
+extension MeilensteinDaten {
+    /// Liest alles aus dem Datensatz des Profils (der Wächter und die Seite brauchen dieselben Zahlen). `fruehstueckTage` kennt nur der Wächter.
+    @MainActor
+    static func aus(_ daten: DatenSatz, naechte: [String: SchlafNacht], schritte: [String: Int], heute: String, fruehstueckTage: Int = 0) -> MeilensteinDaten {
+        let ziele = daten.ziele.ziele
+        let essenZiele = daten.essen.ernaehrungsZiele
+        var werte: [String: EssenTagWerte] = [:]
+        if essenZiele.eingerichtet {
+            for tag in daten.essen.tage {
+                let summe = daten.essen.summe(tag)
+                let ziel = daten.essen.ernaehrungsZiele(tag: tag)
+                werte[tag] = EssenTagWerte(kcal: summe.kcal, protein: summe.protein, zielKcal: ziel.kcal, zielProtein: ziel.protein)
+            }
         }
-        return beste
+        return MeilensteinDaten(
+            sessions: daten.training.sessions, gymTage: daten.habits.werte(Habit.gym.id), gymTageProWoche: ziele.gymTageProWoche, heute: heute,
+            schlafMinuten: naechte.mapValues(\.schlafMinuten), schlafZiel: ziele.schlafMinuten,
+            gewicht: daten.habits.werte(Habit.gewicht.id), gewichtZielKg: ziele.gewichtKg,
+            essenTage: daten.essen.tage, fruehstueckTage: fruehstueckTage,
+            schritte: schritte, schrittZiel: ziele.schritte, essenWerte: werte, essenZielDa: essenZiele.eingerichtet)
     }
 }

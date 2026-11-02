@@ -20,7 +20,9 @@ struct FortschrittQuelle {
     var medaillen: [MeilensteinStand] { daten?.meilensteine.erreicht ?? [] }
     var medaillenDatum: [String: Date] { Dictionary(medaillen.map { ($0.id, $0.erreicht) }, uniquingKeysWith: { erste, _ in erste }) }
     var erreichteIds: Set<String> { Set(medaillen.map(\.id)) }
-    var stufe: Int { LumiStufe.stufe(erreicht: medaillen.count) }
+    /// Die Zahl, aus der Lumis Stufe folgt (ohne Ziel-Medaillen).
+    var stufenZahl: Int { MeilensteinKatalog.stufenZahl(medaillen.map(\.id)) }
+    var stufe: Int { LumiStufe.stufe(erreicht: stufenZahl) }
     /// Die Satzziele aus der Befragung (`ziel.prio.*`, `ziel.saetze.*`); leer, solange sie nicht gemacht ist.
     var zielWerte: [String: Int] { daten.map { ZieleLogik.werte(in: $0.raum) } ?? [:] }
     var zieleGesetzt: Bool { ZieleLogik.befragt(zielWerte) }
@@ -35,13 +37,13 @@ struct FortschrittQuelle {
     var hatTraining: Bool { !sessions.isEmpty }
     var serieWochen: Int { MeilensteinPruefung.serieWochen(tage: MeilensteinPruefung.trainingsTage(sessions, gym: gym), heute: heute) }
 
-    /// Die Zahlen hinter den Medaillen für "nächstes Ziel".
+    /// Die Zahlen hinter den Medaillen (für "nächstes Ziel" und die Fortschrittsbalken der Meilensteine).
     var zahlen: MeilensteinZahlen {
-        MeilensteinPruefung.zahlen(MeilensteinDaten(
-            sessions: sessions, gymTage: gym, gymTageProWoche: daten?.ziele.ziele.gymTageProWoche ?? 3, heute: heute, schlafMinuten: schlaf,
-            schlafZiel: daten?.ziele.ziele.schlafMinuten ?? 480, gewicht: gewicht, gewichtZielKg: gewichtZielKg,
-            essenTage: daten?.essen.tage ?? [], fruehstueckTage: 0))
+        guard let daten else { return MeilensteinZahlen() }
+        return MeilensteinPruefung.zahlen(MeilensteinDaten.aus(daten, naechte: umgebung.gesundheit.naechte, schritte: umgebung.gesundheit.tage.mapValues(\.schritte), heute: heute))
     }
+    /// Sind die Essensziele eingerichtet? Sonst gibt es keine Protein- und Kalorien-Medaillen.
+    var essenZielDa: Bool { daten?.essen.ernaehrungsZiele.eingerichtet ?? false }
 
     /// Lumis Stimmung aus den Daten: stolz nach einem Training in dieser Woche, sonst bereit.
     var stimmung: LumiStimmung { TrainingLogik.dieseWoche(sessions, heute: heute) > 0 ? .stolz : .bereit }

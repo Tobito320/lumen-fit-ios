@@ -41,7 +41,7 @@ struct FitPassportDaten: Equatable, Sendable {
 enum FitPassport {
     static let schlafTage = 60
 
-    static func bauen(name: String?, sessions: [GymSession], gym: [String: Int], schlafMinuten: [String: Int], medaillen: Int, heute: String,
+    static func bauen(name: String?, sessions: [GymSession], gym: [String: Int], schlafMinuten: [String: Int], medaillen: Int, stufe: Int? = nil, heute: String,
                       katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> FitPassportDaten {
         let kraft = KraftKurve.uebungen(sessions, katalog: katalog).prefix(3).compactMap { u -> PassportKraft? in
             let bester = sessions.flatMap(\.laeufe).filter { $0.uebung == u.id }.flatMap { KraftKurve.arbeitssaetze($0) }
@@ -56,6 +56,6 @@ enum FitPassport {
         return FitPassportDaten(name: reinerName?.isEmpty == false ? reinerName : nil, kraft: Array(kraft),
                                 schlafSchnitt: naechte.isEmpty ? nil : naechte.reduce(0, +) / naechte.count, schlafNaechte: naechte.count,
                                 aktiveWochen: raster.aktiveWochen, serieWochen: MeilensteinPruefung.serieWochen(tage: tage, heute: heute),
-                                gymTage: tage.count, medaillen: medaillen, stufe: LumiStufe.stufe(erreicht: medaillen))
+                                gymTage: tage.count, medaillen: medaillen, stufe: stufe ?? LumiStufe.stufe(erreicht: medaillen))
     }
 }
