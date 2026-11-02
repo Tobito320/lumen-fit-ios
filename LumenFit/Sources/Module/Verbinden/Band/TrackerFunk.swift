@@ -191,14 +191,14 @@ final class TrackerFunk: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
         let suche = ZentraleSuche(zentrale: zentrale, dienst: dienstUUID)
         switch BandVerbindungsweg.waehle(suche, gemerkt: Self.gemerkteKennung()) {
         case .schonVerbunden(let kennung):
-            melden(.bandLog(art: "weg", text: "Band war schon verbunden (retrieveConnectedPeripherals)"))
+            melden(.bandLog(art: "weg", text: "Band war schon mit dem iPhone verbunden: von einer anderen App oder von iOS gehalten (retrieveConnectedPeripherals)"))
             // Ein Band, das nur dem System verbunden ist, braucht für diese App trotzdem ein connect.
             if let geraet = suche.gefunden[kennung] { verbinden(geraet, ueber: zentrale, verbindenErzwingen: true); return }
         case .bekannt(let kennung):
-            melden(.bandLog(art: "weg", text: "Band über die gemerkte Kennung (retrievePeripherals)"))
+            melden(.bandLog(art: "weg", text: "Band war nicht verbunden, gemerkte Kennung benutzt (retrievePeripherals)"))
             if let geraet = suche.gefunden[kennung] { verbinden(geraet, ueber: zentrale); return }
         case .scan:
-            melden(.bandLog(art: "weg", text: "Scan nach Bändern mit Namen H59"))
+            melden(.bandLog(art: "weg", text: "Band war nicht verbunden, Scan nach Bändern mit Namen H59"))
         }
         melden(.sucht)
         zentrale.scanForPeripherals(withServices: nil, options: [CBCentralManagerScanOptionAllowDuplicatesKey: false])

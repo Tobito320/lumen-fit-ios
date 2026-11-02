@@ -215,7 +215,7 @@ struct BandHilfeAbschnitt: View {
         VerbindenAbschnitt(titel: "Hilfe", fuss: nil) {
             DisclosureGroup("Verbindung klappt nicht") {
                 VStack(alignment: .leading, spacing: Abstand.s) {
-                    Text("Das Band nimmt nur eine Verbindung an. In QWatch Pro muss es unter Device, Device Binding gelöst sein.")
+                    Text("Das iPhone hält das Band nur einmal; mehrere Apps teilen sich diese Verbindung (so liefert iOS es, am Gerät noch nicht bewiesen). Ob eine andere App es schon hielt, steht bei den Rohdaten unter Verbindung. In QWatch Pro muss das Band unter Device, Device Binding gelöst sein.")
                     Text("Nach dem Trennen sendet es erst wieder, wenn du es antippst. Lumen Fit verbindet sich dann von selbst, auch im Hintergrund.")
                     Text("Lumen Fit fragt bei jeder Verbindung, beim Öffnen der App und \(TrackerModus.abfrageText(modell.modus)) ab, solange die Verbindung steht.")
                 }
@@ -225,6 +225,9 @@ struct BandHilfeAbschnitt: View {
             }
             DisclosureGroup("Rohdaten (Fehlersuche)") {
                 VStack(alignment: .leading, spacing: Abstand.s) {
+                    Text("Verbindung: \(modell.verbindungsWeg ?? "noch keine seit dem App-Start")")
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
                     Text(modell.rohLog.isEmpty ? "Noch nichts gelesen." : modell.rohLog.joined(separator: "\n"))
                         .font(.caption.monospaced())
                         .textSelection(.enabled)

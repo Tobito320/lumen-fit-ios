@@ -248,6 +248,36 @@ final class BandDienstImplTests: XCTestCase {
         XCTAssertEqual(uhrPakete(a).count, 2)
     }
 
+    // MARK: Verbindungsweg
+
+    func testDerVerbindungswegStehtJeAppStartEinmalImLogUndAlsEigeneZeile() async throws {
+        let text = "Band war schon mit dem iPhone verbunden"
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.bandLog(art: "weg", text: text))
+        a.fabrik.melde(.bandLog(art: "weg", text: text))
+        await warte { a.dienst.modell?.verbindungsWeg == text }
+        try? await Task.sleep(for: .milliseconds(100)) // das zweite Ereignis läuft ebenfalls über den Hauptakteur
+        XCTAssertEqual(try XCTUnwrap(a.dienst.modell).bandLog.filter { $0.hasSuffix("weg: \(text)") }.count, 1, "derselbe Weg zweimal: eine Zeile")
+        // App-Neustart mit denselben UserDefaults: die Zeile ist wieder da (früher merkte sich das `UserDefaults` und die Seite blieb leer).
+        let neu = aufbau()
+        await verbunden(neu)
+        neu.fabrik.melde(.bandLog(art: "weg", text: text))
+        await warte { neu.dienst.modell?.verbindungsWeg == text }
+        XCTAssertTrue(try XCTUnwrap(neu.dienst.modell).bandLog.contains { $0.hasSuffix("weg: \(text)") })
+    }
+
+    func testEinPaketOhneEigeneAnfrageWirdIgnoriertUndEinmalGelogt() async throws {
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.schlafDaten(Data([0xBC, 0x27, 0x01, 0x00, 0xFF, 0x00])))
+        a.fabrik.melde(.schlafDaten(Data([0x01, 0x02])))
+        try? await Task.sleep(for: .milliseconds(100))
+        let modell = try XCTUnwrap(a.dienst.modell)
+        XCTAssertEqual(modell.bandLog.filter { $0.contains("fremd: Dienst-2-Paket ohne eigene Anfrage") }.count, 1)
+        XCTAssertEqual(modell.schlafStand, 0, "nichts wurde ausgewertet")
+    }
+
     // MARK: Ops
 
     func testBandOpsLandenImRaumUndGesundheitsStandNimmtDasMaximum() async throws {

@@ -99,6 +99,10 @@ final class TrackerModell {
 
     /// Warum ein Band-Ereignis es nicht in die Oberfläche schafft, steht in `bandLog` (Fehlersuche, nur im Speicher).
     private(set) var bandLog: [String] = []
+    /// Auf welchem Weg die letzte Verbindung entstand (`BandVerbindungsweg`), nur im Speicher: die Rohdaten-Seite zeigt es als eigene Zeile, auch wenn die
+    /// Log-Zeile längst aus den letzten `bandLogMaximum` gerutscht ist. Nach jedem App-Start wieder da (kein Merken in `UserDefaults`).
+    private(set) var verbindungsWeg: String?
+    @ObservationIgnored private var fremdesPaketGemeldet = false
     /// Ab hier hört das Modell auf Ereignisse des Funks; `funkFabrik` legt den Funk erst bei `verbinden` an (kein Bluetooth-Objekt davor).
     @ObservationIgnored private let funkFabrik: (@escaping @Sendable (TrackerEreignis) -> Void) -> any BandFunk
     @ObservationIgnored private let senke: BandSenke
@@ -422,7 +426,14 @@ final class TrackerModell {
         case .daten(let daten):
             antwortVerarbeiten(daten)
         case .bandLog(let art, let text):
-            bandLogSchreiben(art: art, text: text, nurWennNeu: art == "dienste" || art == "weg")
+            if art == "weg" {
+                // Je App-Start die erste Zeile, danach nur bei anderem Weg; über `UserDefaults` fehlte sie nach jedem Neustart auf der Seite.
+                guard verbindungsWeg != text else { break }
+                verbindungsWeg = text
+                bandLogSchreiben(art: art, text: text, nurWennNeu: false)
+            } else {
+                bandLogSchreiben(art: art, text: text, nurWennNeu: art == "dienste")
+            }
         case .schlafBereit:
             schlafBereit = true
             schlafLesenFallsFaellig()
@@ -585,7 +596,14 @@ final class TrackerModell {
     /// Ein Paket der Antwort: zusammensetzen, bei fertigem Rahmen auswerten. Pakete ohne offene Anfrage sind nicht von Lumen Fit
     /// angefragt und werden ignoriert.
     private func schlafAntwort(_ daten: Data) {
-        guard var sammler = schlafSammler else { return }
+        guard var sammler = schlafSammler else {
+            // Nur zur Fehlersuche, einmal je App-Start: kam das, hat eine andere App am selben Band angefragt (Vermutung, nicht bewiesen).
+            if !fremdesPaketGemeldet {
+                fremdesPaketGemeldet = true
+                bandLogSchreiben(art: "fremd", text: "Dienst-2-Paket ohne eigene Anfrage (\(daten.count) Byte), ignoriert: \(Self.hex(daten.prefix(8)))", nurWennNeu: false)
+            }
+            return
+        }
         let stand = sammler.aufnehmen(daten)
         switch stand {
         case .wartet:
