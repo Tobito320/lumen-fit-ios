@@ -41,6 +41,11 @@ enum CoachTage {
         return tage.sorted { $0.beginn > $1.beginn }
     }
 
+    /// Der vergangene Tag, in dem die Nachricht steht; nil für heute und unbekannte Kennungen (die stehen im Chat).
+    static func tag(mit kennung: String, in tage: [Tag]) -> Tag? {
+        tage.first { $0.nachrichten.contains { $0.id == kennung } }
+    }
+
     /// Die Nachrichten eines Tages, für den Leser.
     static func nachrichten(am beginn: Date, in liste: [CoachNachricht], kalender: Calendar) -> [CoachNachricht] {
         liste.filter { kalender.isDate($0.zeit, inSameDayAs: beginn) }

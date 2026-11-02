@@ -24,6 +24,18 @@ final class CoachTageTests: XCTestCase {
 
     private func ids(_ liste: [CoachNachricht]) -> [String] { liste.map(\.id) }
 
+    // MARK: - Tag zu einer Nachricht (Suche)
+
+    func testTagZuEinerNachrichtNurFuerVergangeneTage() {
+        let beginn = CoachTage.beginn(jetzt: zeit(11, 9), kalender: berlin)
+        let liste = [nachricht("alt", .nutzer, zeit(9, 8)), nachricht("gestern", .coach, zeit(10, 8)), nachricht("heute", .nutzer, zeit(11, 8))]
+        let tage = CoachTage.vergangene(liste, beginn: beginn, kalender: berlin)
+        XCTAssertEqual(CoachTage.tag(mit: "alt", in: tage)?.nachrichten.map(\.id), ["alt"])
+        XCTAssertEqual(CoachTage.tag(mit: "gestern", in: tage)?.nachrichten.map(\.id), ["gestern"])
+        XCTAssertNil(CoachTage.tag(mit: "heute", in: tage), "heute springt der Chat selbst")
+        XCTAssertNil(CoachTage.tag(mit: "gibt-es-nicht", in: tage))
+    }
+
     // MARK: - Heute
 
     func testMitternachtsgrenzeInBerlinerZeit() {
