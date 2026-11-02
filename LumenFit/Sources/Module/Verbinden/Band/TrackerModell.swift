@@ -134,6 +134,9 @@ final class TrackerModell {
     private var erwartet: [TrackerProtokoll.Aenderung] = []
     /// Die Einstellungen des Modus, die in dieser Verbindung schon versucht wurden (`TrackerModus.offene`).
     @ObservationIgnored private var modusVersucht: [TrackerProtokoll.Aenderung] = []
+    /// Die Uhr des Bands wurde in dieser Verbindung schon gestellt (`TrackerProtokoll.zeitSetzenAnfrage`), und ihre Antwort steht noch aus.
+    @ObservationIgnored private var zeitVersucht = false
+    @ObservationIgnored private var zeitAntwortOffen = false
     /// Die Tage, die der Raum noch nicht kennt: ein neuer Stand der Zeilen setzt es, `bandMelden` schreibt die Ops.
     private var ungemeldet = true
 
@@ -241,7 +244,14 @@ final class TrackerModell {
         let kandidaten: [TrackerProtokoll.Dauermessung] = [.stress, .hrv]
         verlaufWartet = kandidaten.filter { TrackerVerlauf.verlaufFaellig(letzte: verlaufGelesen[$0], jetzt: jetzt) }
         verlaufPuffer = nil
-        senden(TrackerProtokoll.akkuAnfrage)
+        guard !zeitVersucht else { senden(TrackerProtokoll.akkuAnfrage); return }
+        // Erste Runde dieser Verbindung: erst die Uhr stellen, dann Akku und der Rest; der Schlaf folgt erst am Rundenende. Schweigt das Band, kostet es nur die Ruhezeit.
+        zeitVersucht = true
+        zeitAntwortOffen = true
+        let uhrPaket = TrackerProtokoll.zeitSetzenAnfrage(jetzt)
+        bandLogSchreiben(art: "zeit", text: "gesendet \(Self.hex(uhrPaket))", nurWennNeu: false)
+        offeneAnfragen.insert(TrackerProtokoll.akkuAnfrage, at: 0)
+        senden(uhrPaket)
     }
 
     /// Fragt nur die Schritte von heute ab (für den Aufsteh-Wecker, alle 30 Sekunden im Weckfenster). Läuft schon eine Abfrage, passiert nichts:
@@ -396,6 +406,7 @@ final class TrackerModell {
             zustand = .verbunden
             gekoppelt = true
             modusVersucht = [] // neue Verbindung, neue Versuche
+            zeitVersucht = false // und die Uhr des Bands wird wieder gestellt
             verlaufGelesen = [:]
             if let geraetename {
                 name = geraetename
@@ -444,6 +455,11 @@ final class TrackerModell {
             messungen[art] = an
             naechsteAnfrage()
         case .quittung:
+            naechsteAnfrage()
+        case .zeitQuittung:
+            guard zeitAntwortOffen else { break } // nicht von Lumen Fit angefragt: die Runde nicht weiterschieben
+            zeitAntwortOffen = false
+            bandLogSchreiben(art: "zeit", text: "Antwort \(Self.hex(daten))", nurWennNeu: false)
             naechsteAnfrage()
         case .schritteKopf:
             schrittAntwort = true
@@ -529,13 +545,15 @@ final class TrackerModell {
         }
     }
 
+    private static func hex(_ daten: Data) -> String { daten.map { String(format: "%02x", $0) }.joined(separator: " ") }
+
     /// Das Ladebit und die Einstellungen sind unbelegt: Lumen Fit zeigt die rohen 16 Byte, nicht nur Byte 1 und 2.
     private func rohProtokollieren(_ daten: Data) {
         let art = daten.first
         if art == TrackerProtokoll.Befehl.schritte.rawValue { return }
         if art == TrackerProtokoll.Befehl.stressVerlauf.rawValue || art == TrackerProtokoll.Befehl.hrvVerlauf.rawValue { return }
         if art == TrackerProtokoll.Befehl.pulsVerlauf.rawValue, daten.count > 1, daten[daten.startIndex + 1] > 1 { return }
-        let hex = daten.map { String(format: "%02x", $0) }.joined(separator: " ")
+        let hex = Self.hex(daten)
         rohLog.append("\(uhr().formatted(date: .omitted, time: .standard))  \(hex)")
         if rohLog.count > 40 { rohLog.removeFirst(rohLog.count - 40) }
     }
@@ -643,6 +661,10 @@ final class TrackerModell {
         Task { [weak self] in
             try? await Task.sleep(for: Self.ruhe)
             guard let self, nr == self.anfrageNr else { return }
+            if self.zeitAntwortOffen {
+                self.zeitAntwortOffen = false
+                self.bandLogSchreiben(art: "zeit", text: "keine Antwort nach \(Self.ruhe.components.seconds) s", nurWennNeu: false)
+            }
             self.naechsteAnfrage()
         }
     }
@@ -690,6 +712,7 @@ final class TrackerModell {
         pulsPuffer = nil
         verlaufWartet = []
         verlaufPuffer = nil
+        zeitAntwortOffen = false
         reihen.speichern(defaults)
         if case .misst = pulsMessung { pulsMessung = .aus } // die Verbindung riss: kein Ergebnis mehr
         schlafBereit = false // kommt mit der nächsten Verbindung neu (`TrackerFunk` meldet `.schlafBereit`)

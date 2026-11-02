@@ -12,8 +12,8 @@ import Foundation
 /// Ebenfalls nur gelesen und am Gerät ungeprüft (Gadgetbridge, `YawellRingDeviceSupport` und `YawellRingPacketHandler`, Grad B): der Verlauf
 /// von Stress (0x37) und HRV (0x39). Dazu `pulsMessenAnfrage` (0x69): eine einzelne Pulsmessung, wie Gadgetbridge sie startet.
 /// Geschrieben wird nur über `Aenderung` (Puls- und SpO2/Stress/HRV-Dauermessung, Layout aus der
-/// Referenz-Implementierung colmi_r02_client und zwei weiteren, am Gerät noch nicht belegt) und
-/// `findenAnfrage`; Lumen Fit liest danach jede Einstellung zurück. Kein freies Senden: Reset (0xFF) und
+/// Referenz-Implementierung colmi_r02_client und zwei weiteren, am Gerät noch nicht belegt),
+/// `findenAnfrage` und die Uhr (`zeitSetzenAnfrage`, einmal je Verbindung); Lumen Fit liest danach jede Einstellung zurück. Kein freies Senden: Reset (0xFF) und
 /// Ausschalten (0x08) gehören zur selben Familie und gibt es hier nicht.
 enum TrackerProtokoll {
     static let dienst = "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E"
@@ -22,6 +22,7 @@ enum TrackerProtokoll {
     static let namenspraefix = "H59"
 
     enum Befehl: UInt8, CaseIterable {
+        case zeitSetzen = 0x01
         case akku = 0x03
         case pulsVerlauf = 0x15
         case pulsEinstellung = 0x16
@@ -100,6 +101,20 @@ enum TrackerProtokoll {
     }
 
     static let akkuAnfrage = paket(.akku)
+
+    /// Stellt die Uhr des Bands (Befehl 0x01, Byte 1 bis 6 = Jahr ab 2000, Monat, Tag, Stunde, Minute, Sekunde als BCD, Byte 7 bis 14 leer).
+    /// Gadgetbridge (`YawellRingDeviceSupport.setDateTime`, Grad B, dieselbe Familie) schickt genau das bei jeder Verbindung, in Ortszeit,
+    /// ohne Sprach-Byte; die Antwort ist laut colmi_r02_client ein Merkmalspaket (Grad B), kein Löschen oder Zurücksetzen. Das Band kennt keine
+    /// Sommerzeit und lief nach dem 25.10.2026 60 Minuten vor: Schlaf, Puls und Schritte hängen an dieser Uhr. Berliner Zeit, wie
+    /// `TrackerSchlaf` die Bandminuten liest. Am Gerät ungeprüft: ob das H59MAX den Befehl annimmt (siehe Log-Art "zeit").
+    static func zeitSetzenAnfrage(_ jetzt: Date, kalender: Calendar = Datum.kalender) -> Data {
+        let t = kalender.dateComponents([.year, .month, .day, .hour, .minute, .second], from: jetzt)
+        func ziffern(_ wert: Int?) -> UInt8 {
+            let z = min(max(wert ?? 0, 0), 99)
+            return UInt8(((z / 10) << 4) | (z % 10)) // Klammern nötig: in Swift bindet << stärker als /
+        }
+        return paket(.zeitSetzen, [ziffern((t.year ?? 2000) - 2000), ziffern(t.month), ziffern(t.day), ziffern(t.hour), ziffern(t.minute), ziffern(t.second)])
+    }
     /// 0x16 mit Byte 1 = 1 liest die Einstellung (am Gerät belegt: Antwort "an, 10 Minuten").
     static let pulsEinstellungAnfrage = paket(.pulsEinstellung, [1])
     static func einstellungAnfrage(_ art: Dauermessung) -> Data { paket(art.befehl, [1]) }
@@ -182,6 +197,8 @@ enum TrackerProtokoll {
         case dauermessung(Dauermessung, an: Bool)
         /// Antwort auf eine geschriebene Einstellung (Byte 1 = 2): Ob sie gilt, zeigt erst das Zurücklesen.
         case quittung(UInt8)
+        /// Antwort auf `zeitSetzenAnfrage` (Byte 0 = 0x01); der Inhalt (Merkmale des Bands) wird nicht gelesen, nur roh ins Log gestellt.
+        case zeitQuittung
         /// Kopfpaket einer Schritt-Antwort (Byte 1 = 0xF0): Zeilen folgen.
         case schritteKopf
         case schritte(SchrittSlot)
@@ -204,6 +221,8 @@ enum TrackerProtokoll {
         guard istGueltig(daten) else { return nil }
         let b = [UInt8](daten)
         switch b[0] {
+        case Befehl.zeitSetzen.rawValue:
+            return .zeitQuittung
         case Befehl.akku.rawValue:
             return .akku(Akku(prozent: Int(b[1]), laedt: b[2] != 0))
         case Befehl.pulsVerlauf.rawValue:

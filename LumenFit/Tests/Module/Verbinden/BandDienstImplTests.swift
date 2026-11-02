@@ -203,6 +203,51 @@ final class BandDienstImplTests: XCTestCase {
         XCTAssertTrue(a.fabrik.funk.gesendet.contains(TrackerProtokoll.findenAnfrage))
     }
 
+    // MARK: Uhr des Bands
+
+    private func uhrPakete(_ a: Aufbau) -> [Data] { a.fabrik.funk.gesendet.filter { $0.first == TrackerProtokoll.Befehl.zeitSetzen.rawValue } }
+
+    func testDieErsteRundeStelltDieUhrVorAllemAnderenUndVorDemSchlaf() async throws {
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.schlafBereit)
+        try? await Task.sleep(for: .milliseconds(300)) // das Ereignis läuft über den Hauptakteur; unter der Ruhezeit von 3 s bleiben
+        let modell = try XCTUnwrap(a.dienst.modell)
+        XCTAssertEqual(a.fabrik.funk.gesendet, [TrackerProtokoll.zeitSetzenAnfrage(VerbindenTest.jetzt)], "als Erstes die Uhr, der Akku erst nach ihrer Antwort")
+        XCTAssertFalse(a.fabrik.funk.aufrufe.contains("schlaf"), "die Schlaf-Anfrage kommt erst am Rundenende")
+        XCTAssertTrue(modell.bandLog.contains { $0.hasSuffix("zeit: gesendet 01 26 10 29 10 00 00 00 00 00 00 00 00 00 00 70") })
+    }
+
+    func testDieAntwortAufDieUhrSchiebtDieRundeWeiterUndWirdGelogt() async throws {
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.daten(TrackerProtokoll.paket(.zeitSetzen, [0, 1, 0, 5])))
+        await warte { a.fabrik.funk.gesendet.count == 2 }
+        let modell = try XCTUnwrap(a.dienst.modell)
+        XCTAssertEqual(a.fabrik.funk.gesendet.last, TrackerProtokoll.akkuAnfrage)
+        XCTAssertTrue(modell.bandLog.contains { $0.contains("zeit: Antwort 01 00 01 00 05") })
+        XCTAssertEqual(uhrPakete(a).count, 1, "einmal je Verbindung")
+    }
+
+    func testSchweigtDasBandZurUhrGehtDieRundeNachDerRuhezeitWeiterUndDasLogSagtEs() async throws {
+        let a = aufbau()
+        await verbunden(a)
+        for _ in 0..<200 where a.fabrik.funk.gesendet.count < 2 { try? await Task.sleep(for: .milliseconds(25)) }
+        let modell = try XCTUnwrap(a.dienst.modell)
+        XCTAssertEqual(a.fabrik.funk.gesendet.last, TrackerProtokoll.akkuAnfrage, "keine Antwort darf die Runde nicht blockieren")
+        XCTAssertTrue(modell.bandLog.contains { $0.hasSuffix("zeit: keine Antwort nach 3 s") })
+    }
+
+    func testJedeNeueVerbindungStelltDieUhrNeu() async {
+        let a = aufbau()
+        await verbunden(a)
+        a.fabrik.melde(.getrennt)
+        await warte { a.dienst.modell?.zustand == .wartet }
+        a.fabrik.melde(.verbunden(name: "H59 Test"))
+        await warte { self.uhrPakete(a).count == 2 }
+        XCTAssertEqual(uhrPakete(a).count, 2)
+    }
+
     // MARK: Ops
 
     func testBandOpsLandenImRaumUndGesundheitsStandNimmtDasMaximum() async throws {
