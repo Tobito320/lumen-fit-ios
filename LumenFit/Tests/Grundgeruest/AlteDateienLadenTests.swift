@@ -40,6 +40,12 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertTrue(store.werte.alarmWeckt, "neues Feld fehlt in der alten Datei: Standard an")
         XCTAssertTrue(store.werte.nutzungZaehlen, "neues Feld fehlt in der alten Datei: Standard an")
         XCTAssertFalse(store.werte.fastenAn, "neues Feld fehlt in der alten Datei: Fasten aus")
+        XCTAssertFalse(store.werte.bandEingerichtet, "Band nie angefasst: nur die Zeile Band einrichten")
+        var band = store.werte
+        band.bandBewusstAus = true
+        XCTAssertTrue(band.bandEingerichtet, "einmal bewusst ausgeschaltet heißt eingerichtet")
+        band.bandBewusstAus = false; band.bandAktiv = true
+        XCTAssertTrue(band.bandEingerichtet)
         XCTAssertFalse(FileManager.default.fileExists(atPath: ordner.appendingPathComponent("einstellungen.json.defekt").path))
     }
 

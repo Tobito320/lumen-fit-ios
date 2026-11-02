@@ -32,6 +32,9 @@ struct Einstellungen: Codable, Equatable, Sendable {
 
     init() {}
 
+    /// Das Band ist eingerichtet, wenn es an ist oder je bewusst ausgeschaltet wurde; sonst steht unter Geräte nur "Band einrichten".
+    var bandEingerichtet: Bool { bandAktiv || bandBewusstAus }
+
     /// Die eine Abfrage für alle Ansichten: soll dieser Bereich erscheinen?
     func zeigt(_ bereich: AppBereich) -> Bool {
         switch bereich {
