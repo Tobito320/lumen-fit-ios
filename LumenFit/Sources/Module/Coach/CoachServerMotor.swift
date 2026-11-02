@@ -1,7 +1,7 @@
 import Foundation
 
 // Coach mit echtem Modell am Lumen-Server (`POST /ki/coach`, Muster wie die Foto-KI): der OpenAI-Schlüssel liegt nur am Server, die App kennt ihn nie.
-// Aus, bis der Server den Schalter `kiCoachErlaubt` für das Konto setzt (ohne Build änderbar) und dort das Secret `OPENAI_API_KEY` liegt.
+// Aus, bis der Server den Schalter `kiCoachErlaubt` für das Konto setzt (ohne Build änderbar); er läuft nur für die zwei Lovea-Konten (`coachSichtbar`) über den Lovea-Server.
 // Gesendet wird eine Zusammenfassung (Tageswerte, Essen, Gewicht, Schritte und Schlaf der letzten 14 Tage, Ziele, Merkzettel, das bisherige Gespräch),
 // nie Rohdaten oder Bilder. Fehler und Fristen gibt der Motor weiter; die Auswahl (`CoachWahlMotor`) erfindet daraus keine Antwort.
 

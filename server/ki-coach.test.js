@@ -10,12 +10,10 @@ const APP = "app-key-test";
 const ADMIN = "admin-key-test";
 const ID = "a".repeat(32);
 const GEHEIM = "g".repeat(48);
-const SCHLUESSEL = "sk-test-geheim-nie-loggen";
 const kopf = { "X-App-Key": APP, "X-Konto": ID, "X-Geheimnis": GEHEIM, "content-type": "application/json" };
 const heute = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
 
 const ANTWORT = { text: "Zwei Tage mit 120 g Protein bauen keine Muskeln ab.", knoepfe: [{ text: "morgen_leicht", art: "morgen_leicht", ziel: "" }] };
-const antwortMit = (o) => new Response(JSON.stringify({ output_text: JSON.stringify(o) }), { status: 200 });
 const KONTEXT = {
   tag: "2026-10-31", schlafMinuten: 450, bereitschaft: 70, schritte: 2349, letztesTraining: "Push, gestern", stimmung: "bereit",
   ziele: { schritte: 8000, kalorien: 2500, proteinGramm: 160, schlafMinuten: 480, gymTageProWoche: 4 },
@@ -24,11 +22,13 @@ const KONTEXT = {
 };
 const FRAGE = "Wenn ich montag bis Dienstag 120g protein esse nehme ich muskeln ab?";
 
-async function aufbau({ an = true, schluessel = true } = {}) {
+// person: "ahmed" | "annika" | null (Konto ohne Lovea-Person: der Coach bleibt zu). bindung: false = Lovea-Server nicht eingerichtet.
+async function aufbau({ an = true, bindung = true, person = "ahmed" } = {}) {
   const env = { DB: fakeD1(SCHEMA), APP_KEY: APP, ADMIN_KEY: ADMIN, LOVEA_KEY: "lovea-geheim" };
-  if (schluessel) env.OPENAI_API_KEY = SCHLUESSEL;
+  if (bindung) env.LOVEA = {};
   const reg = await handleFetch(new Request("https://x.test/konto", { method: "POST", headers: { "X-App-Key": APP }, body: JSON.stringify({ id: ID, geheimnis: GEHEIM, name: "Test", version: "1" }) }), env);
   assert.equal(reg.status, 201);
+  env.DB.roh.prepare("UPDATE konten SET lovea_person = ?").run(person);
   if (an) {
     const r = await handleFetch(new Request(`https://x.test/admin/konto/${ID}`, { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiCoachErlaubt: true } }) }), env);
     assert.equal(r.status, 200);
@@ -36,14 +36,14 @@ async function aufbau({ an = true, schluessel = true } = {}) {
   return env;
 }
 
-function fakeOpenAI(antwort = () => antwortMit(ANTWORT)) {
+function fakeLovea(antwort = () => new Response(JSON.stringify({ ok: true, text: JSON.stringify(ANTWORT), modell: "x" }), { status: 200 })) {
   const f = async (url, opt) => { f.aufrufe.push({ url, opt }); return antwort(url, opt); };
   f.aufrufe = [];
   return f;
 }
 
-async function coach(env, { holen = fakeOpenAI(), body = { frage: FRAGE, verlauf: [], kontext: KONTEXT }, headers = kopf, roh } = {}) {
-  const r = await handleFetch(new Request("https://x.test/ki/coach", { method: "POST", headers, body: roh ?? JSON.stringify(body) }), env, undefined, holen);
+async function coach(env, { holen = fakeLovea(), body = { frage: FRAGE, verlauf: [], kontext: KONTEXT }, headers = kopf, roh } = {}) {
+  const r = await handleFetch(new Request("https://x.test/ki/coach", { method: "POST", headers, body: roh ?? JSON.stringify(body) }), env, holen);
   const t = await r.text();
   let json = null;
   try { json = JSON.parse(t); } catch {}
@@ -56,8 +56,8 @@ test("ohne Konto-Login 401", async () => {
   assert.equal((await coach(env, { headers: { "X-App-Key": APP } })).status, 401);
 });
 
-test("Schalter aus: 403, OpenAI wird nie gefragt, nichts gezählt", async () => {
-  const holen = fakeOpenAI();
+test("Schalter aus: 403, Lovea wird nie gefragt, nichts gezählt", async () => {
+  const holen = fakeLovea();
   const env = await aufbau({ an: false });
   const r = await coach(env, { holen });
   assert.equal(r.status, 403);
@@ -80,9 +80,20 @@ test("Schalter global an gilt für das Konto, das Konto kann ihn abschalten", as
   assert.equal((await coach(env)).status, 403);
 });
 
-test("ohne Secret 503 nichtEingerichtet, nichts gezählt", async () => {
-  const holen = fakeOpenAI();
-  const env = await aufbau({ schluessel: false });
+test("Konto ohne Lovea-Person: 403 nichtErlaubt, auch mit Schalter am Konto und global, nichts gezählt", async () => {
+  const holen = fakeLovea();
+  const env = await aufbau({ person: null });
+  await handleFetch(new Request("https://x.test/admin/config", { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ kiCoachErlaubt: true }) }), env);
+  const r = await coach(env, { holen });
+  assert.equal(r.status, 403);
+  assert.equal(r.json.fehler, "nichtErlaubt");
+  assert.equal(holen.aufrufe.length, 0);
+  assert.deepEqual(zaehler(env), []);
+});
+
+test("ohne Bindung 503 nichtEingerichtet, nichts gezählt", async () => {
+  const holen = fakeLovea();
+  const env = await aufbau({ bindung: false });
   const r = await coach(env, { holen });
   assert.equal(r.status, 503);
   assert.equal(r.json.fehler, "nichtEingerichtet");
@@ -90,47 +101,8 @@ test("ohne Secret 503 nichtEingerichtet, nichts gezählt", async () => {
   assert.deepEqual(zaehler(env), []);
 });
 
-test("Erfolg: Frage und Zahlen gehen an OpenAI, Knopftext ist nie der Bezeichner, Schlüssel nie in der Antwort", async () => {
-  const holen = fakeOpenAI();
-  const env = await aufbau();
-  const r = await coach(env, { holen });
-  assert.equal(r.status, 200);
-  assert.equal(r.json.ok, true);
-  assert.equal(r.json.text, ANTWORT.text);
-  assert.deepEqual(r.json.knoepfe, [{ text: "Morgen leicht", art: "morgen_leicht", ziel: "" }]);
-  assert.equal(r.json.rest, TAGESLIMIT - 1);
-  assert.ok(!r.text.includes(SCHLUESSEL));
-
-  const { url, opt } = holen.aufrufe[0];
-  assert.equal(url, "https://api.openai.com/v1/responses");
-  assert.equal(opt.headers.Authorization, `Bearer ${SCHLUESSEL}`);
-  const k = JSON.parse(opt.body);
-  assert.equal(k.store, false);
-  assert.equal(k.text.format.strict, true);
-  assert.equal(k.input.at(-1).content, FRAGE, "die Frage der Person wird wirklich gestellt");
-  assert.match(k.instructions, /"proteinGramm":120/, "Essen der letzten Tage steht im Kontext");
-  assert.match(k.instructions, /"wochentag":"Mo"/, "Wochentage stehen daneben, damit Montag und Dienstag stimmen");
-  assert.match(k.instructions, /"schlafHeuteMinuten":450/);
-  assert.ok(k.max_output_tokens <= 1500);
-});
-
-test("OpenAI wird mit dem globalen fetch gefragt, nie über die Dienstbindung LOVEA", async () => {
-  const env = await aufbau();
-  env.LOVEA = { fetch: async () => { throw new Error("LOVEA darf für OpenAI nie benutzt werden"); } };
-  const echtes = globalThis.fetch;
-  const aufrufe = [];
-  globalThis.fetch = async (url, opt) => { aufrufe.push({ url, auth: opt.headers.Authorization }); return antwortMit(ANTWORT); };
-  try {
-    const r = await handleFetch(new Request("https://x.test/ki/coach", { method: "POST", headers: kopf, body: JSON.stringify({ frage: FRAGE }) }), env);
-    assert.equal(r.status, 200);
-  } finally {
-    globalThis.fetch = echtes;
-  }
-  assert.deepEqual(aufrufe, [{ url: "https://api.openai.com/v1/responses", auth: `Bearer ${SCHLUESSEL}` }]);
-});
-
-test("Eingaben werden geprüft: kaputt, leer, zu groß ohne Zählen und ohne OpenAI", async () => {
-  const holen = fakeOpenAI();
+test("Eingaben werden geprüft: kaputt, leer, zu groß ohne Zählen und ohne Lovea", async () => {
+  const holen = fakeLovea();
   const env = await aufbau();
   assert.equal((await coach(env, { holen, roh: "{kaputt" })).status, 400);
   assert.equal((await coach(env, { holen, body: [] })).status, 400);
@@ -177,8 +149,8 @@ test("Knöpfe: nur gültige Arten und Seiten, nie ein Bezeichner als Text, höch
   assert.deepEqual(knoepfeBereinigen("kaputt"), []);
 });
 
-test("Tageslimit: die 31. Frage bekommt 429 tageslimit, ohne OpenAI; anderes Konto zählt extra", async () => {
-  const holen = fakeOpenAI();
+test("Tageslimit: die 31. Frage bekommt 429 tageslimit, ohne Lovea; anderes Konto zählt extra", async () => {
+  const holen = fakeLovea();
   const env = await aufbau();
   env.DB.roh.prepare("INSERT INTO ki_nutzung (konto, tag, n) VALUES (?, ?, ?), ('coach:fremd', ?, ?)").run(`coach:${ID}`, heute(), TAGESLIMIT - 1, heute(), TAGESLIMIT);
   const letzte = await coach(env, { holen });
@@ -191,7 +163,7 @@ test("Tageslimit: die 31. Frage bekommt 429 tageslimit, ohne OpenAI; anderes Kon
 });
 
 test("Monatslimit: ist es erreicht, wird nichts gefragt und der Tageszähler geht zurück", async () => {
-  const holen = fakeOpenAI();
+  const holen = fakeLovea();
   const env = await aufbau();
   env.DB.roh.prepare("INSERT INTO ki_nutzung (konto, tag, n) VALUES (?, ?, ?)").run(`coach:${ID}`, heute().slice(0, 7), MONATSLIMIT);
   const r = await coach(env, { holen });
@@ -199,26 +171,6 @@ test("Monatslimit: ist es erreicht, wird nichts gefragt und der Tageszähler geh
   assert.equal(r.json.fehler, "monatslimit");
   assert.equal(holen.aufrufe.length, 0);
   assert.equal(env.DB.roh.prepare("SELECT n FROM ki_nutzung WHERE tag = ?").get(heute()).n, 0);
-});
-
-test("Fehler nach dem Zählen geben die Frage zurück und melden eine ehrliche Fehlerart", async () => {
-  const faelle = [
-    ["Netz weg", () => { throw new Error("offline"); }, 502, "netz"],
-    ["429 ohne Quota", () => new Response(JSON.stringify({ error: { code: "rate_limit_exceeded" } }), { status: 429 }), 429, "zuVieleAnfragen"],
-    ["Guthaben leer", () => new Response(JSON.stringify({ error: { code: "insufficient_quota" } }), { status: 429 }), 503, "guthaben"],
-    ["Schlüssel falsch", () => new Response("{}", { status: 401 }), 503, "nichtEingerichtet"],
-    ["Unsinn", () => new Response("kein json", { status: 200 }), 502, "kiFehler"],
-    ["unvollständig", () => new Response(JSON.stringify({ status: "incomplete" }), { status: 200 }), 502, "kiFehler"],
-    ["leerer Text", () => antwortMit({ text: "  ", knoepfe: [] }), 502, "kiFehler"],
-  ];
-  for (const [name, antwort, status, fehler] of faelle) {
-    const env = await aufbau();
-    const r = await coach(env, { holen: fakeOpenAI(antwort) });
-    assert.equal(r.status, status, name);
-    assert.equal(r.json.fehler, fehler, name);
-    assert.ok(zaehler(env).every((z) => z.n === 0), `${name}: Frage zurückgegeben`);
-    assert.ok(!r.text.includes(SCHLUESSEL), name);
-  }
 });
 
 test("nichts wird geloggt: weder Schlüssel noch Frage noch Antwort", async () => {
@@ -232,22 +184,14 @@ test("nichts wird geloggt: weder Schlüssel noch Frage noch Antwort", async () =
 
 // --- Weg über den Lovea-Server (Konten mit lovea_person): Lovea-Server vor Lumen-Server ---
 
-async function loveaAufbau({ bindung = true, person = "ahmed", schluessel = false } = {}) {
-  const env = await aufbau({ schluessel });
-  env.DB.roh.prepare("UPDATE konten SET lovea_person = ?").run(person);
-  const aufrufe = [];
-  if (bindung) env.LOVEA = { fetch: async (url, opt) => { aufrufe.push({ url, opt }); return env.loveaAntwort ? env.loveaAntwort() : new Response(JSON.stringify({ ok: true, text: JSON.stringify(ANTWORT), modell: "x" }), { status: 200 }); } };
-  return { env, aufrufe };
-}
-
-test("Lovea-Konto: Anfrage geht über die Bindung an /agent/ki, ohne OPENAI_API_KEY und ohne OpenAI", async () => {
-  const { env, aufrufe } = await loveaAufbau();
-  const openai = fakeOpenAI();
-  const r = await coach(env, { holen: openai });
+test("Lovea-Konto: Anfrage geht über die Bindung an /agent/ki", async () => {
+  const lovea = fakeLovea();
+  const env = await aufbau();
+  const aufrufe = lovea.aufrufe;
+  const r = await coach(env, { holen: lovea });
   assert.equal(r.status, 200);
   assert.equal(r.json.text, ANTWORT.text);
   assert.deepEqual(r.json.knoepfe, [{ text: "Morgen leicht", art: "morgen_leicht", ziel: "" }]);
-  assert.equal(openai.aufrufe.length, 0);
   assert.equal(aufrufe.length, 1);
   assert.match(aufrufe[0].url, /\/agent\/ki$/);
   assert.equal(aufrufe[0].opt.headers["X-Lovea-Key"], "lovea-geheim");
@@ -260,18 +204,6 @@ test("Lovea-Konto: Anfrage geht über die Bindung an /agent/ki, ohne OPENAI_API_
   assert.equal(r.json.rest, TAGESLIMIT - 1, "Tageslimit gilt weiter");
 });
 
-test("Lovea-Konto: Schalter aus bleibt 403, ohne Bindung ehrlich nichtEingerichtet, nichts gezählt", async () => {
-  const aus = await loveaAufbau();
-  await handleFetch(new Request(`https://x.test/admin/konto/${ID}`, { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiCoachErlaubt: false } }) }), aus.env);
-  assert.equal((await coach(aus.env)).status, 403);
-  assert.equal(aus.aufrufe.length, 0);
-  const ohne = await loveaAufbau({ bindung: false, schluessel: true });
-  const r = await coach(ohne.env);
-  assert.equal(r.status, 503);
-  assert.equal(r.json.fehler, "nichtEingerichtet");
-  assert.deepEqual(zaehler(ohne.env), []);
-});
-
 test("Lovea-Konto: Fehler des Lovea-Servers geben die Frage zurück und bleiben ehrlich", async () => {
   const faelle = [
     ["Netz weg", () => { throw new Error("offline"); }, 502, "netz"],
@@ -282,10 +214,8 @@ test("Lovea-Konto: Fehler des Lovea-Servers geben die Frage zurück und bleiben 
     ["Unsinn", () => new Response("kein json", { status: 200 }), 502, "kiFehler"],
   ];
   for (const [name, antwort, status, fehler] of faelle) {
-    const { env } = await loveaAufbau();
-    env.loveaAntwort = antwort;
-    env.LOVEA.fetch = async () => antwort();
-    const r = await coach(env);
+    const env = await aufbau();
+    const r = await coach(env, { holen: fakeLovea(antwort) });
     assert.equal(r.status, status, name);
     assert.equal(r.json.fehler, fehler, name);
     assert.ok(zaehler(env).every((z) => z.n === 0), `${name}: Frage zurückgegeben`);
@@ -293,8 +223,9 @@ test("Lovea-Konto: Fehler des Lovea-Servers geben die Frage zurück und bleiben 
 });
 
 test("Lovea-Konto: Tageslimit gilt auch über Lovea", async () => {
-  const { env, aufrufe } = await loveaAufbau();
+  const holen = fakeLovea();
+  const env = await aufbau();
   env.DB.roh.prepare("INSERT INTO ki_nutzung (konto, tag, n) VALUES (?, ?, ?)").run(`coach:${ID}`, heute(), TAGESLIMIT);
-  assert.equal((await coach(env)).status, 429);
-  assert.equal(aufrufe.length, 0);
+  assert.equal((await coach(env, { holen })).status, 429);
+  assert.equal(holen.aufrufe.length, 0);
 });

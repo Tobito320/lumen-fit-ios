@@ -59,7 +59,7 @@ test("Config: Standardwerte, Konto gewinnt vor global gewinnt vor Standard", asy
   const env = umgebung();
   await registrieren(env);
   let r = await ruf(env, "GET", "/config", { headers: app() });
-  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false });
+  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false });
   await ruf(env, "PATCH", "/admin/config", { headers: admin, body: { nameAendernTage: 3, neu: "x" } });
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { nameAendernTage: 1 } } });
   r = await ruf(env, "GET", "/config", { headers: app() });
@@ -153,6 +153,18 @@ test("loveaVerbinden zählt nie aus global, nur je Konto mit Person", async () =
   env.DB.roh.prepare("UPDATE konten SET lovea_person = 'ahmed'").run();
   r = await ruf(env, "GET", "/config", { headers: app() });
   assert.equal(r.json.config.loveaVerbinden, true);
+});
+
+test("coachSichtbar zählt nur aus der Person, nie aus global oder Konto", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  env.DB.roh.prepare("UPDATE globale_config SET einstellungen = ?").run(JSON.stringify({ coachSichtbar: true }));
+  env.DB.roh.prepare("UPDATE konten SET einstellungen = ?").run(JSON.stringify({ coachSichtbar: true }));
+  let r = await ruf(env, "GET", "/config", { headers: app() });
+  assert.equal(r.json.config.coachSichtbar, false);
+  env.DB.roh.prepare("UPDATE konten SET lovea_person = 'annika'").run();
+  r = await ruf(env, "GET", "/config", { headers: app() });
+  assert.equal(r.json.config.coachSichtbar, true);
 });
 
 test("Lovea-Freigabe: nur für freigegebenes Konto, nennt Person, nie den Key", async () => {

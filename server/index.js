@@ -5,7 +5,7 @@ import { kiFoto } from "./ki-foto.js";
 import { kiCoach } from "./ki-coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 
-const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false };
+const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false };
 const PERSONEN = ["ahmed", "annika"];
 // shortcut: harte Obergrenze statt Ratenbegrenzung gegen Massen-Registrierung; bei mehr Geräten Grenze anheben oder Cloudflare-Regel davor.
 const MAX_KONTEN = 200;
@@ -80,6 +80,8 @@ function zusammen(konto, global) {
   const eigen = lesen(konto.einstellungen);
   const cfg = { ...STANDARD, ...global, ...eigen };
   cfg.loveaVerbinden = eigen.loveaVerbinden === true && PERSONEN.includes(konto.lovea_person);
+  // Coach nur für die zwei Lovea-Konten; weder global noch am Konto überschreibbar.
+  cfg.coachSichtbar = PERSONEN.includes(konto.lovea_person);
   // Band in Lumen Fit: Standard an für ahmed (ein bewusstes Aus in der App gewinnt dort), für alle anderen aus; ein Wert am Konto gewinnt.
   cfg.bandStandard = typeof eigen.bandStandard === "boolean" ? eigen.bandStandard : konto.lovea_person === "ahmed" || global.bandStandard === true;
   return cfg;
@@ -602,7 +604,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
-  if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig, loveaHolen: holen }, kiHolen);
+  if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig, loveaHolen: holen });
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }
