@@ -96,6 +96,6 @@ final class WidgetSnapshotSchreiber {
             kcal: Int(summe.kcal.rounded()), kcalZiel: essenZiele.kcal, protein: Int(summe.protein.rounded()), proteinZiel: essenZiele.protein,
             habits: habits, lumi: stimmungen.last { $0.tag == heute }?.stimmung ?? .bereit, lumiStufe: daten.meilensteine.stufe,
             gymTage: WochenStreifenLogik.gymTage(sessions: daten.training.sessions, haken: daten.habits.werte(Habit.gym.id)),
-            partner: PartnerAnzeige.zusammenfassung(daten.verbindung.partner))
+            partner: PartnerAnzeige.zusammenfassung(daten.verbindung.partner), bereiche: daten.einstellungen.werte)
     }
 }

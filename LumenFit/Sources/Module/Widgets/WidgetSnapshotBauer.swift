@@ -24,6 +24,8 @@ struct WidgetEingabe: Sendable {
     var gymTage: Set<String> = []
     /// Der Partner im Stand `verbunden`; nil sonst. Das Widget bekommt nur, was er freigibt (`WidgetPartnerStand.aus`).
     var partner: ZusammenfassungDatei? = nil
+    /// Welche Bereiche an sind: ein ausgeschalteter Bereich liefert dem Widget nichts (es zeigt dann seinen Leerzustand statt Werten).
+    var bereiche = Einstellungen()
 }
 
 /// Eine sichtbare Gewohnheit mit ihren Tageswerten und dem Ziel aus den Einstellungen (`HabitStore.habitZiel`).
@@ -42,16 +44,18 @@ enum WidgetSnapshotBauer {
 
     static func baue(_ e: WidgetEingabe) -> WidgetSnapshot {
         let heute = Datum.text(e.jetzt)
+        let gym = e.bereiche.gymAn, essen = e.bereiche.essenAn, schlaf = e.bereiche.schlafAn
         return WidgetSnapshot(
             geschrieben: e.jetzt, profilName: e.profilName, profilKennung: e.profilKennung, tag: heute, thema: e.thema, erscheinung: e.erscheinung,
             lumi: e.lumi, lumiStufe: e.lumiStufe,
-            boegen: WidgetBoegenWerte(schritte: e.schritte, schritteZiel: e.ziele.schritte, trainingTage: trainingTage(e.sessions, heute: heute),
-                                      trainingZiel: e.ziele.gymTageProWoche, schlafMinuten: e.schlafMinuten, schlafZiel: e.ziele.schlafMinuten, hrv: e.hrv),
-            plan: naechsterTag(plan: e.plan, sessions: e.sessions, heute: heute),
-            serieWochen: TrainingLogik.serieWochen(e.sessions, heute: heute),
-            essen: WidgetEssenStand(kcal: e.kcal, kcalZiel: e.kcalZiel, protein: e.protein, proteinZiel: e.proteinZiel),
+            boegen: WidgetBoegenWerte(schritte: e.schritte, schritteZiel: e.ziele.schritte, trainingTage: gym ? trainingTage(e.sessions, heute: heute) : nil,
+                                      trainingZiel: gym ? e.ziele.gymTageProWoche : nil, schlafMinuten: schlaf ? e.schlafMinuten : nil,
+                                      schlafZiel: schlaf ? e.ziele.schlafMinuten : nil, hrv: schlaf ? e.hrv : nil),
+            plan: gym ? naechsterTag(plan: e.plan, sessions: e.sessions, heute: heute) : nil,
+            serieWochen: gym ? TrainingLogik.serieWochen(e.sessions, heute: heute) : nil,
+            essen: essen ? WidgetEssenStand(kcal: e.kcal, kcalZiel: e.kcalZiel, protein: e.protein, proteinZiel: e.proteinZiel) : nil,
             habits: e.habits.prefix(hoechstensHabits).map { kachel($0, heute: heute) },
-            gymWoche: HabitLogik.wochenTage(heute: heute).map { WidgetGymTag(tag: $0, erledigt: e.gymTage.contains($0) && $0 <= heute) },
+            gymWoche: !gym ? nil : HabitLogik.wochenTage(heute: heute).map { WidgetGymTag(tag: $0, erledigt: e.gymTage.contains($0) && $0 <= heute) },
             partner: e.partner.map(WidgetPartnerStand.aus))
     }
 

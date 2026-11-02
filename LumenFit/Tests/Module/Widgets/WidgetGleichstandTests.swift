@@ -114,6 +114,27 @@ final class WidgetGleichstandTests: XCTestCase {
         XCTAssertNil(WidgetSnapshotBauer.baue(ohne).partner)
     }
 
+    func testAusgeschalteteBereicheLiefernDemWidgetNichts() {
+        var e = WidgetEingabe(jetzt: jetzt, profilName: "Beispiel", profilKennung: "p1", thema: .monochrom, erscheinung: .system, ziele: Ziele(),
+                              schritte: 5_000, schlafMinuten: 420, hrv: 60, sessions: [], plan: TrainingsPlan(tage: []), kcal: 800, kcalZiel: 2_000, protein: 40, proteinZiel: 100,
+                              habits: [], lumi: .bereit, lumiStufe: 1, gymTage: ["2026-09-21"])
+        let an = WidgetSnapshotBauer.baue(e)
+        XCTAssertNotNil(an.essen)
+        XCTAssertNotNil(an.gymWoche)
+        XCTAssertEqual(an.boegen?.schlafMinuten, 420)
+        _ = e.bereiche.setze(.gym, an: false)
+        _ = e.bereiche.setze(.essen, an: false)
+        _ = e.bereiche.setze(.schlaf, an: true)
+        let aus = WidgetSnapshotBauer.baue(e)
+        XCTAssertNil(aus.essen)
+        XCTAssertNil(aus.gymWoche)
+        XCTAssertNil(aus.plan)
+        XCTAssertNil(aus.serieWochen)
+        XCTAssertNil(aus.boegen?.trainingTage)
+        XCTAssertEqual(aus.boegen?.schritte, 5_000, "Schritte gehören zu Heute und bleiben")
+        XCTAssertEqual(aus.boegen?.schlafMinuten, 420)
+    }
+
     func testAlteDateiOhneGymWocheUndPartnerBleibtLesbar() throws {
         let ordner = try tempOrdner()
         try Data(#"{"profilName":"Alt","tag":"2026-09-22","gymWoche":"kaputt","partner":{"name":1}}"#.utf8).write(to: ordner.appendingPathComponent(WidgetSnapshotDatei.name))
