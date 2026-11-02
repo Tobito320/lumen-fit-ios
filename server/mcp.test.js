@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("sechs Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_import_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
+test("acht Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -53,4 +53,15 @@ test("nutzung: GET /admin/nutzung; konto_setzen kann den Import-Merker zurückse
   assert.equal(aufrufe[0].opt.method, "GET");
   await werkzeugAufrufen("lumenfit_konto_setzen", { id: "abc", lovea_import_zuruecksetzen: true }, opt);
   assert.deepEqual(JSON.parse(aufrufe[1].opt.body), { lovea_import: null });
+});
+
+test("fehler und auswertung: GET mit Fenster in Tagen, falsche Tage werden abgewiesen", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "K", basis: { live: "https://live.test" } };
+  await werkzeugAufrufen("lumenfit_fehler", {}, opt);
+  await werkzeugAufrufen("lumenfit_auswertung", { tage: 7 }, opt);
+  assert.deepEqual(aufrufe.map((a) => a.url), ["https://live.test/admin/fehler", "https://live.test/admin/auswertung?tage=7"]);
+  assert.ok(aufrufe.every((a) => a.opt.method === "GET"));
+  await assert.rejects(werkzeugAufrufen("lumenfit_fehler", { tage: 0 }, opt), /tage/);
+  await assert.rejects(werkzeugAufrufen("lumenfit_auswertung", { tage: "7; DROP" }, opt), /tage/);
 });

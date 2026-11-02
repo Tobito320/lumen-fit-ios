@@ -4,6 +4,8 @@
 import { kiFoto } from "./ki-foto.js";
 import { coachProbe, kiCoach } from "./ki-coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
+import { NAMEN } from "./nutzung-namen.js";
+import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
 const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false };
 const PERSONEN = ["ahmed", "annika"];
@@ -15,9 +17,9 @@ const SCHLUESSEL_FORM = /^[A-Za-z][A-Za-z0-9_]{0,40}$/;
 const MAX_EINSTELLUNGEN_BYTES = 4000;
 const MAX_LIMIT = 200;
 const TAG_FORM = /^\d{4}-\d{2}-\d{2}$/;
-const NAME_FORM = /^[a-z][A-Za-z0-9_.]{0,39}$/;
-const MAX_NAMEN = 60;
+// 90 Tage: genug für "mindestens 30 Tage ohne Nutzung" bei den Streichkandidaten, alles darüber wird bei jeder Meldung gelöscht.
 const NUTZUNG_TAGE = 90;
+const MAX_NUTZUNG_BYTES = 16384;
 const FREIGABEN = ["schritte", "gym", "schlaf", "essen", "plan", "verlauf", "tagebuch", "koerper", "stimmung", "gewohnheiten"];
 // Bereiche je Verbindung: die zehn Freigaben.
 export const BEREICHE = FREIGABEN;
@@ -26,15 +28,9 @@ const MAX_PARTNER_BYTES = 262144;
 const KOERPER_ARTEN = ["gewicht", "taille", "brust", "schulter", "bizeps", "oberschenkel", "koerperfett"];
 const MAHLZEITEN = ["fruehstueck", "mittag", "abend", "snack"];
 const EREIGNIS_ARTEN = ["gymStart", "gymEnde", "ziel", "rekord", "schlafGut"];
-// Namen, die die App meldet (Tabs, Seiten, Funktionen). "Nie genutzt" in der Auswertung = in dieser Liste, aber nie gemeldet.
-// Nur Namen, die die App wirklich senden kann: Tabs, die Seiten, die als eigene Route auf einem Tab liegen, und die zwei Blätter. Die Unterseiten im Profil
-// (Aussehen, Ziele ...) sind Links innerhalb des Blatts und werden nicht einzeln gemessen: das Profil zählt als "blatt.profil".
-export const BEKANNTE_BEREICHE = [
-  "tab.heute", "tab.gym", "tab.essen", "tab.schlaf", "tab.coach", "blatt.profil", "blatt.freund",
-  "seite.gym.plaene", "seite.gym.fortschritt", "seite.essen.scan", "seite.essen.favoriten", "seite.schlaf.verlauf", "seite.schlaf.werte",
-  "seite.verlauf", "seite.gewichtEintragen", "seite.uebung",
-];
-export const BEKANNTE_FUNKTIONEN = ["training", "satz", "mahlzeit", "gewicht", "habit", "meilenstein"];
+// "Nie genutzt" in der Auswertung = in der Liste der App (nutzung-namen.js), aber nie gemeldet.
+export const BEKANNTE_BEREICHE = NAMEN.bereiche;
+export const BEKANNTE_FUNKTIONEN = NAMEN.funktionen;
 
 const json = (o, status = 200) => Response.json(o, { status });
 const nein = (status, fehler) => json({ fehler }, status);
@@ -220,39 +216,41 @@ async function importBeleg(request, env) {
   return json({ ok: true });
 }
 
-// Zähler { name: Anzahl } prüfen; null bei ungültiger Form. Nur Namen aus Kleinbuchstaben-Anfang, nie Freitext.
-function zaehler(x) {
-  if (x === undefined) return {};
-  if (!istObjekt(x) || Object.keys(x).length > MAX_NAMEN) return null;
-  const aus = {};
-  for (const [k, v] of Object.entries(x)) {
-    if (!NAME_FORM.test(k) || !Number.isInteger(v) || v < 0 || v > 9999) return null;
-    aus[k] = v;
-  }
-  return aus;
-}
-const summe = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = Math.min(9999, (o[k] ?? 0) + v); return o; };
-
-// Nutzung: ein Bündel je Start (Tag, Zähler für Bereiche und Funktionen). Keine Inhalte, keine Gesundheitswerte. Mehrere Bündel am Tag werden addiert.
+// Nutzung: ein Bündel je Start (Tag, Zähler für Bereiche und Funktionen, dazu Gruppen mit festen Namen). Mehrere Bündel am Tag werden addiert.
+// Es zählt nur, was in nutzung-namen.js steht; alles andere (auch zusätzliche Felder) wird verworfen. Keine Inhalte, keine Gesundheitswerte.
 async function nutzungMelden(request, env) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
-  const b = await koerper(request);
+  const text = await request.text();
+  if (text.length > MAX_NUTZUNG_BYTES) return nein(413, "zu groß");
+  let b;
+  try { b = JSON.parse(text); } catch { b = null; }
   if (!istObjekt(b) || !TAG_FORM.test(b.tag ?? "")) return nein(400, "ungültig");
   const t = Date.parse(`${b.tag}T00:00:00Z`);
   if (!(t > Date.now() - 3 * 864e5 && t < Date.now() + 2 * 864e5)) return nein(400, "tag");
-  const bereiche = zaehler(b.bereiche), funktionen = zaehler(b.funktionen);
-  if (!bereiche || !funktionen) return nein(400, "ungültig");
+  const bereiche = zaehlerPruefen("bereiche", b.bereiche), funktionen = zaehlerPruefen("funktionen", b.funktionen), gruppen = gruppenPruefen(b.gruppen);
+  if (!bereiche || !funktionen || !gruppen) return nein(400, "ungültig");
   const alt = await env.DB.prepare("SELECT bereiche, funktionen FROM nutzung WHERE konto = ? AND tag = ?").bind(konto.id, b.tag).first();
   const neuB = summe(lesen(alt?.bereiche), bereiche), neuF = summe(lesen(alt?.funktionen), funktionen);
-  if (Object.keys(neuB).length > MAX_NAMEN || Object.keys(neuF).length > MAX_NAMEN) return nein(400, "zu viele Namen");
   const version = (request.headers.get("X-App-Version") ?? konto.version).slice(0, 20);
   await env.DB.prepare("INSERT OR REPLACE INTO nutzung (konto, tag, version, bereiche, funktionen) VALUES (?, ?, ?, ?, ?)")
     .bind(konto.id, b.tag, version, JSON.stringify(neuB), JSON.stringify(neuF)).run();
+  if (Object.keys(gruppen).length) {
+    // iOS und Gerätetyp nur in fester Form (sonst leer): kein Freitext, kein genaues Gerät.
+    const ios = typeof b.ios === "string" && IOS_FORM.test(b.ios) ? b.ios : "";
+    const geraet = typeof b.geraet === "string" && GERAET_FORM.test(b.geraet) ? b.geraet : "";
+    const vorhanden = await env.DB.prepare("SELECT daten FROM nutzung_mehr WHERE konto = ? AND tag = ? AND version = ? AND ios = ? AND geraet = ?")
+      .bind(konto.id, b.tag, version, ios, geraet).first();
+    await env.DB.prepare("INSERT OR REPLACE INTO nutzung_mehr (konto, tag, version, ios, geraet, daten) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(konto.id, b.tag, version, ios, geraet, JSON.stringify(zusammenfuehren(lesen(vorhanden?.daten), gruppen))).run();
+  }
+  // Aufräumen für alle Konten, nicht nur für das meldende: wer auf "Nein" geht, meldet nie wieder, seine alten Tage sollen trotzdem verschwinden.
   const grenze = new Date(Date.now() - NUTZUNG_TAGE * 864e5).toISOString().slice(0, 10);
-  await env.DB.prepare("DELETE FROM nutzung WHERE konto = ? AND tag < ?").bind(konto.id, grenze).run();
+  await env.DB.prepare("DELETE FROM nutzung WHERE tag < ?").bind(grenze).run();
+  await env.DB.prepare("DELETE FROM nutzung_mehr WHERE tag < ?").bind(grenze).run();
   return json({ ok: true });
 }
+const summe = (a, b) => { const o = { ...a }; for (const [k, v] of Object.entries(b)) o[k] = Math.min(9999, (o[k] ?? 0) + v); return o; };
 
 // Auswertung je Konto für den MCP: zuletzt aktiv, aktive Tage 7/30, meistgenutzt, nie genutzt (laut Liste der App).
 function auswerten(konto, zeilen, jetzt = Date.now()) {
@@ -522,6 +520,13 @@ async function verwalten(request, url, env) {
         lovea_import_erledigt: importe.find((i) => i.konto === k.id)?.wert ?? null,
       })),
     });
+  }
+  if ((url.pathname === "/admin/fehler" || url.pathname === "/admin/auswertung") && m === "GET") {
+    const tage = url.searchParams.get("tage") ?? 30;
+    const { results: mehr } = await env.DB.prepare("SELECT konto, tag, version, ios, geraet, daten FROM nutzung_mehr").all();
+    if (url.pathname === "/admin/fehler") return json(fehlerAuswerten(mehr, { tage }));
+    const { results: alt } = await env.DB.prepare("SELECT konto, tag, bereiche, funktionen FROM nutzung").all();
+    return json(auswertungBauen(alt, mehr, { tage }));
   }
   if (url.pathname === "/admin/import-beleg" && m === "GET") {
     const { results: konten } = await env.DB.prepare("SELECT * FROM konten WHERE lovea_person IS NOT NULL ORDER BY gesehen DESC").all();
