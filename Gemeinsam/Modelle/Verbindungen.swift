@@ -230,6 +230,20 @@ enum VerbindungenLogik {
         }
     }
 
+    /// Wo steht meine Anfrage? `gesehen`: sie stand schon einmal in der Liste. Fehlt sie erst dann, hat die andere Person sie abgelehnt;
+    /// vorher kann die Liste nur noch alt sein (Funkloch), dann wird weiter gewartet.
+    enum AnfrageStand: Equatable, Sendable { case wartet, verbunden, abgelehnt }
+
+    nonisolated static func anfrageStand(id: String, gesehen: Bool, in eintraege: [VerbindungEintrag]) -> AnfrageStand {
+        guard let e = eintraege.first(where: { $0.id == id }) else { return gesehen ? .abgelehnt : .wartet }
+        return e.aktiv ? .verbunden : .wartet
+    }
+
+    /// Die erste Anfrage an mich, die ich noch nicht kenne (beim Öffnen des Blatts standen schon andere in der Liste: die bleiben dort).
+    nonisolated static func neueAnfrage(_ anfragen: [VerbindungEintrag], bekannt: Set<String>) -> VerbindungEintrag? {
+        anfragen.first { !bekannt.contains($0.id) }
+    }
+
     /// Bereiche, die die Person dir erlaubt, die aber in ihren Daten fehlen (bei ihr ausgeschaltet): "wird nicht geteilt". Ohne Daten nichts behaupten.
     nonisolated static func nichtGeteilt(_ eintrag: VerbindungEintrag) -> [VerbindungBereich] {
         guard let daten = eintrag.daten else { return [] }

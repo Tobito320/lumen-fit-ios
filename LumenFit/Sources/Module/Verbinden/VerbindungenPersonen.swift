@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Eine Person in der Liste "Verbindungen": Name, ob und wie lange sie zuletzt Daten geschickt hat, was du von ihr siehst.
+/// Eine Person in der Liste "Verbindungen": Name und darunter ihre Schritte und ihr Gym von heute (sofern geteilt), sonst wann sie zuletzt Daten geschickt hat.
 struct VerbindungZeile: View {
     let eintrag: VerbindungEintrag
     @Environment(AppUmgebung.self) private var umgebung
@@ -24,7 +24,7 @@ struct VerbindungZeile: View {
 
     private var untertitel: String {
         if eintrag.ich.pause { return "Pausiert" }
-        return VerbindungenLogik.zuletztText(eintrag.zuletzt, jetzt: umgebung.uhr())
+        return VerbindungenLogik.kurzInfo(eintrag, jetzt: umgebung.uhr()) ?? VerbindungenLogik.zuletztText(eintrag.zuletzt, jetzt: umgebung.uhr())
     }
 }
 
@@ -47,9 +47,9 @@ struct VerbindungPersonView: View {
         Group {
             if let e = eintrag {
                 Form {
-                    kopf(e)
                     zeigstAbschnitt(e)
                     vorschauAbschnitt(e)
+                    kopf(e)
                     siehstAbschnitt(e)
                     optionen(e)
                     entfernen(e)
@@ -153,6 +153,10 @@ struct VerbindungPersonView: View {
                 ForEach(zeilen) { z in
                     LabeledContent { Text(z.wert).monospacedDigit() } label: { Label(z.titel, systemImage: z.symbol) }
                         .accessibilityElement(children: .combine)
+                }
+                let fehlt = VerbindungenLogik.nichtGeteilt(e)
+                if !fehlt.isEmpty {
+                    Text("Wird nicht geteilt: \(fehlt.map(\.name).joined(separator: ", "))").font(.footnote).foregroundStyle(palette.text2)
                 }
                 // Plan, Verlauf, Tagebuch und Körperwerte öffnen als eigene Ansichten: für den Lovea-Partner mit seinem Stand, für alle anderen mit dem der Person.
                 let stand = e.lovea ? PartnerAnsichtLogik.aktuellerStand(umgebung) : e.stand(jetzt: umgebung.uhr())

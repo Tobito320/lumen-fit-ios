@@ -48,7 +48,8 @@ final class VerbindungenSpeicher {
 /// Was beim Scannen oder Annehmen eines Codes herauskommt.
 enum EinladungErgebnis: Equatable, Sendable {
     case person(String)
-    case fertig
+    /// Die Anfrage ist raus; `id` ist die Verbindung beim Server (bis zur Annahme eine "wartende" in der Liste).
+    case angefragt(id: String)
     case fehler(String)
 }
 
@@ -119,8 +120,12 @@ extension KontoDienst {
 
     /// Die Anfrage an den Besitzer des Codes. Daten fließen erst, wenn er sie annimmt.
     func einladungEinloesen(_ token: String) async -> EinladungErgebnis {
-        let e = await einladungSenden("/verbindungen/anfrage", token) { _ in EinladungErgebnis.fertig }
-        if e == .fertig { await verbindungenNeuLaden() }
+        let e = await einladungSenden("/verbindungen/anfrage", token) { daten in
+            struct Antwort: Decodable { var id: String }
+            guard let a = try? JSONDecoder().decode(Antwort.self, from: daten) else { return EinladungErgebnis.fehler(Self.keinNetz) }
+            return EinladungErgebnis.angefragt(id: a.id)
+        }
+        if case .angefragt = e { await verbindungenNeuLaden() }
         return e
     }
 

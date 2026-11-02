@@ -5,9 +5,13 @@ import SwiftUI
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
+    @State private var verbindenOffen = false
 
     var body: some View {
         List {
+            ProfilAbschnitt {
+                Button { verbindenOffen = true } label: { ProfilListenZeile("Kollegen verbinden", symbol: "qrcode") }
+            }
             ProfilBereicheAbschnitt()
             ProfilAbschnitt {
                 link("Konto", symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }
@@ -34,6 +38,7 @@ struct ProfilBlattView: View {
         .profilListe()
         .defaultScrollAnchor(startAnker)
         .navigationTitle("Profil")
+        .sheet(isPresented: $verbindenOffen) { VerbindungCodeBlatt() }
     }
 
     /// Oben; nur das Debug-Bild der CI startet unten (Start-Argument `-lumenFitScroll unten`), damit die untere Hälfte im Bild zu sehen ist.

@@ -202,4 +202,24 @@ final class VerbindungenLogikTests: XCTestCase {
         e.ich.pause = false
         XCTAssertNil(VerbindungenLogik.kurzInfo(e, jetzt: jetzt.addingTimeInterval(2 * 86_400)), "gestriger Stand steht nicht als heute da")
     }
+
+    // MARK: Warten auf die Annahme
+
+    func testAnfrageStandWartetBisAnnahmeOderAblehnung() {
+        let wartend = VerbindungEintrag(id: "x", name: "Person", status: .anfrageAusgehend)
+        let aktiv = VerbindungEintrag(id: "x", name: "Person", status: .aktiv)
+        XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: true, in: [wartend]), .wartet)
+        XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: true, in: [aktiv]), .verbunden)
+        XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: true, in: []), .abgelehnt, "der Server löscht die Zeile beim Ablehnen")
+        XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: false, in: []), .wartet, "nie gesehen: eine alte Liste, kein Ablehnen")
+        XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: true, in: [VerbindungEintrag(id: "y", name: "Andere", status: .aktiv)]), .abgelehnt)
+    }
+
+    func testNeueAnfrageIgnoriertDieSchonBekannten() {
+        let alt = VerbindungEintrag(id: "alt", name: "Alt", status: .anfrageEingehend)
+        let neu = VerbindungEintrag(id: "neu", name: "Neu", status: .anfrageEingehend)
+        XCTAssertNil(VerbindungenLogik.neueAnfrage([alt], bekannt: ["alt"]))
+        XCTAssertEqual(VerbindungenLogik.neueAnfrage([alt, neu], bekannt: ["alt"])?.id, "neu")
+        XCTAssertNil(VerbindungenLogik.neueAnfrage([], bekannt: []))
+    }
 }
