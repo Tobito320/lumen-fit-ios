@@ -100,12 +100,12 @@ final class GesundheitsStandTests: XCTestCase {
         verlauf.schlafGesperrt = [heute]
         let health = SchlafTestBau.nacht(heute, minuten: 400)
         let band = BandSchlafOp(tag: heute, start: health.von, ende: health.bis, phasen: [SchlafAbschnitt(phase: .kern, von: health.von, bis: health.bis)])
-        var eigene = SchlafEigeneQuellen(hand: [:], band: [band])
-        let stand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { eigene })
+        let nurBand = SchlafEigeneQuellen(hand: [:], band: [band])
+        let stand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { nurBand })
         await stand.aktualisiere()
         XCTAssertNil(stand.naechte[heute], "in Lovea gelöscht: weder Health noch Band holen die Nacht zurück")
-        eigene.hand[heute] = SchlafTestBau.nacht(heute, minuten: 360)
-        let mitHand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { eigene })
+        let mitEintrag = SchlafEigeneQuellen(hand: [heute: SchlafTestBau.nacht(heute, minuten: 360)], band: [band])
+        let mitHand = GesundheitsStand(leser: FakeHealthLeser(naechte: [health]), uhr: uhr.uhr, importVerlauf: { verlauf }, eigeneNaechte: { mitEintrag })
         await mitHand.aktualisiere()
         XCTAssertEqual(mitHand.naechte[heute]?.schlafMinuten, 360)
     }

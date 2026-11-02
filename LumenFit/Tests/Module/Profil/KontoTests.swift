@@ -409,10 +409,6 @@ final class KontoTests: XCTestCase {
         XCTAssertNil(NamenRegel.freiAb(letzteAenderung: jetzt.addingTimeInterval(-8 * 86_400), tage: 7, jetzt: jetzt))
         XCTAssertNotNil(NamenRegel.freiAb(letzteAenderung: jetzt, tage: 7, jetzt: jetzt))
     }
-}
-
-private extension NamenAenderung {
-    var isGesperrt: Bool { if case .gesperrt = self { true } else { false } }
 
     func testKennungBereitHoltDasKontoNachWennDerStartKeinNetzHatte() async throws {
         let bund = SpeicherSchluesselbund()
@@ -433,4 +429,8 @@ private extension NamenAenderung {
         let k = await d.kennungBereit()
         XCTAssertNil(k)
     }
+}
+
+private extension NamenAenderung {
+    var isGesperrt: Bool { if case .gesperrt = self { true } else { false } }
 }
