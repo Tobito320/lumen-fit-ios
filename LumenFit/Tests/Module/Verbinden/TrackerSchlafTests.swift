@@ -123,7 +123,7 @@ final class TrackerSchlafTests: XCTestCase {
         XCTAssertEqual(gestern?.bis, zeit(13, 7, 0))
         XCTAssertEqual(gestern?.minuten, 360)
         XCTAssertEqual(ergebnis.verworfen.count, 1)
-        XCTAssertTrue(ergebnis.verworfen[0].contains("vor 2 Tagen"), ergebnis.verworfen[0])
+        XCTAssertTrue(ergebnis.verworfen[0].contains("2026-10-12"), ergebnis.verworfen[0])
     }
 
     func testMinutenNullWerdenIgnoriert() {
@@ -223,6 +223,31 @@ final class TrackerSchlafTests: XCTestCase {
         XCTAssertFalse(ergebnis.naechte.contains { $0.tag == "2026-10-12" })
     }
 
+    // MARK: Zwei Teile einer Nacht
+
+    private func teil(_ von: Date, _ bis: Date, _ phasen: [TrackerSchlaf.Phasenzeit]) -> TrackerSchlaf.Nacht {
+        TrackerSchlaf.Nacht(tag: "2026-11-03", von: von, bis: bis, minuten: phasen.filter { $0.art != TrackerSchlaf.Phase.wach }.reduce(0) { $0 + $1.minuten }, phasen: phasen)
+    }
+
+    /// Rückmeldung 03.11.: 21:52 bis 01:25 geschlafen, Toilette, weiter bis 06:45. Vorher zeigte die App nur den ersten Teil (3:33 h).
+    func testZweiTeileMitKurzerLueckeWerdenEineNachtMitWachPhase() {
+        let a = teil(zeit(2, 21, 52), zeit(3, 1, 25), [.init(art: 2, minuten: 120), .init(art: 3, minuten: 93)])
+        let b = teil(zeit(3, 1, 40), zeit(3, 6, 45), [.init(art: 2, minuten: 200), .init(art: 4, minuten: 105)])
+        for n in [TrackerSchlaf.zusammen(a, b), TrackerSchlaf.zusammen(b, a)] {
+            XCTAssertEqual(n.von, zeit(2, 21, 52))
+            XCTAssertEqual(n.bis, zeit(3, 6, 45))
+            XCTAssertEqual(n.minuten, 518)
+            XCTAssertEqual(n.phasen.map(\.art), [2, 3, 5, 2, 4])
+            XCTAssertEqual(n.phasen[2].minuten, 15)
+        }
+    }
+
+    func testTeileMitLangerLueckeBleibenGetrenntUndDerLaengereGewinnt() {
+        let a = teil(zeit(2, 14, 0), zeit(2, 14, 50), [.init(art: 2, minuten: 50)])
+        let b = teil(zeit(2, 23, 0), zeit(3, 6, 0), [.init(art: 2, minuten: 420)])
+        XCTAssertEqual(TrackerSchlaf.zusammen(a, b), b)
+    }
+
     // MARK: Wann gefragt wird
 
     private func nachtHeute(bis: Date) -> [String: TrackerSchlaf.Nacht] {
@@ -260,8 +285,11 @@ final class TrackerSchlafTests: XCTestCase {
 
     func testNachGelesenerNachtVonHeuteWirdNichtMehrGefragt() {
         let bis = zeit(14, 6, 40)
+        let nachMittag = zeit(14, 12, 30)
+        XCTAssertFalse(TrackerSchlaf.faellig(letzte: nachMittag, naechte: nachtHeute(bis: bis), heute: heute, jetzt: nachMittag.addingTimeInterval(3600)))
+        // Am Morgen gelesen: es kann noch ein zweiter Teil kommen, also weiter fragen.
         let gelesenNachAufwachen = jetzt.addingTimeInterval(-2 * 3600)
-        XCTAssertFalse(TrackerSchlaf.faellig(letzte: gelesenNachAufwachen, naechte: nachtHeute(bis: bis), heute: heute, jetzt: jetzt))
+        XCTAssertTrue(TrackerSchlaf.faellig(letzte: gelesenNachAufwachen, naechte: nachtHeute(bis: bis), heute: heute, jetzt: jetzt))
         // Gelesen, bevor die Nacht zu Ende war: noch einmal fragen.
         let gelesenVorher = bis.addingTimeInterval(-3600)
         XCTAssertTrue(TrackerSchlaf.faellig(letzte: gelesenVorher, naechte: nachtHeute(bis: bis), heute: heute, jetzt: jetzt))

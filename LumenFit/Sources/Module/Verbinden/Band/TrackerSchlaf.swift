@@ -158,7 +158,7 @@ enum TrackerSchlaf {
             switch pruefen(zurueck: zurueck, start: start, ende: ende, phasen: phasen, heute: heute, jetzt: jetzt) {
             case .success(let nacht):
                 if let alt = ergebnis.naechte.firstIndex(where: { $0.tag == nacht.tag }) {
-                    if nacht.minuten > ergebnis.naechte[alt].minuten { ergebnis.naechte[alt] = nacht }
+                    ergebnis.naechte[alt] = zusammen(ergebnis.naechte[alt], nacht)
                 } else {
                     ergebnis.naechte.append(nacht)
                 }
@@ -166,10 +166,31 @@ enum TrackerSchlaf {
                 ergebnis.verworfen.append("Tag vor \(zurueck) Tagen: \(verwurf.grund)")
             }
         }
+        // Mindestnacht erst nach dem Zusammenlegen: zwei Teile einer Nacht (Aufwachen für die Toilette) sind einzeln oft unter drei Stunden.
+        ergebnis.naechte.removeAll { nacht in
+            guard nacht.minuten < TrackerSchlaf.mindestNacht else { return false }
+            ergebnis.verworfen.append("Tag \(nacht.tag): nur \(nacht.minuten) min Schlaf, unter der Mindestnacht")
+            return true
+        }
         return ergebnis
     }
 
-    /// Plausibel ist eine Nacht, wenn sie mindestens `TrackerSchlaf.mindestNacht` Schlafminuten hat, nicht in der Zukunft endet und die
+    /// Höchstens so lange darf man zwischen zwei Teilen derselben Nacht wach sein, damit sie eine Nacht werden.
+    static let hoechstLuecke: TimeInterval = 3 * 3600
+
+    /// Zwei Teile am selben Aufwachtag: liegen sie höchstens `hoechstLuecke` auseinander, eine Nacht mit der Lücke als Wach-Phase
+    /// (Rückmeldung 03.11.: wach um 01:25, Toilette, weiter bis 06:45; vorher galt nur der längere Teil). Sonst gewinnt der längere Teil.
+    static func zusammen(_ a: Nacht, _ b: Nacht) -> Nacht {
+        let (frueh, spaet) = a.von <= b.von ? (a, b) : (b, a)
+        let luecke = spaet.von.timeIntervalSince(frueh.bis)
+        guard luecke >= 0, luecke <= hoechstLuecke else { return a.minuten >= b.minuten ? a : b }
+        let wach = Int((luecke / 60).rounded())
+        let mitte = wach > 0 ? [Phasenzeit(art: Phase.wach, minuten: wach)] : []
+        return Nacht(tag: frueh.tag, von: frueh.von, bis: spaet.bis, minuten: frueh.minuten + spaet.minuten,
+                     phasen: frueh.phasen + mitte + spaet.phasen)
+    }
+
+    /// Plausibel ist ein Teil der Nacht, wenn er Schlaf enthält (die Mindestnacht prüft `auswerten` nach dem Zusammenlegen), nicht in der Zukunft endet und die
     /// Phasen lückenlos zur Zeit zwischen Einschlafen und Aufwachen passen (Summe aller Phasen, auch "wach").
     private static func pruefen(zurueck: Int, start: Int, ende: Int, phasen: [Phasenzeit], heute: String, jetzt: Date) -> Result<Nacht, Verwurf> {
         guard (0...30).contains(zurueck) else { return .failure(Verwurf(grund: "Tage zurück unsinnig")) }
@@ -186,7 +207,7 @@ enum TrackerSchlaf {
             return .failure(Verwurf(grund: "Phasen \(summe) min, Zeit zwischen Einschlafen und Aufwachen \(spanne) min"))
         }
         let schlaf = phasen.filter { !Phase.zaehltNichtAlsSchlaf.contains($0.art) }.reduce(0) { $0 + $1.minuten }
-        guard schlaf >= TrackerSchlaf.mindestNacht else { return .failure(Verwurf(grund: "nur \(schlaf) min Schlaf, unter der Mindestnacht")) }
+        guard schlaf > 0 else { return .failure(Verwurf(grund: "kein Schlaf in den Phasen")) }
         let tag = Datum.addTage(heute, -zurueck)
         let bis = zeitpunkt(tag, minute: ende)
         let von = start > ende ? zeitpunkt(Datum.addTage(tag, -1), minute: start) : zeitpunkt(tag, minute: start)
@@ -237,8 +258,8 @@ enum TrackerSchlaf {
 
     // MARK: Wann fragen
 
-    /// Ob jetzt gefragt wird: höchstens alle `abstand` Sekunden, und nicht mehr, wenn die Nacht von heute schon gelesen ist, nachdem
-    /// sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig. `ohneAntwort`: die letzte Frage hat
+    /// Ob jetzt gefragt wird: höchstens alle `abstand` Sekunden, und nicht mehr, wenn die Nacht von heute schon nach Mittag gelesen ist,
+    /// nachdem sie zu Ende war. Springt die Uhr zurück (letzte Frage "in der Zukunft"), ist die Frage fällig. `ohneAntwort`: die letzte Frage hat
     /// keinen gültigen Rahmen gebracht; dann gilt nur `wiederholung` und eine gelesene Nacht von heute spricht nicht gegen die Frage.
     static func faellig(letzte: Date?, naechte: [String: Nacht], heute: String, jetzt: Date, abstand: TimeInterval = abstand,
                         ohneAntwort: Bool = false) -> Bool {
@@ -246,7 +267,9 @@ enum TrackerSchlaf {
         let seitdem = jetzt.timeIntervalSince(letzte)
         guard seitdem >= 0 else { return true }
         if seitdem < (ohneAntwort ? min(abstand, wiederholung) : abstand) { return false }
-        if !ohneAntwort, let nacht = naechte[heute], letzte >= nacht.bis { return false }
+        // Fertig ist die Nacht erst, wenn nach Mittag gelesen wurde: nachts kann nach einem Aufwachen noch ein zweiter Teil kommen
+        // (Rückmeldung 03.11.: Band las um 01:25 aufgewacht, danach wurde bis 06:45 nichts mehr gefragt).
+        if !ohneAntwort, let nacht = naechte[heute], letzte >= nacht.bis, Datum.kalender.component(.hour, from: letzte) >= 12 { return false }
         return true
     }
 }
