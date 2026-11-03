@@ -91,6 +91,7 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertTrue(alt.config.profilAnlegenErlaubt)
         XCTAssertTrue(alt.loveaErlaubt)
         XCTAssertFalse(alt.config.coachSichtbar)
+        XCTAssertFalse(alt.config.schlafBeleg, "Schlaf-Beleg ist ohne Antwort des Servers aus")
     }
 
     func testEinUnbekanntesThemeErgibtDenStandardUndBehaeltDenRest() throws {

@@ -103,6 +103,23 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
         return SchlafAuswertung.naechte(roh, von: von, bis: bis)
     }
 
+    /// Alle Schlafproben der Tage mit Rohwert und Quelle, ohne Auswahl (Schlaf-Beleg). Gleiches Fenster wie `schlafNaechte`.
+    func schlafProben(von: String, bis: String) async -> [HealthSchlafProbe] {
+        guard HKHealthStore.isHealthDataAvailable(), let zeit = fenster(von: von, bis: bis),
+              let anfang = Datum.kalender.date(byAdding: .hour, value: -30, to: zeit.start) else { return [] }
+        let praedikat = HKQuery.predicateForSamples(withStart: anfang, end: zeit.ende, options: .strictStartDate)
+        return await withCheckedContinuation { fortsetzung in
+            let abfrage = HKSampleQuery(sampleType: HKCategoryType(.sleepAnalysis), predicate: praedikat, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, proben, _ in
+                let liste = ((proben as? [HKCategorySample]) ?? []).map { probe in
+                    HealthSchlafProbe(wert: probe.value, von: probe.startDate, bis: probe.endDate,
+                                      quelle: probe.sourceRevision.source.bundleIdentifier, geraet: probe.sourceRevision.productType)
+                }
+                fortsetzung.resume(returning: liste)
+            }
+            speicher.execute(abfrage)
+        }
+    }
+
     /// Wach und "im Bett" zählen nicht als Schlaf; die Lücken zwischen den Abschnitten sind die Wachzeit.
     private static func phase(_ wert: Int) -> SchlafPhase? {
         switch HKCategoryValueSleepAnalysis(rawValue: wert) {

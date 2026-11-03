@@ -30,6 +30,9 @@ struct ProfilDatenschutzView: View {
                 Text(ProfilTexte.NutzungFrage.schalterFuss)
                     .font(.footnote).foregroundStyle(palette.text2)
                     .padding(.horizontal, Abstand.l)
+                if umgebung.konto.schlafBelegAn {
+                    Text("Schlaf-Beleg an Entwickler: an").font(.footnote).foregroundStyle(palette.text2).padding(.horizontal, Abstand.l)
+                }
             }
             .padding(Abstand.l)
         }

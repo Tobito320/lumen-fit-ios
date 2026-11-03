@@ -247,9 +247,18 @@ final class VerbindenDienste {
             await abruf()
             await umgebung.gesundheit.aktualisiere()
             bruecke.schreibe()
-        case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .healthAktualisiert, .speichernFehlgeschlagen:
+            schlafBelegAnstossen()
+        case .healthAktualisiert:
+            schlafBelegAnstossen()   // auch nach einem Band-Sync mit neuen Nächten oder Schritten
+        case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .speichernFehlgeschlagen:
             break
         }
+    }
+
+    /// Schlaf-Beleg (Diagnose): nur wenn der Server ihn für das Konto freigibt, höchstens einmal je Stunde. Ohne Warten auf das Netz.
+    private func schlafBelegAnstossen() {
+        let umgebung = umgebung
+        Task { await SchlafBelegDienst.sendeFallsFaellig(umgebung) }
     }
 
     /// Schalter umgelegt: Lovea an/aus (Stand neu lesen), Band an/aus (starten, trennen und Lovea den Status melden).

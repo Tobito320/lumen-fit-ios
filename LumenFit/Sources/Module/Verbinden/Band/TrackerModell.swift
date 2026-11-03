@@ -351,6 +351,9 @@ final class TrackerModell {
     /// Die Nacht vom Armband für den Tag des Aufwachens; `nil` ohne plausible Nacht (`schlafStand`).
     func schlafNacht(_ tag: String) -> TrackerSchlaf.Nacht? { bandSchlaf.naechte[tag] }
 
+    /// Alle plausiblen Nächte, die das Band zuletzt geliefert hat, aufsteigend (Schlaf-Beleg).
+    var schlafNaechteRoh: [TrackerSchlaf.Nacht] { bandSchlaf.naechte.values.sorted { $0.tag < $1.tag } }
+
     /// Die jüngste plausible Nacht vom Armband für die Verlauf-Karte; ändert sich mit `schlafStand`.
     var letzteBandNacht: TrackerSchlaf.Nacht? {
         _ = schlafStand

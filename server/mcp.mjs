@@ -56,6 +56,11 @@ export const WERKZEUGE = [
     inputSchema: { type: "object", properties: { umgebung } },
   },
   {
+    name: "lumenfit_schlaf_beleg",
+    description: "Schlaf-Beleg (Diagnose, nur wenn der Schalter schlafBeleg am Konto an ist, nur Ahmed): die letzten Belege der App mit Rohwerten zu Schlaf (Band, Health, Handeintrag), gewählter Nacht, Band-Uhr-Abgleich, letztem Band-Sync und Schritten je Quelle. Neueste zuerst, höchstens 30 je Konto. Gesundheitsdaten: nur zur Fehlersuche lesen, nichts weitergeben.",
+    inputSchema: { type: "object", properties: { umgebung, konto: kontoId, limit: { type: "integer", minimum: 1, maximum: 30, description: "Anzahl Belege, Standard 1." } }, required: ["konto"] },
+  },
+  {
     name: "lumenfit_config_setzen",
     description: "Globale Schalter ändern (gelten für alle Konten, ein Konto-Schalter gewinnt). Merge-Patch, null entfernt. Start: profilAnlegenErlaubt (false), nameAendernTage (7). loveaVerbinden gibt es nicht global.",
     inputSchema: { type: "object", properties: { umgebung, einstellungen: { type: "object" } }, required: ["einstellungen"] },
@@ -89,6 +94,11 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
     }
   }
   else if (name === "lumenfit_import_beleg") pfad = "/admin/import-beleg";
+  else if (name === "lumenfit_schlaf_beleg") {
+    if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
+    if (a.limit !== undefined && (!Number.isInteger(a.limit) || a.limit < 1 || a.limit > 30)) throw new Error("limit: ganze Zahl von 1 bis 30");
+    pfad = `/admin/schlaf-beleg?konto=${encodeURIComponent(a.konto)}${a.limit !== undefined ? `&limit=${a.limit}` : ""}`;
+  }
   else if (name === "lumenfit_config_setzen") [pfad, methode, body] = ["/admin/config", "PATCH", a.einstellungen];
   else {
     if (typeof a.id !== "string" || !a.id) throw new Error("id fehlt");

@@ -51,6 +51,15 @@ final class KontoTests: XCTestCase {
         XCTAssertNil(ServerConfig.zusammen(basis, antwort: Data(#"{"fehler":"x"}"#.utf8)), "ohne Objekt config bleibt alles")
     }
 
+    func testSchlafBelegStehtStandardAusUndFolgtNurDemServer() throws {
+        XCTAssertFalse(ServerConfig.standard.schlafBeleg)
+        let an = try XCTUnwrap(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"schlafBeleg":true}}"#.utf8)))
+        XCTAssertTrue(an.schlafBeleg)
+        XCTAssertTrue(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"schlafBeleg":"ja"}}"#.utf8))).schlafBeleg, "falscher Typ lässt den Wert")
+        XCTAssertFalse(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"schlafBeleg":false}}"#.utf8))).schlafBeleg)
+        XCTAssertFalse(try JSONDecoder().decode(ServerConfig.self, from: Data(#"{"nameAendernTage":3}"#.utf8)).schlafBeleg, "alter gemerkter Stand: aus")
+    }
+
     func testCoachSichtbarStehtStandardAusUndFolgtDemServerOhneBeiFunklochZuVerschwinden() throws {
         XCTAssertFalse(ServerConfig.standard.coachSichtbar)
         let an = try XCTUnwrap(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"coachSichtbar":true}}"#.utf8)))

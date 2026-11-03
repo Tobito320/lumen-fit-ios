@@ -59,7 +59,7 @@ test("Config: Standardwerte, Konto gewinnt vor global gewinnt vor Standard", asy
   const env = umgebung();
   await registrieren(env);
   let r = await ruf(env, "GET", "/config", { headers: app() });
-  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false });
+  assert.deepEqual(r.json.config, { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false });
   await ruf(env, "PATCH", "/admin/config", { headers: admin, body: { nameAendernTage: 3, neu: "x" } });
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { nameAendernTage: 1 } } });
   r = await ruf(env, "GET", "/config", { headers: app() });
@@ -469,4 +469,67 @@ test("Partner: Wochenwerte, Ziele, Energie, Gewohnheiten kommen nur mit ihrer Fr
   assert.equal((await lies(["essen"])).wasserGlaeser, undefined, "unsinnig große Zahl fällt weg");
   wert.wasserGlaeser = 5;
   assert.equal(alle.zyklus, undefined, "ein Zyklus aus einem alten Build wird nie ausgegeben");
+});
+
+// Schlaf-Beleg: Schalter nur am Konto, nur mit Person ahmed, Standard aus.
+const SCHLAF = { nacht: [{ quelle: "band", start: "2026-11-02T21:52:00Z", ende: "2026-11-03T01:25:00Z" }] };
+async function schlafAn(env) {
+  await registrieren(env);
+  return ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_person: "ahmed", einstellungen: { schlafBeleg: true } } });
+}
+
+test("Schlaf-Beleg: Schalter aus = 403 und nichts gespeichert, global reicht nicht", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: SCHLAF })).status, 403);
+  assert.equal((await ruf(env, "PATCH", "/admin/config", { headers: admin, body: { schlafBeleg: true } })).status, 400);
+  await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_person: "annika", einstellungen: { schlafBeleg: true } } });
+  assert.equal((await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { lovea_person: null, einstellungen: { schlafBeleg: true } } })).status, 400);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: SCHLAF })).status, 403);
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM schlaf_belege").get().n, 0);
+  assert.equal((await ruf(env, "GET", "/config", { headers: app() })).json.config.schlafBeleg, false);
+});
+
+test("Schlaf-Beleg: an = gespeichert, Config meldet es, Auth nötig, Müll abgelehnt", async () => {
+  const env = umgebung();
+  assert.equal((await schlafAn(env)).status, 200);
+  assert.equal((await ruf(env, "GET", "/config", { headers: app() })).json.config.schlafBeleg, true);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: { ...app(), "X-Geheimnis": "x".repeat(48) }, body: SCHLAF })).status, 401);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: [1] })).status, 400);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: SCHLAF })).status, 200);
+  const z = env.DB.roh.prepare("SELECT * FROM schlaf_belege").get();
+  assert.equal(z.konto, ID);
+  assert.deepEqual(JSON.parse(z.daten), SCHLAF);
+});
+
+test("Schlaf-Beleg: Größenlimit 512 KB", async () => {
+  const env = umgebung();
+  await schlafAn(env);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: { x: "a".repeat(524288) } })).status, 413);
+  assert.equal((await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: { x: "a".repeat(500000) } })).status, 200);
+});
+
+test("Schlaf-Beleg: je Konto nur die letzten 30, andere Konten bleiben", async () => {
+  const env = umgebung();
+  await schlafAn(env);
+  env.DB.roh.prepare("INSERT INTO schlaf_belege (konto, zeit, daten) VALUES ('anderes', 't', '{}')").run();
+  for (let i = 0; i < 33; i++) await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: { lauf: i } });
+  const eigene = env.DB.roh.prepare("SELECT daten FROM schlaf_belege WHERE konto = ? ORDER BY id").all(ID).map((z) => JSON.parse(z.daten).lauf);
+  assert.equal(eigene.length, 30);
+  assert.equal(eigene[0], 3);
+  assert.equal(eigene.at(-1), 32);
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM schlaf_belege WHERE konto = 'anderes'").get().n, 1);
+});
+
+test("Schlaf-Beleg: Admin liest neueste zuerst mit limit, ohne Admin-Key 401", async () => {
+  const env = umgebung();
+  await schlafAn(env);
+  for (let i = 0; i < 3; i++) await ruf(env, "POST", "/diagnose/schlaf", { headers: app(), body: { lauf: i } });
+  assert.equal((await ruf(env, "GET", `/admin/schlaf-beleg?konto=${ID}`, { headers: app() })).status, 401);
+  assert.equal((await ruf(env, "GET", "/admin/schlaf-beleg?konto=kurz", { headers: admin })).status, 400);
+  let r = await ruf(env, "GET", `/admin/schlaf-beleg?konto=${ID}`, { headers: admin });
+  assert.deepEqual(r.json.belege.map((b) => b.daten.lauf), [2]);
+  r = await ruf(env, "GET", `/admin/schlaf-beleg?konto=${ID}&limit=2`, { headers: admin });
+  assert.deepEqual(r.json.belege.map((b) => b.daten.lauf), [2, 1]);
+  assert.ok(r.json.belege[0].zeit);
 });

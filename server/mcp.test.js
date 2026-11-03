@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("acht Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
+test("neun Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -64,4 +64,13 @@ test("fehler und auswertung: GET mit Fenster in Tagen, falsche Tage werden abgew
   assert.ok(aufrufe.every((a) => a.opt.method === "GET"));
   await assert.rejects(werkzeugAufrufen("lumenfit_fehler", { tage: 0 }, opt), /tage/);
   await assert.rejects(werkzeugAufrufen("lumenfit_auswertung", { tage: "7; DROP" }, opt), /tage/);
+});
+
+test("schlaf_beleg: GET /admin/schlaf-beleg mit konto und limit, ungültiges limit wird abgelehnt", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "K", basis: { live: "https://live.test", test: "https://test.test" } };
+  await werkzeugAufrufen("lumenfit_schlaf_beleg", { konto: "abc", limit: 3 }, opt);
+  assert.equal(aufrufe[0].url, "https://live.test/admin/schlaf-beleg?konto=abc&limit=3");
+  await assert.rejects(() => werkzeugAufrufen("lumenfit_schlaf_beleg", { konto: "abc", limit: 99 }, opt));
+  await assert.rejects(() => werkzeugAufrufen("lumenfit_schlaf_beleg", {}, opt));
 });

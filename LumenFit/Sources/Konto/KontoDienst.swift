@@ -92,6 +92,8 @@ final class KontoDienst {
     var loveaErlaubt: Bool { LoveaFreigabe.erlaubt(freigegeben: stand.loveaErlaubt, demo: LoveaFreigabe.demoAktiv) }
     /// Der Coach zeigt sich nur, wenn der Server es dem Konto sagt (zwei Lovea-Konten); der gemerkte Stand gilt bei Funkloch. Nur Debug-Demo darf es erzwingen.
     var coachSichtbar: Bool { stand.config.coachSichtbar || LoveaFreigabe.demoAktiv }
+    /// Der Server hat den Schlaf-Beleg für dieses Konto freigegeben (Diagnose, Standard aus; der gemerkte Stand gilt bei Funkloch).
+    var schlafBelegAn: Bool { stand.config.schlafBeleg }
     /// Die Lovea-Person des Kontos, nur mit echter Server-Freigabe (nie in der Demo); sonst nil.
     var loveaPerson: String? { stand.loveaErlaubt ? stand.loveaPerson : nil }
     /// Der Server gibt das Konto frei und der einmalige Import ist noch nicht gelaufen (nie in der Demo).
@@ -288,6 +290,13 @@ final class KontoDienst {
     func meldeImportBeleg<T: Encodable & Sendable>(_ beleg: T) async -> Int? {
         guard case .da(let k) = liesKennung(), k.registriert, let koerper = try? JSONEncoder().encode(beleg) else { return nil }
         return await sendeMitKonto("/lovea/import-beleg", methode: "POST", body: koerper, kennung: k)?.status
+    }
+
+    /// Schickt den Schlaf-Beleg (`SchlafBeleg`, JSON) an `/diagnose/schlaf`. Status des Servers; nil bei Netzfehler oder wenn das Gerät nicht angemeldet ist.
+    /// Der Server nimmt ihn nur an, wenn der Schalter für das Konto an ist (sonst 403).
+    func schlafBelegSenden(_ koerper: Data) async -> Int? {
+        guard schlafBelegAn, case .da(let k) = liesKennung(), k.registriert else { return nil }
+        return await sendeMitKonto("/diagnose/schlaf", methode: "POST", body: koerper, kennung: k)?.status
     }
 
     private func meldeImportAnServer(_ kennung: KontoKennung) async {

@@ -68,6 +68,9 @@ final class GesundheitsStand {
         return liste.filter { !stand.schlafGesperrt.contains($0.nacht.tag) || eigene.hand[$0.nacht.tag] != nil }
     }
 
+    /// Schritte je Tag nur aus Health, ohne Band (Schlaf-Beleg: beide Quellen getrennt sehen).
+    var schritteAusHealth: [String: Int] { healthTage.mapValues(\.schritte) }
+
     private var bandUndHealth: [String: TagesWerte] {
         var ergebnis = healthTage
         for b in band() {

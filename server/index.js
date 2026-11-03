@@ -7,7 +7,7 @@ import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
-const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false };
+const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false };
 const PERSONEN = ["ahmed", "annika"];
 // shortcut: harte Obergrenze statt Ratenbegrenzung gegen Massen-Registrierung; bei mehr Geräten Grenze anheben oder Cloudflare-Regel davor.
 const MAX_KONTEN = 200;
@@ -80,8 +80,11 @@ function zusammen(konto, global) {
   cfg.coachSichtbar = PERSONEN.includes(konto.lovea_person);
   // Band in Lumen Fit: Standard an für ahmed (ein bewusstes Aus in der App gewinnt dort), für alle anderen aus; ein Wert am Konto gewinnt.
   cfg.bandStandard = typeof eigen.bandStandard === "boolean" ? eigen.bandStandard : konto.lovea_person === "ahmed" || global.bandStandard === true;
+  // Schlaf-Beleg (Diagnose): nur Ahmeds Konto und nur, wenn das KONTO den Schalter selbst gesetzt hat; nie aus global.
+  cfg.schlafBeleg = schlafBelegAn(konto);
   return cfg;
 }
+const schlafBelegAn = (konto) => lesen(konto.einstellungen).schlafBeleg === true && konto.lovea_person === "ahmed";
 const globaleConfig = async (env) => lesen((await env.DB.prepare("SELECT einstellungen FROM globale_config WHERE id = 1").first())?.einstellungen);
 
 // Meldet das Konto an: Antwort { konto } oder { antwort } (Fehler). Unbekannte ID und falsches Geheimnis sind nicht zu unterscheiden.
@@ -213,6 +216,24 @@ async function importBeleg(request, env) {
   const schluessel = b.typ === "beleg" ? "lovea_import_beleg" : "lovea_import_fehler";
   if (b.typ === "fehler") b.anzahl = Math.min(9999, (lesen((await merker(env, konto.id, schluessel))?.wert).anzahl ?? 0) + 1);
   await env.DB.prepare("INSERT OR REPLACE INTO konto_merker (konto, schluessel, wert) VALUES (?, ?, ?)").bind(konto.id, schluessel, JSON.stringify(b)).run();
+  return json({ ok: true });
+}
+
+// Schlaf-Beleg (Diagnose, nur auf Freigabe): Rohwerte von Schlaf und Schritten, damit ein Agent falsches Tracking untersuchen kann. Standard aus, nur je Konto.
+const MAX_SCHLAF_BYTES = 524288;
+const SCHLAF_BELEGE = 30;
+async function schlafBelegAnnehmen(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!schlafBelegAn(konto)) return nein(403, "nicht freigegeben");
+  const text = await request.text();
+  if (text.length > MAX_SCHLAF_BYTES) return nein(413, "zu groß");
+  let b;
+  try { b = JSON.parse(text); } catch { b = null; }
+  if (!istObjekt(b)) return nein(400, "ungültig");
+  await env.DB.prepare("INSERT INTO schlaf_belege (konto, zeit, daten) VALUES (?, ?, ?)").bind(konto.id, new Date().toISOString(), text).run();
+  await env.DB.prepare("DELETE FROM schlaf_belege WHERE konto = ? AND id NOT IN (SELECT id FROM schlaf_belege WHERE konto = ? ORDER BY id DESC LIMIT ?)")
+    .bind(konto.id, konto.id, SCHLAF_BELEGE).run();
   return json({ ok: true });
 }
 
@@ -543,8 +564,16 @@ async function verwalten(request, url, env) {
       })),
     });
   }
+  if (url.pathname === "/admin/schlaf-beleg" && m === "GET") {
+    const id = url.searchParams.get("konto") ?? "";
+    if (!ID_FORM.test(id)) return nein(400, "konto ungültig");
+    const n = Number(url.searchParams.get("limit") ?? 1);
+    const limit = Number.isInteger(n) && n >= 1 ? Math.min(n, SCHLAF_BELEGE) : 1;
+    const { results } = await env.DB.prepare("SELECT zeit, daten FROM schlaf_belege WHERE konto = ? ORDER BY id DESC LIMIT ?").bind(id, limit).all();
+    return json({ konto: id, belege: results.map((z) => ({ zeit: z.zeit, daten: lesen(z.daten) })) });
+  }
   if (url.pathname === "/admin/config" && m === "PATCH") {
-    const r = flicken(await globaleConfig(env), await koerper(request), ["loveaVerbinden"]);
+    const r = flicken(await globaleConfig(env), await koerper(request), ["loveaVerbinden", "schlafBeleg"]);
     if (r.fehler) return nein(400, r.fehler);
     await env.DB.prepare("UPDATE globale_config SET einstellungen = ? WHERE id = 1").bind(JSON.stringify(r.wert)).run();
     return json({ global: { ...STANDARD, ...r.wert } });
@@ -576,6 +605,8 @@ async function verwalten(request, url, env) {
       einstellungen = r.wert;
     }
     if ("loveaVerbinden" in einstellungen && typeof einstellungen.loveaVerbinden !== "boolean") return nein(400, "loveaVerbinden: true oder false");
+    if ("schlafBeleg" in einstellungen && typeof einstellungen.schlafBeleg !== "boolean") return nein(400, "schlafBeleg: true oder false");
+    if (einstellungen.schlafBeleg === true && person !== "ahmed") return nein(400, "schlafBeleg nur mit lovea_person ahmed");
     if (einstellungen.loveaVerbinden === true && !person) return nein(400, "loveaVerbinden braucht lovea_person");
     await env.DB.prepare("UPDATE konten SET lovea_person = ?, gesperrt = ?, einstellungen = ? WHERE id = ?")
       .bind(person, gesperrt, JSON.stringify(einstellungen), zeile.id).run();
@@ -596,6 +627,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/lovea/agent/ops" && m === "GET") return loveaOps(request, url, env, holen);
   if (url.pathname === "/lovea/import-erledigt" && m === "POST") return importErledigt(request, env);
   if (url.pathname === "/lovea/import-beleg" && m === "POST") return importBeleg(request, env);
+  if (url.pathname === "/diagnose/schlaf" && m === "POST") return schlafBelegAnnehmen(request, env);
   if (url.pathname === "/nutzung" && m === "POST") return nutzungMelden(request, env);
   if (url.pathname === "/partner" && m === "PUT") return partnerLegen(request, env);
   if (url.pathname === "/partner" && m === "GET") return partnerLesen(request, env);

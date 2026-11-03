@@ -86,3 +86,11 @@ CREATE TABLE IF NOT EXISTS drossel (
   fenster INTEGER NOT NULL,
   n INTEGER NOT NULL
 );
+-- Schlaf-Beleg (Diagnose, nur wenn der Schalter schlafBeleg am Konto an ist): Rohwerte von Schlaf und Schritten, je Konto die letzten 30.
+CREATE TABLE IF NOT EXISTS schlaf_belege (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  konto TEXT NOT NULL,
+  zeit TEXT NOT NULL,
+  daten TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS schlaf_belege_konto ON schlaf_belege (konto, id);
