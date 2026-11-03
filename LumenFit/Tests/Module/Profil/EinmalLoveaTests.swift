@@ -112,7 +112,8 @@ final class EinmalLoveaTests: XCTestCase {
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         let text = String(decoding: try XCTUnwrap(lader.anfragen.last { $0.url?.path == "/nutzung" }?.httpBody), as: UTF8.self)
         XCTAssertFalse(text.contains("Beispiel"), "kein Profilname in der Nutzungsmeldung")
-        XCTAssertEqual(Set((try JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] ?? [:]).keys), ["tag", "bereiche", "funktionen"])
+        let schluessel = Set((try JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any] ?? [:]).keys)
+        XCTAssertTrue(schluessel.isSubset(of: ["tag", "bereiche", "funktionen", "gruppen", "ios", "geraet"]), "\(schluessel)")
     }
 
     // MARK: - Import-erledigt

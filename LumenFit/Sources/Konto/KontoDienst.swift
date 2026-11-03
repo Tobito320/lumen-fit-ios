@@ -393,6 +393,8 @@ final class KontoDienst {
         guard nutzung.an, case .da(let kennung) = liesKennung(), kennung.registriert else { return }
         let jetzt = uhr()
         if let letzter = letzterNutzungsUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.nutzungPause { return }
+        // Ohne neuen Inhalt startet die Pause nicht, sonst bliebe ein Fehler kurz danach bis zu 5 Minuten liegen.
+        guard !nutzung.faellig(heute: Datum.text(jetzt), ersterInSitzung: false, zwischendurch: true).isEmpty else { return }
         letzterNutzungsUpload = jetzt
         await nutzungUebertragen(kennung, zwischendurch: true)
     }

@@ -21,7 +21,7 @@ final class ProfilTexteTests: XCTestCase {
 
     func testDatenschutzSagtEhrlichWasDieNutzungsmeldungIst() throws {
         let netz = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel == "Was an den Lumen-Server geht" })
-        for wort in ["nicht anonym", "Nein oder gar nichts", "90 Tagen", "Absturz", "kein Gesundheitswert", "Nutzung melden"] {
+        for wort in ["nicht anonym", "Nein oder gar nichts", "90 Tagen", "Absturz", "Kein Gesundheitswert", "Nutzung melden"] {
             XCTAssertTrue(netz.text.contains(wort), wort)
         }
         XCTAssertFalse(netz.text.lowercased().replacingOccurrences(of: "nicht anonym", with: "").contains("anonym"), "nirgends als anonym ausgeben")

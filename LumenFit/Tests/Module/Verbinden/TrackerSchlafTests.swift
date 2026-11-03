@@ -274,7 +274,7 @@ final class TrackerSchlafTests: XCTestCase {
     func testEineAnfrageOhneAntwortBeweistNichtDassDieNachtFertigIst() {
         let bis = zeit(14, 6, 40)
         let gelesen = nachtHeute(bis: bis)
-        let spaet = bis.addingTimeInterval(3600)
+        let spaet = zeit(14, 12, 30)
         XCTAssertFalse(TrackerSchlaf.faellig(letzte: spaet, naechte: gelesen, heute: heute, jetzt: spaet.addingTimeInterval(40 * 60)))
         XCTAssertTrue(TrackerSchlaf.faellig(letzte: spaet, naechte: gelesen, heute: heute, jetzt: spaet.addingTimeInterval(40 * 60), ohneAntwort: true))
     }
