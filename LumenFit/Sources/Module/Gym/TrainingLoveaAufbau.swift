@@ -196,7 +196,7 @@ struct TrainingLoveaView: View {
                 VStack(spacing: 2) {
                     ForEach(sitzung.liste.indices, id: \.self) { i in zeile(i, dran: i == dran) }
                 }
-                Text("Halte eine Übung gedrückt, um sie auszulassen.").font(.footnote).foregroundStyle(.secondary)
+                Text("Halte eine Übung gedrückt, um sie auszulassen oder an eine andere Stelle zu ziehen.").font(.footnote).foregroundStyle(.secondary)
             }
             schluss
         }
@@ -301,6 +301,7 @@ struct TrainingLoveaView: View {
         .accessibilityElement(children: .combine)
         .accessibilityValue(u.fertig ? "fertig" : u.ausgelassen ? "ausgelassen" : dran ? "jetzt dran" : "")
         .contextMenu { kontext(i, u) }
+        .uebungZiehen(u.id) { von, auf in sitzung.verschieben(von, auf: auf) }
     }
 
     private func untertitel(_ u: WorkoutUebung, dran: Bool) -> String {

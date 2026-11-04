@@ -629,6 +629,15 @@ final class GymSitzung: TrainingSteuerung {
         }
     }
 
+    /// Ziehen und Ablegen: die Übung `von` (Plan-Id) kommt an die Stelle der Übung `auf`. Der Plantag bekommt dieselbe Reihenfolge, damit sie bleibt.
+    func verschieben(_ von: String, auf: String) {
+        ladeWennNoetig()
+        guard let a = liste.firstIndex(where: { $0.id == von }), let b = liste.firstIndex(where: { $0.id == auf }), a != b else { return }
+        liste = WorkoutLogik.verschieben(liste, von: a, nach: b)
+        if let t = training, let alt = tag { t.planSichern(TrainingLogik.tagSetzen(t.plan, WorkoutLogik.tagInReihenfolge(alt, liste))) }
+        liveSenden()
+    }
+
     /// "Plan aktualisieren": der Tag bekommt den Aufbau dieses Trainings (`neuerTag`).
     func planAktualisieren() {
         guard let t = training, let neu = neuerTag else { return }

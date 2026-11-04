@@ -24,7 +24,7 @@ struct UebungsKarte: View {
     private func karte(_ u: WorkoutUebung) -> some View {
         let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
         return ListenKarte {
-            kopf(u, gruen)
+            kopf(u, gruen).uebungZiehen(u.id) { von, auf in sitzung.verschieben(von, auf: auf) }
             Haarlinie()
             if u.planUebung.istCardio {
                 cardioZeile(u, gruen)

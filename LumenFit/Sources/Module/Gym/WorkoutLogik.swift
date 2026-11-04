@@ -26,6 +26,25 @@ enum WorkoutLogik {
     static let standardPause = 120
     static let pausen = [0, 60, 90, 120, 150, 180, 240, 300]
 
+    /// Ziehen und Ablegen im Training: die Übung `von` kommt an die Stelle `nach`. Kopplungen lösen sich wie im Plan (`PlanEditor.verschieben`).
+    static func verschieben(_ liste: [WorkoutUebung], von: Int, nach: Int) -> [WorkoutUebung] {
+        guard liste.indices.contains(von), liste.indices.contains(nach), von != nach else { return liste }
+        var l = liste
+        l.insert(l.remove(at: von), at: nach)
+        for i in l.indices { l[i].planUebung.supersatz = nil }
+        return l
+    }
+
+    /// Der Plantag in der Reihenfolge der Liste, ohne Kopplungen; Plan-Übungen, die nicht in der Liste stehen, bleiben dahinter.
+    static func tagInReihenfolge(_ tag: TrainingsTag, _ liste: [WorkoutUebung]) -> TrainingsTag {
+        var t = tag
+        let stelle = Dictionary(liste.enumerated().map { ($1.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let rang = { (u: PlanUebung) in stelle[u.id] ?? Int.max }
+        t.uebungen = tag.uebungen.enumerated().sorted { (rang($0.element), $0.offset) < (rang($1.element), $1.offset) }.map(\.element)
+        for i in t.uebungen.indices { t.uebungen[i].supersatz = nil }
+        return t
+    }
+
     /// Plan-Übungen in Planreihenfolge, dahinter die im Training dazugekommenen. `frueher`: ältere
     /// Einheiten, neueste zuerst.
     static func uebungen(_ s: GymSession, tag: TrainingsTag?, frueher: [GymSession]) -> [WorkoutUebung] {
