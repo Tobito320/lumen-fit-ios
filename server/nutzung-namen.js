@@ -237,7 +237,20 @@ export const NAMEN = {
     "band_verbindung",
     "band_nicht_gefunden",
     "coach_antwort",
-    "coach_versteht"
+    "coach_versteht",
+    "absturz_falle",
+    "absturz_zugriff",
+    "absturz_abbruch",
+    "absturz_beendet",
+    "absturz_anders",
+    "ende_vorne_absturz",
+    "ende_vorne_watchdog",
+    "ende_vorne_speicher",
+    "ende_hinten_absturz",
+    "ende_hinten_watchdog",
+    "ende_hinten_speicher",
+    "ende_hinten_zeit",
+    "ende_hinten_datei"
   ],
   "route": {
     "namen": [

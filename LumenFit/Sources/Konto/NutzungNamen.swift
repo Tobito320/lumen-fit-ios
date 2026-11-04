@@ -28,6 +28,21 @@ enum NutzungFehler: String, CaseIterable, Sendable {
     case bandNichtGefunden = "band_nicht_gefunden"
     case coachAntwort = "coach_antwort"
     case coachVersteht = "coach_versteht"
+    // Art des Absturzes aus den Zahlen des MetricKit-Berichts (Signal, Ausnahme), nie aus Text oder Stack (`NutzungMetrik.art`).
+    case absturzFalle = "absturz_falle"
+    case absturzZugriff = "absturz_zugriff"
+    case absturzAbbruch = "absturz_abbruch"
+    case absturzBeendet = "absturz_beendet"
+    case absturzAnders = "absturz_anders"
+    // Ungewollte Enden der App je Tag aus `MXAppExitMetric` (Zähler von iOS): vorne = sichtbar, hinten = im Hintergrund.
+    case endeVorneAbsturz = "ende_vorne_absturz"
+    case endeVorneWatchdog = "ende_vorne_watchdog"
+    case endeVorneSpeicher = "ende_vorne_speicher"
+    case endeHintenAbsturz = "ende_hinten_absturz"
+    case endeHintenWatchdog = "ende_hinten_watchdog"
+    case endeHintenSpeicher = "ende_hinten_speicher"
+    case endeHintenZeit = "ende_hinten_zeit"
+    case endeHintenDatei = "ende_hinten_datei"
 }
 
 /// Abläufe mit mehreren Stufen: begonnen, beendet oder in einer Stufe abgebrochen (QR-Verbinden, Studio-Suche, Essen eintragen).
