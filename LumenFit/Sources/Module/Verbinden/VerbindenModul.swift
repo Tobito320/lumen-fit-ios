@@ -249,6 +249,7 @@ final class VerbindenDienste {
             bruecke.schreibe()
             schlafBelegAnstossen()
         case .healthAktualisiert:
+            bruecke.schreibe()   // neue Schritte oder Nächte (Band-Sync, von Hand) gleich an Lovea, nicht erst beim nächsten Öffnen; ohne Änderung schreibt die Brücke nichts
             schlafBelegAnstossen()   // auch nach einem Band-Sync mit neuen Nächten oder Schritten
         case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .speichernFehlgeschlagen:
             break
