@@ -51,6 +51,17 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertNil(stand.letzteAktualisierung)
     }
 
+    func testEinFehlerBeimFragenWirdBeimNaechstenAbrufNeuVersucht() async {
+        let leser = FakeHealthLeser(zugriff: .nichtVerfuegbar, tage: tage(5))
+        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr)
+        await stand.aktualisiere()
+        XCTAssertEqual(stand.zugriff, .nichtVerfuegbar)
+        leser.setze(zugriff: .angefragt)
+        await stand.aktualisiere()
+        XCTAssertEqual(stand.zugriff, .angefragt, "gesperrtes Health beim ersten Versuch darf nicht bis zum Neustart kleben")
+        XCTAssertEqual(stand.tage.count, 5)
+    }
+
     func testBandUndHealthZaehlenDasMaximumNieDieSumme() async {
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 10_000, distanzMeter: 7000), TagesWerte(tag: Datum.addTage(heute, -1), schritte: 3000)])
         let gestern = Datum.addTage(heute, -1)

@@ -90,7 +90,8 @@ final class GesundheitsStand {
         let gewollt = typen()
         if !gewollt.isSubset(of: erfragt) {
             zugriff = await leser.zugriff(fuer: gewollt)
-            erfragt.formUnion(gewollt)
+            // Ein Fehler (z. B. Health gesperrt, weil iOS die App im Hintergrund bei gesperrtem iPhone startet) wird nicht gemerkt, sonst bliebe Health bis zum Neustart leer.
+            if zugriff != .nichtVerfuegbar { erfragt.formUnion(gewollt) }
         }
         guard zugriff != .nichtVerfuegbar else { return }
         async let neueTage = leser.tagesWerte(von: von, bis: heute)
