@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI-Fenster: Historien-Check, Repo kurz öffentlich, Push, ios-ci abwarten, Repo sofort wieder privat.
 # GitHub rechnet private Actions nicht ab; Läufe starten nur bei öffentlichem Repo. Nie GitHub-Billing vorschlagen.
-# Aufruf (im Hintergrund, nie im Vordergrund warten): bash scripts/ci-fenster.sh [--tag NAME]
+# Aufruf (im Hintergrund, nie im Vordergrund warten): bash scripts/ci-fenster.sh [--tag NAME]. Pusht HEAD nach main (auch aus einem Worktree), getestet wird genau dieser Commit.
 # Das Repo wird auch bei Abbruch oder Fehler wieder privat (trap).
 set -u
 REPO="Tobito320/lumen-fit-ios"
@@ -32,7 +32,7 @@ echo "Sichtbarkeit: $(gh repo view "$REPO" --json visibility -q .visibility)"
 
 # Direkt nach dem Öffentlich-Schalten antwortet GitHub beim Push manchmal kurz mit 403: bis zu fünfmal wiederholen.
 for versuch in 1 2 3 4 5; do
-  if git push origin main >/dev/null 2>&1; then echo "Push ok (Versuch $versuch)"; break; fi
+  if git push origin HEAD:main >/dev/null 2>&1; then echo "Push ok (Versuch $versuch)"; break; fi
   echo "Push Versuch $versuch fehlgeschlagen"
   sleep 15
 done
