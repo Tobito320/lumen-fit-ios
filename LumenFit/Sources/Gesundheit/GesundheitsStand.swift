@@ -95,7 +95,7 @@ final class GesundheitsStand {
         let abruf = Task { await abrufen() }
         laufend = abruf
         await abruf.value
-        laufend = nil
+        if laufend == abruf { laufend = nil }   // ein inzwischen gestarteter Nachfolger bleibt sichtbar
     }
 
     private func abrufen() async {
