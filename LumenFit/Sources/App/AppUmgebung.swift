@@ -2,6 +2,7 @@ import BackgroundTasks
 import Foundation
 import Observation
 import os
+import UIKit
 
 /// Alles, was Ansichten und Module von außen brauchen: Profil, Navigation, Ereignisse, Gesundheit, die Ports und der `DatenSatz` des aktiven Profils.
 /// `geteilt` ist die eine Instanz der laufenden App (auch für Intents); im Test-Host ist es eine Vorschau ohne Modulstarts.
@@ -117,7 +118,12 @@ final class AppUmgebung {
         guard !neu.isEmpty else { return }
         beobachteteTypen.formUnion(neu)
         healthLeser.beobachte(neu) { [weak self] in
-            Task { @MainActor in await self?.fuehreAbrufAus() }
+            Task { @MainActor in
+                // Der Health-Rückruf ist schon quittiert (`HKHealthLeser.beobachte`): ohne eigene Hintergrundzeit friert iOS die App mitten im Schreiben ein.
+                let zeit = HintergrundZeit("LumenFit-Health-Abruf")
+                await self?.fuehreAbrufAus()
+                zeit.ende()
+            }
         }
     }
 
@@ -272,5 +278,22 @@ final class EinmalSchalter: Sendable {
             defer { war = true }
             return !war
         }
+    }
+}
+
+/// Hält die App für einen Abruf wach (höchstens die Zeit, die iOS gibt) und gibt die Zeit zurück, sobald `ende()` kommt oder iOS sie zurückfordert.
+@MainActor private final class HintergrundZeit {
+    private var kennung = UIBackgroundTaskIdentifier.invalid
+
+    init(_ name: String) {
+        kennung = UIApplication.shared.beginBackgroundTask(withName: name) { [weak self] in
+            MainActor.assumeIsolated { self?.ende() }
+        }
+    }
+
+    func ende() {
+        guard kennung != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(kennung)
+        kennung = .invalid
     }
 }

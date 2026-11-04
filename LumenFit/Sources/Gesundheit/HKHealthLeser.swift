@@ -177,7 +177,7 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
     // MARK: - Hintergrundlieferung
 
     /// Meldet `aenderung`, sobald neue Daten ankommen, auch wenn iOS die App dafür im Hintergrund startet.
-    // shortcut: den Abschluss ruft der Handler sofort nach dem Anstoßen, nicht erst nach der Arbeit; bei zu früh beendeten Hintergrundläufen die Arbeit abwarten.
+    /// Der Abschluss geht sofort nach dem Anstoßen; die Arbeit danach hält `AppUmgebung.beobachteHealth` mit eigener Hintergrundzeit wach.
     func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         for typ in typen {

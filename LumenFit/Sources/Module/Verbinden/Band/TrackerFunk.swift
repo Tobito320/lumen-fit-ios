@@ -90,6 +90,7 @@ final class TrackerFunk: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     private var benachrichtigt = false
     private var gewolltGetrennt = false
     private var suchStopp: DispatchWorkItem?
+    private var fehlversuche = 0
 
     // Dienst 2 und die Suche nach allen Diensten (W-033), nur auf `queue` anfassen.
     private let schlafDienstUUID = CBUUID(string: TrackerSchlaf.dienst)
@@ -232,6 +233,7 @@ final class TrackerFunk: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
     }
 
     func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        fehlversuche = 0
         schlafZuruecksetzen()
         UserDefaults.standard.set(peripheral.identifier.uuidString, forKey: Self.kennungSchluessel)
         peripheral.discoverServices([dienstUUID])
@@ -239,7 +241,11 @@ final class TrackerFunk: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
 
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         guard !gewolltGetrennt else { return }
-        central.connect(peripheral)
+        fehlversuche += 1
+        queue.asyncAfter(deadline: .now() + BandVerbindenPause.sekunden(fehlversuche: fehlversuche)) { [weak self] in
+            guard let self, !self.gewolltGetrennt, let geraet = self.geraet, geraet.state == .disconnected else { return }
+            self.zentrale?.connect(geraet)
+        }
     }
 
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
