@@ -31,15 +31,23 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.tage.count, 60, "alte Tage bleiben stehen")
     }
 
-    func testGleichzeitigeAbrufeFragenHealthNurEinmal() async {
-        let leser = FakeHealthLeser(tage: tage(5))
+    func testWerDenLaufendenAbrufTrifftWartetUndBekommtEinenFolgeabruf() async {
+        let innen = FakeHealthLeser(tage: tage(5))
+        let leser = GesundheitsMerkLeser(innen: innen)
         let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr)
-        async let a: Void = stand.aktualisiere()
-        async let b: Void = stand.aktualisiere()
-        _ = await (a, b)
-        XCTAssertEqual(leser.tagesAbfragen.count, 1, "der zweite wartet auf den ersten")
+        let erster = Task { await stand.aktualisiere() }
+        await leser.tor.warteAufAnkunft()   // der erste Abruf steckt in den Tageswerten
+        innen.setze(tage: tage(5, schritte: 9000))   // Health meldet neue Schritte
+        // `Task` statt `async let`: erbt den Hauptakteur, läuft also beim `yield` sicher bis zum Warten an.
+        let wartende = (0..<3).map { _ in Task { await stand.aktualisiere() } }
+        await Task.yield()
+        await leser.tor.oeffnen()
+        for w in wartende { await w.value }
+        await erster.value
+        XCTAssertEqual(innen.tagesAbfragen.count, 2, "drei Wartende, ein Folgeabruf statt drei")
+        XCTAssertEqual(stand.tage[heute]?.schritte, 9000, "der Folgeabruf holt, was während des ersten kam")
         await stand.aktualisiere()
-        XCTAssertEqual(leser.tagesAbfragen.count, 2, "danach startet wieder ein eigener Abruf")
+        XCTAssertEqual(innen.tagesAbfragen.count, 3, "danach startet wieder ein eigener Abruf")
     }
 
     func testEinNeuerBereichWaehrendEinesAbrufsWirdTrotzdemGefragt() async {
@@ -47,11 +55,14 @@ final class GesundheitsStandTests: XCTestCase {
         let wahl = GesundheitsTypenWahl()
         let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr, typen: { wahl.typen })
         let erster = Task { await stand.aktualisiere() }
-        await Task.yield()   // der erste Abruf läuft und hat [.schritte] gefragt
+        await leser.tor.warteAufAnkunft()   // der erste Abruf hat [.schritte] gefragt und steckt in den Tageswerten
         wahl.typen = [.schritte, .schlaf]
-        await stand.aktualisiere()
+        let zweiter = Task { await stand.aktualisiere() }
+        await Task.yield()
+        await leser.tor.oeffnen()
+        await zweiter.value
         await erster.value
-        XCTAssertTrue(leser.anfragen.contains([.schritte, .schlaf]), "der neue Bereich wurde gefragt, nicht vom laufenden Abruf verschluckt")
+        XCTAssertEqual(leser.anfragen, [[.schritte], [.schritte, .schlaf]], "der neue Bereich wurde gefragt, nicht vom laufenden Abruf verschluckt")
     }
 
     func testNeueWerteDerLetztenTageErsetzenDieAlten() async {
@@ -170,10 +181,40 @@ private final class GesundheitsMerkLeser: HealthLeser, @unchecked Sendable {   /
         schloss.withLock { _anfragen.append(typen) }
         return await innen.zugriff(fuer: typen)
     }
-    func tagesWerte(von: String, bis: String) async -> [TagesWerte] { await innen.tagesWerte(von: von, bis: bis) }
+    /// Hält die erste Tagesabfrage an, bis der Test `tor.oeffnen()` ruft.
+    let tor = GesundheitsTor()
+    func tagesWerte(von: String, bis: String) async -> [TagesWerte] {
+        await tor.ankommenUndWarten()
+        return await innen.tagesWerte(von: von, bis: bis)
+    }
     func schlafNaechte(von: String, bis: String) async -> [SchlafNacht] { await innen.schlafNaechte(von: von, bis: bis) }
     func vitalwerte(_ art: VitalArt, von: String, bis: String) async -> [VitalMesswert] { await innen.vitalwerte(art, von: von, bis: bis) }
     func gewichte(von: String, bis: String) async -> [GewichtsMesswert] { await innen.gewichte(von: von, bis: bis) }
     func workouts(von: String, bis: String) async -> [HealthWorkout] { await innen.workouts(von: von, bis: bis) }
     func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void) {}
+}
+
+/// Hält nur den ersten Durchgang an; alle späteren laufen durch.
+private actor GesundheitsTor {
+    private var benutzt = false
+    private var angekommen = false
+    private var ankunft: CheckedContinuation<Void, Never>?
+    private var offen: CheckedContinuation<Void, Never>?
+
+    func ankommenUndWarten() async {
+        guard !benutzt else { return }
+        benutzt = true
+        angekommen = true
+        ankunft?.resume()
+        ankunft = nil
+        await withCheckedContinuation { offen = $0 }
+    }
+    func warteAufAnkunft() async {
+        guard !angekommen else { return }
+        await withCheckedContinuation { ankunft = $0 }
+    }
+    func oeffnen() {
+        offen?.resume()
+        offen = nil
+    }
 }

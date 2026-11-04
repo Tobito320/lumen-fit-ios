@@ -84,18 +84,25 @@ final class GesundheitsStand {
 
     /// Läuft schon ein Abruf (Heute, Schlaf und der Hintergrund-Abruf rufen bei derselben Health-Meldung), warten alle auf diesen einen statt je zehn Abfragen zu starten.
     @ObservationIgnored private var laufend: Task<Void, Never>?
+    /// Kam ein Aufruf während des Abrufs, hat der laufende neue Werte oder einen neuen Bereich vielleicht verpasst: danach genau ein Folgeabruf für alle Wartenden.
+    @ObservationIgnored private var nochmal = false
 
     /// Erster Aufruf holt 60 Tage und fragt die Rechte, spätere nur das Neue (die letzten Tage, weil Health Daten nachträgt).
     func aktualisiere() async {
         if let laufend {
+            nochmal = true
             await laufend.value
-            // Wurde inzwischen ein Bereich eingeschaltet, fragt erst ein eigener Abruf dessen Rechte; sonst reicht der fertige.
-            guard !typen().isSubset(of: erfragt) else { return }
+            return
         }
-        let abruf = Task { await abrufen() }
+        let abruf = Task {
+            repeat {
+                nochmal = false
+                await abrufen()
+            } while nochmal
+            laufend = nil   // ohne `await` nach der Prüfung: kein Aufruf kann sich an einen schon fertigen Abruf hängen
+        }
         laufend = abruf
         await abruf.value
-        if laufend == abruf { laufend = nil }   // ein inzwischen gestarteter Nachfolger bleibt sichtbar
     }
 
     private func abrufen() async {
