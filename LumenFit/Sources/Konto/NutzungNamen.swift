@@ -70,6 +70,7 @@ enum NutzungEintrag: String, CaseIterable, Sendable {
     case profilFreunde = "profil_freunde"
     case profilDaten = "profil_daten"
     case profilUeber = "profil_ueber"
+    case profilMehr = "profil_mehr"
 }
 
 /// Welche Aufrufe des Lumen-Servers gemessen werden, unter festem Namen. Alles andere (auch `/nutzung` selbst) wird nicht gemessen.

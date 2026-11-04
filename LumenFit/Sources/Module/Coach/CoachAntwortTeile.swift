@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 // Bausteine des Coach-Chats im Lumen-Design (Apple monochrom, Lumi als Figur): Antworttext ohne Blase, Blase der Person, Tippanzeige, Chips,
-// Daumen und Merken, Karte des Morgen-Checks. Jede Tippfläche hat mindestens 44 pt, jedes Symbol ein Label, Reduce Motion wird beachtet.
+// Daumen, Menü beim langen Drücken (Merken, Kopieren, Neu fragen), Karte des Morgen-Checks. Jede Tippfläche hat mindestens 44 pt, jedes Symbol ein Label, Reduce Motion wird beachtet.
 
 enum CoachAnzeige {
     nonisolated static let deutsch = Locale(identifier: "de_DE")
@@ -219,6 +219,8 @@ struct CoachAntwortZeile: View {
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var zeitSichtbar = false
     @State private var fertig: Bool
+    /// Zählt Tipps im Menü des langen Drückens, damit jeder Punkt eine Rückmeldung gibt.
+    @State private var menueTipps = 0
     private let start: Date?
     private let gesamt: Int
 
@@ -248,12 +250,7 @@ struct CoachAntwortZeile: View {
                 textBlock
                     .contentShape(.rect)
                     .onTapGesture { withAnimation(Feder.schnell) { zeitSichtbar.toggle() } }
-                    .contextMenu {
-                        Button("Kopieren", systemImage: "doc.on.doc") { UIPasteboard.general.string = CoachAnzeige.kopierText(nachricht.text) }
-                        ShareLink(item: CoachAnzeige.kopierText(nachricht.text)) { Label("Teilen", systemImage: "square.and.arrow.up") }
-                        Button(modell.istGemerkt(nachricht) ? "Nicht mehr anheften" : "Anheften",
-                               systemImage: modell.istGemerkt(nachricht) ? "pin.slash" : "pin") { modell.schalteMerkliste(nachricht) }
-                    }
+                    .contextMenu { menue }
                 if zeitSichtbar {
                     Text(CoachAnzeige.zeitText(nachricht.zeit)).font(.caption).foregroundStyle(palette.text2).transition(.opacity)
                 }
@@ -261,10 +258,14 @@ struct CoachAntwortZeile: View {
             if fertig || reduceMotion {
                 extras(zerlegt)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .bottom)))
-                CoachChipLeiste(nachricht: nachricht, modell: modell)
-                if !fehler { CoachAktionsZeile(nachricht: nachricht, modell: modell, letzte: letzte) }
+                // Ältere Antworten bleiben nur Text; Chips und Daumen stehen unter der letzten (W-003).
+                if letzte {
+                    CoachChipLeiste(nachricht: nachricht, modell: modell)
+                    if !fehler { CoachAktionsZeile(nachricht: nachricht, modell: modell) }
+                }
             }
         }
+        .haptik(.auswahl, bei: menueTipps)
         .padding(hervor ? Abstand.s : 0)
         .background(hervor ? palette.akzent.opacity(0.12) : .clear, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
         .task {
@@ -272,6 +273,26 @@ struct CoachAntwortZeile: View {
             let rest = start.addingTimeInterval(CoachText.einblendDauer(gesamt: gesamt)).timeIntervalSince(modell.jetzt)
             try? await Task.sleep(for: .seconds(max(0, rest)))
             withAnimation(reduceMotion ? nil : Feder.weich) { fertig = true }
+        }
+    }
+
+    @ViewBuilder
+    private var menue: some View {
+        let text = CoachAnzeige.kopierText(nachricht.text)
+        ForEach(CoachAntwortMenue.punkte(letzte: letzte, gemerkt: modell.istGemerkt(nachricht), denkt: modell.denkt, pausiert: modell.pausiert),
+                id: \.self) { punkt in
+            switch punkt {
+            case .kopieren:
+                Button("Kopieren", systemImage: "doc.on.doc") { UIPasteboard.general.string = text; menueTipps += 1 }
+            case .teilen:
+                ShareLink(item: text) { Label("Teilen", systemImage: "square.and.arrow.up") }
+            case .merken(let gemerkt):
+                Button(gemerkt ? "Nicht mehr merken" : "Merken", systemImage: gemerkt ? "bookmark.slash" : "bookmark") {
+                    modell.schalteMerkliste(nachricht); menueTipps += 1
+                }
+            case .nochmal:
+                Button("Neu fragen", systemImage: "arrow.clockwise") { modell.nochmal(); menueTipps += 1 }
+            }
         }
     }
 
@@ -389,14 +410,12 @@ struct CoachChipLeiste: View {
     }
 }
 
-// MARK: - Daumen, Merken, Kopieren, Nochmal
+// MARK: - Daumen
 
+/// Unter der letzten Antwort nur die Daumen; Merken, Kopieren und "Neu fragen" liegen im langen Drücken (`CoachAntwortMenue`).
 struct CoachAktionsZeile: View {
     let nachricht: CoachNachricht
     let modell: CoachModell
-    /// Nur die letzte Antwort bekommt "Nochmal".
-    var letzte = false
-    @State private var kopiert = false
 
     var body: some View {
         HStack(spacing: Abstand.xs) {
@@ -404,21 +423,6 @@ struct CoachAktionsZeile: View {
                   an: nachricht.daumen == true) { modell.setzeDaumen(true, an: nachricht) }
             knopf(symbol: nachricht.daumen == false ? "hand.thumbsdown.fill" : "hand.thumbsdown", label: "Antwort gefällt mir nicht",
                   an: nachricht.daumen == false) { modell.setzeDaumen(false, an: nachricht) }
-            knopf(symbol: modell.istGemerkt(nachricht) ? "bookmark.fill" : "bookmark", label: "Antwort merken",
-                  an: modell.istGemerkt(nachricht)) { modell.schalteMerkliste(nachricht) }
-            knopf(symbol: kopiert ? "checkmark" : "doc.on.doc", label: kopiert ? "Kopiert" : "Antwort kopieren", an: false) { kopieren() }
-            if letzte, !modell.denkt, !modell.pausiert {
-                knopf(symbol: "arrow.clockwise", label: "Nochmal fragen", an: false) { modell.nochmal() }
-            }
-        }
-    }
-
-    private func kopieren() {
-        UIPasteboard.general.string = CoachAnzeige.kopierText(nachricht.text)
-        withAnimation(Feder.schnell) { kopiert = true }
-        Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            withAnimation(Feder.schnell) { kopiert = false }
         }
     }
 

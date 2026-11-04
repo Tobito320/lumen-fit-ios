@@ -39,10 +39,10 @@ struct UebungsKarte: View {
                     if i < u.saetze.count - 1 { Haarlinie() }
                 }
                 Haarlinie()
+                // Der Rechner steht im Menü ⋯ ("Scheiben und Aufwärmen"), W-003: ein Knopf je Karte weniger.
                 HStack {
                     Button { sitzung.satzDazu(index) } label: { Label("Satz dazu", systemImage: "plus").frame(minHeight: Abstand.tippflaeche) }
                     Spacer()
-                    Button { blatt = .rechner } label: { Label("Rechner", systemImage: "scalemass").frame(minHeight: Abstand.tippflaeche) }
                 }
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, Abstand.l)

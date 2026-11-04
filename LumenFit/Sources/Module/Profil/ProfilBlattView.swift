@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Kompakte Einstellungsliste: eine Zeile je Eintrag, Wert rechts.
-/// Selten Gebrauchtes (Datensicherung, Tabelle, Alles löschen; Datenschutz, Quellen, Version) liegt eine Ebene tiefer unter "Deine Daten" und "Über Lumen Fit".
+/// Selten Gebrauchtes (Meilensteine, Geräte, Deine Daten, Über Lumen Fit) liegt eine Ebene tiefer unter "Mehr" (W-003, Nutzung: gesehen, kaum getippt).
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -19,21 +19,12 @@ struct ProfilBlattView: View {
             }
             ProfilAbschnitt {
                 link("Aussehen", .profilAussehen, symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
-                Toggle(isOn: Binding(get: { umgebung.daten?.einstellungen.werte.haptik ?? true },
-                                     set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
-                    ProfilListenZeile("Haptik", symbol: "hand.tap.fill")
-                }
                 link("Ziele und Körper", .profilZiele, symbol: "target") { ZieleView() }
                 link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
-                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
-            }
-            ProfilAbschnitt {
-                link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() }
                 link("Freunde und Partner", .profilFreunde, symbol: "link") { VerbindungenView() }
             }
             ProfilAbschnitt {
-                link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
-                link("Über Lumen Fit", .profilUeber, symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
+                link("Mehr", .profilMehr, symbol: "ellipsis.circle.fill") { ProfilMehrView() }
             }
         }
         .profilListe()
@@ -53,6 +44,31 @@ struct ProfilBlattView: View {
 
     private var themaName: String? {
         umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }
+    }
+
+    private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
+        NavigationLink { ziel() } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
+            .nutzungEintrag(eintrag)
+    }
+}
+
+/// "Mehr": was selten gebraucht wird, eine Ebene unter dem Profil.
+struct ProfilMehrView: View {
+    @Environment(AppUmgebung.self) private var umgebung
+
+    var body: some View {
+        List {
+            ProfilAbschnitt {
+                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
+                link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() }
+            }
+            ProfilAbschnitt {
+                link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
+                link("Über Lumen Fit", .profilUeber, symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
+            }
+        }
+        .profilListe()
+        .navigationTitle("Mehr")
     }
 
     private var sicherungKurz: String {
