@@ -21,11 +21,29 @@ enum UebungsSymbol {
 struct UebungsBild: View {
     let id: String
     var koerper: String?
+    /// Tipp aufs Bild zeigt Video und Erklärung (`UebungDetailView`); aus nur in der Detailansicht selbst.
+    var tippbar = true
     @State private var bild: UIImage?
+    @State private var detail = false
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
 
     var body: some View {
+        if tippbar {
+            // `.plain`: in Listenzeilen mit eigenem Tipp (Suche, Auswahl) bekommt das Bild seinen eigenen Tipp.
+            Button { detail = true } label: { flaeche }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Video und Erklärung")
+                .sheet(isPresented: $detail) {
+                    NavigationStack { UebungDetailView(id: id, anleitungZuerst: true) }
+                        .presentationDragIndicator(.visible)
+                }
+        } else {
+            flaeche.accessibilityHidden(true)
+        }
+    }
+
+    private var flaeche: some View {
         ZStack {
             palette.grund
             if let bild {
@@ -42,8 +60,8 @@ struct UebungsBild: View {
             }
         }
         .clipShape(.rect(cornerRadius: Rundung.klein, style: .continuous))
+        .contentShape(.rect)
         .task(id: id) { await lade() }
-        .accessibilityHidden(true)
     }
 
     /// `UIImage(contentsOfFile:)` nimmt von einem GIF das erste Bild. Lesen und Dekodieren abseits des Hauptakteurs: in der Übungssuche

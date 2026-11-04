@@ -104,7 +104,7 @@ struct GymUebungGif: View {
                 .accessibilityLabel(angehalten ? "Animation abspielen" : "Animation anhalten")
                 .accessibilityHint("Zeigt die Bewegung der Übung")
             } else {
-                UebungsBild(id: id, koerper: koerper)
+                UebungsBild(id: id, koerper: koerper, tippbar: false)
             }
         }
         .onAppear { erschienen = true }
