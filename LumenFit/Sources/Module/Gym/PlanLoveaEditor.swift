@@ -19,6 +19,8 @@ struct PlanLoveaEditorAktionen {
     var doppeln: (String) -> Void = { _ in }
     /// Übung `id` um -1 (nach oben) oder +1 (nach unten) schieben.
     var schieben: (String, Int) -> Void = { _, _ in }
+    /// Gezogen und abgelegt: Übung `von` an die Stelle von `auf`.
+    var ziehen: (_ von: String, _ auf: String) -> Void = { _, _ in }
     /// Schritt der kg-Stepper je Übung (Lumen: nach Gerät, `LetztesMal.kgSchritt`).
     var kgSchritt: (PlanUebung) -> Double = { _ in 2.5 }
 }
@@ -104,6 +106,7 @@ struct PlanLoveaEditorInhalt: View {
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(offen == u.id ? .isSelected : [])
                 .accessibilityHint(offen == u.id ? "Klappt die Sätze zu" : "Klappt die Sätze auf")
+                .uebungZiehen(u.id, ablegen: aktionen.ziehen)
                 if offen == u.id { saetze(u, in: tag) }
                 Divider()
             }
@@ -316,6 +319,10 @@ struct PlanLoveaEditorView: View {
             hinzufuegen: { sucheOffen = true },
             doppeln: { id in aendern { $0 = PlanEditor.duplizieren($0, id: id) } },
             schieben: { id, schritt in aendern { $0 = PlanEditor.schieben($0, id: id, um: schritt) } },
+            ziehen: { von, auf in aendern { t in
+                guard let a = t.uebungen.firstIndex(where: { $0.id == von }), let b = t.uebungen.firstIndex(where: { $0.id == auf }) else { return }
+                t = PlanEditor.verschieben(t, von: a, nach: b)
+            } },
             kgSchritt: kgSchritt
         )
     }
