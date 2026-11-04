@@ -42,6 +42,18 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(leser.tagesAbfragen.count, 2, "danach startet wieder ein eigener Abruf")
     }
 
+    func testEinNeuerBereichWaehrendEinesAbrufsWirdTrotzdemGefragt() async {
+        let leser = GesundheitsMerkLeser(innen: FakeHealthLeser(tage: tage(5)))
+        let wahl = GesundheitsTypenWahl()
+        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr, typen: { wahl.typen })
+        let erster = Task { await stand.aktualisiere() }
+        await Task.yield()   // der erste Abruf läuft und hat [.schritte] gefragt
+        wahl.typen = [.schritte, .schlaf]
+        await stand.aktualisiere()
+        await erster.value
+        XCTAssertTrue(leser.anfragen.contains([.schritte, .schlaf]), "der neue Bereich wurde gefragt, nicht vom laufenden Abruf verschluckt")
+    }
+
     func testNeueWerteDerLetztenTageErsetzenDieAlten() async {
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 1000)])
         let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr)
@@ -129,4 +141,28 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.gewichte.map(\.kg), [80.4, 80.1])
         XCTAssertEqual(stand.vitale[.ruhepuls]?.count, 0)
     }
+}
+
+@MainActor private final class GesundheitsTypenWahl {
+    var typen: Set<HealthTyp> = [.schritte]
+}
+
+/// Merkt sich, für welche Typen nach den Rechten gefragt wurde; sonst wie der innere Fake.
+private final class GesundheitsMerkLeser: HealthLeser, @unchecked Sendable {   // @unchecked: `_anfragen` nur unter `schloss`
+    private let innen: FakeHealthLeser
+    private let schloss = NSLock()
+    private var _anfragen: [Set<HealthTyp>] = []
+    init(innen: FakeHealthLeser) { self.innen = innen }
+    var anfragen: [Set<HealthTyp>] { schloss.withLock { _anfragen } }
+
+    func zugriff(fuer typen: Set<HealthTyp>) async -> HealthZugriff {
+        schloss.withLock { _anfragen.append(typen) }
+        return await innen.zugriff(fuer: typen)
+    }
+    func tagesWerte(von: String, bis: String) async -> [TagesWerte] { await innen.tagesWerte(von: von, bis: bis) }
+    func schlafNaechte(von: String, bis: String) async -> [SchlafNacht] { await innen.schlafNaechte(von: von, bis: bis) }
+    func vitalwerte(_ art: VitalArt, von: String, bis: String) async -> [VitalMesswert] { await innen.vitalwerte(art, von: von, bis: bis) }
+    func gewichte(von: String, bis: String) async -> [GewichtsMesswert] { await innen.gewichte(von: von, bis: bis) }
+    func workouts(von: String, bis: String) async -> [HealthWorkout] { await innen.workouts(von: von, bis: bis) }
+    func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void) {}
 }
