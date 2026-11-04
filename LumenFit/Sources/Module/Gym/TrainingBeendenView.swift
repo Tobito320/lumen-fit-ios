@@ -18,6 +18,7 @@ struct TrainingBeendenView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     zusammenfassung
+                    cardioDazu
                     fragen
                     TextField("Notiz zum Training (optional)", text: $notiz, axis: .vertical)
                         .lineLimit(1...4)
@@ -87,6 +88,29 @@ struct TrainingBeendenView: View {
         }
     }
 
+    /// "Noch Cardio?": ein Tipp nimmt das Gerät ans Ende des Trainings und schließt das Blatt; danach wie jede Cardio-Übung abschließen.
+    private var cardioDazu: some View {
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            Text("Noch Cardio?").font(.headline)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: Abstand.s) {
+                ForEach(CardioAmEnde.wahl, id: \.id) { g in
+                    Button {
+                        if let u = UebungsKatalog.nachId[g.id] {
+                            sitzung.uebungDazu(u)
+                            schliessen()
+                        }
+                    } label: {
+                        Label(g.titel, systemImage: g.symbol).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.bordered)
+                    .accessibilityHint("Nimmt \(g.titel) ans Ende des Trainings")
+                }
+            }
+        }
+        .padding(Abstand.l)
+        .lumenKartenFlaeche()
+    }
+
     @ViewBuilder
     private var fragen: some View {
         if sitzung.tag != nil, sitzung.neuerTag != nil {
@@ -112,6 +136,22 @@ struct TrainingBeendenView: View {
         sitzung.beende(notiz: notiz)
         schliessen()
     }
+}
+
+/// Die Cardio-Geräte am Ende des Trainings (Katalog-IDs).
+enum CardioAmEnde {
+    struct Geraet: Sendable {
+        let id: String
+        let titel: String
+        let symbol: String
+    }
+
+    static let wahl: [Geraet] = [
+        Geraet(id: "rjiM4L3", titel: "Laufband", symbol: "figure.walk.treadmill"),
+        Geraet(id: "j9Q5crt", titel: "Stepper", symbol: "figure.stair.stepper"),
+        Geraet(id: "rjtuP6X", titel: "Crosstrainer", symbol: "figure.elliptical"),
+        Geraet(id: "a8VDgLw", titel: "Fahrrad", symbol: "figure.indoor.cycle"),
+    ]
 }
 
 /// Einstellungen fürs Training (Idee 30): Training nach Health schreiben (Standard aus) und die Pulsmessung dieses Geräts.
