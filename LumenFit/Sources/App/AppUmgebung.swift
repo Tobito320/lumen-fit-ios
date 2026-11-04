@@ -136,6 +136,8 @@ final class AppUmgebung {
         defer { abrufLaeuft = false }
         let aufgaben = abrufAufgaben
         let arbeit = Task { @MainActor in
+            // Erst Health, dann die Aufgaben: sonst schreiben Lovea-Datei und Server-Stand die Schritte von vorher. Nie die Rechte-Abfrage auslösen.
+            if daten?.einstellungen.werte.healthGefragt == true { await gesundheit.aktualisiere() }
             for aufgabe in aufgaben {
                 if Task.isCancelled { return }
                 await aufgabe()

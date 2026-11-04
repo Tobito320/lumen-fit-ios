@@ -70,6 +70,18 @@ final class AppUmgebungTests: XCTestCase {
         guard case .healthAktualisiert? = ereignis else { return XCTFail("healthAktualisiert erwartet, bekam \(String(describing: ereignis))") }
     }
 
+    func testAbrufLaedtHealthVorDenAufgaben() async throws {
+        let uhr = TestUhr()
+        let heute = Datum.text(uhr.lesen)
+        let u = umgebung(ordner: try tempOrdner(), leser: FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 4321)]), uhr: uhr)
+        try u.profil.anlegen(name: "Test", passwort: "abcd")
+        u.daten?.einstellungen.aendere { $0.healthGefragt = true }
+        let merker = Merker()
+        u.beiAbruf { merker.eintraege.append("\(u.gesundheit.tage[heute]?.schritte ?? 0)") }
+        await u.fuehreAbrufAus()
+        XCTAssertEqual(merker.eintraege, ["4321"], "die Lovea-Datei im Hintergrund braucht die frischen Schritte")
+    }
+
     func testEinmalSchalterLaesstGenauEinenDurch() {
         let einmal = EinmalSchalter()
         XCTAssertTrue(einmal.zuerst())

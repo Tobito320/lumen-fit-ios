@@ -99,10 +99,9 @@ final class WidgetsLaufzeit {
         for tag in tage { umgebung.ereignisse.senden(.habitGeaendert(tag: tag)) }
     }
 
-    /// Hintergrund-Abruf (`umgebung.beiAbruf`): Health nachladen, aber nie die Abfrage der Rechte auslösen (nur wenn die Person schon gefragt wurde), dann sofort schreiben.
+    /// Hintergrund-Abruf (`umgebung.beiAbruf`): Health hat `fuehreAbrufAus` schon vor allen Aufgaben nachgeladen, hier nur sofort schreiben.
     func abruf() async {
         uebernimmTipps()
-        if umgebung.daten?.einstellungen.werte.healthGefragt == true { await umgebung.gesundheit.aktualisiere() }
         schreiber.anfordern(sofort: true)
     }
 }
