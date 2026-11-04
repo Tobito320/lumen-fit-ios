@@ -45,6 +45,7 @@ final class WidgetsLaufzeit {
 
         // Haken der Intents: `trainingSteuerung` wird erst beim Tippen gelesen (das Modul gym setzt sie in seinem eigenen `start`).
         SatzFertigIntent.ausfuehren = { umgebung.trainingSteuerung.satzFertig() }
+        SatzStartenIntent.ausfuehren = { umgebung.trainingSteuerung.naechsterSatzStarten() }
         KurzbefehlHaken.trainingStarten = {
             umgebung.trainingSteuerung.starte(planTag: nil)
             umgebung.router.oeffne(.gym(.training))

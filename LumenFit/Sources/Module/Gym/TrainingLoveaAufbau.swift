@@ -43,7 +43,7 @@ struct LoveaUebungBild: View {
     }
 }
 
-/// Die Leiste unten (Lovea `WorkoutLeiste`): was dran ist, die Satz- oder Pausenzeit, ein Knopf; bei laufender Pause ±15 s und Überspringen.
+/// Die Leiste unten (Lovea `WorkoutLeiste`): was dran ist, die Satz- oder Pausenzeit, ein Knopf; bei laufender Pause ±15 s und "Satz starten".
 struct LoveaTrainingLeiste: View {
     let sitzung: GymSitzung
     let titel: String
@@ -81,9 +81,10 @@ struct LoveaTrainingLeiste: View {
                         Text("+15 s").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
                     .accessibilityLabel("15 Sekunden mehr")
-                    Button { sitzung.pauseUeberspringen() } label: {
-                        Text("Überspringen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    Button { sitzung.naechsterSatzStarten() } label: {
+                        Text("Satz starten").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
+                    .accessibilityHint("Beendet die Pause und startet den nächsten Satz")
                 }
                 .buttonStyle(.bordered)
                 .font(.subheadline.weight(.medium))

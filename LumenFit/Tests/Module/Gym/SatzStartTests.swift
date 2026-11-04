@@ -60,6 +60,16 @@ final class SatzStartTests: XCTestCase {
         XCTAssertEqual(a.sitzung.laufenderSatz(0), 1)
     }
 
+    func testEinTippInDerPauseStartetDenNaechstenSatz() throws {
+        let a = try aufbau()
+        a.sitzung.haken(0, 0)
+        a.uhr.vor(sekunden: 60)
+        a.sitzung.naechsterSatzStarten()
+        XCTAssertNil(a.sitzung.pause, "die Pause ist zu Ende")
+        XCTAssertEqual(a.sitzung.liste[0].saetze[0].pause, 60)
+        XCTAssertEqual(a.sitzung.laufenderSatz(0), 1, "der nächste Satz läuft")
+    }
+
     func testStartenAuchOhnePauseSendetDieZeilen() throws {
         let a = try aufbau()
         a.sitzung.satzStarten(1, 0)

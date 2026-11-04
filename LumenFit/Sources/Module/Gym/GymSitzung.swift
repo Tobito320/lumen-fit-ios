@@ -462,6 +462,14 @@ final class GymSitzung: TrainingSteuerung {
         liveSenden()
     }
 
+    /// Ein Tipp in der Pause (Knopf "Satz starten" in der App und in der Live Activity): Pause zu Ende, der nächste Satz läuft.
+    /// Ist Cardio dran oder alles fertig, endet nur die Pause.
+    func naechsterSatzStarten() {
+        ladeWennNoetig()
+        guard let d = dran, !liste[d.uebung].planUebung.istCardio else { return pauseUeberspringen() }
+        satzStarten(d.uebung, d.satz)
+    }
+
     /// Pause beenden (Tipp auf "Überspringen"): ihre Länge geht an den Satz.
     func pauseUeberspringen() {
         if let u = pauseAbschliessen(umgebung.uhr()) { sende(u) }

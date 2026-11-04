@@ -7,6 +7,7 @@ import XCTest
 final class SatzFertigIntentTests: XCTestCase {
     override func tearDown() async throws {
         SatzFertigIntent.ausfuehren = nil
+        SatzStartenIntent.ausfuehren = nil
         KurzbefehlHaken.trainingStarten = nil
         KurzbefehlHaken.oeffne = nil
         try await super.tearDown()
@@ -28,6 +29,13 @@ final class SatzFertigIntentTests: XCTestCase {
         XCTAssertEqual(steuerung.satzFertigAufrufe, 2)
     }
 
+    func testSatzStartenRuftDieSteuerungDesTrainings() async throws {
+        let (_, steuerung) = try start()
+        _ = try await SatzStartenIntent().perform()
+        XCTAssertEqual(steuerung.satzStartAufrufe, 1)
+        XCTAssertEqual(steuerung.satzFertigAufrufe, 0, "kein Haken, nur der Start")
+    }
+
     func testDieSteuerungWirdErstBeimTippenGelesen() async throws {
         let u = try WidgetsTestUmgebung.neu(ordner: try tempOrdner())
         WidgetsModul.start(u, senke: WidgetsTestSenke(), fabrik: WidgetsTestFabrik(), neuladen: {})
@@ -40,6 +48,8 @@ final class SatzFertigIntentTests: XCTestCase {
     func testImWidgetProzessIstDerHakenNilUndNichtsPassiert() async throws {
         SatzFertigIntent.ausfuehren = nil
         _ = try await SatzFertigIntent().perform()
+        SatzStartenIntent.ausfuehren = nil
+        _ = try await SatzStartenIntent().perform()
         KurzbefehlHaken.trainingStarten = nil
         KurzbefehlHaken.oeffne = nil
         _ = try await TrainingStartenIntent().perform()

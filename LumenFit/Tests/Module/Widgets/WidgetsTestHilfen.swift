@@ -46,10 +46,12 @@ final class WidgetsTestVerzoegerung {
 @MainActor
 final class WidgetsTestSteuerung: TrainingSteuerung {
     private(set) var satzFertigAufrufe = 0
+    private(set) var satzStartAufrufe = 0
     private(set) var gestartet: [String?] = []
 
     func starte(planTag: String?) { gestartet.append(planTag) }
     func satzFertig() { satzFertigAufrufe += 1 }
+    func naechsterSatzStarten() { satzStartAufrufe += 1 }
     func pauseAendern(sekunden: Int) {}
     func beende() {}
 }
