@@ -68,7 +68,7 @@ final class FarbenKontrastTests: XCTestCase {
     }
 
     func testGrundFlaecheUndTextUnterscheidenSich() {
-        XCTAssertEqual(ThemaID.allCases.count, 6)
+        XCTAssertEqual(ThemaID.allCases.count, 7)
         for thema in ThemaID.allCases {
             for dunkel in [false, true] {
                 let t = LumenFarben.tokens(thema: thema, dunkel: dunkel)

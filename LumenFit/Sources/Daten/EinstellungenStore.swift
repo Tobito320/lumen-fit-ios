@@ -18,7 +18,10 @@ final class EinstellungenStore {
     init(ordner: URL? = nil, ereignisse: EreignisKanal? = nil) {
         datei = ordner.map { JSONDatei<Einstellungen>($0.appendingPathComponent("einstellungen.json")) }
         self.ereignisse = ereignisse
-        if let alt = datei?.lade() { gespeichert = alt }
+        if let alt = datei?.lade() {
+            gespeichert = Einstellungen.schlichtEinmal(alt)
+            if gespeichert != alt { datei?.speichere(gespeichert) }
+        }
     }
 
     func aendere(_ f: (inout Einstellungen) -> Void) {

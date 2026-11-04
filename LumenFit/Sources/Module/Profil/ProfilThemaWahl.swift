@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Themenwahl der Aussehen-Seite (Idee 73): fünf Themes für alle, ein sechstes (Lovea) nur für die zwei freigegebenen Konten, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
+/// Themenwahl der Aussehen-Seite (Idee 73): sechs Themes für alle, ein sechstes (Lovea) nur für die zwei freigegebenen Konten, drei Erscheinungen, wirkt sofort über `EinstellungenStore`.
 enum ProfilThemaWahl {
     /// Diese zwei Themes sind für Dunkel gedacht: beim ersten Aktivieren schaltet die Erscheinung von System auf Dunkel.
     static let dunkelVorwahl: Set<ThemaID> = [.graphit, .glut]
@@ -33,13 +33,14 @@ enum ProfilThemaWahl {
         verfuegbar(loveaErlaubt: loveaErlaubt).contains(thema) ? thema : .monochrom
     }
 
-    /// Alle Kombinationen aus Theme und hell/dunkel: zwölf mit Lovea, sonst zehn.
+    /// Alle Kombinationen aus Theme und hell/dunkel: vierzehn mit Lovea, sonst zwölf.
     static func kombinationen(loveaErlaubt: Bool) -> [(thema: ThemaID, dunkel: Bool)] {
         verfuegbar(loveaErlaubt: loveaErlaubt).flatMap { t in [(thema: t, dunkel: false), (thema: t, dunkel: true)] }
     }
 
     static func muster(_ thema: ThemaID) -> String {
         switch thema {
+        case .schlicht: "Glatt"
         case .monochrom: "Punkte"
         case .graphit: "Diagonalen"
         case .stahl: "Raster"
@@ -51,6 +52,7 @@ enum ProfilThemaWahl {
 
     static func beschreibung(_ thema: ThemaID) -> String {
         switch thema {
+        case .schlicht: "Ruhig und flach, eine Farbe: Grün. Folgt dem System."
         case .monochrom: "Schwarz und Weiß, ruhig wie Apple. Folgt dem System."
         case .graphit: "Weiches Grau, am schönsten im Dunkeln."
         case .stahl: "Kühles Blau auf hellem Grund."

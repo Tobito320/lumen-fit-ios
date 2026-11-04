@@ -183,7 +183,7 @@ final class NutzungTests: XCTestCase {
         s.einstellungen(e)
         s.einstellungen(Einstellungen())
         let namen = try XCTUnwrap(s.stand.tage[tag]?.mehr["stand"])
-        XCTAssertEqual(Set(namen.keys), ["theme_monochrom", "band_aus", "einheit_kg", "bereich_gym", "bereich_essen", "bereich_schlaf"], "der zweite Stand ersetzt den ersten")
+        XCTAssertEqual(Set(namen.keys), ["theme_schlicht", "band_aus", "einheit_kg", "bereich_gym", "bereich_essen", "bereich_schlaf"], "der zweite Stand ersetzt den ersten")
         XCTAssertTrue(namen.values.allSatisfy { $0 == 1 })
     }
 

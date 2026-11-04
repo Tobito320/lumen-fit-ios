@@ -214,6 +214,7 @@ export const NAMEN = {
     "profil_ueber"
   ],
   "stand": [
+    "theme_schlicht",
     "theme_monochrom",
     "theme_graphit",
     "theme_stahl",

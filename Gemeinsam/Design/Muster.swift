@@ -2,7 +2,7 @@ import SwiftUI
 
 enum MusterOrt: Sendable { case kopf, karte, hero }
 
-/// Das Muster eines Themes: Punkte (Monochrom), Diagonalen (Graphit), Raster (Stahl), Wellen (Glut), Höhenlinien (Wald). Lovea hat keins: dort sind Grund und Karten flach.
+/// Das Muster eines Themes: Punkte (Monochrom), Diagonalen (Graphit), Raster (Stahl), Wellen (Glut), Höhenlinien (Wald). Lovea und Schlicht haben keins: dort sind Grund und Karten flach.
 /// Ein `Canvas` mit `drawingGroup()` (Metal-Textur im Cache), kein `TimelineView`, keine Dauerbewegung. Bei erhöhtem Kontrast aus,
 /// immer für VoiceOver verborgen. Nicht hinter Diagramme legen.
 struct MusterFlaeche: View {
@@ -54,13 +54,13 @@ enum MusterZeichner {
         case .stahl: 0.14
         case .glut: dunkel ? 0.20 : 0.14
         case .wald: 0.18
-        case .lovea: 0
+        case .lovea, .schlicht: 0
         }
         return ort == .karte ? basis * 0.45 : basis
     }
 
-    /// Lovea zeichnet in Health und Home keine Muster (nur System-Flächen); dort malt auch die Hauptkarte keine Streifen.
-    nonisolated static func hatMuster(_ thema: ThemaID) -> Bool { thema != .lovea }
+    /// Lovea zeichnet in Health und Home keine Muster (nur System-Flächen); dort malt auch die Hauptkarte keine Streifen. Schlicht ist ebenso flach.
+    nonisolated static func hatMuster(_ thema: ThemaID) -> Bool { thema != .lovea && thema != .schlicht }
 
     nonisolated static func zeichne(thema: ThemaID, ort: MusterOrt, groesse: CGSize, farbe: Color, in kontext: inout GraphicsContext) {
         guard groesse.width > 0, groesse.height > 0, hatMuster(thema) else { return }
@@ -74,7 +74,7 @@ enum MusterZeichner {
         case .stahl: kontext.stroke(raster(groesse, abstand: 16), with: .color(farbe), lineWidth: 1)
         case .glut: kontext.stroke(kreise(groesse, mitte: CGPoint(x: groesse.width * 0.85, y: 0), abstand: 10), with: .color(farbe), lineWidth: 1)
         case .wald: kontext.stroke(hoehenlinien(groesse), with: .color(farbe), lineWidth: 1)
-        case .lovea: break
+        case .lovea, .schlicht: break
         }
     }
 

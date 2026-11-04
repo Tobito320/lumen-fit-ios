@@ -22,6 +22,8 @@ def mix(a, b, t):  # a mit Deckkraft t ueber b
 
 # Themes: (grund, flaeche, text, text2, rand, akzent, aufAkzent, muster-Farbe, muster-Deckkraft auf Hero)
 T = {
+ ('Schlicht', 'hell'):   dict(grund='#F6F7F8', flaeche='#FFFFFF', text='#0B0C0E', text2='#5B616B', rand='#848A93', akzent='#16742F', auf='#FFFFFF', stripe='#FFFFFF', sa=0),
+ ('Schlicht', 'dunkel'): dict(grund='#0B0C0E', flaeche='#17191C', text='#F2F3F5', text2='#9A9FA6', rand='#7D828A', akzent='#A6FF00', auf='#0B0C0E', stripe='#0B0C0E', sa=0),
  ('Monochrom', 'hell'):  dict(grund='#FFFFFF', flaeche='#F2F2F7', text='#000000', text2='#5E5E62', rand='#8A8A8E', akzent='#000000', auf='#FFFFFF', stripe='#FFFFFF', sa=.10),
  ('Monochrom', 'dunkel'):dict(grund='#000000', flaeche='#1C1C1E', text='#FFFFFF', text2='#98989F', rand='#8E8E93', akzent='#FFFFFF', auf='#000000', stripe='#000000', sa=.12),
  ('Graphit', 'hell'):    dict(grund='#F2F2F7', flaeche='#FFFFFF', text='#1C1C1E', text2='#5A5A5E', rand='#85858A', akzent='#1C1C1E', auf='#FFFFFF', stripe='#FFFFFF', sa=.10),
@@ -40,7 +42,7 @@ T = {
 RING = dict(bewegen='#FA114F', trainieren_h='#2DBE4F', trainieren_d='#A6FF00', erholen_h='#0A9FE0', erholen_d='#00E0F0')
 PLATTE = '#000000'
 # Deckkraft der Musterlinien je Theme (volle Staerke im Kopfbereich, Karten 45 %)
-PA = {('Monochrom','hell'):.12,('Monochrom','dunkel'):.12,('Graphit','hell'):.10,('Graphit','dunkel'):.10,('Stahl','hell'):.14,('Stahl','dunkel'):.14,('Glut','hell'):.14,('Glut','dunkel'):.20,('Wald','hell'):.18,('Wald','dunkel'):.18,('Lovea','hell'):0,('Lovea','dunkel'):0}
+PA = {('Schlicht','hell'):0,('Schlicht','dunkel'):0,('Monochrom','hell'):.12,('Monochrom','dunkel'):.12,('Graphit','hell'):.10,('Graphit','dunkel'):.10,('Stahl','hell'):.14,('Stahl','dunkel'):.14,('Glut','hell'):.14,('Glut','dunkel'):.20,('Wald','hell'):.18,('Wald','dunkel'):.18,('Lovea','hell'):0,('Lovea','dunkel'):0}
 # Tief-Varianten (Text und duenne Linien auf Theme-Flaechen). hell = auf hellen Flaechen, dunkel = auf dunklen
 TIEF = {
  'hell':   dict(bewegen='#D00A3C', trainieren='#16742F', erholen='#00699E', gut='#16742F', warn='#8F4B00', schlecht='#C4161C'),

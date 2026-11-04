@@ -94,11 +94,29 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertFalse(alt.config.schlafBeleg, "Schlaf-Beleg ist ohne Antwort des Servers aus")
     }
 
+    /// W-003: alte Datei ohne `schlichtGesetzt`. Monochrom (der alte Standard) wird einmal Schlicht, ein selbst gewähltes Theme bleibt,
+    /// und wer danach wieder Monochrom wählt, behält es beim nächsten Start.
+    func testAltesMonochromWirdEinmalSchlichtEigeneWahlBleibt() throws {
+        let ordner = try tempOrdner()
+        let datei = ordner.appendingPathComponent("einstellungen.json")
+        try Data(#"{"thema":"monochrom","erscheinung":"dunkel"}"#.utf8).write(to: datei)
+        let store = EinstellungenStore(ordner: ordner)
+        XCTAssertEqual(store.werte.thema, .schlicht)
+        XCTAssertEqual(store.werte.erscheinung, .dunkel, "der Rest bleibt")
+        XCTAssertTrue(try JSONDecoder().decode(Einstellungen.self, from: Data(contentsOf: datei)).schlichtGesetzt, "der Merker steht in der Datei")
+        store.aendere { $0.thema = .monochrom }
+        XCTAssertEqual(EinstellungenStore(ordner: ordner).werte.thema, .monochrom, "nur einmal: die neue Wahl bleibt")
+
+        let andere = try tempOrdner()
+        try Data(#"{"thema":"wald"}"#.utf8).write(to: andere.appendingPathComponent("einstellungen.json"))
+        XCTAssertEqual(EinstellungenStore(ordner: andere).werte.thema, .wald, "eigene Wahl bleibt")
+    }
+
     func testEinUnbekanntesThemeErgibtDenStandardUndBehaeltDenRest() throws {
         let ordner = try tempOrdner()
         try Data(#"{"thema":"neonpink","haptik":false,"gewichtsEinheit":"stone"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
         let store = EinstellungenStore(ordner: ordner)
-        XCTAssertEqual(store.werte.thema, .monochrom)
+        XCTAssertEqual(store.werte.thema, .schlicht)
         XCTAssertFalse(store.werte.haptik, "der gültige Rest bleibt")
         XCTAssertEqual(store.werte.gewichtsEinheit, .kg)
     }

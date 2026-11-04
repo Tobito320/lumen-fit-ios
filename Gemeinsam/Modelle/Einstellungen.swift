@@ -1,6 +1,7 @@
 import Foundation
 
-enum ThemaID: String, Codable, CaseIterable, Sendable { case monochrom, graphit, stahl, glut, wald, lovea }
+/// `schlicht` steht vorn: Standard für neue Profile und einmal für alle, die noch Monochrom hatten (`Einstellungen.schlichtEinmal`).
+enum ThemaID: String, Codable, CaseIterable, Sendable { case schlicht, monochrom, graphit, stahl, glut, wald, lovea }
 enum Erscheinung: String, Codable, CaseIterable, Sendable { case system, hell, dunkel }
 enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
 /// Die wählbaren Bereiche. Heute (und der Coach, den der Server steuert) bleiben immer.
@@ -12,7 +13,7 @@ enum NutzungAntwort: String, Codable, Sendable { case offen, ja, nein }
 /// Alle Felder haben Standardwerte; `init(from:)` nutzt `decodeIfPresent`, damit neue Felder alte Dateien nie unlesbar machen.
 /// Ein unbekannter oder falsch getippter Wert (zum Beispiel ein Theme, das es später nicht mehr gibt) ergibt den Standard statt einer unlesbaren Datei.
 struct Einstellungen: Codable, Equatable, Sendable {
-    var thema: ThemaID = .monochrom
+    var thema: ThemaID = .schlicht
     var erscheinung: Erscheinung = .system
     var haptik = true
     var gewichtsEinheit: GewichtsEinheit = .kg
@@ -35,8 +36,19 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var schlafAn = true
     /// Intervallfasten im Essen-Tab: aus, bis man es einschaltet (Bestand mit Fasten-Daten behält es, siehe `EssenTagebuchLogik.fastenSichtbar`).
     var fastenAn = false
+    /// Der einmalige Wechsel auf Schlicht ist gelaufen (W-003). Neue Profile starten schon schlicht; alte Dateien ohne das Feld bekommen ihn einmal.
+    var schlichtGesetzt = true
 
     init() {}
+
+    /// Einmal für alte Profile: wer noch den alten Standard Monochrom hat, bekommt Schlicht. Ein anderes Theme war eine eigene Wahl und bleibt.
+    static func schlichtEinmal(_ alt: Einstellungen) -> Einstellungen {
+        guard !alt.schlichtGesetzt else { return alt }
+        var neu = alt
+        if neu.thema == .monochrom { neu.thema = .schlicht }
+        neu.schlichtGesetzt = true
+        return neu
+    }
 
     var nutzungErlaubt: Bool { nutzungAntwort == .ja }
 
@@ -71,12 +83,12 @@ struct Einstellungen: Codable, Equatable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn
+        case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn, schlichtGesetzt
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        thema = (try? c.decodeIfPresent(ThemaID.self, forKey: .thema)) ?? .monochrom
+        thema = (try? c.decodeIfPresent(ThemaID.self, forKey: .thema)) ?? .schlicht
         erscheinung = (try? c.decodeIfPresent(Erscheinung.self, forKey: .erscheinung)) ?? .system
         haptik = (try? c.decodeIfPresent(Bool.self, forKey: .haptik)) ?? true
         gewichtsEinheit = (try? c.decodeIfPresent(GewichtsEinheit.self, forKey: .gewichtsEinheit)) ?? .kg
@@ -93,6 +105,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         essenAn = (try? c.decodeIfPresent(Bool.self, forKey: .essenAn)) ?? true
         schlafAn = (try? c.decodeIfPresent(Bool.self, forKey: .schlafAn)) ?? true
         fastenAn = (try? c.decodeIfPresent(Bool.self, forKey: .fastenAn)) ?? false
+        schlichtGesetzt = (try? c.decodeIfPresent(Bool.self, forKey: .schlichtGesetzt)) ?? false
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }

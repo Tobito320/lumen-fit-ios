@@ -38,6 +38,9 @@ enum LumenFarben {
 
     static func tokens(thema: ThemaID, dunkel: Bool) -> Tokens {
         switch (thema, dunkel) {
+        // Schlicht (W-003): fast schwarz oder hell, flache Karten, eine Farbe. Der Akzent ist das Trainieren-Grün (`ring`/`tief`), sonst nichts Buntes.
+        case (.schlicht, false): (0xF6F7F8, 0xFFFFFF, 0x0B0C0E, 0x5B616B, 0x848A93, 0xE3E5E8, 0x16742F, 0xFFFFFF)
+        case (.schlicht, true): (0x0B0C0E, 0x17191C, 0xF2F3F5, 0x9A9FA6, 0x7D828A, 0x212327, 0xA6FF00, 0x0B0C0E)
         case (.monochrom, false): (0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x000000, 0xFFFFFF)
         case (.monochrom, true), (.graphit, true): (0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0xFFFFFF, 0x000000)
         case (.graphit, false): (0xF2F2F7, 0xFFFFFF, 0x1C1C1E, 0x5A5A5E, 0x85858A, 0xD1D1D6, 0x1C1C1E, 0xFFFFFF)
@@ -92,6 +95,6 @@ enum LumenFarben {
 }
 
 extension EnvironmentValues {
-    @Entry var palette: Palette = LumenFarben.palette(thema: .monochrom, dunkel: false, kontrastHoch: false)
-    @Entry var lumenThema: ThemaID = .monochrom
+    @Entry var palette: Palette = LumenFarben.palette(thema: .schlicht, dunkel: false, kontrastHoch: false)
+    @Entry var lumenThema: ThemaID = .schlicht
 }

@@ -3,6 +3,7 @@ import SwiftUI
 extension ThemaID {
     var anzeigeName: String {
         switch self {
+        case .schlicht: "Schlicht"
         case .monochrom: "Monochrom"
         case .graphit: "Graphit"
         case .stahl: "Stahl"

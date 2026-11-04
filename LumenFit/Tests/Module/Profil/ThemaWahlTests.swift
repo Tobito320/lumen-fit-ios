@@ -4,9 +4,9 @@ import XCTest
 
 @MainActor
 final class ThemaWahlTests: XCTestCase {
-    func testStandardIstMonochromUndSystem() {
+    func testStandardIstSchlichtUndSystem() {
         let e = Einstellungen()
-        XCTAssertEqual(e.thema, .monochrom)
+        XCTAssertEqual(e.thema, .schlicht)
         XCTAssertEqual(e.erscheinung, .system)
     }
 
@@ -33,9 +33,9 @@ final class ThemaWahlTests: XCTestCase {
         XCTAssertEqual(ProfilThemaWahl.waehle(.stahl, aktuell: g).erscheinung, .hell, "ein anderes Theme ändert die Erscheinung nie")
     }
 
-    func testZwoelfKombinationenHabenEinePalette() {
-        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: true).count, 12)
-        XCTAssertEqual(Set(ProfilThemaWahl.kombinationen(loveaErlaubt: true).map { "\($0.thema)-\($0.dunkel)" }).count, 12)
+    func testVierzehnKombinationenHabenEinePalette() {
+        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: true).count, 14)
+        XCTAssertEqual(Set(ProfilThemaWahl.kombinationen(loveaErlaubt: true).map { "\($0.thema)-\($0.dunkel)" }).count, 14)
         for (thema, dunkel) in ProfilThemaWahl.kombinationen(loveaErlaubt: true).map({ ($0.thema, $0.dunkel) }) {
             let palette = LumenFarben.palette(thema: thema, dunkel: dunkel, kontrastHoch: false)
             XCTAssertNotEqual(palette.grund, palette.text, "\(thema) \(dunkel): Text und Grund sind verschieden")
@@ -51,7 +51,7 @@ final class ThemaWahlTests: XCTestCase {
     }
 
     func testJedesThemeHatEigenesMusterUndBeschreibung() {
-        XCTAssertEqual(Set(ThemaID.allCases.map(ProfilThemaWahl.muster)).count, 6)
+        XCTAssertEqual(Set(ThemaID.allCases.map(ProfilThemaWahl.muster)).count, 7)
         for thema in ThemaID.allCases {
             XCTAssertFalse(ProfilThemaWahl.beschreibung(thema).isEmpty)
             XCTAssertFalse(thema.anzeigeName.isEmpty)

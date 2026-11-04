@@ -351,10 +351,10 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertEqual(ThemaID.lovea.anzeigeName, "Lovea")
         XCTAssertEqual(ProfilThemaWahl.muster(.lovea), "Flach")
         XCTAssertFalse(MusterZeichner.hatMuster(.lovea), "Lovea malt in Health und Home kein Muster")
-        for thema in ThemaID.allCases where thema != .lovea { XCTAssertTrue(MusterZeichner.hatMuster(thema), "\(thema)") }
+        for thema in ThemaID.allCases where thema != .lovea && thema != .schlicht { XCTAssertTrue(MusterZeichner.hatMuster(thema), "\(thema)") }
         XCTAssertEqual(MusterZeichner.deckkraft(thema: .lovea, dunkel: false, ort: .kopf), 0)
-        XCTAssertEqual(Einstellungen().thema, .monochrom, "Standard bleibt monochrom")
+        XCTAssertEqual(Einstellungen().thema, .schlicht, "Standard ist schlicht (W-003)")
         XCTAssertEqual(try JSONDecoder().decode(Einstellungen.self, from: Data(#"{"thema":"lovea"}"#.utf8)).thema, .lovea, "gespeichert bleibt die Wahl")
-        XCTAssertEqual(try JSONDecoder().decode(Einstellungen.self, from: Data(#"{"thema":"gibtsNicht"}"#.utf8)).thema, .monochrom)
+        XCTAssertEqual(try JSONDecoder().decode(Einstellungen.self, from: Data(#"{"thema":"gibtsNicht"}"#.utf8)).thema, .schlicht)
     }
 }

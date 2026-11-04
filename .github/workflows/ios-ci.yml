@@ -136,7 +136,7 @@ jobs:
           set -u
           mkdir -p screenshots
           TABS="heute gym essen schlaf coach"
-          THEMES="monochrom graphit stahl glut wald lovea"
+          THEMES="schlicht monochrom graphit stahl glut wald lovea"
           IPHONE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
           APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
           test -n "$IPHONE_ID" && test -n "$APP"
