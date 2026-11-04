@@ -46,10 +46,13 @@ struct UebungsBild: View {
         .accessibilityHidden(true)
     }
 
-    /// `UIImage(contentsOfFile:)` nimmt von einem GIF das erste Bild.
+    /// `UIImage(contentsOfFile:)` nimmt von einem GIF das erste Bild. Lesen und Dekodieren abseits des Hauptakteurs: in der Übungssuche
+    /// lief sonst je Zeile ein Dateizugriff und ein GIF-Dekodieren auf dem Hauptthread (Ruckeln beim Scrollen).
     private func lade() async {
         bild = nil
         guard UebungsKatalog.hatVideo(id), let url = await UebungsMedien.datei(id) else { return }
-        bild = UIImage(contentsOfFile: url.path)
+        let geladen = await Task.detached(priority: .userInitiated) { UIImage(contentsOfFile: url.path)?.preparingForDisplay() }.value
+        guard !Task.isCancelled else { return }
+        bild = geladen
     }
 }
