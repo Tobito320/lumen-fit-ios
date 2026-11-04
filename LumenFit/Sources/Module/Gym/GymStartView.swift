@@ -60,8 +60,8 @@ struct GymStartView: View {
         let jetzt = umgebung.uhr()
         let heute = Datum.text(jetzt)
         let datum = gewaehlt ?? heute
-        let profil = sitzung.studio?.profil ?? .standard
-        let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt, slotMinuten: ZeitSchaetzung.slot(profil))
+        // Ohne Studio kein Zeitfenster: ein aus Lovea übernommenes ließe sich nicht mehr ändern.
+        let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt)
         let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
         return VStack(alignment: .leading, spacing: Abstand.l) {
             // Lumen-Aufbau: der große Start ganz oben, dann Woche und Tag, Letzte Einheiten; alles Seltene unter "Mehr".
