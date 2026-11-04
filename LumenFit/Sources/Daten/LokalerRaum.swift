@@ -50,6 +50,9 @@ final class LokalerRaum {
 
     func ops(arten: Set<String>) -> [Op] { alle.filter { arten.contains($0.art) } }
 
+    /// Wie viele Ops der Raum hat. Ops werden nur angehängt: gleiche Anzahl heißt gleicher Inhalt (Merk-Schlüssel für Leser, die alles durchgehen).
+    var anzahl: Int { alle.count }
+
     /// Kehrt zurück, wenn alle geschriebenen Ops gefaltet sind (hier: sofort, alles läuft synchron).
     func leer() async {}
 }
