@@ -122,4 +122,20 @@ final class AppUmgebungTests: XCTestCase {
         XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 8000, "die letzte Op je Tag gewinnt")
         XCTAssertEqual(u.gesundheit.tage[heute]?.distanzMeter, 6100)
     }
+
+    func testGemerkteBandTageFolgenNeuenOpsUndDemProfilwechsel() async throws {
+        let uhr = TestUhr()
+        let u = umgebung(ordner: try tempOrdner(), uhr: uhr)
+        let a = try u.profil.anlegen(name: "Eins", passwort: "abcd")
+        let heute = Datum.text(uhr.lesen)
+        u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 7000, meter: 5200))
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 7000)
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 7000, "zweiter Zugriff aus dem Merker")
+        u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 9000, meter: 6000))
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 9000, "eine neue Op macht das Gemerkte ungültig")
+        _ = try u.profil.anlegen(name: "Zwei", passwort: "efgh")
+        XCTAssertNotEqual(u.gesundheit.tage[heute]?.schritte, 9000, "anderes Profil sieht die Band-Tage des ersten nicht")
+        XCTAssertTrue(u.profil.wechsle(zu: a.id, passwort: "abcd"))
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 9000)
+    }
 }

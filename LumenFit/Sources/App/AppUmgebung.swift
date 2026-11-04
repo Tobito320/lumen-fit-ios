@@ -198,13 +198,30 @@ final class AppUmgebung {
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
 
-    func eigeneNaechte() -> SchlafEigeneQuellen { SchlafEigeneQuellen.lesen(umgebung?.daten?.raum) }
+    /// `gesundheit.tage` und `.naechte` lesen diese beiden bei jedem Zugriff, auch mehrmals je `body`. Ohne Merken liefe jedes Mal ein voller Lauf über alle Ops
+    /// mit JSON-Decode auf dem Hauptakteur. Gleicher Raum mit gleicher Op-Anzahl gibt dasselbe Ergebnis (Ops werden nur angehängt).
+    private struct Merkschluessel: Equatable { let raum: ObjectIdentifier; let profil: ProfilID; let anzahl: Int }
+    private var naechteGemerkt: (schluessel: Merkschluessel, wert: SchlafEigeneQuellen)?
+    private var bandGemerkt: (schluessel: Merkschluessel, wert: [BandTagOp])?
+
+    private func schluessel(_ raum: LokalerRaum) -> Merkschluessel { Merkschluessel(raum: ObjectIdentifier(raum), profil: raum.profil, anzahl: raum.anzahl) }
+
+    func eigeneNaechte() -> SchlafEigeneQuellen {
+        guard let raum = umgebung?.daten?.raum else { return SchlafEigeneQuellen.lesen(nil) }
+        if let g = naechteGemerkt, g.schluessel == schluessel(raum) { return g.wert }
+        let wert = SchlafEigeneQuellen.lesen(raum)
+        naechteGemerkt = (schluessel(raum), wert)
+        return wert
+    }
 
     func bandTage() -> [BandTagOp] {
         guard let raum = umgebung?.daten?.raum else { return [] }
+        if let g = bandGemerkt, g.schluessel == schluessel(raum) { return g.wert }
         var tage: [String: BandTagOp] = [:]
         for op in raum.ops(arten: ["fit.band.tag"]) { if let t = op.daten(BandTagOp.self) { tage[t.tag] = t } }
-        return SchritteHandLogik.zusammen(band: tage, hand: SchritteHandLogik.tage(ops: raum.ops(arten: [SchritteHandLogik.art])))
+        let wert = SchritteHandLogik.zusammen(band: tage, hand: SchritteHandLogik.tage(ops: raum.ops(arten: [SchritteHandLogik.art])))
+        bandGemerkt = (schluessel(raum), wert)
+        return wert
     }
 }
 
