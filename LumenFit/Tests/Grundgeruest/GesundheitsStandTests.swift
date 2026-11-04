@@ -31,6 +31,17 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.tage.count, 60, "alte Tage bleiben stehen")
     }
 
+    func testGleichzeitigeAbrufeFragenHealthNurEinmal() async {
+        let leser = FakeHealthLeser(tage: tage(5))
+        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr)
+        async let a: Void = stand.aktualisiere()
+        async let b: Void = stand.aktualisiere()
+        _ = await (a, b)
+        XCTAssertEqual(leser.tagesAbfragen.count, 1, "der zweite wartet auf den ersten")
+        await stand.aktualisiere()
+        XCTAssertEqual(leser.tagesAbfragen.count, 2, "danach startet wieder ein eigener Abruf")
+    }
+
     func testNeueWerteDerLetztenTageErsetzenDieAlten() async {
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 1000)])
         let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr)

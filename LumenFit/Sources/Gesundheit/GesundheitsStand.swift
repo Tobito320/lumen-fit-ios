@@ -82,8 +82,19 @@ final class GesundheitsStand {
         return ergebnis
     }
 
+    /// Läuft schon ein Abruf (Heute, Schlaf und der Hintergrund-Abruf rufen bei derselben Health-Meldung), warten alle auf diesen einen statt je zehn Abfragen zu starten.
+    @ObservationIgnored private var laufend: Task<Void, Never>?
+
     /// Erster Aufruf holt 60 Tage und fragt die Rechte, spätere nur das Neue (die letzten Tage, weil Health Daten nachträgt).
     func aktualisiere() async {
+        if let laufend { return await laufend.value }
+        let abruf = Task { await abrufen() }
+        laufend = abruf
+        await abruf.value
+        laufend = nil
+    }
+
+    private func abrufen() async {
         let heute = Datum.text(uhr())
         let anzahl = erstGeholt ? Self.nachladeTage : Self.ersteTage
         let von = Datum.addTage(heute, -(anzahl - 1))
