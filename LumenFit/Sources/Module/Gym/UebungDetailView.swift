@@ -195,18 +195,22 @@ struct UebungDetailView: View {
 
     private func soGehts(_ u: Uebung) -> some View {
         VStack(spacing: Abstand.m) {
-            if let h = EinstellHinweise.finden(name: u.name) { anleitung(h) }
+            if let a = UebungsAnleitungen.finden(u.id) {
+                anleitung(ablauf: a.ablauf, fehler: a.fehler, unsicher: false)
+            } else if let h = EinstellHinweise.finden(name: u.name) {
+                anleitung(ablauf: h.anleitung, fehler: h.fehler, unsicher: h.unsicher)
+            }
             muskelnUndGeraet(u)
         }
     }
 
-    /// Ablauf und typischer Fehler; "Einstellen" bleibt weg, es verweist auf das gespeicherte Gerät, das es nicht mehr gibt.
-    private func anleitung(_ h: EinstellHinweis) -> some View {
+    /// Ablauf und typischer Fehler (eigene Erklärung, sonst `EinstellHinweis`); dessen "Einstellen" bleibt weg, es verweist auf das gespeicherte Gerät, das es nicht mehr gibt.
+    private func anleitung(ablauf: String, fehler: String, unsicher: Bool) -> some View {
         ListenKarte {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                anleitungsBlock("Ablauf", h.anleitung)
-                anleitungsBlock("Typischer Fehler", h.fehler)
-                if h.unsicher {
+                anleitungsBlock("Ablauf", ablauf)
+                anleitungsBlock("Typischer Fehler", fehler)
+                if unsicher {
                     Label("Unsicher, selbst prüfen", systemImage: "exclamationmark.triangle.fill")
                         .font(.caption.weight(.semibold)).foregroundStyle(palette.text2)
                 }
