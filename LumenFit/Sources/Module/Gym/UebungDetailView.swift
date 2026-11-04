@@ -12,7 +12,7 @@ struct UebungDetailView: View {
     @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
-    @State private var reiter = Reiter.uebersicht
+    @State private var reiter: Reiter
     @State private var art = RekordArt.gewicht
     @State private var hinzugefuegt = 0
     @State private var formular = false
@@ -22,6 +22,12 @@ struct UebungDetailView: View {
     private enum Reiter: String, CaseIterable, Identifiable {
         case uebersicht = "Übersicht", historie = "Historie", sogehts = "So geht's"
         var id: String { rawValue }
+    }
+
+    /// `anleitungZuerst`: vom Tipp aufs Übungsbild, dann steht gleich "So geht's" offen.
+    init(id: String, anleitungZuerst: Bool = false) {
+        self.id = id
+        _reiter = State(initialValue: anleitungZuerst ? .sogehts : .uebersicht)
     }
 
     var body: some View {
@@ -188,6 +194,37 @@ struct UebungDetailView: View {
     // MARK: So geht's
 
     private func soGehts(_ u: Uebung) -> some View {
+        VStack(spacing: Abstand.m) {
+            if let h = EinstellHinweise.finden(name: u.name) { anleitung(h) }
+            muskelnUndGeraet(u)
+        }
+    }
+
+    /// Ablauf und typischer Fehler; "Einstellen" bleibt weg, es verweist auf das gespeicherte Gerät, das es nicht mehr gibt.
+    private func anleitung(_ h: EinstellHinweis) -> some View {
+        ListenKarte {
+            VStack(alignment: .leading, spacing: Abstand.s) {
+                anleitungsBlock("Ablauf", h.anleitung)
+                anleitungsBlock("Typischer Fehler", h.fehler)
+                if h.unsicher {
+                    Label("Unsicher, selbst prüfen", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.semibold)).foregroundStyle(palette.text2)
+                }
+            }
+            .padding(Abstand.m)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func anleitungsBlock(_ titel: String, _ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(titel).font(.caption.weight(.semibold)).foregroundStyle(palette.text2)
+            Text(text).font(.subheadline).foregroundStyle(palette.text).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func muskelnUndGeraet(_ u: Uebung) -> some View {
         ListenKarte {
             GymZeile(titel: "Zielmuskel") { Text(u.muskel).foregroundStyle(palette.text2) }
             Haarlinie()
