@@ -216,7 +216,8 @@ enum AbrufPlaner {
     private struct Auftrag: @unchecked Sendable { let aufgabe: BGAppRefreshTask }
 
     @MainActor static func registriere(_ umgebung: AppUmgebung) {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: nil) { aufgabe in
+        // `@Sendable`: sonst erbt der Rückruf den Hauptakteur, iOS ruft ihn aber außerhalb davon, und Swift 6 bricht die App dann zur Laufzeit ab.
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: .main) { @Sendable aufgabe in
             guard let aufgabe = aufgabe as? BGAppRefreshTask else { aufgabe.setTaskCompleted(success: false); return }
             let auftrag = Auftrag(aufgabe: aufgabe)
             let einmal = EinmalSchalter()
@@ -226,7 +227,7 @@ enum AbrufPlaner {
                 if einmal.zuerst() { auftrag.aufgabe.setTaskCompleted(success: true) }
             }
             // Ohne Ablauf-Handler beendet iOS die App hart, wenn die Zeit um ist (Absturz im Hintergrund). Genau einmal abschließen.
-            aufgabe.expirationHandler = {
+            aufgabe.expirationHandler = { @Sendable in
                 arbeit.cancel()
                 if einmal.zuerst() { auftrag.aufgabe.setTaskCompleted(success: false) }
             }
