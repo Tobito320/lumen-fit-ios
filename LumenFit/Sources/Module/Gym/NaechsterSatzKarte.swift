@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// Die eine mutige Karte im Training (schwarze Platte mit Streifen): läuft eine Pause, zeigt sie den Countdown mit Plus, Minus und
-/// Überspringen (Idee 23); sonst steht da, welcher Satz dran ist, mit "Letztes Mal" (Idee 21). Die Zahl tickt das System (`Text(timerInterval:)`).
+/// "Satz starten" (Idee 23, ein Tipp beendet die Pause); sonst steht da, welcher Satz dran ist, mit "Letztes Mal" (Idee 21). Die Zahl tickt das System (`Text(timerInterval:)`).
 struct NaechsterSatzKarte: View {
     let sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
@@ -60,7 +60,8 @@ struct NaechsterSatzKarte: View {
             Button("+15 s") { mehr += 1; sitzung.pauseAendern(sekunden: PauseLogik.schritt) }
                 .accessibilityLabel("15 Sekunden mehr")
             Spacer(minLength: 0)
-            Button("Überspringen") { sitzung.pauseUeberspringen() }
+            Button("Satz starten") { sitzung.naechsterSatzStarten() }
+                .accessibilityHint("Beendet die Pause und startet den nächsten Satz")
         }
         .buttonStyle(.bordered)
         .controlSize(.large)

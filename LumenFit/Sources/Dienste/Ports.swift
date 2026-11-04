@@ -9,6 +9,7 @@ protocol LiveAnzeige: Sendable {
 @MainActor protocol TrainingSteuerung: AnyObject {
     func starte(planTag: String?)
     func satzFertig()
+    func naechsterSatzStarten()
     func pauseAendern(sekunden: Int)
     func beende()
 }
@@ -43,6 +44,7 @@ struct KeineLiveAnzeige: LiveAnzeige {
 @MainActor final class KeineTrainingSteuerung: TrainingSteuerung {
     func starte(planTag: String?) {}
     func satzFertig() {}
+    func naechsterSatzStarten() {}
     func pauseAendern(sekunden: Int) {}
     func beende() {}
 }

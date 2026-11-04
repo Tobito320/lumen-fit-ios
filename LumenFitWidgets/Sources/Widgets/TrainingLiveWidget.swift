@@ -52,20 +52,30 @@ private func trainingFarben(systemDunkel: Bool, kontrastHoch: Bool) -> WidgetFar
                             kontrastHoch: kontrastHoch, modus: .fullColor)
 }
 
-/// Der Knopf "Satz fertig": mindestens 44 pt, Schrift auf Trainieren-Tief mit Kontrast.
+/// Der Knopf: in der Pause "Satz starten" (Pause zu Ende, nächster Satz läuft), sonst "Satz fertig". Mindestens 44 pt, Schrift auf Trainieren-Tief mit Kontrast.
+/// Nach dem Pausenende bleibt "Satz starten" stehen, bis die App neu meldet: genau das ist dann der nächste Schritt.
 private struct SatzFertigKnopf: View {
+    let stand: TrainingLiveStand
     let farben: WidgetFarben
 
     var body: some View {
-        Button(intent: SatzFertigIntent()) {
-            Image(systemName: "checkmark")
-                .font(.title3.weight(.bold))
-                .foregroundStyle(farben.aufTrainieren)
-                .frame(width: 52, height: 52)
-                .background(farben.trainieren, in: .circle)
+        if stand.pauseEnde != nil {
+            Button(intent: SatzStartenIntent()) { kreis("play.fill") }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Satz starten")
+        } else {
+            Button(intent: SatzFertigIntent()) { kreis("checkmark") }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Satz fertig")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Satz fertig")
+    }
+
+    private func kreis(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(farben.aufTrainieren)
+            .frame(width: 52, height: 52)
+            .background(farben.trainieren, in: .circle)
     }
 }
 
@@ -146,7 +156,7 @@ private struct TrainingSperrbildschirm: View {
                     PausenZeile(stand: stand, farben: farben)
                 }
                 Spacer(minLength: 8)
-                SatzFertigKnopf(farben: farben)
+                SatzFertigKnopf(stand: stand, farben: farben)
             }
             WidgetBalken(anteil: WidgetAnzeige.anteil(max(stand.satz - 1, 0), stand.von), farbe: farben.trainieren, spur: farben.trainieren.opacity(0.22))
         }
@@ -168,7 +178,7 @@ private struct TrainingInselUnten: View {
                 PausenZeile(stand: stand, farben: farben)
             }
             Spacer(minLength: 8)
-            SatzFertigKnopf(farben: farben)
+            SatzFertigKnopf(stand: stand, farben: farben)
         }
     }
 }
