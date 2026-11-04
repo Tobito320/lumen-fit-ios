@@ -25,7 +25,6 @@ struct GymStartView: View {
     @State private var freiGestartet = 0
     /// Lumen-Aufbau: "Mehr" unten ist zu, bis man es öffnet.
     @State private var mehrOffen = false
-    @State private var studioEintragen = false
 
     var body: some View {
         ScrollView {
@@ -47,7 +46,6 @@ struct GymStartView: View {
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
         .sheet(item: $uebungenTag) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
-        .sheet(isPresented: $studioEintragen) { StudioEditorBlatt(sitzung: sitzung) }
         .toolbar {
             if aufbau == .lovea {
                 ToolbarItem(placement: .topBarTrailing) { loveaMenue }
@@ -81,10 +79,8 @@ struct GymStartView: View {
                 einstellungenKnopf
             }
             letzte(training, jetzt: jetzt)
-            // Lumen: Studio-Karte erst, wenn ein Studio eingetragen ist; vorher steht der Einstieg unter "Mehr".
-            if aufbau == .lovea || profil.hatStudio { StudioKarte(sitzung: sitzung) { heuteStarten(training) } }
             PartnerKarte(bereich: .gym)
-            if aufbau == .lumen { mehrBereich(stand, training: training, hatStudio: profil.hatStudio) }
+            if aufbau == .lumen { mehrBereich(stand, training: training) }
         }
     }
 
@@ -111,12 +107,12 @@ struct GymStartView: View {
         .buttonStyle(.bordered)
     }
 
-    /// Eine Zeile "Mehr", darunter (aufgeklappt) Diese Woche mit Verlegen und Testwoche, Cardio, Einstellungen, Nachtragen und der Studio-Einstieg.
+    /// Eine Zeile "Mehr", darunter (aufgeklappt) Diese Woche mit Verlegen und Testwoche, Cardio, Einstellungen und Nachtragen.
     @ViewBuilder
-    private func mehrBereich(_ stand: GymStartStand, training: TrainingStore, hatStudio: Bool) -> some View {
+    private func mehrBereich(_ stand: GymStartStand, training: TrainingStore) -> some View {
         ListenKarte {
             Button { mehrOffen.toggle() } label: {
-                GymZeile(titel: "Mehr", untertitel: "Diese Woche, Cardio, nachtragen\(hatStudio ? "" : ", Studio")") {
+                GymZeile(titel: "Mehr", untertitel: "Diese Woche, Cardio, nachtragen") {
                     Image(systemName: mehrOffen ? "chevron.up" : "chevron.down")
                         .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                 }
@@ -132,12 +128,6 @@ struct GymStartView: View {
                 Label("Training nachtragen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
             .buttonStyle(.bordered)
-            if !hatStudio {
-                Button { studioEintragen = true } label: {
-                    Label("Studio eintragen", systemImage: "building.2").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                }
-                .buttonStyle(.bordered)
-            }
         }
     }
 

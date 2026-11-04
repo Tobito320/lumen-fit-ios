@@ -280,20 +280,7 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertNil(a.sitzung.sessionId)
     }
 
-    // MARK: - Studio-Hinweis, Tausch, Auslassen, Plan
-
-    func testStudioHinweisBeimEinchecken() throws {
-        let a = try aufbau()
-        a.sitzung.studio?.aendere { $0.name = "Testhalle"; $0.oeffnung = StudioOeffnung(werktage: .init(von: 8 * 60, bis: 22 * 60)) }
-        a.sitzung.starte(planTag: "push") // 12:00 an einem Mittwoch: offen
-        XCTAssertNil(a.sitzung.studioHinweis)
-        a.sitzung.beende()
-        a.uhr.setze(Datum.datum("2026-09-24").addingTimeInterval(5 * 3600)) // Donnerstag 05:00
-        a.sitzung.starte(planTag: "push")
-        XCTAssertEqual(a.sitzung.studioHinweis, "Das Studio öffnet erst um 08:00.")
-        a.sitzung.hinweisGelesen()
-        XCTAssertNil(a.sitzung.studioHinweis)
-    }
+    // MARK: - Tausch, Auslassen, Plan
 
     func testAusweichenTauschtDieUebungVorDemErstenHaken() throws {
         let a = try aufbau()

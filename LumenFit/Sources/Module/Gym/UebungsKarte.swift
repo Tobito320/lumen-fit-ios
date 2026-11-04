@@ -26,11 +26,6 @@ struct UebungsKarte: View {
         return ListenKarte {
             kopf(u, gruen)
             Haarlinie()
-            // Defekt, "Meine Einstellung" und "So geht's" hängen am Studio: erst sichtbar, wenn eins eingetragen ist.
-            if sitzung.studio?.profil.hatStudio == true {
-                DefektAbschnitt(sitzung: sitzung, index: index)
-                GeraeteAbschnitt(sitzung: sitzung, index: index)
-            }
             if u.planUebung.istCardio {
                 cardioZeile(u, gruen)
             } else if u.ausgelassen {
