@@ -87,7 +87,11 @@ final class GesundheitsStand {
 
     /// Erster Aufruf holt 60 Tage und fragt die Rechte, spätere nur das Neue (die letzten Tage, weil Health Daten nachträgt).
     func aktualisiere() async {
-        if let laufend { return await laufend.value }
+        if let laufend {
+            await laufend.value
+            // Wurde inzwischen ein Bereich eingeschaltet, fragt erst ein eigener Abruf dessen Rechte; sonst reicht der fertige.
+            guard !typen().isSubset(of: erfragt) else { return }
+        }
         let abruf = Task { await abrufen() }
         laufend = abruf
         await abruf.value
