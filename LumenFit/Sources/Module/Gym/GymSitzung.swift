@@ -49,8 +49,6 @@ final class GymSitzung: TrainingSteuerung {
     private(set) var rekordLabel: [String: String] = [:]
     /// Der Rekord-Toast (`.lumenToast`); die Ansicht bindet ihn.
     var toast: ToastInhalt?
-    /// Das Studio hat beim Einchecken zu: einmalig anzeigen, dann `hinweisGelesen()`.
-    private(set) var studioHinweis: String?
 
     init(umgebung: AppUmgebung, puls: any GymPulsQuelle = GymKeinePuls()) {
         self.umgebung = umgebung
@@ -184,13 +182,10 @@ final class GymSitzung: TrainingSteuerung {
         let jetzt = umgebung.uhr()
         _ = d.training.einchecken(tag: gewaehlt)
         d.habits.setzeGym(datum: Datum.text(jetzt), an: true)
-        studioHinweis = studio.flatMap { GymOeffnung.hinweis($0.profil.oeffnung, jetzt: jetzt) }
         puls.leeren()
         puls.starten()
         ladeWennNoetig()
     }
-
-    func hinweisGelesen() { studioHinweis = nil }
 
     /// "Fortsetzen": das zuletzt beendete Training läuft weiter (`TrainingLogik.fortsetzbar`).
     func fortsetzen() {

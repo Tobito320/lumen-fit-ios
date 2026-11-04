@@ -57,11 +57,6 @@ struct TrainingLaufView: View {
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
         .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
-        .alert("Hinweis zum Studio", isPresented: Binding(get: { sitzung.studioHinweis != nil }, set: { if !$0 { sitzung.hinweisGelesen() } })) {
-            Button("OK") { sitzung.hinweisGelesen() }
-        } message: {
-            Text(sitzung.studioHinweis ?? "")
-        }
         .task { sitzung.ladeWennNoetig() }
     }
 

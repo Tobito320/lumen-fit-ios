@@ -180,11 +180,6 @@ struct TrainingLoveaView: View {
             .haptik(.satzFertig, bei: sitzung.hakenZaehler)
             .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
             .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
-            .alert("Hinweis zum Studio", isPresented: Binding(get: { sitzung.studioHinweis != nil }, set: { if !$0 { sitzung.hinweisGelesen() } })) {
-                Button("OK") { sitzung.hinweisGelesen() }
-            } message: {
-                Text(sitzung.studioHinweis ?? "")
-            }
             .task { sitzung.ladeWennNoetig() }
     }
 
@@ -450,14 +445,6 @@ struct TrainingLoveaUebungView: View {
                 }
             }
             .listRowSeparator(.hidden)
-            if !u.ausgelassen {
-                Section {
-                    DefektAbschnitt(sitzung: sitzung, index: i)
-                    GeraeteAbschnitt(sitzung: sitzung, index: i)
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-            }
             Section {
                 if u.ausgelassen {
                     GymZeile(titel: "Ausgelassen", untertitel: "Zählt nicht für Volumen und Rekorde") {
