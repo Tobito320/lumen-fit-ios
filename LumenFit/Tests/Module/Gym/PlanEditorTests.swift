@@ -25,12 +25,12 @@ final class PlanEditorTests: XCTestCase {
         XCTAssertEqual(plan.tage.map(\.id), ["b"])
     }
 
-    func testVerschiebenSetztReihenfolgeUndLoestSupersaetze() {
+    func testVerschiebenSetztReihenfolgeUndLaesstAnderePaareStehen() {
         var t = tag("a", ["u1", "u2", "u3"])
         t.uebungen[0].supersatz = true
         let neu = PlanEditor.verschieben(t, von: 2, nach: 0)
         XCTAssertEqual(neu.uebungen.map(\.id), ["u3", "u1", "u2"])
-        XCTAssertTrue(neu.uebungen.allSatisfy { $0.supersatz == nil })
+        XCTAssertEqual(neu.uebungen.map(\.supersatz), [nil, true, nil], "u3 war in keinem Paar: u1 und u2 bleiben gekoppelt")
         XCTAssertEqual(PlanEditor.verschieben(t, von: 1, nach: 1), t)
         XCTAssertEqual(PlanEditor.verschieben(t, von: 0, nach: 9), t)
     }
