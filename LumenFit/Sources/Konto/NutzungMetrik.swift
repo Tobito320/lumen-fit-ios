@@ -11,10 +11,10 @@ enum NutzungMetrik {
     /// Die Art eines Absturzes aus Signal und Mach-Ausnahme des Berichts (nur Zahlen). Eine Swift-Falle (Unwrap, Index, Hauptakteur-Prüfung) ist SIGTRAP oder EXC_BREAKPOINT.
     nonisolated static func art(signal: Int?, ausnahme: Int?) -> NutzungFehler {
         switch (signal, ausnahme) {
-        case (5, _), (_, 6): .absturzFalle
-        case (11, _), (10, _), (_, 1): .absturzZugriff
-        case (6, _): .absturzAbbruch
-        case (9, _): .absturzBeendet
+        case (5?, _), (_, 6?): .absturzFalle
+        case (11?, _), (10?, _), (_, 1?): .absturzZugriff
+        case (6?, _): .absturzAbbruch
+        case (9?, _): .absturzBeendet
         default: .absturzAnders
         }
     }
