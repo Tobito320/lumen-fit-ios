@@ -24,6 +24,22 @@ enum SupersatzLogik {
         bloecke(uebungen).first { $0.contains(index) } ?? [index]
     }
 
+    /// Ziehen: Übung `von` an die Stelle von `nach`. Nur sie fällt aus ihrem Paar, alle anderen Paare bleiben; sie landet nie mitten in einem Paar
+    /// (nach unten hinter, nach oben vor das Paar der Zielübung). Ergebnis: die alten Indizes in neuer Reihenfolge, je Stelle die Kopplung.
+    static func verschieben(_ uebungen: [PlanUebung], von: Int, nach: Int) -> [(index: Int, supersatz: Bool?)] {
+        var bl = bloecke(uebungen)
+        guard von != nach, let bi = bl.firstIndex(where: { $0.contains(von) }), var bj = bl.firstIndex(where: { $0.contains(nach) }) else {
+            return uebungen.indices.map { ($0, uebungen[$0].supersatz) }
+        }
+        bl[bi].removeAll { $0 == von }
+        if bl[bi].isEmpty {
+            bl.remove(at: bi)
+            if bj > bi { bj -= 1 }
+        }
+        bl.insert([von], at: nach > von ? bj + 1 : bj)
+        return bl.flatMap { b in b.enumerated().map { (index: $0.element, supersatz: b.count == 2 && $0.offset == 0 ? true : nil) } }
+    }
+
     /// Koppelt Übung `i` mit der nächsten (oder löst die Kopplung). Die letzte Übung und Cardio lassen sich nicht koppeln.
     static func koppeln(_ uebungen: [PlanUebung], _ i: Int, an: Bool) -> [PlanUebung] {
         guard uebungen.indices.contains(i) else { return uebungen }

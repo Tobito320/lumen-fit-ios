@@ -17,13 +17,15 @@ enum PlanEditor {
         return p
     }
 
-    /// Übung `von` an die Stelle `nach` im Tag schieben. Eine Kopplung (Supersatz) löst sich, wenn die Nachbarn wechseln.
+    /// Übung `von` an die Stelle `nach` im Tag schieben. Nur die verschobene Übung verlässt ihren Supersatz (`SupersatzLogik.verschieben`).
     static func verschieben(_ tag: TrainingsTag, von: Int, nach: Int) -> TrainingsTag {
         guard tag.uebungen.indices.contains(von), tag.uebungen.indices.contains(nach), von != nach else { return tag }
         var t = tag
-        let u = t.uebungen.remove(at: von)
-        t.uebungen.insert(u, at: nach)
-        for i in t.uebungen.indices { t.uebungen[i].supersatz = nil }
+        t.uebungen = SupersatzLogik.verschieben(tag.uebungen, von: von, nach: nach).map { s in
+            var u = tag.uebungen[s.index]
+            u.supersatz = s.supersatz
+            return u
+        }
         return t
     }
 
