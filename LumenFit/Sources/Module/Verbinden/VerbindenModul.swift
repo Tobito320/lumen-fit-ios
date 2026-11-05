@@ -20,6 +20,7 @@ enum VerbindenModul {
         daten.einstellungen.aendere { $0.loveaVerbunden = true }
         daten.verbindung.freigaben = [.schritte, .gym, .schlaf]
         VerbindenDemo.partner = .verbunden(datei)
+        VerbindenDemo.crew = GymCrewDemo.eintraege(jetzt: umgebung.uhr())
         let woche = Datum.wochenstart(Datum.text(umgebung.uhr()))
         let jetzt = umgebung.uhr()
         daten.verbindung.freunde = [
@@ -35,6 +36,8 @@ enum VerbindenModul {
 @MainActor
 enum VerbindenDemo {
     static var partner: PartnerStand?
+    /// Erfundene Crew für `-lumenFitDemo` (Gym-Tab); leer = die echten Verbindungen.
+    static var crew: [VerbindungEintrag] = []
 }
 
 /// Verdrahtet die Teile des Moduls mit den Ereignissen der App: Datei für Lovea schreiben, Partner-Mitteilungen, Band, Wünsche. Es gibt eine Instanz

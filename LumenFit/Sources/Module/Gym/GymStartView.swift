@@ -54,6 +54,7 @@ struct GymStartView: View {
         .navigationDestination(item: $menueZiel) { menueSeite($0) }
         .haptik(.erfolg, bei: freiGestartet)
         .task { sitzung.ladeWennNoetig() }
+        .gymCrewAbruf()
     }
 
     private func inhalt(_ training: TrainingStore) -> some View {
@@ -79,6 +80,8 @@ struct GymStartView: View {
                 einstellungenKnopf
             }
             letzte(training, jetzt: jetzt)
+            if aufbau == .lumen { GymCrewAbschnitt() }
+            GymRekordPinnwandView()
             PartnerKarte(bereich: .gym)
             if aufbau == .lumen { mehrBereich(stand, training: training) }
         }
@@ -221,8 +224,12 @@ struct GymStartView: View {
     /// "Partner 54 min · 27 Sätze   Du geplant: Push": zuerst der Partner (nur wenn verbunden), dann du. Der Punkt davor wie im Wochenstreifen (dunkel = du, hell = Partner).
     private func werZeile(_ stand: GymStartStand, jetzt: Date) -> some View {
         let partner = GymPartnerLogik.partner(PartnerAnsichtLogik.aktuellerStand(umgebung))
-        return HStack(spacing: 14) {
-            if let partner {
+        let crew = GymCrewQuelle.zeilen(umgebung, datum: stand.gewaehlt)
+        // Eine Zeile je Person der Crew; ohne Verbindungen bleibt es beim bisherigen Partner (älterer Weg).
+        return VStack(alignment: .leading, spacing: Abstand.s) {
+            if !crew.isEmpty {
+                GymCrewZeilen(zeilen: crew)
+            } else if let partner {
                 person(partner.profilName, GymPartnerLogik.status(partner, datum: stand.gewaehlt, heute: stand.heute, jetzt: jetzt), punkt: palette.text2)
             }
             person("Du", stand.status, punkt: palette.text)

@@ -21,6 +21,7 @@ struct TrainingLaufView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 kopf
+                GymMitlaufZeile()
                 NaechsterSatzKarte(sitzung: sitzung)
                 ForEach(sitzung.liste.indices, id: \.self) { i in
                     UebungsKarte(sitzung: sitzung, index: i)
@@ -45,6 +46,7 @@ struct TrainingLaufView: View {
             }
         }
         .animation(ruhig ? nil : Feder.schnell, value: sitzung.rueckgaengig)
+        .gymCrewAbruf()
         .sheet(isPresented: $beenden) { TrainingBeendenView(sitzung: sitzung) }
         .sheet(isPresented: $suche) {
             UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true)

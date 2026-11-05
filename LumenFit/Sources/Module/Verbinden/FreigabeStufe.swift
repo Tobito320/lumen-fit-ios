@@ -1,16 +1,26 @@
 import Foundation
 
-/// Die zwei einfachen Wahlen beim Teilen mit einer Person: "Wenig" (Schritte und Gym, der Standard) oder "Alles" (alle Bereiche).
+/// Die einfachen Wahlen beim Teilen mit einer Person: "Wenig" (Schritte und Gym, der Standard), "Crew" (Training, Plan und Gewichte fürs Gym) oder "Alles" (alle Bereiche).
 /// Eine eigene Auswahl aus den einzelnen Schaltern passt zu keiner Stufe (`von` liefert nil) und bleibt unverändert.
 enum FreigabeStufe: CaseIterable, Sendable {
-    case wenig, alles
+    case wenig, crew, alles
 
-    var name: String { self == .wenig ? "Wenig" : "Alles" }
+    var name: String {
+        switch self {
+        case .wenig: "Wenig"
+        case .alles: "Alles"
+        case .crew: "Crew"
+        }
+    }
+
+    /// Ein Satz unter der Auswahl, was die Stufe zeigt (nil: keiner nötig).
+    var hilfe: String? { self == .crew ? "Training, Plan und Gewichte der letzten Einheiten. Nie Schlaf, Essen, Körper." : nil }
 
     var bereiche: Set<VerbindungBereich> {
         switch self {
         case .wenig: VerbindungenLogik.standardZeigt
         case .alles: Set(VerbindungBereich.allCases)
+        case .crew: [.gym, .plan, .verlauf]
         }
     }
 
