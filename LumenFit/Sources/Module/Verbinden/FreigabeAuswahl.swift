@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// Die Wahl, was eine Person von dir sieht: oben "Wenig" oder "Alles", darunter jeder Bereich als Schalter. Passt die Auswahl zu keiner Stufe, ist im Segment nichts aktiv.
+/// Die Wahl, was eine Person von dir sieht: oben "Wenig", "Crew" oder "Alles", darunter jeder Bereich als Schalter. Passt die Auswahl zu keiner Stufe, ist im Segment nichts aktiv.
 /// `einklappbar` nil: die Schalter stehen offen da (Bildschirm "Verbunden mit"); sonst hinter "Einzelne Schalter" (Seite der Person).
 struct FreigabeAuswahl: View {
     let an: Set<VerbindungBereich>
     let einklappbar: Binding<Bool>?
     let aendern: (Set<VerbindungBereich>) -> Void
+    @Environment(\.palette) private var palette
 
     var body: some View {
         Picker("Wie viel", selection: Binding<FreigabeStufe?>(
@@ -15,6 +16,7 @@ struct FreigabeAuswahl: View {
         }
         .pickerStyle(.segmented)
         .frame(minHeight: Abstand.tippflaeche)
+        if let hilfe = FreigabeStufe.von(an)?.hilfe { Text(hilfe).font(.footnote).foregroundStyle(palette.text2) }
         if let einklappbar {
             DisclosureGroup("Einzelne Schalter", isExpanded: einklappbar) { schalter }
         } else {
