@@ -78,7 +78,7 @@ final class BereicheTests: XCTestCase {
         let router = Router()
         XCTAssertFalse(router.schlafSichtbar, "Standard: aus")
         XCTAssertFalse(router.zeigt(.schlaf))
-        XCTAssertTrue(router.zeigt(.training) && router.zeigt(.plan) && router.zeigt(.essen) && router.zeigt(.heute))
+        XCTAssertTrue(router.zeigt(.training) && router.zeigt(.plan) && router.zeigt(.essen) && router.zeigt(LumenFitTab.heute))
         router.oeffne(.schlaf(.werte))
         XCTAssertEqual(router.tab, .heute)
         router.schiebe(.schlaf(.letzteNacht))

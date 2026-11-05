@@ -12,8 +12,7 @@ struct GymRekordPinnwandView: View {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 Text("Rekorde der Crew").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
                 ForEach(rekorde, id: \.self) { r in
-                    (Text(r.name).fontWeight(.semibold).foregroundStyle(palette.text)
-                        + Text(" · \(GymRekordPinnwandLogik.text(r, heute: Datum.text(jetzt)))").foregroundStyle(palette.text2))
+                    Text("\(Text(r.name).fontWeight(.semibold).foregroundStyle(palette.text))\(Text(" · \(GymRekordPinnwandLogik.text(r, heute: Datum.text(jetzt)))").foregroundStyle(palette.text2))")
                         .font(.footnote)
                         .accessibilityElement(children: .combine)
                 }
