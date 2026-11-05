@@ -1,14 +1,16 @@
 import Foundation
 
 enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
-    case heute, gym, essen, schlaf
+    /// Reihenfolge der Tabs: Heute, Training, Plan, Essen, Schlaf. Training und Plan sind beide der Bereich Gym (`AppBereich.gym`).
+    case heute, training, plan, essen, schlaf
 
     var id: String { rawValue }
 
     var titel: String {
         switch self {
         case .heute: "Heute"
-        case .gym: "Gym"
+        case .training: "Training"
+        case .plan: "Plan"
         case .essen: "Essen"
         case .schlaf: "Schlaf"
         }
@@ -17,7 +19,8 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
     var symbolName: String {
         switch self {
         case .heute: "sun.max.fill"
-        case .gym: "dumbbell.fill"
+        case .training: "dumbbell.fill"
+        case .plan: "list.bullet.clipboard"
         case .essen: "fork.knife"
         case .schlaf: "bed.double.fill"
         }
@@ -26,7 +29,7 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
     /// Der wählbare Bereich des Tabs; nil bei Heute (bleibt immer).
     var bereich: AppBereich? {
         switch self {
-        case .gym: .gym
+        case .training, .plan: .gym
         case .essen: .essen
         case .schlaf: .schlaf
         case .heute: nil
@@ -37,7 +40,8 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
     static func fuer(_ route: Route) -> LumenFitTab? {
         switch route {
         case .heute, .gewichtEintragen, .verlauf: .heute
-        case .gym, .uebung: .gym
+        case .gym(.training): .training
+        case .gym(.plaene), .gym(.fortschritt), .uebung: .plan
         case .essen: .essen
         case .schlaf: .schlaf
         case .profil, .freund: nil

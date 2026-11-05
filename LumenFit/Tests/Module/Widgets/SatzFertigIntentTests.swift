@@ -62,7 +62,7 @@ final class SatzFertigIntentTests: XCTestCase {
         _ = try await TrainingStartenIntent().perform()
         XCTAssertEqual(steuerung.gestartet.count, 1)
         XCTAssertNil(steuerung.gestartet[0], "kein bestimmter Plantag: der Gym-Teil nimmt den von heute")
-        XCTAssertEqual(u.router.tab, .gym)
+        XCTAssertEqual(u.router.tab, .training)
     }
 
     func testGewichtEintragenUndEssenScannenOeffnenDieSeiten() async throws {
@@ -102,7 +102,7 @@ final class SatzFertigIntentTests: XCTestCase {
         let (u, steuerung) = try start()
         _ = try await SchnellzugriffIntent(aktion: .training).perform()
         XCTAssertEqual(steuerung.gestartet.count, 1)
-        XCTAssertEqual(u.router.tab, .gym)
+        XCTAssertEqual(u.router.tab, .training)
         _ = try await SchnellzugriffIntent(aktion: .scan).perform()
         XCTAssertEqual(u.router.tab, .essen)
         XCTAssertEqual(u.router.pfade[.essen], [.essen(.scan)])

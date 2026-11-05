@@ -40,7 +40,8 @@ final class Router {
         case .profil, .freund:
             blatt = route
         case .heute: wechsle(.heute, [])
-        case .gym(.training): wechsle(.gym, [])
+        case .gym(.training): wechsle(.training, [])
+        case .gym(.plaene): wechsle(.plan, [])
         case .essen(.heute): wechsle(.essen, [])
         case .schlaf(.letzteNacht): wechsle(.schlaf, [])
         default:

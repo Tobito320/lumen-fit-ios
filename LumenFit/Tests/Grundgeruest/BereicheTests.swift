@@ -40,7 +40,7 @@ final class BereicheTests: XCTestCase {
 
     func testTabsUndRoutenFolgenDenBereichen() {
         let e = aus(.schlaf, .essen)
-        XCTAssertTrue(e.zeigt(LumenFitTab.heute) && e.zeigt(LumenFitTab.gym))
+        XCTAssertTrue(e.zeigt(LumenFitTab.heute) && e.zeigt(LumenFitTab.training) && e.zeigt(LumenFitTab.plan))
         XCTAssertFalse(e.zeigt(LumenFitTab.schlaf) || e.zeigt(LumenFitTab.essen))
         XCTAssertFalse(e.zeigt(Route.schlaf(.letzteNacht)))
         XCTAssertTrue(e.zeigt(Route.gym(.training)) && e.zeigt(Route.heute) && e.zeigt(Route.profil(.einstellungen)))
@@ -78,7 +78,7 @@ final class BereicheTests: XCTestCase {
         let router = Router()
         XCTAssertFalse(router.schlafSichtbar, "Standard: aus")
         XCTAssertFalse(router.zeigt(.schlaf))
-        XCTAssertTrue(router.zeigt(.gym) && router.zeigt(.essen) && router.zeigt(.heute))
+        XCTAssertTrue(router.zeigt(.training) && router.zeigt(.plan) && router.zeigt(.essen) && router.zeigt(.heute))
         router.oeffne(.schlaf(.werte))
         XCTAssertEqual(router.tab, .heute)
         router.schiebe(.schlaf(.letzteNacht))
@@ -119,4 +119,51 @@ final class BereicheTests: XCTestCase {
         XCTAssertEqual(ProfilBereiche.waehlbar(schlafSichtbar: false), [.gym, .essen])
         XCTAssertEqual(ProfilBereiche.waehlbar(schlafSichtbar: true), [.gym, .essen, .schlaf])
     }
+
+    // MARK: Gym in zwei Tabs (Training, Plan)
+
+    func testReihenfolgeUndTitelDerTabs() {
+        XCTAssertEqual(LumenFitTab.allCases, [.heute, .training, .plan, .essen, .schlaf])
+        XCTAssertEqual(LumenFitTab.training.titel, "Training")
+        XCTAssertEqual(LumenFitTab.training.symbolName, "dumbbell.fill")
+        XCTAssertEqual(LumenFitTab.plan.titel, "Plan")
+        XCTAssertEqual(LumenFitTab.plan.symbolName, "list.bullet.clipboard")
+    }
+
+    func testRoutenLiegenAufDemPassendenTab() {
+        XCTAssertEqual(LumenFitTab.fuer(.gym(.training)), .training)
+        XCTAssertEqual(LumenFitTab.fuer(.gym(.plaene)), .plan)
+        XCTAssertEqual(LumenFitTab.fuer(.gym(.fortschritt)), .plan)
+        XCTAssertEqual(LumenFitTab.fuer(.uebung(id: "x")), .plan)
+        let router = Router()
+        router.oeffne(.gym(.training))
+        XCTAssertEqual(router.tab, .training)
+        router.oeffne(.gym(.plaene))
+        XCTAssertEqual(router.tab, .plan)
+        XCTAssertEqual(router.pfade[.plan], [])
+        router.oeffne(.gym(.fortschritt))
+        XCTAssertEqual(router.tab, .plan)
+        XCTAssertEqual(router.pfade[.plan], [.gym(.fortschritt)], "Fortschritt öffnet das Segment über dem Plan")
+    }
+
+    func testBereichGymBlendetBeideTabsAus() {
+        let e = aus(.gym)
+        XCTAssertFalse(e.zeigt(LumenFitTab.training) || e.zeigt(LumenFitTab.plan))
+        let router = Router()
+        router.setze(einstellungen: e)
+        router.oeffne(.gym(.plaene))
+        XCTAssertEqual(router.tab, .heute)
+        router.oeffne(.uebung(id: "x"))
+        XCTAssertEqual(router.tab, .heute)
+    }
+
+    #if DEBUG
+    func testStartArgumentGymFuehrtWeiterInsTraining() {
+        let d = UserDefaults(suiteName: "tab-gym-\(UUID().uuidString)")!
+        d.set("gym", forKey: "lumenFitTab")
+        XCTAssertEqual(StartArgumente.lies(d).tab, .training)
+        d.set("plan", forKey: "lumenFitTab")
+        XCTAssertEqual(StartArgumente.lies(d).tab, .plan)
+    }
+    #endif
 }

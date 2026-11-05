@@ -7,7 +7,8 @@ struct RouteAnsicht: View {
     var body: some View {
         switch route {
         case .heute: HeuteTabView()
-        case .gym(let bereich): GymTabView(bereich: bereich).kartenTint(HabitFarbe.mint.farbe)
+        case .gym(.training): TrainingTabView().kartenTint(HabitFarbe.mint.farbe)
+        case .gym(let bereich): PlanTabView(bereich: bereich).kartenTint(HabitFarbe.mint.farbe)
         case .essen(let bereich): EssenTabView(bereich: bereich).kartenTint(LumenFarben.loveaEssen)
         case .schlaf(let bereich): SchlafTabView(bereich: bereich).kartenTint(HabitFarbe.indigo.farbe)
         case .profil(let bereich): profil(bereich)
@@ -38,7 +39,8 @@ struct RouteAnsicht: View {
     static func wurzel(_ tab: LumenFitTab) -> some View {
         switch tab {
         case .heute: HeuteTabView()
-        case .gym: GymTabView().kartenTint(HabitFarbe.mint.farbe)
+        case .training: TrainingTabView().kartenTint(HabitFarbe.mint.farbe)
+        case .plan: PlanTabView().kartenTint(HabitFarbe.mint.farbe)
         case .essen: EssenTabView().kartenTint(LumenFarben.loveaEssen)
         case .schlaf: SchlafTabView().kartenTint(HabitFarbe.indigo.farbe)
         }

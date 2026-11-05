@@ -62,7 +62,8 @@ final class EinmalLoveaTests: XCTestCase {
     }
 
     func testNutzungNamenKommenNurAusFestenWoertern() {
-        XCTAssertEqual(NutzungName.tab(.gym), "tab.gym")
+        XCTAssertEqual(NutzungName.tab(.training), "tab.training")
+        XCTAssertEqual(NutzungName.tab(.plan), "tab.plan")
         XCTAssertEqual(NutzungName.seite(.gym(.plaene)), "seite.gym.plaene")
         XCTAssertEqual(NutzungName.seite(.uebung(id: "geheime-kennung")), "seite.uebung", "keine Kennung in der Meldung")
         XCTAssertEqual(NutzungName.blatt(.profil(.aussehen)), "blatt.profil")
