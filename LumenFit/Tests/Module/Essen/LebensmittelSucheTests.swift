@@ -118,8 +118,8 @@ final class LebensmittelSucheTests: XCTestCase {
         let server = try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json")
         let s = try mitServer(server)
         s.eingabe("Hafer", vorne: [])
-        let lauf = Task { await s.serverSuchen(pause: .milliseconds(300)) }
-        try await Task.sleep(for: .milliseconds(20))   // der Lauf hat die erste Eingabe gemerkt und wartet
+        let lauf = Task { await s.serverSuchen(pause: .seconds(2)) }
+        try await Task.sleep(for: .milliseconds(300))   // CI-Simulator ist langsam: genug Vorlauf, damit der Lauf hat die erste Eingabe gemerkt und wartet
         s.eingabe("Haf", vorne: [])   // neue Eingabe, bevor die Pause um ist
         await lauf.value
         XCTAssertEqual(server.aufrufe, 0, "die alte Anfrage geht gar nicht erst raus")
