@@ -23,6 +23,9 @@ final class HeuteModellTests: XCTestCase {
         let u = AppUmgebung(ordner: try tempOrdner(), schluesselbund: SpeicherSchluesselbund(), http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
                             leser: leser, healthSchreiber: schreiber, bruecke: KeinePartnerBruecke(), uhr: uhr.uhr, passwortRunden: 1_000)
         if profil { try u.profil.anlegen(name: "Test", passwort: "abcd") }
+        var config = ServerConfig.standard
+        config.schlafSichtbar = true   // Schlaf gehört nur Konten mit Erlaubnis; diese Tests prüfen ihn
+        u.konto.uebernimm(config)
         return u
     }
 

@@ -45,7 +45,7 @@ final class MeilensteinWaechter {
     /// Prüft das aktive Profil; ohne Profil nichts. Auch die Meilensteine-Seite ruft es beim Öffnen.
     func pruefeAlles() {
         guard let umgebung, let daten = umgebung.daten else { return }
-        let einstellungen = umgebung.router.einstellungen
+        let einstellungen = umgebung.bereicheWirksam
         pruefe(daten, naechte: umgebung.gesundheit.naechte, schritte: umgebung.gesundheit.tage.mapValues(\.schritte), heute: Datum.text(umgebung.uhr()),
                sichtbar: { gruppe in gruppe.bereich.map { einstellungen.zeigt($0) } ?? true })
     }

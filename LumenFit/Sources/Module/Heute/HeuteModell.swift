@@ -198,7 +198,7 @@ final class HeuteModell {
         let gymZiel = max(1, ziele.gymTageProWoche)
         let schlafMin = nacht?.minuten ?? 0
         // Nur die gewählten Bereiche: ein ausgeschalteter Bogen fehlt hier, in der Ansage und in der Rechnung "alle voll".
-        let bereiche = daten.einstellungen.werte
+        let bereiche = umgebung.bereicheWirksam
         var boegen: [BogenWert] = [
             BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
                       beschriftung: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))"),

@@ -9,13 +9,15 @@ struct ServerConfig: Equatable, Codable, Sendable {
     var nameAendernTage = 7
     /// Der Server stellt "Band in Lumen Fit nutzen" für dieses Konto von selbst an (Standard nur dort, wo er es sagt). Ein bewusstes Aus in der App gewinnt.
     var bandStandard = false
+    /// Schlaf, Armband und AirPods sind sichtbar: der Server sagt es nur dem Konto, das sie nutzen darf (Standard: Konten mit Lovea-Person). Ohne Antwort und ohne gemerkten Stand bleiben sie weg.
+    var schlafSichtbar = false
     /// Schlaf-Beleg an den Entwickler (Diagnose): nur auf Freigabe des Servers für genau dieses Konto, Standard aus. Ohne Antwort bleibt er aus.
     var schlafBeleg = false
 
     nonisolated static let standard = ServerConfig()
     nonisolated static let tageBereich = 0...365
 
-    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage, bandStandard, schlafBeleg }
+    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage, bandStandard, schlafSichtbar, schlafBeleg }
 
     init() {}
 
@@ -24,6 +26,7 @@ struct ServerConfig: Equatable, Codable, Sendable {
         profilAnlegenErlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .profilAnlegenErlaubt)) ?? false
         nameAendernTage = Self.tage(try? c.decodeIfPresent(Int.self, forKey: .nameAendernTage)) ?? 7
         bandStandard = (try? c.decodeIfPresent(Bool.self, forKey: .bandStandard)) ?? false
+        schlafSichtbar = (try? c.decodeIfPresent(Bool.self, forKey: .schlafSichtbar)) ?? false
         schlafBeleg = (try? c.decodeIfPresent(Bool.self, forKey: .schlafBeleg)) ?? false
     }
 
@@ -37,6 +40,7 @@ struct ServerConfig: Equatable, Codable, Sendable {
         var neu = basis
         if case .bool(let b)? = werte["profilAnlegenErlaubt"] { neu.profilAnlegenErlaubt = b }
         if case .bool(let b)? = werte["bandStandard"] { neu.bandStandard = b }
+        if case .bool(let b)? = werte["schlafSichtbar"] { neu.schlafSichtbar = b }
         if case .bool(let b)? = werte["schlafBeleg"] { neu.schlafBeleg = b }
         if case .number(let d)? = werte["nameAendernTage"], d.isFinite, d == d.rounded(), let t = tage(Int(exactly: d)) { neu.nameAendernTage = t }
         return neu

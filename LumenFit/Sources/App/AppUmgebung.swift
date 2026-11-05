@@ -36,6 +36,11 @@ final class AppUmgebung {
     @ObservationIgnored private var beobachteteTypen: Set<HealthTyp> = []
     @ObservationIgnored private var abrufAufgaben: [@MainActor () async -> Void] = []
 
+    /// Die gewählten Bereiche des aktiven Profils, so wie die App sie zeigt: Schlaf nur, wenn der Server es dem Konto erlaubt (`Einstellungen.wirksam`).
+    var bereicheWirksam: Einstellungen {
+        (daten?.einstellungen.werte ?? Einstellungen()).wirksam(schlafSichtbar: konto.schlafSichtbar)
+    }
+
     /// Der `DatenSatz` des aktiven Profils; nil, solange es kein Profil gibt. Ein Profilwechsel liefert einen neuen.
     var daten: DatenSatz? {
         guard let id = profil.aktiv?.id else { return nil }

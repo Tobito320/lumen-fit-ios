@@ -86,7 +86,7 @@ struct HeuteTagZeilen: View {
         let wasser = daten.habits.wert(Habit.wasser.id, tag)
         let gewicht = daten.habits.wert(Habit.gewicht.id, tag)
         let ziele = daten.ziele.ziele
-        let bereiche = daten.einstellungen.werte
+        let bereiche = umgebung.bereicheWirksam
         return ListenKarte {
             zeile("figure.walk", "Schritte", (werte?.schritte).map { $0 > 0 ? "\(HeuteQuellen.zahl($0)) von \(HeuteQuellen.zahl(ziele.schritte))" : "keine Daten" } ?? "keine Daten")
             if bereiche.gymAn {

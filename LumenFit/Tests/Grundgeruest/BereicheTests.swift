@@ -71,4 +71,52 @@ final class BereicheTests: XCTestCase {
         router.schiebe(.gym(.training))
         XCTAssertTrue(router.pfade[.heute]?.isEmpty ?? true, "nichts landet auf dem Stapel von Heute")
     }
+
+    // MARK: Schlaf nur mit Erlaubnis des Servers
+
+    func testOhneErlaubnisKeinSchlafTabUndSchlafRoutenLandenAufHeute() {
+        let router = Router()
+        XCTAssertFalse(router.schlafSichtbar, "Standard: aus")
+        XCTAssertFalse(router.zeigt(.schlaf))
+        XCTAssertTrue(router.zeigt(.gym) && router.zeigt(.essen) && router.zeigt(.heute))
+        router.oeffne(.schlaf(.werte))
+        XCTAssertEqual(router.tab, .heute)
+        router.schiebe(.schlaf(.letzteNacht))
+        XCTAssertTrue(router.pfade[.heute]?.isEmpty ?? true)
+        XCTAssertTrue(router.oeffne(url: URL(string: "lumenfit://schlaf?bereich=verlauf")!))
+        XCTAssertEqual(router.tab, .heute)
+    }
+
+    func testMitErlaubnisOeffnetSchlafUndDasWegnehmenSchicktZurueckAufHeute() {
+        let router = Router()
+        router.setzeSchlafSichtbar(true)
+        XCTAssertTrue(router.zeigt(.schlaf))
+        router.oeffne(.schlaf(.werte))
+        XCTAssertEqual(router.tab, .schlaf)
+        XCTAssertEqual(router.pfade[.schlaf], [.schlaf(.werte)])
+        router.setzeSchlafSichtbar(false)
+        XCTAssertEqual(router.tab, .heute, "ein offener Schlaf-Tab verlässt die Seite")
+        XCTAssertNil(router.pfade[.schlaf])
+    }
+
+    func testErlaubnisUndEigeneWahlGeltenBeide() {
+        let router = Router()
+        router.setzeSchlafSichtbar(true)
+        router.setze(einstellungen: aus(.schlaf))
+        XCTAssertFalse(router.zeigt(.schlaf), "erlaubt, aber selbst ausgeschaltet")
+    }
+
+    func testWirksameBereicheBlendenSchlafOhneErlaubnisAusUndLassenImmerEinenAn() {
+        XCTAssertFalse(Einstellungen().wirksam(schlafSichtbar: false).schlafAn)
+        XCTAssertTrue(Einstellungen().wirksam(schlafSichtbar: true).schlafAn)
+        XCTAssertTrue(Einstellungen().wirksam(schlafSichtbar: false).gymAn)
+        var nurSchlaf = Einstellungen()
+        nurSchlaf.gymAn = false
+        nurSchlaf.essenAn = false
+        let w = nurSchlaf.wirksam(schlafSichtbar: false)
+        XCTAssertTrue(w.gymAn || w.essenAn, "nie ein Profil ohne sichtbaren Bereich")
+        XCTAssertTrue(nurSchlaf.schlafAn, "die gespeicherte Wahl bleibt unverändert")
+        XCTAssertEqual(ProfilBereiche.waehlbar(schlafSichtbar: false), [.gym, .essen])
+        XCTAssertEqual(ProfilBereiche.waehlbar(schlafSichtbar: true), [.gym, .essen, .schlaf])
+    }
 }

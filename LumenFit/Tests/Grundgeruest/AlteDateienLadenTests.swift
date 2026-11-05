@@ -90,6 +90,7 @@ final class AlteDateienLadenTests: XCTestCase {
         let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3,"coachSichtbar":true},"loveaErlaubt":true}"#.utf8))
         XCTAssertTrue(alt.config.profilAnlegenErlaubt)
         XCTAssertTrue(alt.loveaErlaubt)
+        XCTAssertFalse(alt.config.schlafSichtbar, "kein Schlaf, bis der Server ihn erlaubt (auch wenn der alte Stand den Coach kannte)")
         XCTAssertFalse(alt.config.schlafBeleg, "Schlaf-Beleg ist ohne Antwort des Servers aus")
     }
 

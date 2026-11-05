@@ -90,6 +90,8 @@ final class KontoDienst {
     var config: ServerConfig { stand.config }
     /// Lovea verbinden und der Import sind nur sichtbar, wenn der Server das Konto freigibt (nur Debug-Demo darf es erzwingen).
     var loveaErlaubt: Bool { LoveaFreigabe.erlaubt(freigegeben: stand.loveaErlaubt, demo: LoveaFreigabe.demoAktiv) }
+    /// Schlaf, Armband und AirPods zeigen sich nur, wenn der Server es dem Konto sagt; der gemerkte Stand gilt bei Funkloch. Nur Debug-Demo darf es erzwingen.
+    var schlafSichtbar: Bool { stand.config.schlafSichtbar || LoveaFreigabe.demoAktiv }
     /// Der Server hat den Schlaf-Beleg für dieses Konto freigegeben (Diagnose, Standard aus; der gemerkte Stand gilt bei Funkloch).
     var schlafBelegAn: Bool { stand.config.schlafBeleg }
     /// Die Lovea-Person des Kontos, nur mit echter Server-Freigabe (nie in der Demo); sonst nil.
@@ -139,6 +141,12 @@ final class KontoDienst {
         self.verbindungen = VerbindungenSpeicher(datei: ordner.appendingPathComponent(VerbindungenSpeicher.dateiName))
         let gelesen = (try? Data(contentsOf: datei)).flatMap { try? JSONDecoder().decode(KontoStand.self, from: $0) }
         self.stand = gelesen ?? KontoStand()
+    }
+
+    /// Merkt die Server-Einstellungen (auch für Tests, die ohne Netz eine Erlaubnis setzen).
+    func uebernimm(_ config: ServerConfig) {
+        stand.config = config
+        sichere()
     }
 
     nonisolated static var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
@@ -248,7 +256,7 @@ final class KontoDienst {
         var configAntwort = erstesConfig
         if configAntwort == nil { configAntwort = await sende(anfrage("/config", kennung: kennung)) }
         if let c = configAntwort, c.status == 200 {
-            if let neu = ServerConfig.zusammen(stand.config, antwort: c.daten) { stand.config = neu; sichere() }
+            if let neu = ServerConfig.zusammen(stand.config, antwort: c.daten) { uebernimm(neu) }
         }
         if let f = await sende(anfrage("/lovea/freigabe", kennung: kennung)), f.status == 200 {
             struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool?; var person: String? }

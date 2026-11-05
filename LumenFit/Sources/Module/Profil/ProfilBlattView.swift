@@ -60,7 +60,8 @@ struct ProfilMehrView: View {
         List {
             ProfilAbschnitt {
                 link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
-                link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() }
+                // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
+                if umgebung.konto.schlafSichtbar { link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() } }
             }
             ProfilAbschnitt {
                 link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }

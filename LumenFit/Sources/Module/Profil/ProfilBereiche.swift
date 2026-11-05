@@ -18,6 +18,9 @@ enum ProfilBereiche {
         }
     }
 
+    /// Die Bereiche, die diese Person wählen kann: Schlaf nur mit Erlaubnis des Servers (`ServerConfig.schlafSichtbar`).
+    static func waehlbar(schlafSichtbar: Bool) -> [AppBereich] { AppBereich.allCases.filter { $0 != .schlaf || schlafSichtbar } }
+
     static let erklaerung = "Ausblenden löscht nichts. Deine Daten bleiben, bis du den Bereich wieder einschaltest. Einer bleibt immer an."
 
     /// Schaltet einen Bereich im aktiven Profil. false, wenn nichts passiert ist (kein Profil oder der letzte eingeschaltete Bereich).
@@ -42,9 +45,10 @@ struct ProfilBereicheAbschnitt: View {
 
     var body: some View {
         let werte = umgebung.daten?.einstellungen.werte ?? Einstellungen()
-        let nurEiner = AppBereich.allCases.filter { werte.zeigt($0) }.count == 1
+        let waehlbar = ProfilBereiche.waehlbar(schlafSichtbar: umgebung.konto.schlafSichtbar)
+        let nurEiner = waehlbar.filter { werte.zeigt($0) }.count == 1
         ProfilAbschnitt("Bereiche", fuss: ProfilBereiche.erklaerung) {
-            ForEach(AppBereich.allCases, id: \.self) { bereich in
+            ForEach(waehlbar, id: \.self) { bereich in
                 Toggle(isOn: Binding(get: { werte.zeigt(bereich) },
                                      set: { ProfilBereiche.schalte(bereich, an: $0, in: umgebung) })) {
                     ProfilListenZeile(ProfilBereiche.titel(bereich), symbol: ProfilBereiche.symbol(bereich))

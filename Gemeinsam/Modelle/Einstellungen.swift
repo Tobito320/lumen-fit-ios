@@ -70,6 +70,16 @@ struct Einstellungen: Codable, Equatable, Sendable {
         }
     }
 
+    /// Was die App zeigt: Schlaf, Armband und AirPods nur, wenn der Server es dem Konto erlaubt (`ServerConfig.schlafSichtbar`). Die gespeicherte Wahl
+    /// bleibt unverändert; ist sonst nichts an, zeigt die App Gym, damit nie ein Profil ohne sichtbaren Bereich entsteht.
+    func wirksam(schlafSichtbar: Bool) -> Einstellungen {
+        guard !schlafSichtbar, schlafAn else { return self }
+        var e = self
+        e.schlafAn = false
+        if !(e.gymAn || e.essenAn) { e.gymAn = true }
+        return e
+    }
+
     /// Schaltet einen Bereich. Der letzte eingeschaltete bleibt an: dann passiert nichts und die Antwort ist false.
     @discardableResult
     mutating func setze(_ bereich: AppBereich, an: Bool) -> Bool {
