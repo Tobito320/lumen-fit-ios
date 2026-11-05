@@ -2,12 +2,12 @@
 // App-Wege: X-App-Key + X-Konto + X-Geheimnis. Verwaltung (/admin/*): nur X-Admin-Key.
 // Reine fetch(request, env, holen)-Funktion ohne cloudflare:workers-Import -> unter Node testbar.
 import { kiFoto } from "./ki-foto.js";
-import { coachProbe, kiCoach } from "./ki-coach.js";
+import { handleEssen } from "./essen.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
-const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, coachSichtbar: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false };
+const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false, schlafSichtbar: false, kiFotoErlaubt: true, kiFotoLimit: 5 };
 const PERSONEN = ["ahmed", "annika"];
 // shortcut: harte Obergrenze statt Ratenbegrenzung gegen Massen-Registrierung; bei mehr Geräten Grenze anheben oder Cloudflare-Regel davor.
 const MAX_KONTEN = 200;
@@ -76,8 +76,11 @@ function zusammen(konto, global) {
   const eigen = lesen(konto.einstellungen);
   const cfg = { ...STANDARD, ...global, ...eigen };
   cfg.loveaVerbinden = eigen.loveaVerbinden === true && PERSONEN.includes(konto.lovea_person);
-  // Coach nur für die zwei Lovea-Konten; weder global noch am Konto überschreibbar.
-  cfg.coachSichtbar = PERSONEN.includes(konto.lovea_person);
+  const person = PERSONEN.includes(konto.lovea_person);
+  // Schlaf, Armband, AirPods: Standard nur für die zwei Lovea-Konten; ein Wert am Konto gewinnt (ohne Build änderbar).
+  cfg.schlafSichtbar = typeof eigen.schlafSichtbar === "boolean" ? eigen.schlafSichtbar : person;
+  // Foto-Scan: die zwei Lovea-Konten ohne Limit (null), alle anderen höchstens kiFotoLimit Fotos am Tag (Standard 5).
+  cfg.kiFotoLimit = person ? null : Number.isInteger(cfg.kiFotoLimit) && cfg.kiFotoLimit >= 0 ? cfg.kiFotoLimit : STANDARD.kiFotoLimit;
   // Band in Lumen Fit: Standard an für ahmed (ein bewusstes Aus in der App gewinnt dort), für alle anderen aus; ein Wert am Konto gewinnt.
   cfg.bandStandard = typeof eigen.bandStandard === "boolean" ? eigen.bandStandard : konto.lovea_person === "ahmed" || global.bandStandard === true;
   // Schlaf-Beleg (Diagnose): nur Ahmeds Konto und nur, wenn das KONTO den Schalter selbst gesetzt hat; nie aus global.
@@ -606,6 +609,8 @@ async function verwalten(request, url, env) {
     }
     if ("loveaVerbinden" in einstellungen && typeof einstellungen.loveaVerbinden !== "boolean") return nein(400, "loveaVerbinden: true oder false");
     if ("schlafBeleg" in einstellungen && typeof einstellungen.schlafBeleg !== "boolean") return nein(400, "schlafBeleg: true oder false");
+    for (const k of ["schlafSichtbar", "kiFotoErlaubt"]) if (k in einstellungen && typeof einstellungen[k] !== "boolean") return nein(400, `${k}: true oder false`);
+    if ("kiFotoLimit" in einstellungen && !(Number.isInteger(einstellungen.kiFotoLimit) && einstellungen.kiFotoLimit >= 0)) return nein(400, "kiFotoLimit: ganze Zahl ab 0");
     if (einstellungen.schlafBeleg === true && person !== "ahmed") return nein(400, "schlafBeleg nur mit lovea_person ahmed");
     if (einstellungen.loveaVerbinden === true && !person) return nein(400, "loveaVerbinden braucht lovea_person");
     await env.DB.prepare("UPDATE konten SET lovea_person = ?, gesperrt = ?, einstellungen = ? WHERE id = ?")
@@ -635,8 +640,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
-  if (url.pathname === "/ki/coach" && m === "POST") return kiCoach(request, env, { kontoPruefen, zusammen, globaleConfig, loveaHolen: holen });
-  if (url.pathname === "/admin/coach-probe" && m === "POST") return adminOk(request, env) ? json(await coachProbe(env, holen)) : unauthorized();
+  if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");
 }
