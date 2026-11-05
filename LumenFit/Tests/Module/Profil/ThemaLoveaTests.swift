@@ -14,14 +14,14 @@ final class ThemaLoveaTests: XCTestCase {
         KontoDienst(zugang: zugang, schluesselbund: bund, http: lader, ordner: ordner, uhr: TestUhr().uhr, version: "0.0.1")
     }
 
-    func testOhneFreigabeGibtEsFuenfThemesMitFreigabeSechs() {
+    func testOhneFreigabeGibtEsSechsThemesMitFreigabeSieben() {
         let ohne = ProfilThemaWahl.verfuegbar(loveaErlaubt: false)
-        XCTAssertEqual(ohne.count, 5)
+        XCTAssertEqual(ohne.count, 6)
         XCTAssertFalse(ohne.contains(.lovea))
-        XCTAssertEqual(ProfilThemaWahl.verfuegbar(loveaErlaubt: true).count, 6)
+        XCTAssertEqual(ProfilThemaWahl.verfuegbar(loveaErlaubt: true).count, 7)
         XCTAssertTrue(ProfilThemaWahl.verfuegbar(loveaErlaubt: true).contains(.lovea))
-        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: false).count, 10)
-        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: true).count, 12)
+        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: false).count, 12)
+        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: true).count, 14)
     }
 
     func testGespeichertesLoveaOhneFreigabeFaelltOhneAbsturzAufMonochromZurueck() throws {
