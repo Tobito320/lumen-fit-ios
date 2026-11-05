@@ -115,6 +115,8 @@ final class KontoDienst {
     nonisolated static let partnerDatei = "partner-server.json"
     /// So selten wird die Zusammenfassung für den Partner hochgeladen.
     nonisolated static let partnerPause: TimeInterval = 120
+    /// Solange der gebaute Stand "im Gym" sagt, geht der nächste Satz schneller raus (Mitlauf der Crew).
+    nonisolated static let partnerPauseImGym: TimeInterval = 20
     @ObservationIgnored private var partnerAusstehend: Data?
     @ObservationIgnored private var letzterPartnerUpload: Date?
     @ObservationIgnored private var nutzungGesendetInSitzung = false
@@ -340,10 +342,16 @@ final class KontoDienst {
     /// Nichts mehr hochladen (keine Verbindung zeigt etwas): eine gemerkte, noch nicht gesendete Zusammenfassung verfällt.
     func hochladenVerwerfen() { partnerAusstehend = nil }
 
+    /// 20 Sekunden, wenn die Zusammenfassung `imGym` meldet, sonst 2 Minuten (auch bei Daten, die nicht lesbar sind).
+    nonisolated static func pauseFuer(_ daten: Data) -> TimeInterval {
+        let imGym = (try? LoveaVertrag.decoder().decode(ZusammenfassungDatei.self, from: daten))?.heute.verlauf?.imGym == true
+        return imGym ? partnerPauseImGym : partnerPause
+    }
+
     func partnerSenden(_ kennung: KontoKennung, erzwingen: Bool = false) async {
         guard let daten = partnerAusstehend else { return }
         let jetzt = uhr()
-        if !erzwingen, let letzter = letzterPartnerUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.partnerPause { return }
+        if !erzwingen, let letzter = letzterPartnerUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.pauseFuer(daten) { return }
         letzterPartnerUpload = jetzt
         if let r = await sendeMitKonto("/partner", methode: "PUT", body: daten, kennung: kennung), r.status == 200 || r.status == 400 {
             partnerAusstehend = nil   // 400: der Server mag diese Form nie; nicht endlos wiederholen
