@@ -1,7 +1,7 @@
 import Foundation
 
 /// Ein neuer Rekord einer Person aus der Crew: Übung, Gewicht in kg, Wiederholungen, Tag.
-struct PinnwandRekord: Equatable, Sendable {
+struct PinnwandRekord: Equatable, Hashable, Sendable {
     var name: String
     var uebung: String
     var kg: Double
