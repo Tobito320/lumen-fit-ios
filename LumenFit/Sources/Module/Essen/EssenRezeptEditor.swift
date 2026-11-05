@@ -286,7 +286,7 @@ private struct EssenZutatMengeBlatt: View {
     }
 }
 
-/// Zutat wählen: Zuletzt und Eigene, beim Tippen BLS und Eigenes, Open Food Facts nur auf "Suchen".
+/// Zutat wählen: Zuletzt und Eigene, beim Tippen BLS, Eigenes und der Lumen-Server.
 private struct EssenZutatSucheBlatt: View {
     let gewaehlt: @MainActor (Lebensmittel) -> Void
 
@@ -309,14 +309,13 @@ private struct EssenZutatSucheBlatt: View {
                         liste("Eigene", essen?.eigene ?? [])
                     } else {
                         liste(nil, suche.stand.sichtbar)
-                        onlineBereich
+                        EssenOnlineHinweis(zustand: suche.online)
                     }
                 }
                 .padding(Abstand.l)
             }
             .scrollDismissesKeyboard(.interactively)
             .searchable(text: $text, prompt: "Zutat suchen")
-            .onSubmit(of: .search) { Task { await suche.onlineSuchen() } }
             .navigationTitle("Zutat")
             .navigationBarTitleDisplayMode(.inline)
             .lumenHintergrund()
@@ -327,6 +326,7 @@ private struct EssenZutatSucheBlatt: View {
                 for _ in 0..<20 where !Task.isCancelled && !LebensmittelIndex.shared.bereit { try? await Task.sleep(for: .milliseconds(150)) }
                 guard !Task.isCancelled else { return }
                 suche.eingabe(text, vorne: vorne)
+                await suche.serverSuchen()
             }
         }
     }
@@ -335,7 +335,7 @@ private struct EssenZutatSucheBlatt: View {
     private func liste(_ titel: String?, _ eintraege: [Lebensmittel]) -> some View {
         if let titel, !eintraege.isEmpty { Text(titel).font(.headline).foregroundStyle(palette.text) }
         if eintraege.isEmpty, titel == nil {
-            Text("Nichts gefunden. Du kannst bei Open Food Facts suchen.").font(.subheadline).foregroundStyle(palette.text2)
+            Text("Nichts gefunden.").font(.subheadline).foregroundStyle(palette.text2)
         } else if !eintraege.isEmpty {
             ListenKarte {
                 ForEach(Array(eintraege.enumerated()), id: \.element.id) { i, l in
@@ -343,24 +343,6 @@ private struct EssenZutatSucheBlatt: View {
                     Button { dismiss(); gewaehlt(l) } label: { EssenLebensmittelZeile(lebensmittel: l).padding(.horizontal, Abstand.l) }
                         .buttonStyle(.plain)
                 }
-            }
-        }
-    }
-
-    private var onlineBereich: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            Button { Task { await suche.onlineSuchen() } } label: {
-                Label("Bei Open Food Facts suchen", systemImage: "magnifyingglass").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            .buttonStyle(.bordered)
-            .disabled(suche.online == .laedt)
-            switch suche.online {
-            case .ruhig: EmptyView()
-            case .laedt: ProgressView("Ich suche …")
-            case .fertig(let n): Text(n == 0 ? "Open Food Facts hat nichts Passendes." : "\(n) Treffer von Open Food Facts stehen oben in der Liste.").font(.footnote).foregroundStyle(palette.text2)
-            case .limit(let s): FehlerKarte(titel: "Kurz warten", hilfe: "Open Food Facts erlaubt nur 10 Suchen in der Minute. In etwa \(s) Sekunden geht es wieder.")
-            case .offline: FehlerKarte(titel: "Kein Netz", hilfe: "Mit Netz kannst du es noch einmal versuchen.")
-            case .fehler: FehlerKarte(titel: "Open Food Facts antwortet gerade nicht", hilfe: "Versuche es gleich noch einmal.")
             }
         }
     }

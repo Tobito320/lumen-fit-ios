@@ -114,39 +114,6 @@ final class OpenFoodFactsQuelleTests: XCTestCase {
         do { _ = try await q.produkt("4008400402222"); XCTFail("Limit erwartet") } catch { XCTAssertNotNil(error as? OffFehler) }
     }
 
-    func testSucheNutztSuchadresseUndLiefertTreffer() async throws {
-        let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
-        let treffer = try await quelle(lader).suche("Haferflocken")
-        XCTAssertFalse(treffer.isEmpty)
-        XCTAssertTrue(treffer.allSatisfy { $0.quelle == "off" && $0.id.hasPrefix("off-") })
-        let url = try XCTUnwrap(lader.anfragen.first?.url)
-        XCTAssertEqual(url.host, "search.openfoodfacts.org")
-        XCTAssertEqual(url.path, "/search")
-        XCTAssertTrue(url.query?.contains("q=Haferflocken") == true)
-        // Das erste Fixture-Produkt hat nur Kilojoule (1565): 374 kcal.
-        let erste = try XCTUnwrap(treffer.first { $0.barcode == "4013200254742" })
-        XCTAssertEqual(erste.pro100.kcal, 1565 / 4.184, accuracy: 0.01)
-    }
-
-    func testSucheLimitZehnJeMinuteUndLeererTextOhneAbfrage() async throws {
-        let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
-        let q = quelle(lader)
-        let leer = try await q.suche("   ")
-        XCTAssertTrue(leer.isEmpty)
-        XCTAssertEqual(lader.aufrufe, 0)
-        for _ in 0..<10 { _ = try await q.suche("Haferflocken") }
-        do { _ = try await q.suche("Haferflocken"); XCTFail("Limit erwartet") } catch { XCTAssertNotNil(error as? OffFehler) }
-        XCTAssertEqual(lader.aufrufe, 10)
-    }
-
-    func testSucheWiederholtEinmalBeiHTTP500() async throws {
-        let ok = try FixtureOrt.daten("Essen", "off-search-haferflocken.json")
-        let lader = SkriptLader([.init(status: 500, daten: Data(), fehler: nil), .init(status: 200, daten: ok, fehler: nil)])
-        let treffer = try await quelle(lader).suche("Haferflocken")
-        XCTAssertFalse(treffer.isEmpty)
-        XCTAssertEqual(lader.aufrufe, 2)
-    }
-
     func testRateFensterGibtWartezeitZurueck() {
         var fenster = EssenRateFenster(limit: 2)
         let t0 = Date(timeIntervalSince1970: 1000)

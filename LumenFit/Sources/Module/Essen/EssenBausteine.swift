@@ -110,3 +110,23 @@ struct EssenBalken: View {
         .accessibilityHidden(true)
     }
 }
+
+/// Eine Zeile unter den Suchtreffern: Ladeanzeige, solange der Server antwortet, und ein Satz bei Netzfehler. Die lokalen Treffer bleiben immer stehen.
+struct EssenOnlineHinweis: View {
+    let zustand: EssenOnlineZustand
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        switch zustand {
+        case .ruhig: EmptyView()
+        case .laedt: ProgressView("Ich suche weiter …").font(.footnote)
+        case .fertig: EmptyView()
+        case .offline: hinweis("Gerade offline. Du siehst die Treffer aus dem BLS.")
+        case .fehler: hinweis("Die Online-Suche antwortet gerade nicht. Die Treffer aus dem BLS bleiben stehen.")
+        }
+    }
+
+    private func hinweis(_ text: String) -> some View {
+        Text(text).font(.footnote).foregroundStyle(palette.text2)
+    }
+}

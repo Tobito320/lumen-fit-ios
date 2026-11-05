@@ -27,17 +27,15 @@ struct EssenRateFenster: Sendable {
     }
 }
 
-/// Open Food Facts (ODbL) über den `HTTPLader`: Produkt per Barcode (höchstens 15 je Minute) und Textsuche (höchstens 10 je Minute).
+/// Open Food Facts (ODbL) über den `HTTPLader`: Produkt per Barcode (höchstens 15 je Minute). Die Textsuche macht `EssenServerQuelle`; Open Food Facts bleibt Rückfall für Barcodes.
 /// Fragt nur auf Aufruf, lädt nie vor. Bei HTTP 500 gibt es einen Wiederholversuch, der als Abfrage zählt. Ohne Schlüssel, ohne Konto.
 actor OpenFoodFactsQuelle {
     static let produktLimit = 15
-    static let sucheLimit = 10
 
     private let lader: any HTTPLader
     private let uhr: Uhr
     private let kennung: String
     private var produktFenster = EssenRateFenster(limit: OpenFoodFactsQuelle.produktLimit)
-    private var sucheFenster = EssenRateFenster(limit: OpenFoodFactsQuelle.sucheLimit)
 
     init(lader: any HTTPLader, uhr: @escaping Uhr = { Date() }, version: String = OpenFoodFactsQuelle.appVersion) {
         self.lader = lader
@@ -55,33 +53,10 @@ actor OpenFoodFactsQuelle {
         guard !code.isEmpty, var teile = URLComponents(string: "https://world.openfoodfacts.org/api/v2/product/\(code).json") else { throw OffFehler.antwort }
         teile.queryItems = [URLQueryItem(name: "fields", value: ErnaehrungLogik.offFelder)]
         guard let url = teile.url else { throw OffFehler.antwort }
-        let (daten, status) = try await hole(url, suche: false)
+        let (daten, status) = try await hole(url)
         if status == 404 { return nil }
         guard status == 200 else { throw OffFehler.server(status) }
         return ErnaehrungLogik.offProdukt(daten).map(Self.alsOff)
-    }
-
-    /// Erst nur DACH und EU, geordnet nach `SuchRang`; bleibt das leer, einmal ohne Länderfilter (seltene Importware).
-    func suche(_ text: String) async throws -> [Lebensmittel] {
-        let q = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !q.isEmpty else { return [] }
-        // Lucene-Zeichen raus: ein Anführungszeichen oder Doppelpunkt im Text bräche die Anfrage mit Länderfilter.
-        let sauber = String(q.map { $0.isLetter || $0.isNumber ? $0 : " " }).split(separator: " ").joined(separator: " ")
-        var kandidaten: [SuchKandidat] = []
-        if !sauber.isEmpty { kandidaten = try await abfrage(sauber + " " + SuchRang.laenderFilter) }
-        if kandidaten.isEmpty { kandidaten = try await abfrage(q) }
-        return SuchRang.rangfolge(kandidaten, text: q).map(Self.alsOff)
-    }
-
-    private func abfrage(_ q: String) async throws -> [SuchKandidat] {
-        guard var teile = URLComponents(string: "https://search.openfoodfacts.org/search") else { throw OffFehler.antwort }
-        teile.queryItems = [URLQueryItem(name: "q", value: q), URLQueryItem(name: "page_size", value: "40"),
-                            URLQueryItem(name: "langs", value: "de"),
-                            URLQueryItem(name: "fields", value: ErnaehrungLogik.offFelder + ",countries_tags,popularity_key,unique_scans_n")]
-        guard let url = teile.url else { throw OffFehler.antwort }
-        let (daten, status) = try await hole(url, suche: true)
-        guard status == 200 else { throw OffFehler.server(status) }
-        return SuchRang.kandidaten(daten)
     }
 
     private static func alsOff(_ l: Lebensmittel) -> Lebensmittel {
@@ -90,9 +65,9 @@ actor OpenFoodFactsQuelle {
         return neu
     }
 
-    private func hole(_ url: URL, suche: Bool) async throws -> (Data, Int) {
+    private func hole(_ url: URL) async throws -> (Data, Int) {
         for versuch in 0..<2 {
-            try erlaube(suche: suche)
+            try erlaube()
             var anfrage = URLRequest(url: url)
             anfrage.setValue(kennung, forHTTPHeaderField: "User-Agent")
             anfrage.timeoutInterval = 15
@@ -104,9 +79,7 @@ actor OpenFoodFactsQuelle {
         throw OffFehler.server(500)
     }
 
-    private func erlaube(suche: Bool) throws {
-        let jetzt = uhr()
-        let warten = suche ? sucheFenster.versuche(jetzt: jetzt) : produktFenster.versuche(jetzt: jetzt)
-        if let warten { throw OffFehler.limit(sekunden: warten) }
+    private func erlaube() throws {
+        if let warten = produktFenster.versuche(jetzt: uhr()) { throw OffFehler.limit(sekunden: warten) }
     }
 }
