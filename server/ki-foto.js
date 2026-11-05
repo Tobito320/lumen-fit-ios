@@ -1,10 +1,12 @@
 // Quelle: Lovea server/ki.js (nur die Foto-Mahlzeit: Schema, Anweisung, Berechnung, Fehlerarten; ohne Durable Object, Portionsgedächtnis und Kostenbuch).
 // POST /ki/foto: Foto einer Mahlzeit -> Zutaten mit Gramm und Nährwerten (OpenAI Responses API).
-// Aus bis der Schalter `kiFotoErlaubt` (Konto oder global) true ist UND das Secret OPENAI_API_KEY gesetzt ist. Gesundheitsdaten gehen nur an OpenAI.
+// An für alle (Schalter `kiFotoErlaubt`, Standard true; false am Konto oder global sperrt), braucht das Secret OPENAI_API_KEY. Limit je Tag: `kiFotoLimit` aus /config (null = ohne). Gesundheitsdaten gehen nur an OpenAI.
 // Nichts wird geloggt: weder Bild noch Antwort noch Schlüssel. Reine Funktion ohne cloudflare:workers-Import -> unter Node testbar.
 
 export const MODELL = "gpt-6-luna";
-export const TAGESLIMIT = 40;
+export const TAGESLIMIT = 5;
+// Konten ohne Limit zählen trotzdem mit (Kosten sehen), die Grenze liegt nur praktisch unerreichbar hoch.
+const OHNE_LIMIT = 1_000_000;
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const BODY_MAX = 1_600_000; // Zeichen des Anfragekörpers
 const BILD_MAX = 1_400_000; // Base64-Zeichen (etwa 1 MB Bild)
@@ -160,7 +162,9 @@ export const zurueck = (env, konto, tag) => env.DB.prepare("UPDATE ki_nutzung SE
 export async function kiFoto(request, env, hilfen, holen = (u, o) => fetch(u, o), jetzt = new Date()) {
   const { konto, antwort } = await hilfen.kontoPruefen(request, env);
   if (antwort) return antwort;
-  if (hilfen.zusammen(konto, await hilfen.globaleConfig(env)).kiFotoErlaubt !== true) return nein(403, "nichtErlaubt");
+  const cfg = hilfen.zusammen(konto, await hilfen.globaleConfig(env));
+  if (cfg.kiFotoErlaubt !== true) return nein(403, "nichtErlaubt");
+  const limit = cfg.kiFotoLimit ?? OHNE_LIMIT;
   if (!env.OPENAI_API_KEY) return nein(503, "nichtEingerichtet");
 
   if (Number(request.headers.get("content-length")) > BODY_MAX) return nein(413, "bildZuGross");
@@ -177,8 +181,8 @@ export async function kiFoto(request, env, hilfen, holen = (u, o) => fetch(u, o)
   const hinweis = text(b.hinweis, 300);
 
   const tag = berlinTag(jetzt);
-  const gezaehlt = await zaehlen(env, konto.id, tag);
-  if (!gezaehlt) return nein(429, "tageslimit", { max: TAGESLIMIT });
+  const gezaehlt = await zaehlen(env, konto.id, tag, limit);
+  if (!gezaehlt) return nein(429, "tageslimit", { max: limit });
 
   const anfrage = ["Analysiere das Foto dieser Mahlzeit."];
   if (mahlzeit) anfrage.push(`Mahlzeit: ${MAHLZEITEN[mahlzeit]}.`);
@@ -218,7 +222,7 @@ export async function kiFoto(request, env, hilfen, holen = (u, o) => fetch(u, o)
     await zurueck(env, konto.id, tag);
     return nein(502, "kiFehler");
   }
-  const rest = Math.max(0, TAGESLIMIT - gezaehlt.n);
+  const rest = cfg.kiFotoLimit == null ? null : Math.max(0, limit - gezaehlt.n);
   const items = Array.isArray(ergebnis?.items) ? ergebnis.items.slice(0, 12).map(itemBerechnen) : [];
   const leer = { ok: true, ist_essen: false, items: [], versteckt: [], gesamt: gesamtBerechnen([], []), frage: null, bemerkung: text(ergebnis?.bemerkung, 120), rest, modell: MODELL };
   if (!ergebnis?.ist_essen || items.length === 0) return Response.json(leer);

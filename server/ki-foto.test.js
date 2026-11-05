@@ -19,7 +19,7 @@ const OEL = { name: "Bratöl", gramm: 10, kcal_pro_100g: 880 };
 const antwortMit = (o) => new Response(JSON.stringify({ output_text: JSON.stringify(o) }), { status: 200 });
 const ESSEN = { ist_essen: true, items: [REIS], versteckt: [OEL], frage: null, bemerkung: "Reis mit etwas Öl." };
 
-/** Umgebung mit Konto; `an`: Schalter kiFotoErlaubt am Konto; `schluessel`: Secret gesetzt. */
+/** Umgebung mit Konto; `an: false` setzt kiFotoErlaubt am Konto aus (Standard ist an); `schluessel`: Secret gesetzt. */
 async function aufbau({ an = true, schluessel = true } = {}) {
   const env = { DB: fakeD1(SCHEMA), APP_KEY: APP, ADMIN_KEY: ADMIN, LOVEA_KEY: "lovea-geheim" };
   if (schluessel) env.OPENAI_API_KEY = SCHLUESSEL;
@@ -27,9 +27,9 @@ async function aufbau({ an = true, schluessel = true } = {}) {
     method: "POST", headers: { "X-App-Key": APP }, body: JSON.stringify({ id: ID, geheimnis: GEHEIM, name: "Test", version: "1" }),
   }), env);
   assert.equal(reg.status, 201);
-  if (an) {
+  if (!an) {
     const r = await handleFetch(new Request(`https://x.test/admin/konto/${ID}`, {
-      method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiFotoErlaubt: true } }),
+      method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiFotoErlaubt: false } }),
     }), env);
     assert.equal(r.status, 200);
   }
@@ -70,12 +70,33 @@ test("Schalter aus: 403 und OpenAI wird nie gefragt, auch nicht ohne Secret", as
   assert.equal((await foto(await aufbau({ an: false, schluessel: false }))).status, 403);
 });
 
-test("Schalter global an gilt für das Konto, Konto kann ihn abschalten", async () => {
-  const env = await aufbau({ an: false });
-  await handleFetch(new Request("https://x.test/admin/config", { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ kiFotoErlaubt: true }) }), env);
+test("Standard an für jedes Konto; global aus sperrt, ein Konto-Wert gewinnt", async () => {
+  const env = await aufbau();
   assert.equal((await foto(env)).status, 200);
-  await handleFetch(new Request(`https://x.test/admin/konto/${ID}`, { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiFotoErlaubt: false } }) }), env);
+  await handleFetch(new Request("https://x.test/admin/config", { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ kiFotoErlaubt: false }) }), env);
   assert.equal((await foto(env)).status, 403);
+  await handleFetch(new Request(`https://x.test/admin/konto/${ID}`, { method: "PATCH", headers: { "X-Admin-Key": ADMIN, "content-type": "application/json" }, body: JSON.stringify({ einstellungen: { kiFotoErlaubt: true } }) }), env);
+  assert.equal((await foto(env)).status, 200);
+});
+
+test("Lovea-Konten (Ahmed, Annika) ohne Limit: rest null, auch nach vielen Fotos", async () => {
+  const env = await aufbau();
+  env.DB.roh.prepare("UPDATE konten SET lovea_person = 'annika'").run();
+  const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
+  env.DB.roh.prepare("INSERT INTO ki_nutzung (konto, tag, n) VALUES (?, ?, ?)").run(ID, heute, 500);
+  const r = await foto(env);
+  assert.equal(r.status, 200);
+  assert.equal(r.json.rest, null);
+  assert.equal(zaehler(env), 501);
+});
+
+test("/config nennt das Foto-Limit: 5 für alle, null für Lovea-Konten", async () => {
+  const env = await aufbau();
+  const cfg = async () => (await (await handleFetch(new Request("https://x.test/config", { headers: kopf }), env)).json()).config;
+  assert.equal((await cfg()).kiFotoLimit, 5);
+  assert.equal((await cfg()).kiFotoErlaubt, true);
+  env.DB.roh.prepare("UPDATE konten SET lovea_person = 'ahmed'").run();
+  assert.equal((await cfg()).kiFotoLimit, null);
 });
 
 test("ohne Secret 503 nichtEingerichtet, nichts gezählt, OpenAI nicht gefragt", async () => {
@@ -163,7 +184,7 @@ test("Bild: zu groß 413 bildZuGross, kaputt oder falscher Typ 400 ungueltig, oh
   assert.equal(zaehler(env), 0);
 });
 
-test("Tageslimit: das 41. Foto bekommt 429 tageslimit, ohne OpenAI; anderer Tag und anderes Konto zählen extra", async () => {
+test("Tageslimit: das 6. Foto bekommt 429 tageslimit, ohne OpenAI; anderer Tag und anderes Konto zählen extra", async () => {
   const holen = fakeOpenAI();
   const env = await aufbau();
   const heute = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" }).format(new Date());
@@ -174,6 +195,7 @@ test("Tageslimit: das 41. Foto bekommt 429 tageslimit, ohne OpenAI; anderer Tag 
   const zuviel = await foto(env, { holen });
   assert.equal(zuviel.status, 429);
   assert.equal(zuviel.json.fehler, "tageslimit");
+  assert.equal(zuviel.json.max, 5);
   assert.equal(holen.aufrufe.length, 1);
   assert.equal(zaehler(env), TAGESLIMIT);
   // Gestern ist verbraucht, heute zählt neu; ein fremdes Konto hat seinen eigenen Zähler.
