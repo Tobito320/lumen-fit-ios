@@ -1,7 +1,6 @@
 import Foundation
 
 /// Idee 58, Erholung in einfacher Sprache: ein bis drei kurze Sätze, rein aus Regeln (kein Modell, kein Netz).
-/// Auf Wunsch erklärt der Coach es weiter (`coachFrage`).
 ///
 /// Regeln:
 /// 1. Die HRV gegen deinen Schnitt trägt den Kern. 5 Prozent darüber: bereit. 5 Prozent darunter: normal, bei Lage unter deinem Bereich: schonen.
@@ -42,9 +41,6 @@ enum ErholungsKlartext {
     struct Ergebnis: Equatable, Sendable {
         let stufe: Stufe
         let satz: String
-
-        /// Frage an den Coach, mit dem Satz als Grundlage.
-        var coachFrage: String { "Erkläre mir bitte in einfachen Worten meine Erholung heute. Die App sagt: \(satz)" }
     }
 
     /// Schwelle in Prozent für "darüber" und "darunter".

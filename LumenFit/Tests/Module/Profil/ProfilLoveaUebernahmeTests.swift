@@ -159,15 +159,11 @@ final class ProfilLoveaUebernahmeTests: XCTestCase {
         XCTAssertEqual(beleg["wecker.setzen"]?.roh, 2)
         XCTAssertEqual(beleg["einkauf.liste"]?.roh, 1)
         XCTAssertTrue(beleg.values.allSatisfy(\.stimmt), "\(beleg)")
-        // Coach-Nachricht ist als Lumen-Op sichtbar, mit fester Kennung.
-        let verlauf = daten.coach.verlauf
-        XCTAssertEqual(verlauf.map(\.text), ["Guten Morgen"])
-        XCTAssertEqual(verlauf.first?.rolle, .coach)
-        XCTAssertEqual(beleg["coach.nachricht"]?.uebernommen, 1)
-        // Zweiter Lauf: nichts doppelt, die Nachricht zählt als schon da.
+        // Loveas Coach-Verlauf bleibt roh im Log (Lumen Fit hat keinen Coach mehr).
+        XCTAssertEqual(beleg["coach.nachricht"]?.roh, 1)
+        // Zweiter Lauf: nichts doppelt.
         let nochmal = ProfilLoveaUebernahme.uebernehme(ops, in: daten, defaults: defaults())
-        XCTAssertEqual(daten.coach.verlauf.count, 1)
-        XCTAssertEqual(nochmal["coach.nachricht"]?.vorhanden, 1)
+        XCTAssertEqual(nochmal["coach.nachricht"]?.roh, 1)
         XCTAssertEqual(nochmal["abgabe.lovea.gym.studioprofil"]?.vorhanden, 1)
     }
 

@@ -14,7 +14,6 @@ final class DatenSatz {
     let essen: EssenStore
     let habits: HabitStore
     let meilensteine: MeilensteinStore
-    let coach: CoachStore
     let verbindung: VerbindungStore
     let importVerlauf: ImportVerlaufStore
 
@@ -39,7 +38,6 @@ final class DatenSatz {
         self.essen = essen
         self.training = TrainingStore(raum: raum, einstellungen: einstellungen, ereignisse: ereignisse, uhr: uhr)
         self.meilensteine = MeilensteinStore(raum: raum, ereignisse: ereignisse, uhr: uhr)
-        self.coach = CoachStore(raum: raum)
         self.importVerlauf = ImportVerlaufStore(raum: raum)
         self.verbindung = VerbindungStore(ordner: ordner, bruecke: bruecke, einstellungen: einstellungen, ereignisse: ereignisse)
     }

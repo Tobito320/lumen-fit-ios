@@ -143,7 +143,6 @@ enum NutzungName {
         case .gym(let b): "seite.gym.\(b.rawValue)"
         case .essen(let b): "seite.essen.\(b.rawValue)"
         case .schlaf(let b): "seite.schlaf.\(b.rawValue)"
-        case .coach: "seite.coach"
         case .profil(let b): "seite.profil.\(b.rawValue)"
         case .verlauf: "seite.verlauf"
         case .gewichtEintragen: "seite.gewichtEintragen"

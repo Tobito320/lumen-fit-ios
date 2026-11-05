@@ -36,7 +36,7 @@ enum PartnerTageswerte {
         if HabitLogik.erledigt(Habit.wasser, wert: wasser, ziel: wasserZiel) { w.habitsFertig.insert(Habit.wasser.id) }
 
         // Morgen-Check: der letzte Eintrag je Tag, heute und die Tage der Woche.
-        for op in daten.raum.ops(arten: [CoachDaten.stimmungArt]) {
+        for op in daten.raum.ops(arten: ["fit.lumi.stimmung"]) {
             guard let s = op.daten(StimmungsEintrag.self), woche.contains(s.tag) else { continue }
             w.stimmungWoche[s.tag] = min(max(s.wert, 1), 5)
         }

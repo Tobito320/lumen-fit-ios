@@ -10,8 +10,6 @@ enum LoveaDaten {
     static let essen = LumenFarben.loveaEssen
     static let wasser = Color(red: 0.35, green: 0.72, blue: 1)
     static let ueber = Color.orange
-    static var coach: Color { HabitFarbe.himmel.farbe }
-    static var coachMint: Color { HabitFarbe.mint.farbe }
     static let gymGruen = Color(red: 0x30 / 255, green: 0xD1 / 255, blue: 0x58 / 255)
 
     /// Stufenfarbe eines Teils der Tagesform (Lovea `TagesformBlock.swift:189-193`): ab 70 grün, ab 45 orange, sonst rot.

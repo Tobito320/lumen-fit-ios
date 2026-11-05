@@ -37,8 +37,20 @@ enum SchlafHandLogik {
         let k = Datum.kalender
         let b = k.dateComponents([.hour, .minute], from: bett), a = k.dateComponents([.hour, .minute], from: auf)
         guard let bh = b.hour, let bm = b.minute, let ah = a.hour, let am = a.minute,
-              case .schlaf(let von, let bis)? = FreitextLogik.schlafDaten(bett: (bh, bm), auf: (ah, am), tag: tag) else { return nil }
+              let (von, bis) = zeiten(bett: (bh, bm), auf: (ah, am), tag: tag) else { return nil }
         return SchlafHandD(tag: tag, bett: von, auf: bis)
+    }
+
+    /// `tag` = der Morgen des Aufwachens (wie `SchlafHandD.tag`). Bett nach der Aufstehzeit = Vorabend. nil bei unter 1 oder über 16 Stunden.
+    private static func zeiten(bett: (h: Int, m: Int), auf: (h: Int, m: Int), tag: String) -> (Date, Date)? {
+        let k = Datum.kalender
+        let morgen = Datum.datum(tag)
+        guard let aufDatum = k.date(bySettingHour: auf.h, minute: auf.m, second: 0, of: morgen),
+              var bettDatum = k.date(bySettingHour: bett.h, minute: bett.m, second: 0, of: morgen) else { return nil }
+        if bettDatum >= aufDatum { bettDatum = k.date(byAdding: .day, value: -1, to: bettDatum) ?? bettDatum }
+        let stunden = aufDatum.timeIntervalSince(bettDatum) / 3600
+        guard stunden >= 1, stunden <= 16 else { return nil }
+        return (bettDatum, aufDatum)
     }
 
     /// Startwerte des Blatts: der Eintrag oder die erkannte Nacht, sonst 23:00 bis 07:00.

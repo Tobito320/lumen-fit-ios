@@ -1,6 +1,6 @@
 import Foundation
 
-/// Zahlen einer Gruppe von Dingen, die nicht als eigene Op-Art aus Lovea kommen (`abgabe.*` aus Loveas Abgabe, `coach.*`, Vorräte, Wecker).
+/// Zahlen einer Gruppe von Dingen, die nicht als eigene Op-Art aus Lovea kommen (`abgabe.*` aus Loveas Abgabe, Loveas `coach.*`, Vorräte, Wecker).
 /// Eine Einheit ist ein Schlüssel (bei `abgabe.tagesform.gefuehl.<tag>` ein Tag, bei Ops ohne Schlüssel die Op). Von mehreren Ops derselben Einheit
 /// zählt die neueste, die älteren stehen unter `aelter`. Nur Zahlen, nie Inhalte.
 struct ProfilLoveaUebernahmeBeleg: Codable, Equatable, Sendable {
@@ -23,7 +23,7 @@ struct ProfilLoveaUebernahmeBeleg: Codable, Equatable, Sendable {
 }
 
 /// Was aus Loveas Abgabe (PR "Abgabe": `einstellung.setzen` mit Schlüssel `abgabe.*`) und den Arten ohne Leser in Lumen Fit wird.
-/// Sichtbar: Studio-Profil, Geräte-Einstellung, Defekt-Notizen, Tagesform-Gefühl, Band-Regeln, Coach-Verlauf. Roh im Log: Wecker, Erinnerungen
+/// Sichtbar: Studio-Profil, Geräte-Einstellung, Defekt-Notizen, Tagesform-Gefühl, Band-Regeln. Roh im Log: Coach-Verlauf (Lovea-Daten ohne Gegenstück), Wecker, Erinnerungen
 /// (Zuhause ist Lumen Alarm, Lumen Fit ist nur Health), Band-Tage und -Nächte, Coach-Schalter (Datei im Speicher gehalten), Einkaufsliste, Kühlschrank.
 /// Lumen Fit überschreibt nie, was lokal schon steht.
 enum ProfilLoveaUebernahme {
@@ -123,7 +123,6 @@ enum ProfilLoveaUebernahme {
     @MainActor
     private static func einzeln(_ e: Einheit, _ op: Op, daten: DatenSatz, defaults: UserDefaults) -> Einzel {
         switch e.gruppe {
-        case "coach.nachricht": return coachNachricht(op, daten: daten)
         case "abgabe.lovea.gym.studioprofil": return studio(wert(op), ordner: daten.ordner)
         case "abgabe.lovea.gym.einstellungen": return geraete(wert(op), ordner: daten.ordner)
         case "abgabe.lovea.gym.defekt": return defekt(wert(op), ordner: daten.ordner)
@@ -267,25 +266,5 @@ enum ProfilLoveaUebernahme {
         // Ohne eine einzige Band-Regel in der Abgabe gibt es nichts zu zeigen: die Gruppe bleibt roh.
         r.hatLeser = gemappt > 0
         return r
-    }
-
-    // MARK: Coach-Verlauf
-
-    private struct LoveaCoachNachricht: Decodable {
-        var rolle: String?
-        var text: String?
-    }
-
-    /// Wird zur Lumen-Op `fit.coach.nachricht` mit fester Kennung (ein zweiter Lauf legt nichts doppelt an).
-    @MainActor
-    static func coachNachricht(_ op: Op, daten: DatenSatz) -> Einzel {
-        guard let d = try? JSONDecoder().decode(LoveaCoachNachricht.self, from: op.d),
-              let text = d.text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return Einzel(eintraege: 1, kaputt: true) }
-        let id = "lovea-" + op.id
-        guard !daten.raum.ops(arten: [CoachStore.nachrichtArt]).contains(where: { $0.id == id }) else { return Einzel(eintraege: 1) }
-        let n = CoachNachricht(id: id, rolle: d.rolle == "du" ? .nutzer : .coach, text: text, zeit: op.zeit, chips: [], daumen: nil)
-        daten.raum.einreihen(Op(id: id, art: CoachStore.nachrichtArt, von: daten.profil, zeit: op.zeit, d: Op.neu(CoachStore.nachrichtArt, n, von: daten.profil, zeit: op.zeit).d))
-        let da = daten.raum.ops(arten: [CoachStore.nachrichtArt]).contains { $0.id == id }
-        return Einzel(eintraege: 1, geschrieben: da ? 1 : 0, kaputt: !da)
     }
 }

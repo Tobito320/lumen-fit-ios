@@ -3,7 +3,7 @@ import XCTest
 
 final class RouteURLTests: XCTestCase {
     private let alleRouten: [Route] = {
-        var liste: [Route] = [.heute, .verlauf, .gewichtEintragen, .coach(frage: nil), .coach(frage: "Wie viel Eiweiß brauche ich? Mehr & besser, +1 #x = ok"),
+        var liste: [Route] = [.heute, .verlauf, .gewichtEintragen,
                               .uebung(id: "EIeI8Vf"), .uebung(id: "eigen/ä ö"), .freund(daten: nil), .freund(daten: "abc-_123xyz")]
         liste += [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
         liste += [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
@@ -31,7 +31,7 @@ final class RouteURLTests: XCTestCase {
         XCTAssertEqual(RouteURL.url(fuer: .profil(.datensicherung)).absoluteString, "lumenfit://profil?bereich=datensicherung")
         XCTAssertEqual(RouteURL.url(fuer: .gewichtEintragen).absoluteString, "lumenfit://gewicht")
         XCTAssertEqual(RouteURL.url(fuer: .uebung(id: "abc")).absoluteString, "lumenfit://uebung?id=abc")
-        XCTAssertEqual(RouteURL.url(fuer: .coach(frage: "a b")).absoluteString, "lumenfit://coach?frage=a%20b")
+        XCTAssertNil(RouteURL.route(aus: URL(string: "lumenfit://coach?frage=a%20b")!), "der Coach ist weg: alte Links sind keine Route")
     }
 
     func testUnbekannterBereichUndFehlendeAngabenGebenDenErstenFall() throws {
@@ -39,7 +39,6 @@ final class RouteURLTests: XCTestCase {
         XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit://essen"))), .essen(.heute))
         XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit://schlaf?bereich="))), .schlaf(.letzteNacht))
         XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit://profil"))), .profil(.uebersicht))
-        XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit://coach?frage="))), .coach(frage: nil))
         XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit://freund"))), .freund(daten: nil))
         XCTAssertEqual(RouteURL.route(aus: try XCTUnwrap(URL(string: "lumenfit:///"))), .heute, "ohne Host ist es Heute")
     }
@@ -58,7 +57,6 @@ final class RouteURLTests: XCTestCase {
     }
 
     func testLeereTexteZaehlenAlsFehlend() {
-        XCTAssertEqual(RouteURL.url(fuer: .coach(frage: "")).absoluteString, "lumenfit://coach")
         XCTAssertEqual(RouteURL.url(fuer: .freund(daten: "")).absoluteString, "lumenfit://freund")
     }
 }

@@ -29,7 +29,7 @@ struct ProfilLoveaBeleg: Codable, Equatable, Sendable {
     var schonDa: Int
     var uebersprungen: Int
     var arten: [String: ProfilLoveaArtBeleg]
-    /// Gruppen ohne eigene Art: Loveas Abgabe (`abgabe.*`), Coach, Wecker, Vorräte. Pro Gruppe, was sichtbar wurde, was nur im Log liegt (`roh`) und was nicht ging.
+    /// Gruppen ohne eigene Art: Loveas Abgabe (`abgabe.*`), Loveas Coach-Daten, Wecker, Vorräte. Pro Gruppe, was sichtbar wurde, was nur im Log liegt (`roh`) und was nicht ging.
     var uebernahme: [String: ProfilLoveaUebernahmeBeleg] = [:]
 
     /// Der Server nimmt nur Namen in dieser Form (kleiner Anfangsbuchstabe, Buchstaben, Ziffern, `_`, `.`, höchstens 60) und höchstens 150 Arten.

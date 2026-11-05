@@ -47,7 +47,7 @@ final class GesundheitsStand {
         ImportVerlaufLogik.tage(bandUndHealth, stand: importVerlauf())
     }
 
-    /// Nächte je Aufwachtag, wie sie überall gelten (Heute, Wochenstreifen, Coach, Widget, Lovea-Brücke, Freundeskarte, Medaillen, Upload):
+    /// Nächte je Aufwachtag, wie sie überall gelten (Heute, Wochenstreifen, Widget, Lovea-Brücke, Freundeskarte, Medaillen, Upload):
     /// Hand, Band, dann Health (`gewaehlteNaechte`). Nie nur Health.
     var naechte: [String: SchlafNacht] {
         Dictionary(gewaehlteNaechte(eigene: eigeneNaechte()).map { ($0.nacht.tag, $0.nacht) }, uniquingKeysWith: { $1 })

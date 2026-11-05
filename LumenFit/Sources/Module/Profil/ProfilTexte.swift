@@ -10,12 +10,11 @@ enum ProfilTexte {
 
     // MARK: - Datenschutz
 
-    /// `coach`: nur Konten mit Coach lesen von Gesprächen; für alle anderen gibt es sie nicht.
-    static func datenschutz(coach: Bool) -> [Abschnitt] { [
+    static func datenschutz() -> [Abschnitt] { [
         Abschnitt(titel: "Was gespeichert wird",
                   text: "Auf deinem iPhone: dein Name, die Spur deines Passworts (nie das Passwort selbst), deine Trainings, dein Essenstagebuch, Gewohnheiten, Ziele, Körperdaten und Einstellungen. Der Name und die Passwort-Spur liegen im Schlüsselbund, alles andere in der App."),
         Abschnitt(titel: "Was dein iPhone nie verlässt",
-                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht\(coach ? " und deine Gespräche mit dem Coach" : ""). Lumen Fit hat keinen Server für deine Daten, kein Konto mit Anmeldung, keine Werbung und kein Tracking. Es geht nur etwas hinaus, wenn du es selbst teilst: eine Datensicherung, eine Tabelle, eine Wochenkarte oder die Zusammenfassung, die du deinem Partner einzeln freigibst."),
+                  text: "Deine Gesundheitsdaten aus Health, deine Trainings, dein Essen, dein Gewicht. Lumen Fit hat keinen Server für deine Daten, kein Konto mit Anmeldung, keine Werbung und kein Tracking. Es geht nur etwas hinaus, wenn du es selbst teilst: eine Datensicherung, eine Tabelle, eine Wochenkarte oder die Zusammenfassung, die du deinem Partner einzeln freigibst."),
         Abschnitt(titel: "Was ins Netz geht",
                   text: "Nur das Nötige: beim Scannen oder Suchen fragt die App Open Food Facts nach dem Barcode oder deinem Suchtext, und Übungsbilder werden geladen und gemerkt. Beim Eintragen deines Studios geht dein Suchtext an Apple Karten, dazu deine ungefähre Position, wenn du den Standort erlaubst (nur während der Suche, ohne Erlaubnis suchst du ohne Entfernung). Gespeichert wird nur der Name des Studios, nie ein Standort. Dabei gehen nie dein Name, deine Gesundheitsdaten oder dein Training mit."),
         Abschnitt(titel: "Was an den Lumen-Server geht",
@@ -82,13 +81,13 @@ enum ProfilTexte {
         var id: String { text }
     }
 
-    static func loeschliste(einheiten: Int, essenstage: Int, meilensteine: Int, coachNachrichten: Int) -> [Loeschzeile] {
+    static func loeschliste(einheiten: Int, essenstage: Int, meilensteine: Int) -> [Loeschzeile] {
         func zeile(_ n: Int, _ einzahl: String, _ mehrzahl: String) -> Loeschzeile { Loeschzeile(text: "\(n) \(n == 1 ? einzahl : mehrzahl)") }
         return [
             zeile(einheiten, "Training", "Trainings"),
             zeile(essenstage, "Tag im Essenstagebuch", "Tage im Essenstagebuch"),
             zeile(meilensteine, "Meilenstein", "Meilensteine"),
-        ] + (coachNachrichten > 0 ? [zeile(coachNachrichten, "Nachricht im Coach-Verlauf", "Nachrichten im Coach-Verlauf")] : []) + [
+        ] + [
             Loeschzeile(text: "Ziele, Körperdaten, Einstellungen und Gewohnheiten"),
         ]
     }

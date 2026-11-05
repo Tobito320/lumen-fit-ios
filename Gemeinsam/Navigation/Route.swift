@@ -13,7 +13,6 @@ enum Route: Hashable, Codable, Sendable {
     case gym(GymBereich)
     case essen(EssenBereich)
     case schlaf(SchlafBereich)
-    case coach(frage: String?)
     case profil(ProfilBereich)
     case verlauf
     case gewichtEintragen

@@ -136,10 +136,11 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: Abstand.l) {
             karteTitel("Was willst du nutzen?", "Was du ausschaltest, siehst du nicht mehr. \(ProfilBereiche.erklaerung) Ändern geht jederzeit im Profil.")
             ListenKarte {
-                ForEach(Array(AppBereich.allCases.enumerated()), id: \.element) { index, bereich in
+                let waehlbar = ProfilBereiche.waehlbar(schlafSichtbar: umgebung.konto.schlafSichtbar)
+                ForEach(Array(waehlbar.enumerated()), id: \.element) { index, bereich in
                     if index > 0 { Haarlinie() }
                     let an = fluss.bereiche.zeigt(bereich)
-                    let letzter = an && AppBereich.allCases.filter { fluss.bereiche.zeigt($0) }.count == 1
+                    let letzter = an && waehlbar.filter { fluss.bereiche.zeigt($0) }.count == 1
                     Toggle(isOn: Binding(get: { an }, set: { fluss.setzeBereich(bereich, an: $0) })) {
                         ProfilListenZeile(ProfilBereiche.titel(bereich), symbol: ProfilBereiche.symbol(bereich))
                     }
@@ -180,7 +181,7 @@ struct OnboardingView: View {
             karteTitel("Health dazunehmen?", "Lumen Fit liest nur, was du gewählt hast, aus Health. So ist dein erster Tag schon voll. Alles bleibt auf deinem iPhone.")
             ListenKarte {
                 ProfilZeile(symbol: "figure.walk", titel: "Schritte und Bewegung", zeile: "Für deinen Tagesbogen", pfeil: false)
-                if fluss.bereiche.schlafAn {
+                if fluss.bereiche.schlafAn, umgebung.konto.schlafSichtbar {
                     Haarlinie()
                     ProfilZeile(symbol: "bed.double.fill", titel: "Schlaf und Erholung", zeile: "Für deine Nächte und die Bereitschaft", pfeil: false)
                 }

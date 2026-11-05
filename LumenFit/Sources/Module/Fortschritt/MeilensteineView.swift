@@ -8,7 +8,7 @@ struct MeilensteineView: View {
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         let datum = q.medaillenDatum
-        let einstellungen = umgebung.router.einstellungen
+        let einstellungen = umgebung.bereicheWirksam
         let abschnitte = MedaillenAnsicht.abschnitte(zeigt: { einstellungen.zeigt($0) }, erreicht: q.erreichteIds, ohneZiel: MeilensteinPruefung.ohneZiel(essenZielDa: q.essenZielDa))
         let zaehlung = MedaillenAnsicht.zaehlung(abschnitte, erreicht: q.erreichteIds)
         let erreicht = zaehlung.erreicht

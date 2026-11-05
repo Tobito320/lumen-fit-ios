@@ -8,39 +8,42 @@ final class Router {
     var tab: LumenFitTab = .heute
     var pfade: [LumenFitTab: [Route]] = [:]
     var blatt: Route?
-    /// Ein Coach-Text aus einem Link von außen (Annahme 34): landet im Eingabefeld und wird nie von selbst gesendet.
-    var coachEntwurf: String?
-    /// Vom Server pro Konto (`coachSichtbar`); ohne wird jede Coach-Seite zu Heute.
-    var coachSichtbar = false
+    /// Vom Server pro Konto (`schlafSichtbar`); ohne wird jede Schlaf-Seite zu Heute.
+    var schlafSichtbar = false
     /// Von den Einstellungen des Profils (`AppBereich`): ausgeschaltete Bereiche haben keinen Tab und keine Seite.
     var einstellungen = Einstellungen()
 
-    /// Stellt die Sichtbarkeit ein; wird sie weggenommen, verlässt ein offener oder gemerkter Coach-Tab die Seite.
-    func setzeCoachSichtbar(_ sichtbar: Bool) {
-        coachSichtbar = sichtbar
+    /// Stellt die Erlaubnis ein; wird sie weggenommen, verlässt ein offener oder gemerkter Schlaf-Tab die Seite.
+    func setzeSchlafSichtbar(_ sichtbar: Bool) {
+        schlafSichtbar = sichtbar
         guard !sichtbar else { return }
-        pfade[.coach] = nil
-        if tab == .coach { tab = .heute }
+        pfade[.schlaf] = nil
+        if tab == .schlaf { tab = .heute }
     }
+
+    /// Zeigt die App diesen Tab: Bereich an (Profil) und, beim Schlaf, vom Server erlaubt.
+    func zeigt(_ tab: LumenFitTab) -> Bool { einstellungen.wirksam(schlafSichtbar: schlafSichtbar).zeigt(tab) }
+
+    /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) immer.
+    func zeigt(_ route: Route) -> Bool { LumenFitTab.fuer(route).map { zeigt($0) } ?? true }
 
     /// Nimmt neue Einstellungen an; zeigt der offene oder gemerkte Tab einen ausgeschalteten Bereich, landet er auf Heute (die Daten bleiben).
     func setze(einstellungen neu: Einstellungen) {
         einstellungen = neu
-        for tab in LumenFitTab.allCases where !neu.zeigt(tab) { pfade[tab] = nil }
-        if !neu.zeigt(tab) { tab = .heute }
+        for tab in LumenFitTab.allCases where !zeigt(tab) { pfade[tab] = nil }
+        if !zeigt(tab) { tab = .heute }
     }
 
     func oeffne(_ route: Route) {
-        if !coachSichtbar, case .coach = route { return wechsle(.heute, []) }
-        if !einstellungen.zeigt(route) { return wechsle(.heute, []) }
+        if !zeigt(route) { return wechsle(.heute, []) }
         switch route {
         case .profil, .freund:
             blatt = route
         case .heute: wechsle(.heute, [])
-        case .gym(.training): wechsle(.gym, [])
+        case .gym(.training): wechsle(.training, [])
+        case .gym(.plaene): wechsle(.plan, [])
         case .essen(.heute): wechsle(.essen, [])
         case .schlaf(.letzteNacht): wechsle(.schlaf, [])
-        case .coach(nil): wechsle(.coach, [])
         default:
             if let tab = LumenFitTab.fuer(route) { wechsle(tab, [route]) }
         }
@@ -48,23 +51,16 @@ final class Router {
 
     /// Lovea-Aufbau: legt eine Seite auf den Stapel des Heute-Tabs (wie `pfad.append` im Health-Tab von Lovea), ohne den Tab zu wechseln.
     func schiebe(_ route: Route) {
-        if !coachSichtbar, case .coach = route { return }
-        if !einstellungen.zeigt(route) { return }
+        if !zeigt(route) { return }
         blatt = nil
         pfade[.heute, default: []].append(route)
     }
 
     /// Öffnet einen `lumenfit://`-Link. false, wenn er keine Seite der App ist.
-    /// Ein fremder Link darf dem Coach keine Frage stellen: ohne `vertraut` wird `coach?frage=` zum Entwurf im Eingabefeld. Nur der Demo-Start ist vertraut.
     @discardableResult
-    func oeffne(url: URL, vertraut: Bool = false) -> Bool {
+    func oeffne(url: URL) -> Bool {
         guard let route = RouteURL.route(aus: url) else { return false }
-        if !vertraut, coachSichtbar, case .coach(let frage?) = route {
-            coachEntwurf = frage
-            oeffne(.coach(frage: nil))
-        } else {
-            oeffne(route)
-        }
+        oeffne(route)
         return true
     }
 

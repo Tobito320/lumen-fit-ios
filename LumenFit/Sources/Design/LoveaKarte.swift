@@ -6,7 +6,7 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Setzt die Bereichsfarbe der Karten (Schlaf Indigo, Essen Türkis, Gym Mint, Coach Himmel). Wirkt nur im Thema Lovea.
+    /// Setzt die Bereichsfarbe der Karten (Schlaf Indigo, Essen Türkis, Gym Mint). Wirkt nur im Thema Lovea.
     func kartenTint(_ farbe: Color?) -> some View { environment(\.kartenTint, farbe) }
 
     /// Kartenfläche: `flaeche`; im Thema Lovea mit Bereichsfarbe zu 14 % und bei erhöhtem Kontrast mit Rand

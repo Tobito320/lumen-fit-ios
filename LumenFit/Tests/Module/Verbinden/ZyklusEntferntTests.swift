@@ -28,7 +28,7 @@ final class ZyklusEntferntTests: XCTestCase {
         let url = try XCTUnwrap(URL(string: "lumenfit://profil?bereich=zyklus"))
         XCTAssertEqual(RouteURL.route(aus: url), .profil(.uebersicht), "unbekannter Bereich heißt der erste Fall")
         let router = Router()
-        router.tab = .gym
+        router.tab = .training
         XCTAssertTrue(router.oeffne(url: url))
         XCTAssertEqual(router.blatt, .profil(.uebersicht))
     }

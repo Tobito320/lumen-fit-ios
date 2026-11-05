@@ -1,37 +1,38 @@
 import Foundation
 
 enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
-    case heute, gym, essen, schlaf, coach
+    /// Reihenfolge der Tabs: Heute, Training, Plan, Essen, Schlaf. Training und Plan sind beide der Bereich Gym (`AppBereich.gym`).
+    case heute, training, plan, essen, schlaf
 
     var id: String { rawValue }
 
     var titel: String {
         switch self {
         case .heute: "Heute"
-        case .gym: "Gym"
+        case .training: "Training"
+        case .plan: "Plan"
         case .essen: "Essen"
         case .schlaf: "Schlaf"
-        case .coach: "Coach"
         }
     }
 
     var symbolName: String {
         switch self {
         case .heute: "sun.max.fill"
-        case .gym: "dumbbell.fill"
+        case .training: "dumbbell.fill"
+        case .plan: "list.bullet.clipboard"
         case .essen: "fork.knife"
         case .schlaf: "bed.double.fill"
-        case .coach: "bubble.left.fill"
         }
     }
 
-    /// Der wählbare Bereich des Tabs; nil bei Heute und Coach (die bleiben immer).
+    /// Der wählbare Bereich des Tabs; nil bei Heute (bleibt immer).
     var bereich: AppBereich? {
         switch self {
-        case .gym: .gym
+        case .training, .plan: .gym
         case .essen: .essen
         case .schlaf: .schlaf
-        case .heute, .coach: nil
+        case .heute: nil
         }
     }
 
@@ -39,17 +40,17 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
     static func fuer(_ route: Route) -> LumenFitTab? {
         switch route {
         case .heute, .gewichtEintragen, .verlauf: .heute
-        case .gym, .uebung: .gym
+        case .gym(.training): .training
+        case .gym(.plaene), .gym(.fortschritt), .uebung: .plan
         case .essen: .essen
         case .schlaf: .schlaf
-        case .coach: .coach
         case .profil, .freund: nil
         }
     }
 }
 
 extension Einstellungen {
-    /// Zeigt die App diesen Tab? Heute und Coach immer (der Coach folgt zusätzlich dem Server).
+    /// Zeigt die App diesen Tab? Heute immer.
     func zeigt(_ tab: LumenFitTab) -> Bool { tab.bereich.map(zeigt) ?? true }
 
     /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) und Heute-Seiten immer.

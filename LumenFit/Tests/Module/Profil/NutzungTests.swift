@@ -170,8 +170,8 @@ final class NutzungTests: XCTestCase {
 
     func testFehlerArtenSindFesteNamenMitAnzahl() throws {
         let s = try speicher()
-        s.fehler(.absturz, anzahl: 2); s.fehler(.speichern); s.fehler(.coachAntwort)
-        XCTAssertEqual(s.stand.tage[tag]?.mehr["fehler"], ["absturz": 2, "speichern": 1, "coach_antwort": 1])
+        s.fehler(.absturz, anzahl: 2); s.fehler(.speichern)
+        XCTAssertEqual(s.stand.tage[tag]?.mehr["fehler"], ["absturz": 2, "speichern": 1])
         s.fehler(.haenger, anzahl: 0)
         XCTAssertNil(s.stand.tage[tag]?.mehr["fehler"]?["haenger"])
     }

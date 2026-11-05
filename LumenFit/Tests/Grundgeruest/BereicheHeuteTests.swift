@@ -16,6 +16,21 @@ final class BereicheHeuteTests: XCTestCase {
                     leser: leser, healthSchreiber: KeinHealthSchreiber(), bruecke: KeinePartnerBruecke(), uhr: TestUhr().uhr, passwortRunden: 1_000)
     }
 
+    func testOhneErlaubnisDesServersFehlenSchlafBogenUndSchlafKarten() throws {
+        let u = try umgebung()
+        try u.profil.anlegen(name: "Test", passwort: "abcd")
+        let m = HeuteModell(umgebung: u)
+        m.berechne()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [.bewegen, .trainieren], "kein Schlaf-Bogen ohne schlafSichtbar")
+        XCTAssertFalse(m.stand?.bereiche.schlafAn ?? true)
+        XCTAssertTrue(u.daten?.einstellungen.werte.schlafAn ?? false, "die gespeicherte Wahl bleibt, nur die Anzeige fehlt")
+        var config = ServerConfig.standard
+        config.schlafSichtbar = true
+        u.konto.uebernimm(config)
+        m.berechne()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [.bewegen, .trainieren, .erholen])
+    }
+
 
     // MARK: Heute
 
@@ -57,6 +72,9 @@ final class BereicheHeuteTests: XCTestCase {
     func testRingeZeichnenNurAktivesUndEinstellungenWirkenSofort() throws {
         let u = try umgebung()
         try u.profil.anlegen(name: "Test", passwort: "abcd")
+        var config = ServerConfig.standard
+        config.schlafSichtbar = true
+        u.konto.uebernimm(config)
         let m = HeuteModell(umgebung: u)
         m.berechne()
         XCTAssertEqual(m.stand?.boegen.map(\.id), [.bewegen, .trainieren, .erholen])

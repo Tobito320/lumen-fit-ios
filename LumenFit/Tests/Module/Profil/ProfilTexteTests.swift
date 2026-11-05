@@ -20,7 +20,7 @@ final class ProfilTexteTests: XCTestCase {
     }
 
     func testDatenschutzSagtEhrlichWasDieNutzungsmeldungIst() throws {
-        let netz = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel == "Was an den Lumen-Server geht" })
+        let netz = try XCTUnwrap(ProfilTexte.datenschutz().first { $0.titel == "Was an den Lumen-Server geht" })
         for wort in ["nicht anonym", "Nein oder gar nichts", "90 Tagen", "Absturz", "Kein Gesundheitswert", "Nutzung melden"] {
             XCTAssertTrue(netz.text.contains(wort), wort)
         }
@@ -31,36 +31,29 @@ final class ProfilTexteTests: XCTestCase {
     }
 
     func testDatenschutzNenntDieStudioSucheBeiApple() throws {
-        let netz = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel == "Was ins Netz geht" })
+        let netz = try XCTUnwrap(ProfilTexte.datenschutz().first { $0.titel == "Was ins Netz geht" })
         for wort in ["Suchtext", "Apple Karten", "Standort", "nur der Name"] {
             XCTAssertTrue(netz.text.contains(wort), wort)
         }
     }
 
     func testDatenschutzSagtWasDasGeraetNieVerlaesst() throws {
-        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz(coach: true).first { $0.titel.contains("nie verlässt") })
+        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz().first { $0.titel.contains("nie verlässt") })
         for wort in ["Gesundheitsdaten", "Trainings", "Essen", "Gewicht", "kein Konto", "keinen Server"] {
             XCTAssertTrue(verlaesst.text.contains(wort) || verlaesst.text.lowercased().contains(wort.lowercased()), wort)
         }
         XCTAssertTrue(verlaesst.text.contains("selbst teilst"), "Teilen von Hand ist die einzige Ausnahme und steht dabei")
-        let titel = ProfilTexte.datenschutz(coach: true).map(\.titel)
+        let titel = ProfilTexte.datenschutz().map(\.titel)
         XCTAssertTrue(titel.contains("Was gespeichert wird"))
         XCTAssertTrue(titel.contains("Alles löschen"))
         XCTAssertEqual(Set(titel).count, titel.count, "jeder Abschnitt hat einen eigenen Titel")
     }
 
-    func testOhneCoachNenntDerDatenschutzKeineGespraecheUndDieListeKeinenVerlauf() throws {
-        let verlaesst = try XCTUnwrap(ProfilTexte.datenschutz(coach: false).first { $0.titel.contains("nie verlässt") })
-        XCTAssertFalse(verlaesst.text.contains("Coach"))
-        XCTAssertTrue(verlaesst.text.contains("dein Gewicht. Lumen Fit"))
-        XCTAssertFalse(ProfilTexte.loeschliste(einheiten: 1, essenstage: 1, meilensteine: 1, coachNachrichten: 0).map(\.text).contains { $0.contains("Coach") })
-    }
-
     func testLoeschlisteEinzahlUndMehrzahl() {
-        let z = ProfilTexte.loeschliste(einheiten: 1, essenstage: 12, meilensteine: 0, coachNachrichten: 3).map(\.text)
-        XCTAssertEqual(z, ["1 Training", "12 Tage im Essenstagebuch", "0 Meilensteine", "3 Nachrichten im Coach-Verlauf",
+        let z = ProfilTexte.loeschliste(einheiten: 1, essenstage: 12, meilensteine: 0).map(\.text)
+        XCTAssertEqual(z, ["1 Training", "12 Tage im Essenstagebuch", "0 Meilensteine",
                            "Ziele, Körperdaten, Einstellungen und Gewohnheiten"])
-        XCTAssertEqual(ProfilTexte.loeschliste(einheiten: 5, essenstage: 1, meilensteine: 1, coachNachrichten: 1).map(\.text).prefix(4),
-                       ["5 Trainings", "1 Tag im Essenstagebuch", "1 Meilenstein", "1 Nachricht im Coach-Verlauf"])
+        XCTAssertEqual(ProfilTexte.loeschliste(einheiten: 5, essenstage: 1, meilensteine: 1).map(\.text).prefix(3),
+                       ["5 Trainings", "1 Tag im Essenstagebuch", "1 Meilenstein"])
     }
 }

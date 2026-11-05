@@ -22,13 +22,13 @@ enum ProfilLoveaArten {
         "schritte.setzen", "schlaf.setzen", "schlaf.zeiten", "stimmung.setzen",
     ]
 
-    /// Arten, die Lumen Fit nicht selbst liest, aber nicht verlieren darf. Roh im Log, im Bericht genannt (`ProfilLoveaUebernahme`: `coach.nachricht` wird dazu
-    /// als `fit.coach.nachricht` sichtbar). `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank) aus älteren Lovea-Fassungen: keine
+    /// Arten, die Lumen Fit nicht selbst liest, aber nicht verlieren darf. Roh im Log, im Bericht genannt (Loveas `coach.nachricht` bleibt roh: Lumen Fit hat keinen
+    /// Coach mehr, die Schlüssel stehen hier nur als Lovea-Daten). `einkauf.liste` und `kuehl.*` sind Essens-Vorräte (Einkaufsliste, Kühlschrank) aus älteren Lovea-Fassungen: keine
     /// Ansicht hier. `wecker.setzen` ist die Weckzeit, die Lovea dem Partner zeigt: Wecker gehören zu Lumen Alarm, Lumen Fit ist nur Health (Umfang-Gate), und
     /// beim Entfernen in Lovea darf diese Zeit nicht verschwinden.
     static let rohBehalten: Set<String> = ["coach.nachricht", "einkauf.liste", "kuehl.setzen", "kuehl.weg", "wecker.setzen"]
 
-    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Coach, die Konsistenz-Kategorien und die Abgabe aus Lovea
+    /// Schlüssel von `einstellung.setzen`, die zu Health gehören: Ziele (Ernährung, Muskeln, Gym), Loveas `coach.*` (roh behalten), die Konsistenz-Kategorien und die Abgabe aus Lovea
     /// (`abgabe.*`: was nur auf dem Lovea-Gerät lag, siehe `ProfilLoveaUebernahme`). Der Rest ist Lovea-Oberfläche.
     static let einstellungPraefixe = ["ziel.", "coach.", "konsistenz.", "abgabe."]
 

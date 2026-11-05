@@ -21,7 +21,7 @@ enum TrackerAkkuWarnung {
     static func niedrig(prozent: Int, laedt: Bool) -> Bool { !laedt && prozent <= grenze }
 }
 
-/// Die Mitteilung "Band-Akku niedrig" (Schalter auf der Band-Seite, standardmäßig aus; in Lovea `CoachKalenderMitteilung`).
+/// Die Mitteilung "Band-Akku niedrig" (Schalter auf der Band-Seite, standardmäßig aus).
 /// Sie kommt nur, wenn Lumen Fit den Akku ohnehin liest, und einmal je Entladung (`TrackerAkkuWarnung.schritt`). Lumen Fit fragt dafür nichts zusätzlich ab.
 enum BandAkkuWarnung {
     nonisolated static let schluessel = "fit.band.akkuwarnung"

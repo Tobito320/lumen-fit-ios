@@ -27,13 +27,13 @@ final class LumenAufbauTests: XCTestCase {
         router.schiebe(.verlauf)
         XCTAssertEqual(router.tab, .heute)
         XCTAssertEqual(router.pfade[.heute] ?? [], [.gym(.training), .verlauf])
-        XCTAssertNil(router.pfade[.gym], "der Gym-Tab bleibt unberührt")
+        XCTAssertNil(router.pfade[.training], "der Training-Tab bleibt unberührt")
     }
 
     func testDerAlteWegWechseltWeiterDenTab() {
         let router = Router()
         router.oeffne(.gym(.training))
-        XCTAssertEqual(router.tab, .gym)
+        XCTAssertEqual(router.tab, .training)
     }
 
     func testStufenfarbeFolgtDenSchwellen70Und45() {

@@ -5,7 +5,7 @@ enum ModulStart {
     nonisolated static var imTestHost: Bool { ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil }
 
     /// Synchron in `LumenFitApp.init()`: BGTask-Kennungen einmal und vor Ende des App-Starts registrieren, die Health-Beobachtung anmelden,
-    /// dann jedes Modul starten (jedes `start` ist idempotent). Ports (`coachMotor`, `liveAnzeige`, `trainingSteuerung`, `band`) setzen die Module dabei.
+    /// dann jedes Modul starten (jedes `start` ist idempotent). Ports (`liveAnzeige`, `trainingSteuerung`, `band`) setzen die Module dabei.
     @MainActor static func starteAlle(_ umgebung: AppUmgebung) {
         guard !imTestHost else { return }
         AbrufPlaner.registriere(umgebung)
@@ -15,7 +15,6 @@ enum ModulStart {
         FortschrittModul.start(umgebung)
         EssenModul.start(umgebung)
         SchlafModul.start(umgebung)
-        CoachModul.start(umgebung)
         ProfilModul.start(umgebung)
         VerbindenModul.start(umgebung)
         WidgetsModul.start(umgebung)
@@ -28,7 +27,6 @@ enum ModulStart {
         FortschrittModul.demoSaat(umgebung)
         EssenModul.demoSaat(umgebung)
         SchlafModul.demoSaat(umgebung)
-        CoachModul.demoSaat(umgebung)
         ProfilModul.demoSaat(umgebung)
         VerbindenModul.demoSaat(umgebung)
         WidgetsModul.demoSaat(umgebung)

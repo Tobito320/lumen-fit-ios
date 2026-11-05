@@ -71,12 +71,6 @@ final class ErholungsKlartextTests: XCTestCase {
         XCTAssertEqual(e.satz, "Für eine Einschätzung fehlen noch Werte. Eine Apple Watch liefert HRV und Ruhepuls.")
     }
 
-    func testCoachFrageTraegtDenSatz() {
-        let e = ErholungsKlartext.bewerte(hrv: bereich(.hrv, mittel: 55, streuung: 5, aktuell: 61.6), ruhepuls: nil, letzteNachtMinuten: nil, ziel: 480)
-        XCTAssertTrue(e.coachFrage.contains(e.satz))
-        XCTAssertTrue(e.coachFrage.hasPrefix("Erkläre mir bitte in einfachen Worten meine Erholung heute."))
-    }
-
     func testStufenSindGeordnet() {
         XCTAssertLessThan(ErholungsKlartext.Stufe.bereit, .normal)
         XCTAssertLessThan(ErholungsKlartext.Stufe.normal, .schonen)

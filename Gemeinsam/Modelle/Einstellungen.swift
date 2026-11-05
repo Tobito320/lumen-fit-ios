@@ -4,7 +4,7 @@ import Foundation
 enum ThemaID: String, Codable, CaseIterable, Sendable { case schlicht, monochrom, graphit, stahl, glut, wald, lovea }
 enum Erscheinung: String, Codable, CaseIterable, Sendable { case system, hell, dunkel }
 enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
-/// Die wählbaren Bereiche. Heute (und der Coach, den der Server steuert) bleiben immer.
+/// Die wählbaren Bereiche. Heute bleibt immer.
 enum AppBereich: String, Codable, CaseIterable, Sendable { case gym, essen, schlaf }
 
 /// Die Antwort auf die Frage nach der Nutzungsmeldung. Nur `.ja` erlaubt das Senden; "noch nicht gefragt" und "nein" senden nichts.
@@ -68,6 +68,16 @@ struct Einstellungen: Codable, Equatable, Sendable {
         case .essen: essenAn
         case .schlaf: schlafAn
         }
+    }
+
+    /// Was die App zeigt: Schlaf, Armband und AirPods nur, wenn der Server es dem Konto erlaubt (`ServerConfig.schlafSichtbar`). Die gespeicherte Wahl
+    /// bleibt unverändert; ist sonst nichts an, zeigt die App Gym, damit nie ein Profil ohne sichtbaren Bereich entsteht.
+    func wirksam(schlafSichtbar: Bool) -> Einstellungen {
+        guard !schlafSichtbar, schlafAn else { return self }
+        var e = self
+        e.schlafAn = false
+        if !(e.gymAn || e.essenAn) { e.gymAn = true }
+        return e
     }
 
     /// Schaltet einen Bereich. Der letzte eingeschaltete bleibt an: dann passiert nichts und die Antwort ist false.

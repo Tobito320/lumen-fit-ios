@@ -67,8 +67,6 @@ struct SchlafWerteChips: View {
 struct SchlafBereichKarte: View {
     let hrv: SchlafVitalStand
     let erholung: ErholungsKlartext.Ergebnis
-    /// nil, wenn es für dieses Konto keinen Coach gibt: dann fehlt der Knopf.
-    let coachFragen: (@MainActor (String) -> Void)?
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
@@ -104,11 +102,6 @@ struct SchlafBereichKarte: View {
                     .font(.body)
                     .foregroundStyle(palette.text)
                     .fixedSize(horizontal: false, vertical: true)
-                if let coachFragen {
-                    Button("Coach erklärt es") { coachFragen(erholung.coachFrage) }
-                        .buttonStyle(.bordered)
-                        .frame(minHeight: Abstand.tippflaeche)
-                }
             }
             .padding(.top, Abstand.xs)
         }

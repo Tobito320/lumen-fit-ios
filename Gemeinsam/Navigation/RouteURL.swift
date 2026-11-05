@@ -2,7 +2,7 @@ import Foundation
 
 /// `lumenfit://`-Links für Widgets, Live Activity, Siri, Spotlight und geteilte Karten:
 /// `heute` | `gym?bereich=training|plaene|fortschritt` | `essen?bereich=heute|scan|favoriten` | `schlaf?bereich=letzteNacht|verlauf|werte`
-/// | `coach?frage=...` | `profil?bereich=uebersicht|einstellungen|aussehen|ziele|verbindungen|datensicherung|quellen|meilensteine|lumi`
+/// | `profil?bereich=uebersicht|einstellungen|aussehen|ziele|verbindungen|datensicherung|quellen|meilensteine|lumi`
 /// | `verlauf` | `gewicht` | `uebung?id=...` | `freund?d=<Nutzlast, base64url>`.
 /// Fehlender oder unbekannter `bereich` heißt der erste Fall. Für jede Route gilt `route(aus: url(fuer: route)) == route`; ein leerer Text zählt als fehlend.
 enum RouteURL {
@@ -24,9 +24,6 @@ enum RouteURL {
         case .schlaf(let bereich):
             komponenten.host = "schlaf"
             if bereich != .letzteNacht { eintraege.append(eintrag("bereich", bereich.rawValue)) }
-        case .coach(let frage):
-            komponenten.host = "coach"
-            if let frage, !frage.isEmpty { eintraege.append(eintrag("frage", frage)) }
         case .profil(let bereich):
             komponenten.host = "profil"
             if bereich != .uebersicht { eintraege.append(eintrag("bereich", bereich.rawValue)) }
@@ -72,8 +69,6 @@ enum RouteURL {
             return .essen(abfrage["bereich"].flatMap { EssenBereich(rawValue: $0) } ?? .heute)
         case "schlaf":
             return .schlaf(abfrage["bereich"].flatMap { SchlafBereich(rawValue: $0) } ?? .letzteNacht)
-        case "coach":
-            return .coach(frage: leerZuNil(abfrage["frage"]))
         case "profil":
             return .profil(abfrage["bereich"].flatMap { ProfilBereich(rawValue: $0) } ?? .uebersicht)
         case "verlauf":

@@ -408,14 +408,13 @@ struct TagesFormEssen: Equatable {
     var ziel: Int
 }
 
-/// Das Raster von "Dein Tag" im Lovea-Aufbau, in der Reihenfolge von Lovea (`HeuteView.swift:765`): Schritte, Wasser, Schlaf, Habits, Coach, Food, Gewicht, Gym, Creatin.
+/// Das Raster von "Dein Tag" im Lovea-Aufbau, in der Reihenfolge von Lovea (`HeuteView.swift:765`): Schritte, Wasser, Schlaf, Habits, Food, Gewicht, Gym, Creatin.
 /// Was Lumen Fit mehr hat (Koffein, Protein, Stimmung), steht danach. Ein Tipp öffnet die Seite oder trägt ein, wie in Lovea; `oeffne` bekommt die Form.
-struct TagesFormenReihe<Coach: View>: View {
+struct TagesFormenReihe: View {
     let stand: HeuteStand
     let essen: TagesFormEssen
     let tippe: (HeuteHabitZeile) -> Void
     let oeffne: (TagesForm) -> Void
-    @ViewBuilder let coach: () -> Coach
     @Environment(\.dynamicTypeSize) private var schrift
 
     var body: some View {
@@ -434,7 +433,6 @@ struct TagesFormenReihe<Coach: View>: View {
                 TagesFormKachel(form: .habits, titel: "Gewohnheiten", wert: String(erledigt), einheit: "/\(stand.habits.count)",
                                 fuellung: Double(erledigt) / Double(stand.habits.count), aktion: { oeffne(.habits) })
             }
-            if stand.istHeute { coach() }
             if stand.bereiche.essenAn {
                 TagesFormKachel(form: .protein, titel: "Food", wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
                                 fuellung: essen.ziel > 0 ? Double(essen.kcal) / Double(essen.ziel) : 0, aktion: { oeffne(.protein) })

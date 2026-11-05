@@ -1,8 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Hinweise (nur bei Bedarf), Plan, Gewohnheiten und Gewicht.
-/// Einsichten, Freitext, Energie-Bank, Schritte und der Wochenstreifen liegen hinter "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
+/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Plan, Hinweise (nur bei Bedarf), Einsichten, Energie-Bank,
+/// Schritte, der Wochenstreifen, Gewohnheiten und Gewicht, jede Karte einmal und ohne "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
 /// Ohne Health zeigt er statt der Health-Karten einen Leerzustand mit "Health erlauben"; Plan, Gewohnheiten und Gewicht gehen auch ohne.
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -11,7 +11,6 @@ struct HeuteTabView: View {
     @State private var start = 0
     @State private var habitSeite: String?
     @State private var tagGewechselt = 0
-    @State private var mehrOffen = false
     /// Verschiebung und Deckkraft des Inhalts beim Tagwechsel: er gleitet in Wischrichtung hinaus und von der Gegenseite herein.
     @State private var versatz: CGFloat = 0
     @State private var deckkraft = 1.0
@@ -96,27 +95,18 @@ struct HeuteTabView: View {
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
-        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
         if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
-        if umgebung.router.coachSichtbar { CoachKachelView() }
+        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
+        if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
+        if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
+        if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
+        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
         habitsKarte(s, m)
         GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
-        mehrKarten(s, m)
         PartnerKarte(bereich: .heute)
     }
 
-    /// Der seltene Rest von Heute (Einsichten, Freitext, Energie, Schritte, Woche) hinter "Mehr"; zu, bis man es öffnet.
-    private func mehrKarten(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        MehrKlappe(untertitel: "Einsichten, Freitext, Energie, Schritte, Woche", offen: $mehrOffen) {
-            if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-            SchreibKarte(modell: m)
-            if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
-            if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
-            WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
-        }
-    }
-
-    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt, Coach und Partner fehlen
+    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen
     /// mit Absicht (sie gelten für heute). Gewohnheiten lassen sich nachtragen, weil der Speicher einen Tag entgegennimmt.
     @ViewBuilder
     private func vergangenerTag(_ s: HeuteStand, _ m: HeuteModell) -> some View {
