@@ -83,9 +83,9 @@ struct GymMitlaufZeile: View {
 }
 
 /// Holt die Verbindungen neu, solange die Ansicht sichtbar und die App vorn ist UND jemand im Gym ist: alle 30 Sekunden, bei "Bewegung reduzieren" oder
-/// Stromsparmodus alle 60. Endet mit der Ansicht (Task-Abbruch), keine Hintergrund-Schleife.
+/// Stromsparmodus alle 60. Ist niemand im Gym, läuft gar keine Schleife. Endet mit der Ansicht (Task-Abbruch), keine Hintergrund-Schleife.
 private struct GymCrewAbruf: ViewModifier {
-    private struct Schluessel: Equatable { var aktiv: Bool; var langsam: Bool }
+    private struct Schluessel: Equatable { var aktiv: Bool; var langsam: Bool; var jemandImGym: Bool }
 
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.scenePhase) private var phase
@@ -93,11 +93,13 @@ private struct GymCrewAbruf: ViewModifier {
     @Environment(\.stromsparmodus) private var spar
 
     func body(content: Content) -> some View {
-        content.task(id: Schluessel(aktiv: phase == .active, langsam: reduziert || spar)) {
+        let jemand = GymCrewQuelle.zeilen(umgebung).contains { $0.zustand == .imGym }
+        content.task(id: Schluessel(aktiv: phase == .active, langsam: reduziert || spar, jemandImGym: jemand)) {
+            guard phase == .active, jemand else { return }
             let sekunden = reduziert || spar ? 60 : 30
-            while phase == .active {
+            while !Task.isCancelled {
                 do { try await Task.sleep(for: .seconds(sekunden)) } catch { return }
-                if GymCrewQuelle.zeilen(umgebung).contains(where: { $0.zustand == .imGym }) { await umgebung.konto.verbindungenNeuLaden() }
+                await umgebung.konto.verbindungenNeuLaden()
             }
         }
     }
