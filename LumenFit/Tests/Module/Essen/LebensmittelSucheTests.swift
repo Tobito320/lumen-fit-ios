@@ -66,47 +66,120 @@ final class LebensmittelSucheTests: XCTestCase {
         XCTAssertEqual(s.stand.sichtbar.first?.id, "eigen-1", "Eigene und Favoriten bleiben vorn")
     }
 
-    // MARK: - Online nur auf "Suchen"
+    // MARK: - Server beim Tippen
 
-    func testOnlineSuchenHaengtTrefferHintenAn() async throws {
-        let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
-        let s = try suche(lader)
+    private struct Zugang: EssenKiZugang {
+        let v: EssenKiVerbindung?
+        func verbindung() -> EssenKiVerbindung? { v }
+    }
+
+    private func mitServer(_ server: SkriptLader, off: SkriptLader = SkriptLader.fehler(.notConnectedToInternet), verbunden: Bool = true) throws -> LebensmittelSuche {
+        let verbindung = EssenKiVerbindung(server: URL(string: "https://example.invalid/api")!, kopfzeilen: ["X-App-Key": "k"])
+        return LebensmittelSuche(index: LebensmittelIndex(testDaten: try bls()), off: OpenFoodFactsQuelle(lader: off, version: "1.0"),
+                                 server: EssenServerQuelle(zugang: Zugang(v: verbunden ? verbindung : nil), lader: server), speicher: { _ in nil })
+    }
+
+    func testServerTrefferKommenHintenDranOhneDassEtwasSpringt() async throws {
+        let server = try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json")
+        let s = try mitServer(server)
         s.eingabe("Hafer", vorne: [])
         let vorher = s.stand.sichtbar.map(\.id)
         XCTAssertFalse(vorher.isEmpty)
-        XCTAssertEqual(lader.aufrufe, 0)
-        await s.onlineSuchen()
-        XCTAssertEqual(lader.aufrufe, 1)
-        XCTAssertEqual(Array(s.stand.sichtbar.map(\.id).prefix(vorher.count)), vorher, "nichts springt")
-        XCTAssertGreaterThan(s.stand.sichtbar.count, vorher.count)
+        XCTAssertEqual(server.aufrufe, 0, "eingabe selbst fragt nie den Server")
+        await s.serverSuchen(pause: .zero)
+        XCTAssertEqual(server.aufrufe, 1)
+        XCTAssertEqual(Array(s.stand.sichtbar.map(\.id).prefix(vorher.count)), vorher, "BLS bleibt vorn")
+        XCTAssertEqual(s.stand.sichtbar.suffix(3).map(\.id), ["off-4005500123456", "off-4005500123457", "off-4005500123459"])
         XCTAssertEqual(s.online, .fertig(treffer: 3))
     }
 
-    func testOnlineSuchenZuKurzFragtNichts() async throws {
-        let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
-        let s = try suche(lader)
+    func testFavoritenStehenVorBLSUndServer() async throws {
+        let favorit = Lebensmittel(id: "eigen-1", name: "Hafer Mix", pro100: Naehrwerte(kcal: 300, protein: 10, kohlenhydrate: 50, fett: 5))
+        let s = try mitServer(try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json"))
+        s.eingabe("Hafer", vorne: [favorit])
+        await s.serverSuchen(pause: .zero)
+        XCTAssertEqual(s.stand.sichtbar.first?.id, "eigen-1")
+        XCTAssertEqual(s.stand.sichtbar.last?.quelle, "off")
+    }
+
+    func testServerAbZweiZeichenUndNurMitServer() async throws {
+        let server = try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json")
+        let s = try mitServer(server)
         s.eingabe("h", vorne: [])
-        await s.onlineSuchen()
-        XCTAssertEqual(lader.aufrufe, 0)
+        await s.serverSuchen(pause: .zero)
+        XCTAssertEqual(server.aufrufe, 0)
+        let ohne = try suche(SkriptLader.fehler(.notConnectedToInternet))
+        ohne.eingabe("Hafer", vorne: [])
+        await ohne.serverSuchen(pause: .zero)
+        XCTAssertEqual(ohne.online, .ruhig)
     }
 
-    func testOnlineOffline() async throws {
-        let s = try suche(SkriptLader.fehler(.notConnectedToInternet))
-        s.eingabe("Hafer", vorne: [])   // der Auszug kennt "Hafer ganzes Korn", nicht "Hafer Flocken"
-        await s.onlineSuchen()
+    func testUeberholteAntwortWirdVerworfen() async throws {
+        let server = try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json")
+        let s = try mitServer(server)
+        s.eingabe("Hafer", vorne: [])
+        let lauf = Task { await s.serverSuchen(pause: .seconds(2)) }
+        try await Task.sleep(for: .milliseconds(300))   // CI-Simulator ist langsam: genug Vorlauf, damit der Lauf hat die erste Eingabe gemerkt und wartet
+        s.eingabe("Haf", vorne: [])   // neue Eingabe, bevor die Pause um ist
+        await lauf.value
+        XCTAssertEqual(server.aufrufe, 0, "die alte Anfrage geht gar nicht erst raus")
+        XCTAssertTrue(s.stand.sichtbar.allSatisfy { $0.quelle == "bls" })
+    }
+
+    func testAbgebrochenerLaufFragtNichts() async throws {
+        let server = try SkriptLader(fixture: "Essen", "essen-server-suche-skyr.json")
+        let s = try mitServer(server)
+        s.eingabe("Hafer", vorne: [])
+        let lauf = Task { await s.serverSuchen(pause: .seconds(5)) }
+        lauf.cancel()
+        await lauf.value
+        XCTAssertEqual(server.aufrufe, 0)
+    }
+
+    func testOfflineLaesstLokaleTrefferStehen() async throws {
+        let s = try mitServer(SkriptLader.fehler(.notConnectedToInternet))
+        s.eingabe("Hafer", vorne: [])
+        let vorher = s.stand.sichtbar
+        await s.serverSuchen(pause: .zero)
         XCTAssertEqual(s.online, .offline)
-        XCTAssertFalse(s.stand.sichtbar.isEmpty, "die BLS-Treffer bleiben stehen")
+        XCTAssertEqual(s.stand.sichtbar, vorher)
     }
 
-    func testOnlineLimit() async throws {
-        let lader = try SkriptLader(fixture: "Essen", "off-search-haferflocken.json")
-        let s = try suche(lader)
-        s.eingabe("Haferflocken", vorne: [])
-        for _ in 0..<10 { await s.onlineSuchen() }
-        await s.onlineSuchen()
-        guard case .limit(let sekunden) = s.online else { return XCTFail("Limit erwartet, war \(s.online)") }
-        XCTAssertGreaterThan(sekunden, 0)
-        XCTAssertEqual(lader.aufrufe, 10)
+    func testServerFehlerUndKeinZugangSindFehler() async throws {
+        let kaputt = try mitServer(SkriptLader(status: 500, daten: Data()))
+        kaputt.eingabe("Hafer", vorne: [])
+        await kaputt.serverSuchen(pause: .zero)
+        XCTAssertEqual(kaputt.online, .fehler)
+        let ohne = try mitServer(SkriptLader(status: 200, daten: Data()), verbunden: false)
+        ohne.eingabe("Hafer", vorne: [])
+        await ohne.serverSuchen(pause: .zero)
+        XCTAssertEqual(ohne.online, .fehler)
+        XCTAssertFalse(ohne.stand.sichtbar.isEmpty)
+    }
+
+    func testBarcodeServerZuerstDannOffAlsRueckfall() async throws {
+        let off = try SkriptLader(fixture: "Essen", "off-v2-product-4008400402222.json")
+        let treffer = try mitServer(try SkriptLader(fixture: "Essen", "essen-server-barcode-skyr.json"), off: off)
+        let r1 = await treffer.barcode("4005500123456")
+        guard case .gefunden(let l) = r1 else { return XCTFail("gefunden erwartet, war \(r1)") }
+        XCTAssertEqual(l.name, "High Protein Skyr Natur")
+        XCTAssertEqual(off.aufrufe, 0, "der Server kannte ihn, OFF bleibt stumm")
+
+        let offLader = try SkriptLader(fixture: "Essen", "off-v2-product-4008400402222.json")
+        let nicht404 = try mitServer(SkriptLader(status: 404, daten: Data(#"{"produkt":null}"#.utf8)), off: offLader)
+        let r2 = await nicht404.barcode("4008400402222")
+        guard case .gefunden(let l2) = r2 else { return XCTFail("gefunden erwartet, war \(r2)") }
+        XCTAssertEqual(l2.id, "off-4008400402222")
+        XCTAssertEqual(offLader.aufrufe, 1)
+
+        let offLader2 = try SkriptLader(fixture: "Essen", "off-v2-product-4008400402222.json")
+        let fehler = try mitServer(SkriptLader.fehler(.notConnectedToInternet), off: offLader2)
+        let r3 = await fehler.barcode("4008400402222")
+        guard case .gefunden = r3 else { return XCTFail("OFF fängt den Serverfehler auf, war \(r3)") }
+
+        let beide = try mitServer(SkriptLader(status: 404, daten: Data(#"{"produkt":null}"#.utf8)), off: SkriptLader(status: 404, daten: Data()))
+        let r4 = await beide.barcode("4099999999994")
+        XCTAssertEqual(r4, .unbekannt("4099999999994"))
     }
 
     // MARK: - Barcode

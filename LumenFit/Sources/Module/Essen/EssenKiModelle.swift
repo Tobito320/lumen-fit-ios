@@ -4,7 +4,8 @@ import Foundation
 /// Fehlerarten der Foto-Schätzung. Die Namen sind die Fehlerarten des Servers (`ki-foto.js`).
 enum EssenKiFehler: Error, Equatable, Sendable {
     case nichtEingerichtet
-    case tageslimit
+    /// `max`: die Zahl Fotos je Tag, die der Server nennt (`{"fehler":"tageslimit","max":5}`).
+    case tageslimit(max: Int?)
     case guthaben
     case zuVieleAnfragen
     case bildZuGross

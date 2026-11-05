@@ -1,23 +1,25 @@
 import Foundation
 import Observation
 
-/// Zustand der Online-Suche, die nur auf "Suchen" läuft.
+/// Zustand der Server-Suche, die beim Tippen mitläuft. Lokale Treffer bleiben in jedem Zustand stehen.
 enum EssenOnlineZustand: Equatable, Sendable {
     case ruhig
     case laedt
     case fertig(treffer: Int)
-    case limit(sekunden: Int)
+    /// Kein Netz.
     case offline
+    /// Der Server antwortet nicht, lehnt das Konto ab oder das Gerät ist nicht angemeldet.
     case fehler
 }
 
-/// Suche für Textfeld und Barcode: BLS lokal zuerst (ohne Netz), danach Open Food Facts, aber nur auf eine Nutzeraktion hin.
-/// Ein unbekannter Barcode endet in `BarcodeErgebnis.unbekannt` und führt die Ansicht zur Eingabe von Hand. Der letzte Barcode-Treffer
-/// wird gemerkt, ein zweiter Scan desselben Codes fragt nicht noch einmal nach.
+/// Suche für Textfeld und Barcode. Beim Tippen: BLS lokal sofort (`eingabe`), danach die Produktdatenbank des Lumen-Servers (`serverSuchen`,
+/// ab 2 Zeichen, entprellt). Ein unbekannter Barcode endet in `BarcodeErgebnis.unbekannt` und führt die Ansicht zur Eingabe von Hand. Barcode:
+/// Speicher, Server, dann Open Food Facts als Rückfall. Der letzte Barcode-Treffer wird gemerkt, ein zweiter Scan desselben Codes fragt nicht noch einmal nach.
 @MainActor @Observable
 final class LebensmittelSuche {
     @ObservationIgnored private let index: LebensmittelIndex
     @ObservationIgnored private let off: OpenFoodFactsQuelle
+    @ObservationIgnored private let server: EssenServerQuelle?
     @ObservationIgnored private let speicher: @MainActor (String) -> Lebensmittel?
     @ObservationIgnored private(set) var letzterTreffer: (code: String, lebensmittel: Lebensmittel)?
     /// Ergebnis des Nachladens je Barcode (auch "nichts" und Fehler), damit jeder Code in einer Sitzung höchstens einmal bei Open Food Facts gefragt wird.
@@ -28,14 +30,18 @@ final class LebensmittelSuche {
     private(set) var text = ""
     private(set) var online: EssenOnlineZustand = .ruhig
 
-    /// `speicher` findet einen Barcode in Tagebuch, Zuletzt und Eigenen (`EssenStore.offline(barcode:)`).
-    init(index: LebensmittelIndex, off: OpenFoodFactsQuelle, speicher: @escaping @MainActor (String) -> Lebensmittel?) {
+    /// Pause nach dem letzten Tastendruck, bevor der Server gefragt wird.
+    nonisolated static let serverPause: Duration = .milliseconds(250)
+
+    /// `speicher` findet einen Barcode in Tagebuch, Zuletzt und Eigenen (`EssenStore.offline(barcode:)`). Ohne `server` bleibt es bei BLS und Open Food Facts für Barcodes.
+    init(index: LebensmittelIndex, off: OpenFoodFactsQuelle, server: EssenServerQuelle? = nil, speicher: @escaping @MainActor (String) -> Lebensmittel?) {
         self.index = index
         self.off = off
+        self.server = server
         self.speicher = speicher
     }
 
-    /// Jede Eingabe im Textfeld: nur lokal (Favoriten, Zuletzt, Eigene vorne, dann BLS), nie Netz.
+    /// Jede Eingabe im Textfeld: nur lokal (Favoriten, Zuletzt, Eigene vorne, dann BLS), sofort und ohne Netz.
     func eingabe(_ neu: String, vorne: [Lebensmittel]) {
         text = neu
         online = .ruhig
@@ -81,36 +87,42 @@ final class LebensmittelSuche {
         return (3...(zeichen.count - 3)).map { String(zeichen[..<$0]) + " " + String(zeichen[$0...]) }
     }
 
-    /// Nur auf "Suchen": Open Food Facts. Treffer kommen hinten dran, nichts springt; eine Antwort zu einer überholten Eingabe wird verworfen.
-    func onlineSuchen() async {
+    /// Nach `eingabe`: die Server-Treffer kommen hinten dran, nichts springt. Wartet `pause` (neue Eingabe oder Abbruch der Task verwirft die Anfrage),
+    /// fragt nur ab 2 Zeichen; eine Antwort zu einer überholten Eingabe wird verworfen.
+    func serverSuchen(pause: Duration = LebensmittelSuche.serverPause) async {
         let anfrage = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard anfrage.count >= 2 else { return }
+        guard let server, anfrage.count >= 2 else { return }
         let nummer = stand.nummer
+        try? await Task.sleep(for: pause)
+        guard !Task.isCancelled, nummer == stand.nummer else { return }
         online = .laedt
         do {
-            let antwort = try await off.suche(anfrage)
-            guard nummer == stand.nummer else { return }
+            let antwort = try await server.suche(anfrage)
+            guard !Task.isCancelled, nummer == stand.nummer else { return }
             stand = SuchZusammenfuehrung.server(stand, antwort: antwort, nummer: nummer)
             online = .fertig(treffer: antwort.count)
-        } catch let fehler as OffFehler {
+        } catch is CancellationError {
+            return
+        } catch let fehler as EssenServerFehler {
             guard nummer == stand.nummer else { return }
-            switch fehler {
-            case .limit(let sekunden): online = .limit(sekunden: sekunden)
-            case .server, .antwort: online = .fehler
-            }
+            online = fehler == .netz ? .offline : .fehler
         } catch {
             guard nummer == stand.nummer else { return }
-            online = .offline
+            online = .fehler
         }
     }
 
-    /// Barcode aus Kamera oder Eingabe: Speicher, dann Open Food Facts.
+    /// Barcode aus Kamera oder Eingabe: Speicher, Server (bei 404 oder Fehler weiter), dann Open Food Facts.
     func barcode(_ roh: String) async -> BarcodeErgebnis {
         let code = BarcodeLogik.normal(roh)
         if let gemerkt = letzterTreffer, gemerkt.code == code { return .gefunden(gemerkt.lebensmittel) }
         let speicher = speicher
         let off = off
-        let quellen = BarcodeQuellen(lokal: { code in await speicher(code) }, offLive: { code in try await off.produkt(code) })
+        let server = server
+        let quellen = BarcodeQuellen(lokal: { code in await speicher(code) }, offLive: { code in
+            if let treffer = try? await server?.produkt(code) { return treffer }
+            return try await off.produkt(code)
+        })
         let ergebnis = await BarcodeKette.suchen(code, quellen)
         if case .gefunden(let l) = ergebnis { letzterTreffer = (code, l) }
         return ergebnis

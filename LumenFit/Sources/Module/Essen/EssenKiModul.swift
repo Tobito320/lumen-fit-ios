@@ -1,7 +1,7 @@
 import Foundation
 
 /// Die Foto-Mahlzeit per KI im Modul essen: je Profil ein Auftrags-Store (Ordner `essen-ki` im Profilordner), je App ein Freigabe-Prüfer.
-/// Aus, bis der Server den Schalter `kiFotoErlaubt` für das Konto setzt und dort das Secret `OPENAI_API_KEY` liegt; der Knopf ist sonst unsichtbar.
+/// Der Server setzt `kiFotoErlaubt` für alle auf true (ein Konto-Schalter `false` sperrt); der Knopf hängt nur daran und an einem aktiven Profil, nicht an Coach oder Lovea. Das Limit hält der Server (429 `tageslimit`).
 enum EssenKiModul {
     nonisolated static let ordnerName = "essen-ki"
 

@@ -1,22 +1,23 @@
 import Foundation
 
-/// Modul essen: Tagebuch, Scan, Quellen, Ampel, Fasten, Ziele, Analyse. Es fragt nie von selbst das Netz: Open Food Facts nur auf eine Nutzeraktion,
-/// der BLS-Index lädt erst, wenn der Essen-Tab erscheint.
+/// Modul essen: Tagebuch, Scan, Quellen, Ampel, Fasten, Ziele, Analyse. Es fragt nie von selbst das Netz: der Server nur beim Tippen und Scannen,
+/// Open Food Facts nur als Barcode-Rückfall, der BLS-Index lädt erst, wenn der Essen-Tab erscheint.
 enum EssenModul {
     @MainActor private static var gemeinsam: (umgebung: ObjectIdentifier, suche: LebensmittelSuche)?
 
-    /// Idempotent und synchron. Legt nur die Suche samt Open-Food-Facts-Quelle an (ohne Abfrage); der Limiter lebt damit so lange wie die App.
+    /// Idempotent und synchron. Legt nur die Suche samt Quellen an (ohne Abfrage); der Limiter lebt damit so lange wie die App.
     @MainActor static func start(_ umgebung: AppUmgebung) {
         _ = suche(umgebung)
         EssenLiveModul.start(umgebung)
     }
 
-    /// Die eine Suche der App: BLS lokal, Open Food Facts mit Rate-Limit über `umgebung.http`, Barcodes aus dem Speicher des aktiven Profils.
+    /// Die eine Suche der App: BLS lokal, Produkte vom Lumen-Server, Open Food Facts (Barcode-Rückfall, Rate-Limit) über `umgebung.http`, Barcodes aus dem Speicher des aktiven Profils.
     @MainActor static func suche(_ umgebung: AppUmgebung) -> LebensmittelSuche {
         let kennung = ObjectIdentifier(umgebung)
         if let vorhanden = gemeinsam, vorhanden.umgebung == kennung { return vorhanden.suche }
         let quelle = OpenFoodFactsQuelle(lader: umgebung.http, uhr: umgebung.uhr)
-        let neu = LebensmittelSuche(index: .shared, off: quelle, speicher: { [weak umgebung] code in umgebung?.daten?.essen.offline(barcode: code) })
+        let zugang = EssenKiKontoZugang(zugang: KontoZugang.lade(), schluesselbund: umgebung.schluesselbund, version: KontoDienst.appVersion)
+        let neu = LebensmittelSuche(index: .shared, off: quelle, server: EssenServerQuelle(zugang: zugang, lader: umgebung.http), speicher: { [weak umgebung] code in umgebung?.daten?.essen.offline(barcode: code) })
         gemeinsam = (kennung, neu)
         return neu
     }

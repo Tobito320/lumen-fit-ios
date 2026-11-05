@@ -1,0 +1,6 @@
+{"treffer":[
+ {"code":"4005500123456","name":"High Protein Skyr Natur","marke":"Ehrmann","menge":"250 g","portion_g":125,"portion_name":"1 Becher (125 g)","pro100":{"kcal":55,"protein":10,"kohlenhydrate":4,"fett":0,"zucker":4,"ballaststoffe":0,"salz":0.09,"gesFett":0}},
+ {"code":"4005500123457","name":"Skyr Mango","marke":null,"menge":"1,5 l","portion_g":100,"portion_name":"100g","pro100":{"kcal":60,"protein":9,"kohlenhydrate":6,"fett":0.2}},
+ {"code":"4005500123458","name":"Kaputt ohne Kalorien","marke":"X","menge":null,"portion_g":null,"portion_name":null,"pro100":{"protein":1,"kohlenhydrate":1,"fett":1}},
+ {"code":"4005500123459","name":"Skyr Natur","marke":"Arla","menge":null,"portion_g":null,"portion_name":null,"pro100":{"kcal":63,"protein":11,"kohlenhydrate":4,"fett":0.2}}
+]}

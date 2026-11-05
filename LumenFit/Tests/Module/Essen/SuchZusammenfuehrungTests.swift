@@ -23,6 +23,17 @@ final class SuchZusammenfuehrungTests: XCTestCase {
         XCTAssertEqual(neu.sichtbar.map(\.id), ["bls-1", "off-2", "off-3"])
     }
 
+    func testGleicherNameUndMarkeIstDoppeltAuchMitAnderemCode() {
+        func p(_ id: String, _ name: String, _ marke: String?, _ code: String) -> Lebensmittel {
+            Lebensmittel(id: id, name: name, marke: marke, barcode: code, pro100: .null)
+        }
+        let vorn = [Lebensmittel(id: "bls-1", name: "Skyr", pro100: .null), p("off-1", "Skyr Natur", "Arla", "1")]
+        let s = SuchStand(nummer: 1, lokal: vorn, server: [], sichtbar: vorn)
+        let antwort = [p("off-2", "Skyr", nil, "2"), p("off-3", "skyr  natur", "ARLA", "3"), p("off-4", "Skyr Natur", "Ehrmann", "4"), p("off-5", "Skyr Natur", "Ehrmann", "5")]
+        let neu = SuchZusammenfuehrung.server(s, antwort: antwort, nummer: 1)
+        XCTAssertEqual(neu.sichtbar.map(\.id), ["bls-1", "off-1", "off-4"], "BLS und frühere Treffer bleiben, Doppelte raus")
+    }
+
     func testHaeufigZaehlt() throws {
         var f = ErnaehrungFaltung()
         let kaffee = l("bls-k"), ei = l("bls-e")

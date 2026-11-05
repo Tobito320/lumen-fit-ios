@@ -31,7 +31,7 @@ private enum EssenEditorBlatt: Identifiable {
     }
 }
 
-/// Lebensmittel finden und eintragen: Suche in BLS (ohne Netz) und auf Wunsch in Open Food Facts, Favoriten, Zuletzt, Eigene, Scan, Etikett-Foto
+/// Lebensmittel finden und eintragen: Suche in BLS (ohne Netz) und beim Tippen auf dem Lumen-Server, Favoriten, Zuletzt, Eigene, Scan, Etikett-Foto
 /// und Eingabe von Hand. Das Netz wird nur auf "Suchen" gefragt, nie beim Tippen.
 /// Wie in Lovea bleibt das Blatt nach dem Eintragen offen: das Plus in der Zeile trägt sofort ein (letzte Menge, sonst Portion oder 100 g),
 /// ein Banner meldet es. "Fertig" schließt mit `fertig(true)`, "Abbrechen" (ohne Eintrag) mit `fertig(false)`.
@@ -140,13 +140,14 @@ struct EssenHinzufuegenView: View {
             }
             .task(id: text) {
                 // Kurz warten, bis das Tippen pausiert (die Suche über 7.140 Einträge läuft auf dem Hauptakteur), und auf den BLS-Index
-                // warten, der im Hintergrund lädt (höchstens etwa drei Sekunden). Nur lokal, nie Netz.
+                // warten, der im Hintergrund lädt (höchstens etwa drei Sekunden). BLS sofort, der Server danach (entprellt, bricht mit der Task ab).
                 barcodeFehler = nil
                 LebensmittelIndex.shared.laden()
                 try? await Task.sleep(for: .milliseconds(text.isEmpty ? 0 : 200))
                 for _ in 0..<20 where !Task.isCancelled && !LebensmittelIndex.shared.bereit { try? await Task.sleep(for: .milliseconds(150)) }
                 guard !Task.isCancelled else { return }
                 suche.eingabe(text, vorne: vorne)
+                await suche.serverSuchen()
             }
         }
         .lumenToast($toast)
@@ -203,7 +204,6 @@ struct EssenHinzufuegenView: View {
                 TextField("Lebensmittel oder Barcode", text: $text)
                     .submitLabel(.search)
                     .autocorrectionDisabled()
-                    .onSubmit { Task { await suche.onlineSuchen() } }
                     .accessibilityLabel("Suchen")
                 if !text.isEmpty {
                     Button { text = "" } label: { Image(systemName: "xmark.circle.fill").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
@@ -223,7 +223,7 @@ struct EssenHinzufuegenView: View {
             } else {
                 chipReihe
                 ergebnisse
-                onlineBereich
+                EssenOnlineHinweis(zustand: suche.online)
             }
         }
     }
@@ -366,7 +366,7 @@ struct EssenHinzufuegenView: View {
         let liste = treffer
         if let barcodeFehler { FehlerKarte(titel: "Barcode nicht geprüft", hilfe: barcodeFehler) }
         if liste.isEmpty {
-            Text("Nichts gefunden. Du kannst bei Open Food Facts suchen oder das Lebensmittel von Hand eintragen.")
+            Text("Nichts gefunden. Du kannst das Lebensmittel von Hand eintragen.")
                 .font(.subheadline).foregroundStyle(palette.text2)
         } else {
             zeilenKarte(liste)
@@ -392,24 +392,6 @@ struct EssenHinzufuegenView: View {
                                loeschen: { loeschenZiel = l },
                                kopieren: { kopieren(l) },
                                favoritUmschalten: { essen?.favoritSetzen(l, an: !(essen?.istFavorit(l) ?? false)); neuSuchen() })
-    }
-
-    private var onlineBereich: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            Button { Task { await suche.onlineSuchen() } } label: {
-                Label("Bei Open Food Facts suchen", systemImage: "magnifyingglass").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            .buttonStyle(.bordered)
-            .disabled(suche.online == .laedt)
-            switch suche.online {
-            case .ruhig: Text("Die Suche im BLS läuft ohne Netz. Open Food Facts fragt erst, wenn du hier tippst.").font(.footnote).foregroundStyle(palette.text2)
-            case .laedt: ProgressView("Ich suche …")
-            case .fertig(let n): Text(n == 0 ? "Open Food Facts hat nichts Passendes." : "\(n) Treffer von Open Food Facts stehen unten in der Liste.").font(.footnote).foregroundStyle(palette.text2)
-            case .limit(let s): FehlerKarte(titel: "Kurz warten", hilfe: "Open Food Facts erlaubt nur 10 Suchen in der Minute. In etwa \(s) Sekunden geht es wieder.")
-            case .offline: FehlerKarte(titel: "Kein Netz", hilfe: "Die Treffer aus dem BLS bleiben stehen. Mit Netz kannst du es noch einmal versuchen.")
-            case .fehler: FehlerKarte(titel: "Open Food Facts antwortet gerade nicht", hilfe: "Das liegt nicht an dir. Versuche es gleich noch einmal.")
-            }
-        }
     }
 
     // MARK: - Favoriten, Zuletzt, Eigene
