@@ -96,7 +96,7 @@ struct HeuteTabView: View {
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
-        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { m.wischeHinweis($0) } }
+        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
         if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
         if umgebung.router.coachSichtbar { CoachKachelView() }
         habitsKarte(s, m)

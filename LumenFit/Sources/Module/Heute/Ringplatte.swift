@@ -22,9 +22,6 @@ struct Ringplatte: View {
                 Text(stand.morgensatz)
                     .font(.title3.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
-                Text(stand.stimmung.beschreibung)
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.8))
             }
         }
         .onAppear {

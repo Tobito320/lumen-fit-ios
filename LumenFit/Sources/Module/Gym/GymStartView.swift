@@ -136,9 +136,12 @@ struct GymStartView: View {
     private func wochenleiste(_ stand: GymStartStand) -> some View {
         let gruen = aufbau.farbe(LoveaDaten.gymGruen, sonst: GymFarbe.gruen(schema: schema, kontrast: kontrast))
         return VStack(alignment: .leading, spacing: Abstand.s) {
-            Text(GymStartLogik.titel(datum: stand.gewaehlt, heute: stand.heute, tag: stand.tag))
-                .font(.title3.weight(.bold)).foregroundStyle(palette.text)
-                .accessibilityAddTraits(.isHeader)
+            // Lumen-Aufbau (W-003): der Tag steht schon als Titel der Karte darunter.
+            if aufbau == .lovea {
+                Text(GymStartLogik.titel(datum: stand.gewaehlt, heute: stand.heute, tag: stand.tag))
+                    .font(.title3.weight(.bold)).foregroundStyle(palette.text)
+                    .accessibilityAddTraits(.isHeader)
+            }
             HStack(spacing: Abstand.xs) {
                 ForEach(stand.woche) { t in
                     Button {
@@ -277,13 +280,20 @@ struct GymStartView: View {
         let abweichung = anderer.flatMap { GymStartStand.abweichung(geplant: stand.tag, gewaehlt: $0) }
         return HeroKarte(platte: true) {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                Text(abweichung ?? stand.status).font(.footnote.weight(.semibold)).textCase(.uppercase)
+                // Lumen-Aufbau (W-003): "noch nicht" sagt nichts Neues, nur Abweichung oder Erledigtes steht oben.
+                if aufbau == .lovea || abweichung != nil || stand.status != "noch nicht" {
+                    Text(abweichung ?? stand.status).font(.footnote.weight(.semibold)).textCase(.uppercase)
+                }
                 if let tag {
                     Text(tag.name.isEmpty ? "Training" : tag.name).font(.title2.weight(.bold)).fontDesign(.rounded)
+                        .accessibilityAddTraits(.isHeader)
                     Text(ZeitSchaetzung.umfang(tag)).font(.subheadline)
-                    let urteil = ZeitSchaetzung.urteil(tag, slotMinuten: stand.slotMinuten)
-                    Label(urteil.titel, systemImage: urteil.warnt ? "exclamationmark.triangle.fill" : "timer").font(.subheadline)
-                    if let tipp = urteil.tipp { Text(tipp.text).font(.footnote) }
+                    // Ohne Zeitfenster wiederholt das Urteil nur die Dauer ("ca. 24 min" unter "etwa 25 min").
+                    if aufbau == .lovea || stand.slotMinuten != nil {
+                        let urteil = ZeitSchaetzung.urteil(tag, slotMinuten: stand.slotMinuten)
+                        Label(urteil.titel, systemImage: urteil.warnt ? "exclamationmark.triangle.fill" : "timer").font(.subheadline)
+                        if let tipp = urteil.tipp { Text(tipp.text).font(.footnote) }
+                    }
                 } else {
                     Text("Ruhetag").font(.title2.weight(.bold)).fontDesign(.rounded)
                     Text("Erholung gehört zum Plan. Du kannst trotzdem trainieren.").font(.subheadline)

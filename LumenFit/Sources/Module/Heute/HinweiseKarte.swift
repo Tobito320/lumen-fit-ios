@@ -1,16 +1,29 @@
 import SwiftUI
 
 /// Hinweise des Tages (Idee 19): höchstens drei kleine Karten, jede zur Seite oder mit dem Knopf wegwischbar. Der Aufrufer reicht schon die gekürzte Liste.
+/// `einzeln` (Lumen-Heute, W-003): erst nur der wichtigste, die übrigen hinter "N weitere".
 struct HinweiseKarte: View {
     let hinweise: [TagesHinweis]
+    var einzeln = false
     let wische: (String) -> Void
+    @State private var alle = false
+    @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var reduceMotion
 
     var body: some View {
+        let liste = Array(hinweise.prefix(TagesHinweisLogik.hoechstens))
+        let gezeigt = einzeln && !alle ? Array(liste.prefix(1)) : liste
         VStack(spacing: Abstand.s) {
-            ForEach(hinweise.prefix(TagesHinweisLogik.hoechstens)) { hinweis in
+            ForEach(gezeigt) { hinweis in
                 HeuteHinweisReihe(hinweis: hinweis) { wische(hinweis.id) }
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .trailing)))
+            }
+            if liste.count > gezeigt.count {
+                Button("\(liste.count - gezeigt.count) weitere") { alle = true }
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(palette.text2)
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+                    .padding(.leading, Abstand.l)
             }
         }
         .animation(reduceMotion ? nil : Feder.weich, value: hinweise.map(\.id))

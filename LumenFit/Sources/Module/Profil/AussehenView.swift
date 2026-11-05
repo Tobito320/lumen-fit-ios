@@ -28,6 +28,12 @@ struct AussehenView: View {
                 }
                 .pickerStyle(.menu)
             }
+            ProfilAbschnitt {
+                Toggle(isOn: Binding(get: { gespeichert.haptik },
+                                     set: { an in umgebung.daten?.einstellungen.aendere { $0.haptik = an } })) {
+                    ProfilListenZeile("Haptik", symbol: "hand.tap.fill")
+                }
+            }
         }
         .profilListe()
         .navigationTitle("Aussehen")

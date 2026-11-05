@@ -211,7 +211,8 @@ export const NAMEN = {
     "profil_geraete",
     "profil_freunde",
     "profil_daten",
-    "profil_ueber"
+    "profil_ueber",
+    "profil_mehr"
   ],
   "stand": [
     "theme_schlicht",
