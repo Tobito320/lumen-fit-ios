@@ -4,7 +4,7 @@ import SwiftUI
 /// Der Heute-Tab im Lovea-Aufbau (Theme Lovea mit Freigabe): Reihenfolge, Abschnitte und Wege des Health-Tabs der Lovea-App.
 /// Oben der Kopf "Health" mit Datum, dann die Plantag-Zeile, die Karte Tagesform mit Monat, Wochenstreifen und Gefühl,
 /// "Dein Tag" mit dem Raster, "Das fällt mir auf", "Körper" und die Zeile "Verlauf". Seiten (Gym, Schlaf, Essen, Verlauf)
-/// öffnen im Stapel des Heute-Tabs, wie in Lovea. Was Lumen Fit mehr hat als Lovea, steht danach unter "Mehr aus Lumen Fit". Alle Karten sind die
+/// öffnen im Stapel des Heute-Tabs, wie in Lovea. Was Lumen Fit mehr hat als Lovea, steht danach unter "Außerdem". Alle Karten sind die
 /// fachlichen Bausteine von Lumen Fit; hier entscheidet nur die Anordnung. Punkte und Challenges bleiben in Lovea.
 struct HeuteLoveaInhalt: View {
     let stand: HeuteStand
@@ -224,14 +224,14 @@ struct HeuteLoveaInhalt: View {
         .buttonStyle(.federnd)
     }
 
-    // MARK: Mehr aus Lumen Fit
+    // MARK: Außerdem
 
     /// Was Lovea nicht hat und Lumen Fit schon: Hinweise des Tages, Energie über den Tag, Plan-Karte mit Start, Schritte, Gewicht mit Verlauf und die Woche in Bögen.
     @ViewBuilder
     private var mehr: some View {
         let unten = stand.istHeute || stand.hatTagesdaten
         if unten {
-            abschnitt("Mehr aus Lumen Fit") {
+            abschnitt("Außerdem") {
                 if stand.istHeute, !stand.hinweise.isEmpty { HinweiseKarte(hinweise: stand.hinweise) { modell.wischeHinweis($0) } }
                 if stand.istHeute {
                     if stand.bereiche.schlafAn { ListenKarte { EnergieVerlaufDiagramm(energie: stand.energie).padding(Abstand.l) } }
