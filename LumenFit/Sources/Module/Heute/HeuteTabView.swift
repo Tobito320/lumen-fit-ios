@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Hinweise (nur bei Bedarf), Plan, Gewohnheiten und Gewicht.
-/// Einsichten, Freitext, Energie-Bank, Schritte und der Wochenstreifen liegen hinter "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
+/// Einsichten, Energie-Bank, Schritte und der Wochenstreifen liegen hinter "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
 /// Ohne Health zeigt er statt der Health-Karten einen Leerzustand mit "Health erlauben"; Plan, Gewohnheiten und Gewicht gehen auch ohne.
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -104,11 +104,10 @@ struct HeuteTabView: View {
         PartnerKarte(bereich: .heute)
     }
 
-    /// Der seltene Rest von Heute (Einsichten, Freitext, Energie, Schritte, Woche) hinter "Mehr"; zu, bis man es öffnet.
+    /// Der seltene Rest von Heute (Einsichten, Energie, Schritte, Woche) hinter "Mehr"; zu, bis man es öffnet.
     private func mehrKarten(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        MehrKlappe(untertitel: "Einsichten, Freitext, Energie, Schritte, Woche", offen: $mehrOffen) {
+        MehrKlappe(untertitel: "Einsichten, Energie, Schritte, Woche", offen: $mehrOffen) {
             if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-            SchreibKarte(modell: m)
             if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
             if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
             WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
