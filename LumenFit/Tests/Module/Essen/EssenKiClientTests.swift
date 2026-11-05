@@ -68,7 +68,8 @@ final class EssenKiClientTests: XCTestCase {
         func f(_ status: Int, _ art: String?) -> EssenKiFehler {
             EssenKiClient.fehler(status: status, daten: Data((art.map { #"{"fehler":"\#($0)"}"# } ?? "").utf8))
         }
-        XCTAssertEqual(f(429, "tageslimit"), .tageslimit)
+        XCTAssertEqual(f(429, "tageslimit"), .tageslimit(max: nil))
+        XCTAssertEqual(EssenKiClient.fehler(status: 429, daten: Data(#"{"fehler":"tageslimit","max":5}"#.utf8)), .tageslimit(max: 5))
         XCTAssertEqual(f(429, "zuVieleAnfragen"), .zuVieleAnfragen)
         XCTAssertEqual(f(413, "bildZuGross"), .bildZuGross)
         XCTAssertEqual(f(503, "guthaben"), .guthaben)

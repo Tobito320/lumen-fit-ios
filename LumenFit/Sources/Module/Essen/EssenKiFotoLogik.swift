@@ -27,6 +27,13 @@ enum EssenKiFotoLogik {
         titel: "Foto nicht lesbar", text: "Mach bitte ein neues Foto.",
         symbol: "photo.badge.exclamationmark", nochmal: false, neuesFoto: true)
 
+    /// Freundlich und mit der Zahl des Servers; ohne Zahl (oder bei 0) ohne Zahl.
+    static func tageslimitText(max: Int?) -> String {
+        let weiter = "Morgen geht es weiter, suchen geht immer."
+        guard let max, max > 0 else { return "Das Foto-Limit für heute ist erreicht. \(weiter)" }
+        return max == 1 ? "Heute ist dein Foto verbraucht. \(weiter)" : "Heute sind deine \(max) Fotos verbraucht. \(weiter)"
+    }
+
     static func anzeige(_ f: EssenKiFehler) -> EssenKiAnzeige {
         switch f {
         case .netz:
@@ -41,8 +48,8 @@ enum EssenKiFotoLogik {
         case .bildZuGross:
             EssenKiAnzeige(titel: "Foto zu groß", text: "Mach bitte ein neues Foto.",
                            symbol: "photo.badge.exclamationmark", nochmal: false, neuesFoto: true)
-        case .tageslimit:
-            EssenKiAnzeige(titel: "Foto-Limit erreicht", text: "Das Foto-Limit für heute ist erreicht. Morgen geht es weiter.",
+        case .tageslimit(let max):
+            EssenKiAnzeige(titel: "Foto-Limit erreicht", text: tageslimitText(max: max),
                            symbol: "moon.zzz", nochmal: false, neuesFoto: false)
         case .guthaben, .nichtEingerichtet:
             EssenKiAnzeige(titel: "KI gerade nicht erreichbar", text: "Trag die Mahlzeit solange von Hand ein.",

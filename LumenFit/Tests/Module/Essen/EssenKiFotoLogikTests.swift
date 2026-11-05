@@ -65,13 +65,20 @@ final class EssenKiFotoLogikTests: XCTestCase {
     }
 
     func testJederFehlerHatTitelTextUndWeg() {
-        let alle: [EssenKiFehler] = [.nichtEingerichtet, .tageslimit, .guthaben, .zuVieleAnfragen, .bildZuGross, .netz, .ungueltig, .unbekannt]
+        let alle: [EssenKiFehler] = [.nichtEingerichtet, .tageslimit(max: 5), .guthaben, .zuVieleAnfragen, .bildZuGross, .netz, .ungueltig, .unbekannt]
         for f in alle {
             let a = EssenKiFotoLogik.anzeige(f)
             XCTAssertFalse(a.titel.isEmpty, "\(f)")
             XCTAssertFalse(a.text.isEmpty, "\(f)")
             XCTAssertFalse(a.symbol.isEmpty, "\(f)")
         }
+    }
+
+    func testTageslimitNenntDieZahlDesServers() {
+        let a = EssenKiFotoLogik.anzeige(EssenKiClient.fehler(status: 429, daten: Data(#"{"fehler":"tageslimit","max":5}"#.utf8)))
+        XCTAssertEqual(a.text, "Heute sind deine 5 Fotos verbraucht. Morgen geht es weiter, suchen geht immer.")
+        XCTAssertEqual(EssenKiFotoLogik.tageslimitText(max: 1), "Heute ist dein Foto verbraucht. Morgen geht es weiter, suchen geht immer.")
+        XCTAssertEqual(EssenKiFotoLogik.tageslimitText(max: nil), "Das Foto-Limit für heute ist erreicht. Morgen geht es weiter, suchen geht immer.")
     }
 
     func testFehlerBietetNurSinnvolleWege() {
@@ -83,7 +90,7 @@ final class EssenKiFotoLogikTests: XCTestCase {
         XCTAssertTrue(gross.neuesFoto)
         let kaputt = EssenKiFotoLogik.anzeige(.ungueltig)
         XCTAssertTrue(kaputt.nochmal && kaputt.neuesFoto)
-        for f in [EssenKiFehler.tageslimit, .guthaben, .nichtEingerichtet] {
+        for f in [EssenKiFehler.tageslimit(max: 5), .guthaben, .nichtEingerichtet] {
             let a = EssenKiFotoLogik.anzeige(f)
             XCTAssertFalse(a.nochmal || a.neuesFoto, "\(f): ein neuer Versuch ändert nichts")
         }

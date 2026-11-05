@@ -75,9 +75,10 @@ struct EssenKiClient: EssenKiSender {
 
     /// Erst die Fehlerart des Servers (`{"fehler": "..."}`), sonst der Status. Alles Unbekannte ist `.unbekannt`.
     static func fehler(status: Int, daten: Data) -> EssenKiFehler {
-        struct Huelle: Decodable { let fehler: String? }
-        switch (try? JSONDecoder().decode(Huelle.self, from: daten))?.fehler {
-        case "tageslimit"?: return .tageslimit
+        struct Huelle: Decodable { let fehler: String?; let max: Int? }
+        let huelle = try? JSONDecoder().decode(Huelle.self, from: daten)
+        switch huelle?.fehler {
+        case "tageslimit"?: return .tageslimit(max: huelle?.max)
         case "zuVieleAnfragen"?: return .zuVieleAnfragen
         case "bildZuGross"?: return .bildZuGross
         case "guthaben"?: return .guthaben

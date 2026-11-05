@@ -42,7 +42,7 @@ final class EssenKiAuftragTests: XCTestCase {
         let lauf = EssenKiAuftragLogik.neuStart(erst, automatisch: true)
         XCTAssertTrue(lauf.wiederholt)
         XCTAssertFalse(EssenKiAuftragLogik.fehlgeschlagen(lauf, .netz).autoNochmal)
-        XCTAssertFalse(EssenKiAuftragLogik.fehlgeschlagen(neu(), .tageslimit).autoNochmal)
+        XCTAssertFalse(EssenKiAuftragLogik.fehlgeschlagen(neu(), .tageslimit(max: 5)).autoNochmal)
     }
 
     func testFehlerBeiNeuSchaetzenBehaeltDieAlteSchaetzung() throws {
@@ -143,11 +143,11 @@ final class EssenKiAuftragTests: XCTestCase {
     @MainActor
     func testFehlerUndNochmal() async throws {
         let a = try schaetzung()
-        let store = EssenKiAuftragStore(ordner: ordner(), sender: Sender { throw EssenKiFehler.tageslimit }, hintergrund: Hintergrund())
+        let store = EssenKiAuftragStore(ordner: ordner(), sender: Sender { throw EssenKiFehler.tageslimit(max: 5) }, hintergrund: Hintergrund())
         let id = store.neu(foto: try jpeg(), mahlzeit: .mittag, datum: "2026-10-10")
         try await warte { store.auftrag(id)?.status == .fehler }
         XCTAssertEqual(store.auftrag(id)?.status, .fehler)
-        XCTAssertEqual(store.auftrag(id)?.fehler, EssenKiFotoLogik.anzeige(.tageslimit))
+        XCTAssertEqual(store.auftrag(id)?.fehler, EssenKiFotoLogik.anzeige(.tageslimit(max: 5)))
         let ok = EssenKiAuftragStore(ordner: ordner(), sender: Sender { a }, hintergrund: Hintergrund())
         let id2 = ok.neu(foto: try jpeg(), mahlzeit: .mittag, datum: "2026-10-10")
         try await warte { ok.auftrag(id2)?.status == .fertig }
