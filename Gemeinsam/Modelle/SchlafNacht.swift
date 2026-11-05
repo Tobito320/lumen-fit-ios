@@ -1,7 +1,7 @@
 // Quelle: Lovea Health/SchlafNacht.swift
 import Foundation
 
-// Schlafphasen einer Nacht (Apple Watch): die Zeitleiste hinter dem Nacht-Diagramm im Coach-Chat und im Schlaf-Tab.
+// Schlafphasen einer Nacht (Apple Watch): die Zeitleiste hinter dem Nacht-Diagramm im Schlaf-Tab.
 // Reine Logik ohne HealthKit-Typen; die Abfrage steht in `HealthModell.schlafPhasen`.
 // Die Nacht ist genau die des Tabs (`HealthLogik.schlafNacht`: Aufwachtag, Block mit Pausen bis 3 h), nur feiner aufgelöst.
 
@@ -53,7 +53,7 @@ struct SchlafNacht: Codable, Equatable, Sendable {
     let bis: Date
     /// Lückenlos von `von` bis `bis`, zeitlich sortiert, benachbarte Abschnitte haben verschiedene Phasen.
     let abschnitte: [SchlafAbschnitt]
-    /// Schlafdauer genau wie im Schlaf-Tab (`HealthLogik.schlafNacht`): Chat, Tab und Coach-Text nennen dieselbe Zahl.
+    /// Schlafdauer genau wie im Schlaf-Tab (`HealthLogik.schlafNacht`): Tab und Heute nennen dieselbe Zahl.
     let schlafMinuten: Int
     /// Kurze Schläfchen am selben Aufwachtag (Blöcke ab 20 Minuten, nicht die Nacht). Optional, damit alte Dateien ladbar bleiben.
     var nickerchen: [SchlafAbschnitt]? = nil

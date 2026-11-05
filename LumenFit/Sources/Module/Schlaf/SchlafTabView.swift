@@ -141,12 +141,7 @@ private struct SchlafTabInhalt: View {
     @ViewBuilder
     private func erholungKarte(_ u: SchlafUebersicht) -> some View {
         SchlafAbschnittKopf("Erholung").id(Self.wertenAnker)
-        SchlafBereichKarte(hrv: u.hrv, erholung: u.erholung, coachFragen: coachFragen)
-    }
-
-    private var coachFragen: (@MainActor @Sendable (String) -> Void)? {
-        guard umgebung.router.coachSichtbar else { return nil }
-        return { [umgebung] frage in umgebung.router.oeffne(.coach(frage: frage)) }
+        SchlafBereichKarte(hrv: u.hrv, erholung: u.erholung)
     }
 
     @ViewBuilder

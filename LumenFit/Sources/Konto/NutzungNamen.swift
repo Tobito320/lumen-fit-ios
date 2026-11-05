@@ -26,8 +26,6 @@ enum NutzungFehler: String, CaseIterable, Sendable {
     case healthNichtVerfuegbar = "health_nicht_verfuegbar"
     case bandVerbindung = "band_verbindung"
     case bandNichtGefunden = "band_nicht_gefunden"
-    case coachAntwort = "coach_antwort"
-    case coachVersteht = "coach_versteht"
     // Art des Absturzes aus den Zahlen des MetricKit-Berichts (Signal, Ausnahme), nie aus Text oder Stack (`NutzungMetrik.art`).
     case absturzFalle = "absturz_falle"
     case absturzZugriff = "absturz_zugriff"
@@ -86,7 +84,6 @@ enum NutzungRoute {
         case "/lovea/import-beleg": return "import_beleg"
         case "/partner": return methode == "PUT" ? "partner_put" : "partner_get"
         case "/ki/foto": return "ki_foto"
-        case "/ki/coach": return "ki_coach"
         default: return pfad.hasPrefix("/verbindungen") ? "verbindungen" : nil
         }
     }

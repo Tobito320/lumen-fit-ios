@@ -124,7 +124,7 @@ final class EssenKiFreigabe {
     @ObservationIgnored private var letzter: Date?
     @ObservationIgnored private var laeuft = false
 
-    /// `schalter`: der Schlüssel in `GET /config` (Foto: `kiFotoErlaubt`, Coach: `kiCoachErlaubt`).
+    /// `schalter`: der Schlüssel in `GET /config` (Foto: `kiFotoErlaubt`).
     init(zugang: any EssenKiZugang, lader: any HTTPLader, uhr: @escaping Uhr = { Date() }, schalter: String = "kiFotoErlaubt") {
         self.zugang = zugang
         self.lader = lader

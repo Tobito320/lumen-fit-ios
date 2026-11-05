@@ -55,7 +55,7 @@ enum VerlaufLogik {
     /// A day of this week with training that gives the groups no set (`ohneSaetze`).
     struct TagOhneSaetze: Equatable, Identifiable {
         enum Art: Equatable {
-            /// Only the Gym tick, no unit (also set by "Schreib, was war" and the Coach).
+            /// Only the Gym tick, no unit (also set by old "Schreib, was war" entries).
             case nurHaken
             /// A unit without a counted set: nothing ticked, or only warm-ups.
             case keinSatz

@@ -118,15 +118,4 @@ final class DatenSatzTests: XCTestCase {
         XCTAssertTrue(satz.meilensteine.istErreicht("erste-einheit"))
         XCTAssertEqual(satz.meilensteine.stufe, 2)
     }
-
-    func testCoachMerkzettelUndVerlauf() throws {
-        let ordner = try tempOrdner()
-        let erster = satz(ordner)
-        erster.coach.merke("Knie schonen")
-        erster.coach.merke("Knie schonen")
-        XCTAssertEqual(erster.coach.merkzettel, ["Knie schonen"])
-        XCTAssertEqual(satz(ordner).coach.merkzettel, ["Knie schonen"])
-        erster.coach.vergiss("Knie schonen")
-        XCTAssertTrue(erster.coach.merkzettel.isEmpty)
-    }
 }

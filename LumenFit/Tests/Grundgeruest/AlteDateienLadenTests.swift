@@ -86,11 +86,10 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(neu.werte.thema, .wald)
     }
 
-    func testAlterKontoStandOhneCoachSichtbarBleibtLesbarUndZeigtKeinenCoach() throws {
-        let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3},"loveaErlaubt":true}"#.utf8))
+    func testAlterKontoStandMitUndOhneCoachSichtbarBleibtLesbar() throws {
+        let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{"profilAnlegenErlaubt":true,"nameAendernTage":3,"coachSichtbar":true},"loveaErlaubt":true}"#.utf8))
         XCTAssertTrue(alt.config.profilAnlegenErlaubt)
         XCTAssertTrue(alt.loveaErlaubt)
-        XCTAssertFalse(alt.config.coachSichtbar)
         XCTAssertFalse(alt.config.schlafBeleg, "Schlaf-Beleg ist ohne Antwort des Servers aus")
     }
 

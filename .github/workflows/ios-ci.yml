@@ -135,7 +135,7 @@ jobs:
         run: |
           set -u
           mkdir -p screenshots
-          TABS="heute gym essen schlaf coach"
+          TABS="heute gym essen schlaf"
           THEMES="schlicht monochrom graphit stahl glut wald lovea"
           IPHONE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name | startswith("iPhone"))][0].udid')
           APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
@@ -187,7 +187,6 @@ jobs:
               "verlauf|lumenfit://verlauf" \
               "gewicht|lumenfit://gewicht" \
               "uebung|lumenfit://uebung?id=2gPfomN" \
-              "coach-frage|lumenfit://coach?frage=Wie%20lief%20meine%20Woche" \
               "lumi-seite|lumenfit://profil?bereich=lumi" \
               "aussehen|lumenfit://profil?bereich=aussehen" \
               "ziele|lumenfit://profil?bereich=ziele" \
@@ -236,7 +235,6 @@ jobs:
                 "gym-fortschritt|-lumenFitRoute lumenfit://gym?bereich=fortschritt" \
                 "schlaf|-lumenFitRoute lumenfit://schlaf?bereich=letzteNacht" \
                 "essen|-lumenFitRoute lumenfit://essen?bereich=heute" \
-                "coach|-lumenFitRoute lumenfit://coach" \
                 "verlauf|-lumenFitRoute lumenfit://verlauf"; do
                 name="${aufnahme%%|*}"
                 # shellcheck disable=SC2086

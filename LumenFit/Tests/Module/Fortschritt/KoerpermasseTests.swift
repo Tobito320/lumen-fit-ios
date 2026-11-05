@@ -1,16 +1,13 @@
 import XCTest
 @testable import LumenFit
 
-/// Ein Ort für Gewicht-Grenzen und Maß-Arten (`Koerpermasse`): dieselben Maße und Grenzen in Heute, Essen-Körperwerte, Messungen und Coach.
+/// Ein Ort für Gewicht-Grenzen und Maß-Arten (`Koerpermasse`): dieselben Maße und Grenzen in Heute, Essen-Körperwerte, Messungen.
 final class KoerpermasseTests: XCTestCase {
     func testGewichtGrenzeIstUeberallDieselbe() {
         XCTAssertEqual(Koerpermasse.gewichtZehntel, 300...2499)
         XCTAssertEqual(HeuteQuellen.gewichtBereich, Koerpermasse.gewichtZehntel)
         XCTAssertEqual(MessArt.gewicht.erlaubt, Koerpermasse.gewichtZehntel)
         XCTAssertFalse(HeuteQuellen.gewichtBereich.contains(2500))
-        XCTAssertEqual(CoachMarker.kilo("249,9"), 249.9)
-        XCTAssertNil(CoachMarker.kilo("250"))
-        XCTAssertNil(CoachMarker.kilo("29,9"))
     }
 
     func testDieselbenMasseInEssenUndMessungen() {

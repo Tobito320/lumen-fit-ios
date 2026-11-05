@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Der Heute-Tab im Lovea-Aufbau (Theme Lovea mit Freigabe): Reihenfolge, Abschnitte und Wege des Health-Tabs der Lovea-App.
 /// Oben der Kopf "Health" mit Datum, dann die Plantag-Zeile, die Karte Tagesform mit Monat, Wochenstreifen und Gefühl,
-/// "Dein Tag" mit dem Raster und "Schreib, was war", "Das fällt mir auf", "Körper" und die Zeile "Verlauf". Seiten (Gym, Schlaf, Essen, Coach, Verlauf)
+/// "Dein Tag" mit dem Raster und "Schreib, was war", "Das fällt mir auf", "Körper" und die Zeile "Verlauf". Seiten (Gym, Schlaf, Essen, Verlauf)
 /// öffnen im Stapel des Heute-Tabs, wie in Lovea. Was Lumen Fit mehr hat als Lovea, steht danach unter "Mehr aus Lumen Fit". Alle Karten sind die
 /// fachlichen Bausteine von Lumen Fit; hier entscheidet nur die Anordnung. Punkte und Challenges bleiben in Lovea.
 struct HeuteLoveaInhalt: View {
@@ -35,7 +35,6 @@ struct HeuteLoveaInhalt: View {
                 if stand.istHeute { SchreibKarte(modell: modell) }
             }
             if stand.istHeute, !stand.einsichten.isEmpty { EinsichtenKarte(einsichten: stand.einsichten) }
-            if stand.istHeute, umgebung.router.coachSichtbar { CoachSicherheitZeile { umgebung.router.schiebe(.coach(frage: nil)) } }
             if stand.istHeute, stand.bereiche.gymAn { abschnitt("Körper") { koerper } }
             if stand.bereiche.gymAn { verlaufZeile }
             mehr
@@ -160,9 +159,7 @@ struct HeuteLoveaInhalt: View {
         let tag = stand.tag
         let essen = umgebung.daten?.essen
         let kost = TagesFormEssen(kcal: Int((essen?.summe(tag).kcal ?? 0).rounded()), ziel: essen?.ernaehrungsZiele(tag: tag).kcal ?? 0)
-        return TagesFormenReihe(stand: stand, essen: kost, tippe: { modell.tippe($0) }, oeffne: { oeffne($0) }) {
-            if umgebung.router.coachSichtbar { CoachKachelView(alsKachel: true, oeffne: { umgebung.router.schiebe(.coach(frage: nil)) }) }
-        }
+        return TagesFormenReihe(stand: stand, essen: kost, tippe: { modell.tippe($0) }, oeffne: { oeffne($0) })
     }
 
     /// Wohin eine Kachel führt (`HeuteView.swift:775-960`): Schritte, Schlaf, Habits, Food und Gym als Seite im Stapel, Gewicht als Blatt.
@@ -367,38 +364,5 @@ private struct GefuehlLeiste: View {
         .disabled(!bearbeitbar)
         .accessibilityLabel("Gefühl \(stufe) von 5, \(TagesformGefuehl.name(stufe))")
         .accessibilityAddTraits(aktiv ? .isSelected : [])
-    }
-}
-
-/// Lovea `CoachKachel` (`Coach/CoachChatView.swift:73`): unter dem Raster steht nur der Sicherheits-Hinweis (zu wenig Essen im Log), ungekürzt; sonst nichts.
-/// Alles andere zeigt die Coach-Kachel im Raster.
-struct CoachSicherheitZeile: View {
-    let oeffne: () -> Void
-    @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-    @Environment(\.dynamicTypeSize) private var schrift
-
-    var body: some View {
-        if let daten = umgebung.daten, !CoachEinstellungen(ordner: daten.ordner).stand.pause,
-           let karte = CoachRegeln.karten(CoachDaten.eingabe(umgebung, daten)).first, karte.art == .sicherheit {
-            Button(action: oeffne) {
-                HStack(spacing: 12) {
-                    Image(systemName: "sparkles").font(.title3).foregroundStyle(HabitFarbe.mint.farbe).frame(width: 28).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Coach").font(.headline).foregroundStyle(palette.text)
-                        Text(karte.titel).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
-                        Text(karte.text).font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.leading)
-                    }
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary).accessibilityHidden(true)
-                }
-                .padding(16)
-                .frame(maxWidth: .infinity, minHeight: 56, alignment: .leading)
-                .lumenKartenFlaeche()
-                .contentShape(.rect(cornerRadius: Rundung.karte, style: .continuous))
-            }
-            .buttonStyle(.federnd)
-            .accessibilityHint("Öffnet den Coach-Chat")
-        }
     }
 }

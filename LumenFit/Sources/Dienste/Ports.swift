@@ -28,13 +28,6 @@ protocol BandDienst: Sendable {
     func vibriere(_ muster: BandMuster) async
 }
 
-/// Gesetzt vom Modul coach (Auswahl `CoachWahl`). Standard: Rückfalltext "Der Coach ist gleich da".
-protocol CoachMotor: Sendable {
-    var name: String { get }
-    func verfuegbar() async -> Bool
-    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort
-}
-
 // MARK: - Standardwerte, bis ein Modul den Port setzt
 
 struct KeineLiveAnzeige: LiveAnzeige {
@@ -54,14 +47,6 @@ struct KeinBand: BandDienst {
     func verbinde() async {}
     func trenne() async {}
     func vibriere(_ muster: BandMuster) async {}
-}
-
-struct RueckfallCoachMotor: CoachMotor {
-    var name: String { "Rückfall" }
-    func verfuegbar() async -> Bool { true }
-    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort {
-        CoachAntwort(text: "Der Coach ist gleich da.", chips: [])
-    }
 }
 
 struct KeinePartnerBruecke: PartnerAustausch {

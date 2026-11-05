@@ -40,7 +40,7 @@ final class BereicheTests: XCTestCase {
 
     func testTabsUndRoutenFolgenDenBereichen() {
         let e = aus(.schlaf, .essen)
-        XCTAssertTrue(e.zeigt(LumenFitTab.heute) && e.zeigt(LumenFitTab.coach) && e.zeigt(LumenFitTab.gym))
+        XCTAssertTrue(e.zeigt(LumenFitTab.heute) && e.zeigt(LumenFitTab.gym))
         XCTAssertFalse(e.zeigt(LumenFitTab.schlaf) || e.zeigt(LumenFitTab.essen))
         XCTAssertFalse(e.zeigt(Route.schlaf(.letzteNacht)))
         XCTAssertTrue(e.zeigt(Route.gym(.training)) && e.zeigt(Route.heute) && e.zeigt(Route.profil(.einstellungen)))

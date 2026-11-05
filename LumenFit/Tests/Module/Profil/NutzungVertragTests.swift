@@ -15,7 +15,7 @@ final class NutzungVertragTests: XCTestCase {
     private func unter(_ n: [String: Any], _ a: String, _ b: String) throws -> Set<String> { Set(try XCTUnwrap((n[a] as? [String: Any])?[b] as? [String])) }
 
     private func seiten() -> [String] {
-        let routen: [Route] = [.heute, .coach(frage: nil), .verlauf, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)]
+        let routen: [Route] = [.heute, .verlauf, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)]
             + [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
             + [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
             + [SchlafBereich.letzteNacht, .verlauf, .werte].map { Route.schlaf($0) }
@@ -65,7 +65,7 @@ final class NutzungVertragTests: XCTestCase {
     func testRoutenMassUndStartStehenImServer() throws {
         let n = try namen()
         let routen = try unter(n, "route", "namen"), status = try unter(n, "route", "status"), tempoNamen = try unter(n, "tempo", "namen"), tempoBucket = try unter(n, "tempo", "bucket")
-        let pfade = ["/konto", "/config", "/lovea/freigabe", "/lovea/agent/ops", "/lovea/import-erledigt", "/lovea/import-beleg", "/partner", "/ki/foto", "/ki/coach", "/verbindungen/x"]
+        let pfade = ["/konto", "/config", "/lovea/freigabe", "/lovea/agent/ops", "/lovea/import-erledigt", "/lovea/import-beleg", "/partner", "/ki/foto", "/verbindungen/x"]
         for p in pfade {
             for m in ["GET", "PUT"] {
                 let r = try XCTUnwrap(NutzungRoute.name(methode: m, pfad: p), p)

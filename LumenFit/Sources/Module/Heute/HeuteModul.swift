@@ -40,7 +40,7 @@ enum HeuteModul {
             daten.habits.setze(Habit.gewicht.id, datum: Datum.addTage(heute, -3 * schritt), wert: 783 + 2 * schritt)
         }
 
-        // Morgen-Check von heute: "gut" (4); das Modul coach schreibt dieselbe Op
+        // Morgen-Check von heute: "gut" (4)
         let hatStimmung = daten.raum.ops(arten: ["fit.lumi.stimmung"]).contains { $0.daten(StimmungsEintrag.self)?.tag == heute }
         if !hatStimmung { daten.raum.senden("fit.lumi.stimmung", StimmungsEintrag(tag: heute, wert: 4, stimmung: .bereit)) }
     }

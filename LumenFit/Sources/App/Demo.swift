@@ -19,7 +19,7 @@ extension AppUmgebung {
         ModulStart.saeDemo(umgebung)
         if argumente.training, let training = umgebung.daten?.training { _ = training.einchecken(tag: training.plan.tage.first?.id) }
         if let tab = argumente.tab { umgebung.router.tab = tab }
-        if let link = argumente.route, let url = URL(string: link) { umgebung.router.oeffne(url: url, vertraut: true) }
+        if let link = argumente.route, let url = URL(string: link) { umgebung.router.oeffne(url: url) }
         return umgebung
     }
 }

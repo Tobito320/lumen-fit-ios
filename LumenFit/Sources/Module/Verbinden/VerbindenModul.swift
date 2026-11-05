@@ -85,7 +85,6 @@ final class VerbindenDienste {
                                   TrackerModell(funk: { TrackerFunk(melden: $0) }, senke: .raum({ umgebung?.daten?.raum }, geschrieben: { umgebung?.ereignisse.senden(.healthAktualisiert) }), uhr: uhr)
                               })
         umgebung.band = band
-        umgebung.alarmWecker.beobachte()
         aufsteher = AufstehWaechter(
             uhr: uhr,
             fenster: { [weak umgebung] in umgebung?.alarmBruecke.weckFenster() ?? [] },
@@ -130,7 +129,6 @@ final class VerbindenDienste {
     /// Eine Runde: Partner-Stand lesen, Mitteilungen, Band fortsetzen, Wünsche, Datei für Lovea. Läuft bei Start, Vordergrund, Hintergrund-Abruf und Darwin-Anstoß.
     func abruf() async {
         uebernahme.weitergeben(person: umgebung.konto.loveaPerson, jetzt: umgebung.uhr())
-        umgebung.alarmWecker.aktualisieren()
         guard let daten = umgebung.daten else { return }
         let jetzt = umgebung.uhr()
         let werte = daten.einstellungen.werte

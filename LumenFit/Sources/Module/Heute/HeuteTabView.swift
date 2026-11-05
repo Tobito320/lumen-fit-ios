@@ -98,7 +98,6 @@ struct HeuteTabView: View {
         }
         if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
         if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
-        if umgebung.router.coachSichtbar { CoachKachelView() }
         habitsKarte(s, m)
         GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
         mehrKarten(s, m)
@@ -116,7 +115,7 @@ struct HeuteTabView: View {
         }
     }
 
-    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt, Coach und Partner fehlen
+    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen
     /// mit Absicht (sie gelten für heute). Gewohnheiten lassen sich nachtragen, weil der Speicher einen Tag entgegennimmt.
     @ViewBuilder
     private func vergangenerTag(_ s: HeuteStand, _ m: HeuteModell) -> some View {

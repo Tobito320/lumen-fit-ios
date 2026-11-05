@@ -4,7 +4,7 @@ import Foundation
 enum ThemaID: String, Codable, CaseIterable, Sendable { case schlicht, monochrom, graphit, stahl, glut, wald, lovea }
 enum Erscheinung: String, Codable, CaseIterable, Sendable { case system, hell, dunkel }
 enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
-/// Die wählbaren Bereiche. Heute (und der Coach, den der Server steuert) bleiben immer.
+/// Die wählbaren Bereiche. Heute bleibt immer.
 enum AppBereich: String, Codable, CaseIterable, Sendable { case gym, essen, schlaf }
 
 /// Die Antwort auf die Frage nach der Nutzungsmeldung. Nur `.ja` erlaubt das Senden; "noch nicht gefragt" und "nein" senden nichts.

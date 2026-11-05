@@ -1,7 +1,7 @@
 import Foundation
 
 enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
-    case heute, gym, essen, schlaf, coach
+    case heute, gym, essen, schlaf
 
     var id: String { rawValue }
 
@@ -11,7 +11,6 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         case .gym: "Gym"
         case .essen: "Essen"
         case .schlaf: "Schlaf"
-        case .coach: "Coach"
         }
     }
 
@@ -21,17 +20,16 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         case .gym: "dumbbell.fill"
         case .essen: "fork.knife"
         case .schlaf: "bed.double.fill"
-        case .coach: "bubble.left.fill"
         }
     }
 
-    /// Der wählbare Bereich des Tabs; nil bei Heute und Coach (die bleiben immer).
+    /// Der wählbare Bereich des Tabs; nil bei Heute (bleibt immer).
     var bereich: AppBereich? {
         switch self {
         case .gym: .gym
         case .essen: .essen
         case .schlaf: .schlaf
-        case .heute, .coach: nil
+        case .heute: nil
         }
     }
 
@@ -42,14 +40,13 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         case .gym, .uebung: .gym
         case .essen: .essen
         case .schlaf: .schlaf
-        case .coach: .coach
         case .profil, .freund: nil
         }
     }
 }
 
 extension Einstellungen {
-    /// Zeigt die App diesen Tab? Heute und Coach immer (der Coach folgt zusätzlich dem Server).
+    /// Zeigt die App diesen Tab? Heute immer.
     func zeigt(_ tab: LumenFitTab) -> Bool { tab.bereich.map(zeigt) ?? true }
 
     /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) und Heute-Seiten immer.

@@ -1,13 +1,15 @@
 // Die einzige Liste der Namen, die die App über die Nutzung melden darf (Vertrag App <-> Server). Reine JSON-Daten hinter `export const NAMEN =`:
 // der Swift-Test (NutzungVertragTests) liest diese Datei und prüft, dass jeder Name der App hier steht. Der Server nimmt nur Namen aus dieser Liste an.
+// "tab.gym" bleibt für ältere App-Stände der Nutzungsmeldung (seit dem Umbau 05.11. melden Training und Plan je einen eigenen Tab).
 // Nie Freitext, nie Werte, nie Kennungen. Neue Seite, Funktion oder Fehlerart in der App: hier eintragen, sonst wirft der Server sie weg.
 export const NAMEN = {
   "bereiche": [
     "tab.heute",
     "tab.gym",
+    "tab.training",
+    "tab.plan",
     "tab.essen",
     "tab.schlaf",
-    "tab.coach",
     "blatt.profil",
     "blatt.freund",
     "seite.gym.plaene",
@@ -20,7 +22,6 @@ export const NAMEN = {
     "seite.gewichtEintragen",
     "seite.uebung",
     "seite.heute",
-    "seite.coach",
     "seite.gym.training",
     "seite.essen.heute",
     "seite.schlaf.letzteNacht",
@@ -60,9 +61,10 @@ export const NAMEN = {
   "erster": [
     "tab.heute",
     "tab.gym",
+    "tab.training",
+    "tab.plan",
     "tab.essen",
     "tab.schlaf",
-    "tab.coach",
     "fn.training",
     "fn.satz",
     "fn.mahlzeit",
@@ -75,9 +77,10 @@ export const NAMEN = {
       "start",
       "tab.heute",
       "tab.gym",
+      "tab.training",
+      "tab.plan",
       "tab.essen",
       "tab.schlaf",
-      "tab.coach",
       "blatt.profil",
       "blatt.freund",
       "seite.gym.plaene",
@@ -90,7 +93,6 @@ export const NAMEN = {
       "seite.gewichtEintragen",
       "seite.uebung",
       "seite.heute",
-      "seite.coach",
       "seite.gym.training",
       "seite.essen.heute",
       "seite.schlaf.letzteNacht",
@@ -107,9 +109,10 @@ export const NAMEN = {
     "nach": [
       "tab.heute",
       "tab.gym",
+      "tab.training",
+      "tab.plan",
       "tab.essen",
       "tab.schlaf",
-      "tab.coach",
       "blatt.profil",
       "blatt.freund",
       "seite.gym.plaene",
@@ -122,7 +125,6 @@ export const NAMEN = {
       "seite.gewichtEintragen",
       "seite.uebung",
       "seite.heute",
-      "seite.coach",
       "seite.gym.training",
       "seite.essen.heute",
       "seite.schlaf.letzteNacht",
@@ -140,9 +142,10 @@ export const NAMEN = {
   "absprung": [
     "tab.heute",
     "tab.gym",
+    "tab.training",
+    "tab.plan",
     "tab.essen",
     "tab.schlaf",
-    "tab.coach",
     "blatt.profil",
     "blatt.freund",
     "seite.gym.plaene",
@@ -155,7 +158,6 @@ export const NAMEN = {
     "seite.gewichtEintragen",
     "seite.uebung",
     "seite.heute",
-    "seite.coach",
     "seite.gym.training",
     "seite.essen.heute",
     "seite.schlaf.letzteNacht",
@@ -238,8 +240,6 @@ export const NAMEN = {
     "health_nicht_verfuegbar",
     "band_verbindung",
     "band_nicht_gefunden",
-    "coach_antwort",
-    "coach_versteht",
     "absturz_falle",
     "absturz_zugriff",
     "absturz_abbruch",
@@ -265,8 +265,7 @@ export const NAMEN = {
       "partner_put",
       "partner_get",
       "verbindungen",
-      "ki_foto",
-      "ki_coach"
+      "ki_foto"
     ],
     "status": [
       "s400",
@@ -296,7 +295,6 @@ export const NAMEN = {
       "partner_get",
       "verbindungen",
       "ki_foto",
-      "ki_coach",
       "start"
     ],
     "bucket": [

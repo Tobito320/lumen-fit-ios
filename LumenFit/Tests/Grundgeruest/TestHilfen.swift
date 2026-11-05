@@ -216,32 +216,6 @@ final class FakeBandDienst: BandDienst, @unchecked Sendable {
     func vibriere(_ muster: BandMuster) async { schloss.withLock { _muster.append(muster) } }
 }
 
-final class FakeCoachMotor: CoachMotor, @unchecked Sendable {
-    private let schloss = NSLock()
-    private var texte: [String]
-    private var _anfragen = 0
-    let name: String
-    private let frei: Bool
-
-    init(name: String = "Fake", verfuegbar: Bool = true, texte: [String] = ["Antwort"]) {
-        self.name = name
-        frei = verfuegbar
-        self.texte = texte
-    }
-
-    var anfragen: Int { schloss.withLock { _anfragen } }
-
-    func verfuegbar() async -> Bool { frei }
-
-    func antworte(_ anfrage: CoachAnfrage) async throws -> CoachAntwort {
-        let text: String = schloss.withLock {
-            _anfragen += 1
-            return texte.count > 1 ? texte.removeFirst() : (texte.first ?? "")
-        }
-        return CoachAntwort(text: text, chips: [])
-    }
-}
-
 final class FakePartnerAustausch: PartnerAustausch, @unchecked Sendable {
     private let schloss = NSLock()
     private var _partner: PartnerStand

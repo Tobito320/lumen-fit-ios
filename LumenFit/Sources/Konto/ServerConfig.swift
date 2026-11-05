@@ -1,6 +1,6 @@
 import Foundation
 
-/// Die Einstellungen vom Server (`GET /config`, SPEC 18): ohne neuen Build änderbar. Klein und fest; unbekannte Schlüssel werden ignoriert.
+/// Die Einstellungen vom Server (`GET /config`, SPEC 18): ohne neuen Build änderbar. Klein und fest; unbekannte Schlüssel werden ignoriert (so bleibt ein alter gemerkter Stand mit `coachSichtbar` lesbar).
 /// Die Standardwerte gelten, solange der Server nie geantwortet hat (offline, erster Start): sie sind die sichere Seite (kein zweites Profil).
 struct ServerConfig: Equatable, Codable, Sendable {
     /// Ein weiteres Profil neben dem ersten anlegen. Das erste Profil geht immer.
@@ -9,15 +9,13 @@ struct ServerConfig: Equatable, Codable, Sendable {
     var nameAendernTage = 7
     /// Der Server stellt "Band in Lumen Fit nutzen" für dieses Konto von selbst an (Standard nur dort, wo er es sagt). Ein bewusstes Aus in der App gewinnt.
     var bandStandard = false
-    /// Der Coach ist sichtbar: der Server sagt es nur den Konten mit Lovea-Person. Ohne Antwort und ohne gemerkten Stand bleibt er weg.
-    var coachSichtbar = false
     /// Schlaf-Beleg an den Entwickler (Diagnose): nur auf Freigabe des Servers für genau dieses Konto, Standard aus. Ohne Antwort bleibt er aus.
     var schlafBeleg = false
 
     nonisolated static let standard = ServerConfig()
     nonisolated static let tageBereich = 0...365
 
-    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage, bandStandard, coachSichtbar, schlafBeleg }
+    enum CodingKeys: String, CodingKey { case profilAnlegenErlaubt, nameAendernTage, bandStandard, schlafBeleg }
 
     init() {}
 
@@ -26,7 +24,6 @@ struct ServerConfig: Equatable, Codable, Sendable {
         profilAnlegenErlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .profilAnlegenErlaubt)) ?? false
         nameAendernTage = Self.tage(try? c.decodeIfPresent(Int.self, forKey: .nameAendernTage)) ?? 7
         bandStandard = (try? c.decodeIfPresent(Bool.self, forKey: .bandStandard)) ?? false
-        coachSichtbar = (try? c.decodeIfPresent(Bool.self, forKey: .coachSichtbar)) ?? false
         schlafBeleg = (try? c.decodeIfPresent(Bool.self, forKey: .schlafBeleg)) ?? false
     }
 
@@ -40,7 +37,6 @@ struct ServerConfig: Equatable, Codable, Sendable {
         var neu = basis
         if case .bool(let b)? = werte["profilAnlegenErlaubt"] { neu.profilAnlegenErlaubt = b }
         if case .bool(let b)? = werte["bandStandard"] { neu.bandStandard = b }
-        if case .bool(let b)? = werte["coachSichtbar"] { neu.coachSichtbar = b }
         if case .bool(let b)? = werte["schlafBeleg"] { neu.schlafBeleg = b }
         if case .number(let d)? = werte["nameAendernTage"], d.isFinite, d == d.rounded(), let t = tage(Int(exactly: d)) { neu.nameAendernTage = t }
         return neu

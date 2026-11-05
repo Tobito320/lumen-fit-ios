@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Untere Leiste mit Eingabe oder Hauptknopf (Chat, Training, Essen eintragen): der Grund der Seite mit einer Haarlinie oben.
-/// Das System-Material `.bar` wurde im dunklen Monochrom zu einem grauen Streifen auf schwarzem Grund (CI-Bild "Coach").
+/// Das System-Material `.bar` wurde im dunklen Monochrom zu einem grauen Streifen auf schwarzem Grund (CI-Bild).
 private struct LumenLeiste: ViewModifier {
     @Environment(\.palette) private var palette
 

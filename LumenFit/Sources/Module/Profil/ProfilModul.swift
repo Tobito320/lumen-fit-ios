@@ -47,7 +47,7 @@ enum ProfilModul {
 enum ProfilLoeschen {
     static func liste(_ daten: DatenSatz) -> [ProfilTexte.Loeschzeile] {
         ProfilTexte.loeschliste(einheiten: daten.training.sessions.count, essenstage: daten.essen.tage.count,
-                                meilensteine: daten.meilensteine.erreicht.count, coachNachrichten: daten.coach.verlauf.count)
+                                meilensteine: daten.meilensteine.erreicht.count)
     }
 
     /// true, wenn das aktive Profil samt Daten gelöscht ist. Daten in Health bleiben unberührt.

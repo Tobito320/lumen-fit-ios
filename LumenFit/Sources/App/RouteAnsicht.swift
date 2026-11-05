@@ -10,7 +10,6 @@ struct RouteAnsicht: View {
         case .gym(let bereich): GymTabView(bereich: bereich).kartenTint(HabitFarbe.mint.farbe)
         case .essen(let bereich): EssenTabView(bereich: bereich).kartenTint(LumenFarben.loveaEssen)
         case .schlaf(let bereich): SchlafTabView(bereich: bereich).kartenTint(HabitFarbe.indigo.farbe)
-        case .coach(let frage): CoachTabView(frage: frage).kartenTint(HabitFarbe.himmel.farbe)
         case .profil(let bereich): profil(bereich)
         case .verlauf: VerlaufView()
         case .gewichtEintragen: GewichtEintragenView()
@@ -42,7 +41,6 @@ struct RouteAnsicht: View {
         case .gym: GymTabView().kartenTint(HabitFarbe.mint.farbe)
         case .essen: EssenTabView().kartenTint(LumenFarben.loveaEssen)
         case .schlaf: SchlafTabView().kartenTint(HabitFarbe.indigo.farbe)
-        case .coach: CoachTabView().kartenTint(HabitFarbe.himmel.farbe)
         }
     }
 }

@@ -3,7 +3,7 @@ import Foundation
 
 // Tagesform (W-028). Reine Logik: Eingabe rein, Zahl mit Gründen raus. Kein Raum, kein HealthKit, kein Netz, keine KI.
 // Nur so lässt sich die Zahl erklären und später nachrechnen. Die Quellen sammelt `TagesformQuellen`.
-// Löst die alte Rechnung (`TagesformLogik.tagesform`) und den Coach-Server (`TagesformCoach`) ab.
+// Löst die alte Rechnung (`TagesformLogik.tagesform`) ab.
 
 // MARK: - Eingabe
 

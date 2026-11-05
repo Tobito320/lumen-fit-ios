@@ -60,13 +60,11 @@ final class KontoTests: XCTestCase {
         XCTAssertFalse(try JSONDecoder().decode(ServerConfig.self, from: Data(#"{"nameAendernTage":3}"#.utf8)).schlafBeleg, "alter gemerkter Stand: aus")
     }
 
-    func testCoachSichtbarStehtStandardAusUndFolgtDemServerOhneBeiFunklochZuVerschwinden() throws {
-        XCTAssertFalse(ServerConfig.standard.coachSichtbar)
-        let an = try XCTUnwrap(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"coachSichtbar":true}}"#.utf8)))
-        XCTAssertTrue(an.coachSichtbar)
-        XCTAssertTrue(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"coachSichtbar":"ja"}}"#.utf8))).coachSichtbar, "falscher Typ lässt den Wert")
-        XCTAssertNil(ServerConfig.zusammen(an, antwort: Data("kein json".utf8)), "Funkloch: gemerkter Stand bleibt")
-        XCTAssertFalse(try XCTUnwrap(ServerConfig.zusammen(an, antwort: Data(#"{"config":{"coachSichtbar":false}}"#.utf8))).coachSichtbar)
+    func testAlterGemerkterStandMitCoachSichtbarBleibtLesbar() throws {
+        // Der Coach ist weg; ein gemerkter Stand mit dem alten Schlüssel muss weiter laden (unbekannte Schlüssel zählen nicht).
+        let alt = try JSONDecoder().decode(ServerConfig.self, from: Data(#"{"nameAendernTage":3,"coachSichtbar":true}"#.utf8))
+        XCTAssertEqual(alt.nameAendernTage, 3)
+        XCTAssertNotNil(ServerConfig.zusammen(.standard, antwort: Data(#"{"config":{"coachSichtbar":true}}"#.utf8)))
     }
 
     func testTageWerdenBegrenztUndBruchzahlenAbgelehnt() throws {
