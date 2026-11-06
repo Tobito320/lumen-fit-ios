@@ -49,7 +49,7 @@ struct TrainingLaufView: View {
         .gymCrewAbruf()
         .sheet(isPresented: $beenden) { TrainingBeendenView(sitzung: sitzung) }
         .sheet(isPresented: $suche) {
-            UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true)
+            UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true, wegnehmen: { sitzung.uebungDazuZurueck($0.id) })
         }
         .sheet(isPresented: $tagWahl) { TagWechselBlatt(sitzung: sitzung) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }

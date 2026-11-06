@@ -346,6 +346,21 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertEqual(a.sitzung.liste.count, 2)
     }
 
+    func testDazugenommeneUebungGehtMitDemHakenWiederHerausSolangeNichtsAbgehaktIst() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        let k = try XCTUnwrap(UebungsKatalog.nachId["znQUdHY"])
+        a.sitzung.uebungDazu(k)
+        XCTAssertTrue(a.sitzung.uebungDazuZurueck(k.id))
+        XCTAssertEqual(a.sitzung.liste.count, 2)
+        XCTAssertTrue(a.sitzung.uebungDazuZurueck(k.id), "nicht mehr da: der Haken darf weg")
+        a.sitzung.uebungDazu(k)
+        a.sitzung.haken(2, 0)
+        XCTAssertFalse(a.sitzung.uebungDazuZurueck(k.id), "mit abgehaktem Satz bleibt sie")
+        XCTAssertEqual(a.sitzung.liste.count, 3)
+        XCTAssertFalse(WorkoutLogik.entfernbar(a.sitzung.liste[0]), "Plan-Übungen sind nie dabei")
+    }
+
     func testPauseUeberlebtEinenNeustartDerSitzung() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")

@@ -8,6 +8,8 @@ struct UebungsSucheView: View {
     var auswahl: ((Uebung) -> Void)?
     /// true = das Blatt bleibt offen, jeder Tipp fügt eine Übung hinzu (Plus wird zum Haken), "Fertig" schließt.
     var mehrfach = false
+    /// Nur mit `mehrfach`: Tipp auf den Haken nimmt die Übung wieder heraus. true = ist weg, false = bleibt (schon abgehakte Sätze).
+    var wegnehmen: ((Uebung) -> Bool)?
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
     @Environment(\.palette) private var palette
@@ -17,6 +19,7 @@ struct UebungsSucheView: View {
     @State private var muskel: String?
     @State private var filterBlatt = false
     @State private var hinzugefuegt: [String] = []
+    @State private var bleibtImTraining = false
     @State private var eigenesOffen = false
     @State private var eigenerName = ""
     @Environment(\.bewegungAus) private var ruhig
@@ -75,6 +78,11 @@ struct UebungsSucheView: View {
             if let eigene { GymEigenesFormular(store: eigene, vorname: eigenerName) { nachErstellen($0) } }
         }
         .haptik(.auswahl, bei: hinzugefuegt.count)
+        .alert("Bleibt im Training", isPresented: $bleibtImTraining) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Bei dieser Übung ist schon ein Satz abgehakt. Zum Entfernen: Menü der Übung, Mehr, Entfernen.")
+        }
     }
 
     // MARK: Daten
@@ -166,6 +174,10 @@ struct UebungsSucheView: View {
     private func zeile(_ u: Uebung) -> some View {
         if let auswahl {
             Button {
+                if mehrfach, let wegnehmen, let i = hinzugefuegt.firstIndex(of: u.id) {
+                    if wegnehmen(u) { withAnimation(ruhig ? nil : Feder.schnell) { _ = hinzugefuegt.remove(at: i) } } else { bleibtImTraining = true }
+                    return
+                }
                 auswahl(u)
                 if mehrfach {
                     withAnimation(ruhig ? nil : Feder.schnell) { hinzugefuegt.append(u.id) }
@@ -181,6 +193,7 @@ struct UebungsSucheView: View {
                             .font(.title3).foregroundStyle(da ? palette.akzent : palette.text2)
                             .contentTransition(.symbolEffect(.replace))
                             .accessibilityLabel(da ? "Hinzugefügt" : "Hinzufügen")
+                            .accessibilityHint(da && wegnehmen != nil ? "Nimmt die Übung wieder heraus" : "")
                     }
                 }
             }

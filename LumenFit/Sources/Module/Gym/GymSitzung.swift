@@ -537,6 +537,16 @@ final class GymSitzung: TrainingSteuerung {
         liveSenden()
     }
 
+    /// Haken in "Übung hinzufügen" noch einmal antippen: die zuletzt dazugenommene Übung mit dieser Katalog-id geht wieder heraus (`uebungWeg`),
+    /// solange nichts an ihr abgehakt ist. true = sie ist weg oder war nicht mehr da; false = sie bleibt, weil schon etwas eingetragen ist.
+    func uebungDazuZurueck(_ katalogId: String) -> Bool {
+        ladeWennNoetig()
+        guard let i = liste.lastIndex(where: { $0.extra && $0.planUebung.uebung == katalogId }) else { return true }
+        guard WorkoutLogik.entfernbar(liste[i]) else { return false }
+        uebungWeg(i)
+        return true
+    }
+
     /// Eine im Training dazugekommene Übung wieder herausnehmen.
     func uebungWeg(_ u: Int) {
         ladeWennNoetig()

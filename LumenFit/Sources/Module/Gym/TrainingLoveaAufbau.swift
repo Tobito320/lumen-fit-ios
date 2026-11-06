@@ -167,7 +167,7 @@ struct TrainingLoveaView: View {
             }
             .loveaBeendenFragen(sitzung: sitzung, ausloeser: $beenden)
             .sheet(isPresented: $suche) {
-                UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true)
+                UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true, wegnehmen: { sitzung.uebungDazuZurueck($0.id) })
             }
             .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
             .sheet(isPresented: $cardioOffen) { CardioAbschlussBlatt(sitzung: sitzung, index: cardioIndex) }

@@ -36,6 +36,11 @@ enum WorkoutLogik {
         }
     }
 
+    /// Eine im Training dazugekommene Übung darf nur ohne abgehakten Satz (und ohne fertiges Cardio) wieder heraus, damit nichts Eingetragenes verloren geht.
+    static func entfernbar(_ u: WorkoutUebung) -> Bool {
+        u.extra && !u.cardioFertig && !u.saetze.contains { $0.ok == true }
+    }
+
     /// Die Liste in der Reihenfolge von `ids` (Blatt "Reihenfolge ändern"): Zug für Zug über `verschieben`, damit Supersätze wie beim Ziehen bleiben.
     static func umordnen(_ liste: [WorkoutUebung], ids: [String]) -> [WorkoutUebung] {
         var l = liste
