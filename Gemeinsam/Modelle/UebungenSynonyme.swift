@@ -74,7 +74,7 @@ enum UebungenSynonyme {
          SuchBegriff(["rudern", "row"], muskeln: ["oberer Rücken", "Rautenmuskel"], nur: ["Rücken"])),
         (["rucken", "back"], SuchBegriff(["rucken"])),
         (["trapez", "traps", "trap", "trapezius"], SuchBegriff(["trapez", "shrug"], muskeln: ["Trapez"])),
-        (["unterer rucken", "lower back", "ruckenstrecker", "erector spinae", "kreuz"],
+        (["unterer rucken", "lower back", "ruckenstrecker", "ruckenstreckung", "erector spinae", "kreuz"],
          SuchBegriff(["ruckenstrecker", "hyperextension", "back extension", "good morning", "kreuzheben", "deadlift"],
                      muskeln: ["Rückenstrecker", "unterer Rücken"])),
 
@@ -91,9 +91,9 @@ enum UebungenSynonyme {
         (["glutes", "glute", "gluteus", "po", "gesass", "hintern", "butt", "popo"],
          SuchBegriff(["glute", "hip thrust", "kickback", "gesassbrucke"], muskeln: ["Po"], nur: ["Beine"])),
         (["waden", "wade", "calves", "calf"], SuchBegriff(["wadenheben", "wadenpresse", "waden", "calf"], muskeln: ["Waden"])),
-        (["adduktoren", "adduktor", "adductors", "adductor", "innere oberschenkel", "oberschenkel innen", "innenseite oberschenkel"],
+        (["adduktoren", "adduktor", "adduktion", "adductors", "adductor", "innere oberschenkel", "oberschenkel innen", "innenseite oberschenkel"],
          SuchBegriff(["adduktor", "adduction"], muskeln: ["Adduktoren"])),
-        (["abduktoren", "abduktor", "abductors", "abductor", "aussere oberschenkel", "oberschenkel aussen", "aussenseite"],
+        (["abduktoren", "abduktor", "abduktion", "abductors", "abductor", "aussere oberschenkel", "oberschenkel aussen", "aussenseite"],
          SuchBegriff(["abduktor", "abduction"], muskeln: ["Abduktoren"])),
 
         // Rumpf
@@ -101,8 +101,8 @@ enum UebungenSynonyme {
          SuchBegriff(["bauch", "crunch", "plank", "sit up"], muskeln: ["Bauch"])),
 
         // Übungen und Umgangssprache
-        (["beinstrecker", "leg extension", "knee extension", "quad extension"], SuchBegriff(["beinstrecker", "leg extension"])),
-        (["beinbeuger", "leg curl", "hamstring curl"], SuchBegriff(["beinbeuger", "leg curl"])),
+        (["beinstrecker", "beinstreckung", "leg extension", "knee extension", "quad extension"], SuchBegriff(["beinstrecker", "leg extension"])),
+        (["beinbeuger", "beinbeugung", "leg curl", "hamstring curl"], SuchBegriff(["beinbeuger", "leg curl"])),
         (["beinpresse", "leg press", "legpress"], SuchBegriff(["beinpresse", "leg press"])),
         (["hackenschmidt", "hack squat", "hacke"], SuchBegriff(["hackenschmidt", "hack"])),
         (["overhead", "uberkopf", "uber kopf"], SuchBegriff(["overhead", "uber kopf", "uberkopf"])),
@@ -116,11 +116,12 @@ enum UebungenSynonyme {
         (["seitheben", "seitenheben", "lateral raise", "side raise"], SuchBegriff(["seitheben", "lateral raise"])),
         (["frontheben", "front raise"], SuchBegriff(["frontheben", "front raise"])),
         (["fliegende", "fly", "flys", "flyes", "flies"], SuchBegriff(["fliegende", "fly", "flye"])),
-        (["schulterdrucken", "shoulder press", "military press", "ohp", "overhead press"],
+        (["schulterdrucken", "schulterpresse", "shoulder press", "military press", "ohp", "overhead press"],
          SuchBegriff(["schulterdrucken", "shoulder press", "military press", "uberkopfdrucken", "overhead press"])),
         (["brustpresse", "chest press", "brustdrucken"], SuchBegriff(["brustpresse", "chest press", "brustdrucken"])),
         (["rumanisches kreuzheben", "romanian deadlift", "rdl"], SuchBegriff(["rumanisches kreuzheben", "romanian deadlift"])),
         (["ausfallschritt", "ausfallschritte", "lunge", "lunges"], SuchBegriff(["ausfallschritt", "lunge"])),
+        (["bauchmaschine", "crunchmaschine"], SuchBegriff(["crunch"])),
         (["wadenheben", "calf raise", "wadenpresse"], SuchBegriff(["wadenheben", "calf raise", "wadenpresse"])),
     ]
 

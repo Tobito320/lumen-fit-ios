@@ -45,4 +45,14 @@ final class UebungsKatalogTests: XCTestCase {
         XCTAssertFalse(UebungsKatalog.suchen("beinstrecker", in: alle).isEmpty)
         XCTAssertTrue(alle.contains { $0.istCardio })
     }
+
+    /// Wörter, die auf den Studio-Maschinen stehen (W-009): "Adduktion" statt "Adduktoren".
+    func testMaschinenWoerterAusDemStudioFindenDieUebung() {
+        let alle = UebungsKatalog.laden(bundle)
+        XCTAssertTrue(UebungsKatalog.suchen("Adduktion", in: alle).map(\.id).contains("oHsrypV"), "Adduktoren sitzend an der Maschine")
+        XCTAssertTrue(UebungsKatalog.suchen("Abduktion", in: alle).map(\.id).contains("CHpahtl"), "Abduktoren sitzend an der Maschine")
+        for wort in ["Beinstreckung", "Beinbeugung", "Schulterpresse", "Rückenstreckung", "Bauchmaschine", "Brustpresse", "Ruderzug"] {
+            XCTAssertFalse(UebungsKatalog.suchen(wort, in: alle).isEmpty, wort)
+        }
+    }
 }
