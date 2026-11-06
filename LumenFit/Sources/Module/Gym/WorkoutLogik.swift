@@ -36,6 +36,15 @@ enum WorkoutLogik {
         }
     }
 
+    /// Die Liste in der Reihenfolge von `ids` (Blatt "Reihenfolge ändern"): Zug für Zug über `verschieben`, damit Supersätze wie beim Ziehen bleiben.
+    static func umordnen(_ liste: [WorkoutUebung], ids: [String]) -> [WorkoutUebung] {
+        var l = liste
+        for (ziel, id) in ids.enumerated() {
+            if let von = l.firstIndex(where: { $0.id == id }), von != ziel { l = verschieben(l, von: von, nach: ziel) }
+        }
+        return l
+    }
+
     /// Der Plantag in der Reihenfolge der Liste, die Kopplungen wie in der Liste; Plan-Übungen, die nicht in der Liste stehen, bleiben dahinter.
     static func tagInReihenfolge(_ tag: TrainingsTag, _ liste: [WorkoutUebung]) -> TrainingsTag {
         var t = tag

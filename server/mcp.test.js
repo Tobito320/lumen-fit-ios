@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("neun Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren"]);
+test("elf Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren", "lumenfit_plan_setzen", "lumenfit_plan_lesen"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -73,4 +73,20 @@ test("schlaf_beleg: GET /admin/schlaf-beleg mit konto und limit, ungültiges lim
   assert.equal(aufrufe[0].url, "https://live.test/admin/schlaf-beleg?konto=abc&limit=3");
   await assert.rejects(() => werkzeugAufrufen("lumenfit_schlaf_beleg", { konto: "abc", limit: 99 }, opt));
   await assert.rejects(() => werkzeugAufrufen("lumenfit_schlaf_beleg", {}, opt));
+});
+
+const PLAN = { tage: [{ id: "t", name: "Push", wochentage: [1], uebungen: [{ id: "u", uebung: "eigen", name: "Bank", saetze: [{ wdh: 8, failure: false }] }] }] };
+
+test("plan_setzen: ohne anwenden nur Vorschau (kein Abruf), mit anwenden POST ins Postfach, kaputter Plan abgewiesen", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "K", basis: { live: "https://live.test" } };
+  const v = await werkzeugAufrufen("lumenfit_plan_setzen", { konto: "abc", plan: PLAN }, opt);
+  assert.equal(v.vorschau, true);
+  assert.equal(aufrufe.length, 0);
+  await werkzeugAufrufen("lumenfit_plan_setzen", { konto: "abc", plan: PLAN, anwenden: true }, opt);
+  assert.equal(aufrufe[0].url, "https://live.test/admin/postfach");
+  assert.deepEqual(JSON.parse(aufrufe[0].opt.body), { konto: "abc", art: "gym.plan", daten: PLAN });
+  await assert.rejects(werkzeugAufrufen("lumenfit_plan_setzen", { konto: "abc", plan: { tage: [] }, anwenden: true }, opt), /tage/);
+  await werkzeugAufrufen("lumenfit_plan_lesen", { konto: "abc" }, opt);
+  assert.equal(aufrufe[1].url, "https://live.test/admin/postfach/plan?konto=abc");
 });

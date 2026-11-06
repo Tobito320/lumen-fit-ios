@@ -11,7 +11,7 @@ struct UebungsKarte: View {
     @State private var blatt: Blatt?
 
     private enum Blatt: String, Identifiable {
-        case notiz, pause, rechner, tausch, cardio
+        case notiz, pause, rechner, tausch, cardio, reihenfolge
         var id: String { rawValue }
     }
 
@@ -56,6 +56,7 @@ struct UebungsKarte: View {
             case .rechner: RechnerBlatt(sitzung: sitzung, index: index)
             case .tausch: AusweichBlatt(sitzung: sitzung, index: index)
             case .cardio: CardioAbschlussBlatt(sitzung: sitzung, index: index)
+            case .reihenfolge: ReihenfolgeBlatt(sitzung: sitzung)
             }
         }
     }
@@ -74,16 +75,19 @@ struct UebungsKarte: View {
             }
             Spacer(minLength: Abstand.s)
             Menu {
-                // Oben nur das Häufige; Pause, Supersatz, Rekorde und Entfernen eine Ebene tiefer.
-                Button { blatt = .notiz } label: { Label("Notiz", systemImage: "note.text") }
+                // Oben nur das Nötigste; Notiz, Scheiben, Reihenfolge, Pause, Supersatz, Rekorde und Entfernen eine Ebene tiefer.
                 if !u.planUebung.istCardio {
                     if AusweichLogik.tauschbar(u, saetze: u.saetze) {
                         Button { blatt = .tausch } label: { Label("Gerät besetzt: tauschen", systemImage: "arrow.left.arrow.right") }
                     }
-                    Button { blatt = .rechner } label: { Label("Scheiben und Aufwärmen", systemImage: "scalemass") }
                     Button { sitzung.auslassen(index) } label: { Label("Auslassen", systemImage: "forward.fill") }
                 }
                 Menu {
+                    Button { blatt = .notiz } label: { Label("Notiz", systemImage: "note.text") }
+                    if !u.planUebung.istCardio {
+                        Button { blatt = .rechner } label: { Label("Scheiben und Aufwärmen", systemImage: "scalemass") }
+                    }
+                    Button { blatt = .reihenfolge } label: { Label("Reihenfolge ändern", systemImage: "arrow.up.arrow.down") }
                     Button { blatt = .pause } label: { Label("Pause dieser Übung", systemImage: "timer") }
                     if !u.planUebung.istCardio {
                         Button { sitzung.supersatz(index, an: u.planUebung.supersatz != true) } label: {
@@ -215,6 +219,31 @@ struct AusweichBlatt: View {
             .navigationTitle("Gerät besetzt")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } } }
+        }
+    }
+}
+
+/// Reihenfolge der Übungen im Training ändern: kompakte Liste, nur Namen, Griffe immer sichtbar. "Fertig" speichert (`GymSitzung.umordnen`).
+struct ReihenfolgeBlatt: View {
+    let sitzung: GymSitzung
+    private struct Eintrag: Identifiable { let id: String; let name: String }
+    @State private var eintraege: [Eintrag] = []
+    @Environment(\.dismiss) private var schliessen
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(eintraege) { Text($0.name) }
+                    .onMove { eintraege.move(fromOffsets: $0, toOffset: $1) }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Reihenfolge")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Fertig") { sitzung.umordnen(eintraege.map(\.id)); schliessen() } }
+            }
+            .onAppear { eintraege = sitzung.liste.map { Eintrag(id: $0.id, name: $0.planUebung.anzeigeName) } }
         }
     }
 }

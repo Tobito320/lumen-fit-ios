@@ -24,6 +24,16 @@ final class UebungZiehenTests: XCTestCase {
         XCTAssertEqual(a.sitzung.liste.map(\.id), ["a", "b", "c"], "nach unten: an die Stelle der Zielübung")
     }
 
+    func testReihenfolgeBlattSpeichertDieNeueReihenfolgeInTrainingUndPlan() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.umordnen(["c", "b", "a"])
+        XCTAssertEqual(a.sitzung.liste.map(\.id), ["c", "b", "a"])
+        XCTAssertEqual(a.daten.training.plan.tage[0].uebungen.map(\.id), ["c", "b", "a"])
+        a.sitzung.umordnen(["x", "b"])
+        XCTAssertEqual(a.sitzung.liste.map(\.id), ["c", "b", "a"], "unbekannte Ids ändern nichts")
+    }
+
     func testUnbekannteOderGleicheUebungAendertNichts() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")

@@ -3,6 +3,7 @@
 // Reine fetch(request, env, holen)-Funktion ohne cloudflare:workers-Import -> unter Node testbar.
 import { kiFoto } from "./ki-foto.js";
 import { handleEssen } from "./essen.js";
+import { postfachApp, postfachAdmin } from "./postfach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
@@ -575,6 +576,10 @@ async function verwalten(request, url, env) {
     const { results } = await env.DB.prepare("SELECT zeit, daten FROM schlaf_belege WHERE konto = ? ORDER BY id DESC LIMIT ?").bind(id, limit).all();
     return json({ konto: id, belege: results.map((z) => ({ zeit: z.zeit, daten: lesen(z.daten) })) });
   }
+  if (url.pathname.startsWith("/admin/postfach")) {
+    const r = await postfachAdmin(request, url, env, { json, nein, koerper, lesen, ID_FORM });
+    if (r) return r;
+  }
   if (url.pathname === "/admin/config" && m === "PATCH") {
     const r = flicken(await globaleConfig(env), await koerper(request), ["loveaVerbinden", "schlafBeleg"]);
     if (r.fehler) return nein(400, r.fehler);
@@ -640,6 +645,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
+  if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
   return nein(404, "not found");

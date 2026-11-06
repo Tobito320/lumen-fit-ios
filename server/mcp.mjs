@@ -7,6 +7,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
+import { ERLAUBT } from "./postfach.js";
 
 const BASIS = {
   test: process.env.LUMENFIT_URL_TEST ?? "https://lumen-fit-test.ahmedhdplay12345.workers.dev",
@@ -70,6 +71,20 @@ export const WERKZEUGE = [
     description: "Konto sperren (gesperrt=true, Standard) oder wieder freigeben (false). Ein gesperrtes Konto bekommt auf allen App-Wegen 403.",
     inputSchema: { type: "object", properties: { umgebung, id: kontoId, gesperrt: { type: "boolean" } }, required: ["id"] },
   },
+  {
+    name: "lumenfit_plan_setzen",
+    description: "Gym-Plan eines Kontos ersetzen (Postfach): ohne anwenden nur Vorschau (Prüfung und Zusammenfassung, nichts wird gesendet), mit anwenden=true wartet die Op im Postfach und die App spielt sie beim nächsten Start oder Vordergrund als gym.plan ein (ein laufendes Training liest den neuen Plantag sofort). ERSETZT DEN GANZEN PLAN, alle Tage mitschicken: vorher lumenfit_plan_lesen. Form: {tage:[{id,name,wochentage:[1..7],uebungen:[{id,uebung(Katalog-id oder \"eigen\"),name?,saetze:[{wdh,kg?,failure}]}]}],ruhetage?:[1..7]}.",
+    inputSchema: {
+      type: "object",
+      properties: { umgebung, konto: kontoId, plan: { type: "object", description: "Ganzer Plan wie in lumenfit_plan_lesen." }, anwenden: { type: "boolean", description: "true: wirklich ins Postfach legen; sonst nur Vorschau." } },
+      required: ["konto", "plan"],
+    },
+  },
+  {
+    name: "lumenfit_plan_lesen",
+    description: "Der Gym-Plan, den die App des Kontos zuletzt gemeldet hat (Stand beim Start oder Vordergrund, mit Zeit). Die App meldet nur, wenn am Konto planMelden=true steht (lumenfit_konto_setzen einstellungen {planMelden:true}); sonst stand null.",
+    inputSchema: { type: "object", properties: { umgebung, konto: kontoId }, required: ["konto"] },
+  },
 ];
 
 function standardKey() {
@@ -98,6 +113,19 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
     if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
     if (a.limit !== undefined && (!Number.isInteger(a.limit) || a.limit < 1 || a.limit > 30)) throw new Error("limit: ganze Zahl von 1 bis 30");
     pfad = `/admin/schlaf-beleg?konto=${encodeURIComponent(a.konto)}${a.limit !== undefined ? `&limit=${a.limit}` : ""}`;
+  }
+  else if (name === "lumenfit_plan_lesen") {
+    if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
+    pfad = `/admin/postfach/plan?konto=${encodeURIComponent(a.konto)}`;
+  }
+  else if (name === "lumenfit_plan_setzen") {
+    if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
+    const fehler = ERLAUBT["gym.plan"](a.plan);
+    if (fehler) throw new Error(fehler);
+    if (a.anwenden !== true) {
+      return { vorschau: true, hinweis: "Nichts gesendet. Ersetzt den ganzen Plan; mit anwenden=true ins Postfach legen.", konto: a.konto, tage: a.plan.tage.map((t) => ({ name: t.name, wochentage: t.wochentage, uebungen: t.uebungen.map((u) => u.name ?? u.uebung) })) };
+    }
+    [pfad, methode, body] = ["/admin/postfach", "POST", { konto: a.konto, art: "gym.plan", daten: a.plan }];
   }
   else if (name === "lumenfit_config_setzen") [pfad, methode, body] = ["/admin/config", "PATCH", a.einstellungen];
   else {

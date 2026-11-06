@@ -94,3 +94,13 @@ CREATE TABLE IF NOT EXISTS schlaf_belege (
   daten TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS schlaf_belege_konto ON schlaf_belege (konto, id);
+-- Postfach für Agenten (postfach.js): Ops, die ein Agent für ein Konto ablegt; die App holt sie ab und quittiert (abgeholt = Zeitpunkt).
+CREATE TABLE IF NOT EXISTS agent_postfach (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  konto TEXT NOT NULL,
+  art TEXT NOT NULL,
+  daten TEXT NOT NULL,
+  erstellt TEXT NOT NULL,
+  abgeholt TEXT
+);
+CREATE INDEX IF NOT EXISTS agent_postfach_konto ON agent_postfach (konto, abgeholt, id);

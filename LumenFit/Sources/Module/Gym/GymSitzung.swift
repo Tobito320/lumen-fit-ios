@@ -638,6 +638,16 @@ final class GymSitzung: TrainingSteuerung {
         liveSenden()
     }
 
+    /// Blatt "Reihenfolge ändern": die Übungen in der Reihenfolge von `ids`; der Plantag zieht mit, wie beim Ziehen.
+    func umordnen(_ ids: [String]) {
+        ladeWennNoetig()
+        let neu = WorkoutLogik.umordnen(liste, ids: ids)
+        guard neu.map(\.id) != liste.map(\.id) else { return }
+        liste = neu
+        if let t = training, let alt = tag { t.planSichern(TrainingLogik.tagSetzen(t.plan, WorkoutLogik.tagInReihenfolge(alt, liste))) }
+        liveSenden()
+    }
+
     /// "Plan aktualisieren": der Tag bekommt den Aufbau dieses Trainings (`neuerTag`).
     func planAktualisieren() {
         guard let t = training, let neu = neuerTag else { return }
