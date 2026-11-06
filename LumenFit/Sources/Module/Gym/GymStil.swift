@@ -15,18 +15,28 @@ struct GymSchalter: View {
     let wert: String
     let minus: () -> Void
     let plus: () -> Void
+    /// Tipp auf die Zahl (Zahlenfeld zum Eintippen); nil = die Zahl ist nur Anzeige.
+    var tippen: (() -> Void)? = nil
     @Environment(\.palette) private var palette
+
+    private var zahl: some View {
+        Text(wert)
+            .font(.title3.weight(.bold)).fontDesign(.rounded).monospacedDigit()
+            .contentTransition(.numericText())
+            .frame(minWidth: 52)
+            .foregroundStyle(palette.text)
+    }
 
     var body: some View {
         HStack(spacing: 0) {
             Button(action: minus) {
                 Image(systemName: "minus").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche).contentShape(.rect)
             }
-            Text(wert)
-                .font(.title3.weight(.bold)).fontDesign(.rounded).monospacedDigit()
-                .contentTransition(.numericText())
-                .frame(minWidth: 52)
-                .foregroundStyle(palette.text)
+            if let tippen {
+                Button(action: tippen) { zahl.frame(minHeight: Abstand.tippflaeche).contentShape(.rect) }
+            } else {
+                zahl
+            }
             Button(action: plus) {
                 Image(systemName: "plus").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche).contentShape(.rect)
             }
@@ -36,6 +46,7 @@ struct GymSchalter: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(titel)
         .accessibilityValue(wert)
+        .accessibilityAction(named: "Zahl eintippen") { tippen?() }
         .accessibilityAdjustableAction { richtung in
             switch richtung {
             case .increment: plus()

@@ -75,4 +75,26 @@ final class LetztesMalTests: XCTestCase {
         XCTAssertEqual(LetztesMal.aendereKg(zeilen, 7, richtung: 1, schritt: 2.5), zeilen)
         XCTAssertEqual(LetztesMal.aendereWdh(zeilen, -1, richtung: 1), zeilen)
     }
+
+    func testGetipptesGewichtKommaPunktLeerUndAusserhalb() {
+        XCTAssertEqual(LetztesMal.kgAusText("15"), 15)
+        XCTAssertEqual(LetztesMal.kgAusText("12,5"), 12.5)
+        XCTAssertEqual(LetztesMal.kgAusText(" 12.5 "), 12.5)
+        XCTAssertEqual(LetztesMal.kgAusText(""), 0, "leer = ohne Gewicht")
+        XCTAssertEqual(LetztesMal.kgAusText("500"), 500)
+        XCTAssertNil(LetztesMal.kgAusText("500,5"))
+        XCTAssertNil(LetztesMal.kgAusText("-2"))
+        XCTAssertNil(LetztesMal.kgAusText("1.2.3"))
+        XCTAssertNil(LetztesMal.kgAusText("abc"))
+        XCTAssertNil(LetztesMal.kgAusText("nan"))
+    }
+
+    func testGetippteWiederholungenSindGanzUndImBereich() {
+        XCTAssertEqual(LetztesMal.wdhAusText("12"), 12)
+        XCTAssertEqual(LetztesMal.wdhAusText("100"), 100)
+        XCTAssertNil(LetztesMal.wdhAusText(""))
+        XCTAssertNil(LetztesMal.wdhAusText("0"))
+        XCTAssertNil(LetztesMal.wdhAusText("101"))
+        XCTAssertNil(LetztesMal.wdhAusText("8,5"))
+    }
 }

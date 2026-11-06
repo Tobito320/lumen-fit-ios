@@ -14,11 +14,32 @@ struct SatzZeile: View {
     @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
     @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = GymAnzeige.rpeSpalteStandard
     @State private var rpeBlatt = false
+    /// Zahlenfeld zum Eintippen von Gewicht oder Wiederholungen (Tipp auf die Zahl).
+    @State private var eingabe: Eingabe?
+    @State private var eingabeText = ""
+    private enum Eingabe: String, Identifiable { case kg, wdh; var id: String { rawValue } }
 
     var body: some View {
         if sitzung.liste.indices.contains(uebung), sitzung.liste[uebung].saetze.indices.contains(satz) {
             zeile(sitzung.liste[uebung], sitzung.liste[uebung].saetze[satz])
+                .alert(eingabe == .kg ? "Gewicht in kg" : "Wiederholungen", isPresented: Binding(get: { eingabe != nil }, set: { _ in })) {
+                    TextField(eingabe == .kg ? "kg" : "Wdh", text: $eingabeText)
+                        .keyboardType(eingabe == .kg ? .decimalPad : .numberPad)
+                    Button("Abbrechen", role: .cancel) { eingabe = nil }
+                    Button("Sichern") { eingabeSichern() }
+                }
         }
+    }
+
+    /// Getippten Wert übernehmen: derselbe Weg wie Plus und Minus (`werteSetzen`); ungültig ändert nichts.
+    private func eingabeSichern() {
+        let s = sitzung.liste[uebung].saetze[satz]
+        switch eingabe {
+        case .kg: if let kg = LetztesMal.kgAusText(eingabeText) { sitzung.werteSetzen(uebung, satz, kg: kg, wdh: s.wdh) }
+        case .wdh: if let wdh = LetztesMal.wdhAusText(eingabeText) { sitzung.werteSetzen(uebung, satz, kg: s.kg, wdh: wdh) }
+        case nil: break
+        }
+        eingabe = nil
     }
 
     private func zeile(_ u: WorkoutUebung, _ s: PlanSatz) -> some View {
@@ -101,12 +122,14 @@ struct SatzZeile: View {
 
     private func kgSchalter(_ u: WorkoutUebung, _ s: PlanSatz) -> some View {
         GymSchalter(titel: "Gewicht", wert: s.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "– kg",
-                    minus: { sitzung.gewicht(uebung, satz, richtung: -1) }, plus: { sitzung.gewicht(uebung, satz, richtung: 1) })
+                    minus: { sitzung.gewicht(uebung, satz, richtung: -1) }, plus: { sitzung.gewicht(uebung, satz, richtung: 1) },
+                    tippen: { eingabeText = s.kg.map { TrainingLogik.kgText($0) } ?? ""; eingabe = .kg })
     }
 
     private func wdhSchalter(_ s: PlanSatz) -> some View {
         GymSchalter(titel: "Wiederholungen", wert: "\(s.wdh)",
-                    minus: { sitzung.wiederholungen(uebung, satz, richtung: -1) }, plus: { sitzung.wiederholungen(uebung, satz, richtung: 1) })
+                    minus: { sitzung.wiederholungen(uebung, satz, richtung: -1) }, plus: { sitzung.wiederholungen(uebung, satz, richtung: 1) },
+                    tippen: { eingabeText = "\(s.wdh)"; eingabe = .wdh })
     }
 
     private func haken(_ s: PlanSatz, _ gruen: Color) -> some View {

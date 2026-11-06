@@ -62,6 +62,19 @@ enum LetztesMal {
         min(max(wdh + (richtung > 0 ? 1 : -1), wdhBereich.lowerBound), wdhBereich.upperBound)
     }
 
+    /// Getipptes Gewicht ("12,5" und "12.5" gelten gleich): 0 bis `kgMaximum`, leer = 0 = ohne Gewicht. nil = ungültig, die Eingabe wird verworfen.
+    static func kgAusText(_ text: String) -> Double? {
+        let t = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")
+        if t.isEmpty { return 0 }
+        guard let kg = Double(t), kg.isFinite, (0...kgMaximum).contains(kg) else { return nil }
+        return kg
+    }
+
+    /// Getippte Wiederholungen als ganze Zahl im `wdhBereich`; nil = leer oder ungültig.
+    static func wdhAusText(_ text: String) -> Int? {
+        Int(text.trimmingCharacters(in: .whitespaces)).flatMap { wdhBereich.contains($0) ? $0 : nil }
+    }
+
     /// Eine Zeile ändern: Plus oder Minus am Gewicht.
     static func aendereKg(_ saetze: [PlanSatz], _ i: Int, richtung: Int, schritt: Double) -> [PlanSatz] {
         guard saetze.indices.contains(i) else { return saetze }
