@@ -126,7 +126,7 @@ struct EssenTabView: View {
                         proteinKarte(woche)
                     } else {
                         // Lumen: Körperwerte, Donut und Protein der Woche hinter "Mehr".
-                        MehrKlappe(untertitel: "Körperwerte, Makros, Protein der Woche", offen: $mehrOffen) {
+                        MehrKlappe("Makros und Körperwerte", untertitel: "Donut, Protein der Woche, Gewicht", offen: $mehrOffen) {
                             if essen.anpassung.sichtbar.contains("koerper") { abschnitt("koerper", daten, summe, ziele) }
                             if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
                             proteinKarte(woche)
@@ -171,7 +171,7 @@ struct EssenTabView: View {
             }
         case "ernaehrung":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                abschnittKopf("Ernährung") { uebersichtOffen = true }
+                abschnittKopf("Ernährung", knopf: "Alle Mahlzeiten") { uebersichtOffen = true }
                 EssenMahlzeitenAbschnitt(essen: essen, tag: tag, zielKcal: ziele.kcal, bearbeitbar: true,
                                          oeffnen: { offeneMahlzeit = $0 },
                                          hinzufuegen: { blatt = .hinzufuegen($0, .suche) },
@@ -187,7 +187,7 @@ struct EssenTabView: View {
             }
         case "koerper":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                abschnittKopf("Körperwerte") { koerperOffen = true }
+                abschnittKopf("Körperwerte", knopf: "Alle Werte") { koerperOffen = true }
                 EssenKoerperKarte(tag: tag, gewicht: essen.gewicht(bis: tag),
                                   werte: KoerperArt.allCases.compactMap { essen.koerperwert($0, bis: tag) },
                                   aendern: { gewichtAendern($0, essen) })
@@ -201,11 +201,11 @@ struct EssenTabView: View {
         Text(text).font(.title2.weight(.heavy)).fontDesign(.rounded).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
     }
 
-    private func abschnittKopf(_ text: String, mehr: @escaping @MainActor () -> Void) -> some View {
+    private func abschnittKopf(_ text: String, knopf: String, aktion mehr: @escaping @MainActor () -> Void) -> some View {
         HStack(alignment: .firstTextBaseline) {
             ueberschrift(text)
             Spacer()
-            Button("Mehr") { mehr() }
+            Button(knopf) { mehr() }
                 .font(.body.weight(.semibold))
                 .foregroundStyle(palette.text)
                 .frame(minHeight: Abstand.tippflaeche)
@@ -223,7 +223,7 @@ struct EssenTabView: View {
         } label: {
             Image(systemName: "ellipsis").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
         }
-        .accessibilityLabel("Mehr")
+        .accessibilityLabel("Ziele und Auswertung")
     }
 
     /// Fasten: Lovea-Aufbau wie bisher; sonst erst nach dem Schalter in "Tagebuch anpassen" oder mit vorhandenen Fasten-Daten.

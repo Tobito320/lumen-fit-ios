@@ -297,7 +297,7 @@ struct VerlaufHighlightsListe: View {
                 .accessibilityAddTraits(.isHeader)
             ForEach(teile.offen) { loveaZeile($0) }
             if !teile.mehr.isEmpty {
-                VerlaufKlapp(titel: "Mehr (\(teile.mehr.count))", offen: $mehrOffen) {
+                VerlaufKlapp(titel: "Weitere Übungen (\(teile.mehr.count))", offen: $mehrOffen) {
                     ForEach(teile.mehr) { loveaZeile($0) }
                 }
             }
@@ -343,7 +343,7 @@ struct VerlaufHighlightsListe: View {
                     Haarlinie()
                 }
                 if !teile.mehr.isEmpty {
-                    VerlaufKlapp(titel: "Mehr (\(teile.mehr.count))", offen: $mehrOffen) {
+                    VerlaufKlapp(titel: "Weitere Übungen (\(teile.mehr.count))", offen: $mehrOffen) {
                         ForEach(teile.mehr) { e in
                             zeile(e)
                             Haarlinie()

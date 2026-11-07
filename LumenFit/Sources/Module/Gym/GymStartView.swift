@@ -39,7 +39,7 @@ struct GymStartView: View {
         .sheet(item: $cardioGeraet) { CardioEingabeView(sitzung: sitzung, geraet: $0.rawValue) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
         .alert("Das geht gerade nicht", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-            Button("OK") { fehler = nil }
+            Button("Verstanden") { fehler = nil }
         } message: {
             Text(fehler ?? "")
         }
@@ -115,7 +115,7 @@ struct GymStartView: View {
     private func mehrBereich(_ stand: GymStartStand, training: TrainingStore) -> some View {
         ListenKarte {
             Button { mehrOffen.toggle() } label: {
-                GymZeile(titel: "Mehr", untertitel: "Diese Woche, Cardio, nachtragen") {
+                GymZeile(titel: "Cardio, Nachtragen, Einstellungen", untertitel: "Auch: diesen Tag verlegen") {
                     Image(systemName: mehrOffen ? "chevron.up" : "chevron.down")
                         .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                 }

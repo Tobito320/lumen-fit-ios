@@ -94,7 +94,7 @@ struct UebungsKarte: View {
                     if u.extra {
                         Button(role: .destructive) { sitzung.uebungWeg(index) } label: { Label("Entfernen", systemImage: "trash") }
                     }
-                } label: { Label("Mehr", systemImage: "ellipsis") }
+                } label: { Label("Pause, Supersatz, Rekorde", systemImage: "ellipsis") }
             } label: {
                 Image(systemName: "ellipsis.circle")
                     .font(.title2)
