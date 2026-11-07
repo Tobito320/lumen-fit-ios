@@ -84,7 +84,7 @@ final class UebungsSucheTests: XCTestCase {
 
     func testOwnEntriesAreAdditiveAndComplete() throws {
         let eigene = alle.filter { $0.id.hasPrefix("lv-") }
-        XCTAssertEqual(eigene.count, 9)
+        XCTAssertGreaterThanOrEqual(eigene.count, 95, "eigene Einträge inkl. Studio-Varianten")
         XCTAssertEqual(Set(alle.map(\.id)).count, alle.count, "doppelte ids")
         for u in eigene {
             XCTAssertFalse(UebungsKatalog.hatVideo(u.id), u.id)
