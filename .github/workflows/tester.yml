@@ -28,6 +28,10 @@ jobs:
           EMAIL: ${{ inputs.email }}
           GRUPPE: ${{ inputs.gruppe }}
           BUNDLE: com.onlyus.lumen-fit
+          KONTAKT_MAIL: ${{ secrets.KONTAKT_MAIL }}
+          KONTAKT_TEL: ${{ secrets.KONTAKT_TEL }}
+          KONTAKT_VORNAME: ${{ secrets.KONTAKT_VORNAME }}
+          KONTAKT_NACHNAME: ${{ secrets.KONTAKT_NACHNAME }}
         run: |
           pip install --quiet pyjwt cryptography requests
           python3 - <<'PY'
@@ -54,6 +58,23 @@ jobs:
                     "relationships": {"app": {"data": {"type": "apps", "id": app}}}}}).json()["data"]
               print("Gruppe angelegt:", gname)
           gid = g["id"]
+          # Externe Tests brauchen Beschreibung, Feedback-Mail und Kontakt für Apples Beta-Review (einmalig, danach nur Abgleich)
+          beschreibung = "Lumen Fit: Training, Essen, Schritte und Schlaf an einem Ort. Profil anlegen, Training starten, Mahlzeit per Suche oder Foto eintragen."
+          loks = r("GET", f"/apps/{app}/betaAppLocalizations").json().get("data", [])
+          if loks:
+              r("PATCH", f"/betaAppLocalizations/{loks[0]['id']}", json={"data": {"type": "betaAppLocalizations", "id": loks[0]["id"],
+                "attributes": {"description": beschreibung, "feedbackEmail": os.environ["KONTAKT_MAIL"]}}})
+          else:
+              r("POST", "/betaAppLocalizations", json={"data": {"type": "betaAppLocalizations", "attributes": {"locale": "de-DE",
+                "description": beschreibung, "feedbackEmail": os.environ["KONTAKT_MAIL"]}, "relationships": {"app": {"data": {"type": "apps", "id": app}}}}})
+          rd = r("GET", f"/apps/{app}/betaAppReviewDetail").json().get("data")
+          if rd:
+              r("PATCH", f"/betaAppReviewDetails/{rd['id']}", json={"data": {"type": "betaAppReviewDetails", "id": rd["id"], "attributes": {
+                "contactFirstName": os.environ["KONTAKT_VORNAME"], "contactLastName": os.environ["KONTAKT_NACHNAME"], "contactEmail": os.environ["KONTAKT_MAIL"],
+                "contactPhone": os.environ["KONTAKT_TEL"], "demoAccountRequired": False,
+                "notes": "Kein Login nötig: Beim ersten Start ein lokales Profil mit Name anlegen."}}})
+          info = r("GET", f"/apps/{app}/betaAppReviewDetail").json().get("data", {}).get("attributes", {})
+          print("Review-Kontakt gesetzt:", bool(info.get("contactPhone")))
           builds = r("GET", "/builds", params={"filter[app]": app, "sort": "-uploadedDate", "limit": 1, "filter[processingState]": "VALID"}).json().get("data", [])
           if builds:
               bid = builds[0]["id"]; print("Neuester Build", builds[0]["attributes"]["version"])
