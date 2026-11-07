@@ -36,4 +36,15 @@ final class GymKatalogTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(katalog.count, 1300)
         XCTAssertFalse(katalog.contains { $0.name.isEmpty || $0.muskel.isEmpty || $0.geraet.isEmpty })
     }
+
+    /// 07.11.: Varianten wie Multipresse und Studio-Maschinen ohne GIF ergänzt (lv-, kein Video), Ids eindeutig.
+    func testStudioVariantenOhneVideoSindDaUndFindbar() {
+        let katalog = UebungsKatalog.laden(Bundle(for: BundleAnker.self))
+        XCTAssertEqual(Set(katalog.map(\.id)).count, katalog.count, "Ids eindeutig")
+        XCTAssertGreaterThanOrEqual(katalog.filter { $0.id.hasPrefix("lv-") }.count, 90)
+        XCTAssertFalse(UebungsKatalog.hatVideo("lv-mp-rdl"))
+        XCTAssertTrue(UebungsKatalog.suchen("smith romanian deadlift", in: katalog).contains { $0.id == "lv-mp-rdl" })
+        XCTAssertTrue(UebungsKatalog.suchen("pendulum squat", in: katalog).contains { $0.id == "lv-ma-pendulum" })
+        XCTAssertTrue(UebungsKatalog.suchen("bayesian", in: katalog).contains { $0.id == "lv-kz-bayesian" })
+    }
 }
