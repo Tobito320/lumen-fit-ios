@@ -1,0 +1,99 @@
+name: TestFlight-Tester einladen
+
+# Lädt eine Person per E-Mail als externen TestFlight-Tester ein (Gruppe "Freunde").
+# Start: gh workflow run tester.yml -R Tobito320/lumen-fit-ios -f email=NAME@BEISPIEL.DE
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: E-Mail der Person
+        required: true
+      gruppe:
+        description: Name der externen Gruppe
+        default: Freunde
+
+permissions:
+  contents: read
+
+jobs:
+  einladen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Einladen
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          EMAIL: ${{ inputs.email }}
+          GRUPPE: ${{ inputs.gruppe }}
+          BUNDLE: com.onlyus.lumen-fit
+          KONTAKT_MAIL: ${{ secrets.KONTAKT_MAIL }}
+          KONTAKT_TEL: ${{ secrets.KONTAKT_TEL }}
+          KONTAKT_VORNAME: ${{ secrets.KONTAKT_VORNAME }}
+          KONTAKT_NACHNAME: ${{ secrets.KONTAKT_NACHNAME }}
+        run: |
+          pip install --quiet pyjwt cryptography requests
+          python3 - <<'PY'
+          import base64, os, sys, time, jwt, requests
+          key = base64.b64decode(os.environ["ASC_KEY_P8_BASE64"]).decode()
+          tok = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": int(time.time()), "exp": int(time.time()) + 1100, "aud": "appstoreconnect-v1"},
+                           key, algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"})
+          H = {"Authorization": f"Bearer {tok}", "Content-Type": "application/json"}
+          B = "https://api.appstoreconnect.apple.com/v1"
+          def r(m, p, **kw):
+              x = requests.request(m, B + p, headers=H, timeout=30, **kw)
+              if x.status_code >= 400:
+                  print(f"{m} {p} -> {x.status_code}: {x.text[:600]}")
+              return x
+          email, gname = os.environ["EMAIL"].strip(), os.environ["GRUPPE"].strip()
+          apps = r("GET", "/apps", params={"filter[bundleId]": os.environ["BUNDLE"]}).json().get("data", [])
+          if not apps:
+              print("App nicht gefunden. Vorhandene:", [(a["attributes"]["bundleId"]) for a in r("GET", "/apps").json().get("data", [])]); sys.exit(1)
+          app = apps[0]["id"]; print("App", apps[0]["attributes"]["name"])
+          gruppen = r("GET", f"/apps/{app}/betaGroups").json().get("data", [])
+          g = next((x for x in gruppen if x["attributes"]["name"] == gname and not x["attributes"]["isInternalGroup"]), None)
+          if not g:
+              g = r("POST", "/betaGroups", json={"data": {"type": "betaGroups", "attributes": {"name": gname},
+                    "relationships": {"app": {"data": {"type": "apps", "id": app}}}}}).json()["data"]
+              print("Gruppe angelegt:", gname)
+          gid = g["id"]
+          # Externe Tests brauchen Beschreibung, Feedback-Mail und Kontakt für Apples Beta-Review (einmalig, danach nur Abgleich)
+          beschreibung = "Lumen Fit: Training, Essen, Schritte und Schlaf an einem Ort. Profil anlegen, Training starten, Mahlzeit per Suche oder Foto eintragen."
+          loks = r("GET", f"/apps/{app}/betaAppLocalizations").json().get("data", [])
+          if loks:
+              r("PATCH", f"/betaAppLocalizations/{loks[0]['id']}", json={"data": {"type": "betaAppLocalizations", "id": loks[0]["id"],
+                "attributes": {"description": beschreibung, "feedbackEmail": os.environ["KONTAKT_MAIL"]}}})
+          else:
+              r("POST", "/betaAppLocalizations", json={"data": {"type": "betaAppLocalizations", "attributes": {"locale": "de-DE",
+                "description": beschreibung, "feedbackEmail": os.environ["KONTAKT_MAIL"]}, "relationships": {"app": {"data": {"type": "apps", "id": app}}}}})
+          rd = r("GET", f"/apps/{app}/betaAppReviewDetail").json().get("data")
+          if rd:
+              r("PATCH", f"/betaAppReviewDetails/{rd['id']}", json={"data": {"type": "betaAppReviewDetails", "id": rd["id"], "attributes": {
+                "contactFirstName": os.environ["KONTAKT_VORNAME"], "contactLastName": os.environ["KONTAKT_NACHNAME"], "contactEmail": os.environ["KONTAKT_MAIL"],
+                "contactPhone": os.environ["KONTAKT_TEL"], "demoAccountRequired": False,
+                "notes": "Kein Login nötig: Beim ersten Start ein lokales Profil mit Name anlegen."}}})
+          info = r("GET", f"/apps/{app}/betaAppReviewDetail").json().get("data", {}).get("attributes", {})
+          print("Review-Kontakt gesetzt:", bool(info.get("contactPhone")))
+          builds = r("GET", "/builds", params={"filter[app]": app, "sort": "-uploadedDate", "limit": 1, "filter[processingState]": "VALID"}).json().get("data", [])
+          if builds:
+              bid = builds[0]["id"]; print("Neuester Build", builds[0]["attributes"]["version"])
+              r("POST", f"/betaGroups/{gid}/relationships/builds", json={"data": [{"type": "builds", "id": bid}]})
+              s = r("POST", "/betaAppReviewSubmissions", json={"data": {"type": "betaAppReviewSubmissions",
+                    "relationships": {"build": {"data": {"type": "builds", "id": bid}}}}})
+              print("Beta-Review:", "eingereicht" if s.status_code < 300 else "nicht eingereicht (siehe oben, evtl. schon eingereicht/freigegeben)")
+          t = r("POST", "/betaTesters", json={"data": {"type": "betaTesters", "attributes": {"email": email},
+                "relationships": {"betaGroups": {"data": [{"type": "betaGroups", "id": gid}]}}}})
+          if t.status_code < 300:
+              print("Tester eingeladen:", email)
+          elif t.status_code == 409:
+              tid = r("GET", "/betaTesters", params={"filter[email]": email}).json()["data"][0]["id"]
+              r("POST", f"/betaGroups/{gid}/relationships/betaTesters", json={"data": [{"type": "betaTesters", "id": tid}]})
+              print("Tester gab es schon, zur Gruppe hinzugefügt:", email)
+          else:
+              sys.exit(1)
+          inv = r("POST", "/betaTesterInvitations", json={"data": {"type": "betaTesterInvitations", "relationships": {
+                "app": {"data": {"type": "apps", "id": app}},
+                "betaTester": {"data": {"type": "betaTesters", "id": (t.json()["data"]["id"] if t.status_code < 300 else tid)}}}}})
+          print("Einladungs-Mail:", "verschickt" if inv.status_code < 300 else "noch nicht (kommt, sobald der Build für externe Tester freigegeben ist)")
+          PY

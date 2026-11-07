@@ -30,11 +30,14 @@ struct TrainingLaufView: View {
                     Label("Übung hinzufügen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.bordered)
-                Button(role: .destructive) { beenden = true } label: {
-                    Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                // Sind alle Sätze durch, ist "Training beenden" schon der große Knopf unten: dann nicht noch einmal.
+                if sitzung.dran != nil {
+                    Button(role: .destructive) { beenden = true } label: {
+                        Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    }
+                    .buttonStyle(.bordered)
+                    .gymTipp(.trainingBeenden, tippKontext)
                 }
-                .buttonStyle(.bordered)
-                .gymTipp(.trainingBeenden, tippKontext)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.l)

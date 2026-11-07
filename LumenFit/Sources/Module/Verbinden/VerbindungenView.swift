@@ -14,7 +14,7 @@ struct VerbindungenView: View {
                 LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an.")
             }
         }
-        .navigationTitle("Verbindungen")
+        .navigationTitle("Freunde und Partner")
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
     }
@@ -51,7 +51,7 @@ private struct VerbindungenInhalt: View {
         .sheet(isPresented: $codeOffen) { VerbindungCodeBlatt() }
         .sheet(isPresented: $scanOffen) { VerbindungScanBlatt() }
         .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-            Button("OK", role: .cancel) {}
+            Button("Verstanden", role: .cancel) {}
         } message: { Text(fehler ?? "") }
     }
 

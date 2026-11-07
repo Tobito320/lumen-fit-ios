@@ -149,7 +149,7 @@ struct SplitDetailView: View {
             Text("Dein jetziger Plan wird durch diesen Split ersetzt. Alte Trainings bleiben.")
         }
         .alert("Das geht gerade nicht", isPresented: Binding(get: { meldung != nil }, set: { if !$0 { meldung = nil } })) {
-            Button("OK") { meldung = nil }
+            Button("Verstanden") { meldung = nil }
         } message: {
             Text(meldung ?? "")
         }

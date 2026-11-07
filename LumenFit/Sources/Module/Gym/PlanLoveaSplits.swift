@@ -104,7 +104,7 @@ struct PlanLoveaVorschauView: View {
             Text("Deine bisherigen Trainingstage und Gewichte im Plan gehen verloren. Der Verlauf bleibt.")
         }
         .alert("Diese Woche ist vorbei", isPresented: $keinTag) {
-            Button("OK", role: .cancel) {}
+            Button("Verstanden", role: .cancel) {}
         } message: {
             Text("Es ist kein Trainingstag mehr übrig. Probier das Split ab Montag.")
         }

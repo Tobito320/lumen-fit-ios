@@ -72,7 +72,7 @@ struct VerbindungPersonView: View {
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
         .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-            Button("OK", role: .cancel) {}
+            Button("Verstanden", role: .cancel) {}
         } message: { Text(fehler ?? "") }
     }
 

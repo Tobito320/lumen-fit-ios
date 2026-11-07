@@ -1,17 +1,15 @@
 import SwiftUI
 
 /// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Kompakte Einstellungsliste: eine Zeile je Eintrag, Wert rechts.
-/// Selten Gebrauchtes (Meilensteine, Geräte, Deine Daten, Über Lumen Fit) liegt eine Ebene tiefer unter "Mehr" (W-003, Nutzung: gesehen, kaum getippt).
+/// Alles liegt höchstens eine Ebene tief, ohne "Mehr"-Zwischenstufe; "Freunde und Partner" enthält den Code zum Zeigen und Scannen.
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @State private var verbindenOffen = false
 
     var body: some View {
         List {
             ProfilAbschnitt {
-                Button { verbindenOffen = true } label: { ProfilListenZeile("Kollegen verbinden", symbol: "qrcode") }
-                    .nutzungEintrag(.profilKollegen)
+                link("Freunde und Partner", .profilFreunde, symbol: "person.2.fill") { VerbindungenView() }
             }
             ProfilBereicheAbschnitt()
             ProfilAbschnitt {
@@ -21,16 +19,18 @@ struct ProfilBlattView: View {
                 link("Aussehen", .profilAussehen, symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
                 link("Ziele und Körper", .profilZiele, symbol: "target") { ZieleView() }
                 link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
-                link("Freunde und Partner", .profilFreunde, symbol: "link") { VerbindungenView() }
+                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
+                // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
+                if umgebung.konto.schlafSichtbar { link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() } }
             }
             ProfilAbschnitt {
-                link("Mehr", .profilMehr, symbol: "ellipsis.circle.fill") { ProfilMehrView() }
+                link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
+                link("Über Lumen Fit", .profilUeber, symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
             }
         }
         .profilListe()
         .defaultScrollAnchor(startAnker)
         .navigationTitle("Profil")
-        .sheet(isPresented: $verbindenOffen) { VerbindungCodeBlatt() }
     }
 
     /// Oben; nur das Debug-Bild der CI startet unten (Start-Argument `-lumenFitScroll unten`), damit die untere Hälfte im Bild zu sehen ist.
@@ -42,38 +42,12 @@ struct ProfilBlattView: View {
         #endif
     }
 
-    private var themaName: String? {
-        umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }
-    }
-
-    private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
-        NavigationLink { ziel() } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
-            .nutzungEintrag(eintrag)
-    }
-}
-
-/// "Mehr": was selten gebraucht wird, eine Ebene unter dem Profil.
-struct ProfilMehrView: View {
-    @Environment(AppUmgebung.self) private var umgebung
-
-    var body: some View {
-        List {
-            ProfilAbschnitt {
-                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
-                // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
-                if umgebung.konto.schlafSichtbar { link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() } }
-            }
-            ProfilAbschnitt {
-                link("Deine Daten", .profilDaten, symbol: "externaldrive.fill", wert: sicherungKurz) { ProfilDatenView() }
-                link("Über Lumen Fit", .profilUeber, symbol: "info.circle.fill", wert: ProfilAppInfo.version) { ProfilUeberView() }
-            }
-        }
-        .profilListe()
-        .navigationTitle("Mehr")
-    }
-
     private var sicherungKurz: String {
         ProfilSicherungStand.kurz(zuletzt: umgebung.daten.flatMap { ProfilSicherungStand.lade($0.ordner) }, jetzt: umgebung.uhr())
+    }
+
+    private var themaName: String? {
+        umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }
     }
 
     private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {

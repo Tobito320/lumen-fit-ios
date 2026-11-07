@@ -142,7 +142,7 @@ struct PlanView: View {
 
     private func quellen(_ plan: TrainingsPlan) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Mehr")
+            GymAbschnitt(titel: "Pläne und Übungen")
             ListenKarte {
                 Button { bibliothek = true } label: {
                     GymZeile(titel: "Split-Bibliothek", untertitel: "Fertige Pläne für 2 bis 6 Tage, auch nur für eine Woche testen") {
