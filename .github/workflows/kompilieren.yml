@@ -1,6 +1,6 @@
 name: Kompilieren
 
-# Compiler ohne Mac (Ahmed 08.11.2026): baut einen Zweig oder Commit auf dem macOS-Läufer, ohne Tests und ohne Simulator-Start,
+# Compiler ohne Mac (08.11.2026): baut einen Zweig oder Commit auf dem macOS-Läufer, ohne Tests und ohne Simulator-Start,
 # und liefert die Fehler und Warnungen als Liste (Artefakt `kompilieren`). Aufruf vom PC: `swift-kompilieren` (zeigt die Fehler im Terminal).
 on:
   workflow_dispatch:
