@@ -4,6 +4,7 @@
 import { kiFoto } from "./ki-foto.js";
 import { handleEssen } from "./essen.js";
 import { postfachApp, postfachAdmin } from "./postfach.js";
+import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
@@ -690,6 +691,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
+  if (url.pathname.startsWith("/coach/")) return coach(request, url, env, { json, nein, koerper, lesen, gleich });
   return nein(404, "not found");
 }
 
