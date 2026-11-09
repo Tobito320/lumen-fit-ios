@@ -10,6 +10,25 @@ enum SatzVorhersageQuelle {
     static var an: Bool { UserDefaults.standard.object(forKey: anSchluessel) as? Bool ?? true }
     static var ziel: VorhersageZiel { VorhersageZiel(rawValue: UserDefaults.standard.string(forKey: zielSchluessel) ?? "") ?? .schwer }
 
+    /// Frühere Einheiten je Übung, einmal je Training gerechnet: `TrainingStore.sessions` faltet bei jedem Lesen alle Ops neu, und jede Satzzeile fragt.
+    /// shortcut: ändert jemand mitten im Training eine alte Einheit, gilt der neue Stand erst im nächsten Training; bei Bedarf am Op-Zähler festmachen.
+    private static var historien: [String: [UebungTag]] = [:]
+    private static var historienTraining: String?
+
+    private static func historie(_ sitzung: GymSitzung, _ w: WorkoutUebung) -> [UebungTag] {
+        let training = sitzung.sessionId ?? ""
+        if historienTraining != training {
+            historien = [:]
+            historienTraining = training
+        }
+        let schluessel = "\(w.planUebung.uebung)|\(w.id)"
+        if let da = historien[schluessel] { return da }
+        let frueher = (sitzung.training?.sessions ?? []).filter { $0.id != sitzung.sessionId }
+        let neu = RekordLogik.tage(katalogId: w.planUebung.uebung, planId: w.id, in: frueher)
+        historien[schluessel] = neu
+        return neu
+    }
+
     /// Der Vorschlag für Satz `satz` der Übung `uebung`, aber nur, wenn das der erste offene Satz der Übung ist (einer auf einmal, nach jedem Haken neu).
     static func vorschlag(_ sitzung: GymSitzung, uebung u: Int, satz i: Int, ziel: VorhersageZiel) -> SatzVorschlag? {
         guard sitzung.liste.indices.contains(u), sitzung.liste[u].saetze.firstIndex(where: { $0.ok != true }) == i else { return nil }
@@ -28,10 +47,7 @@ enum SatzVorhersageQuelle {
         guard !w.planUebung.istCardio, !w.ausgelassen else { return nil }
         let katalog = sitzung.katalog(w.planUebung)
         guard let art = SatzVorhersageLogik.art(katalog, name: w.planUebung.anzeigeName) else { return nil }
-        let laufend = sitzung.laufende?.id
-        let frueher = (sitzung.training?.sessions ?? []).filter { $0.id != laufend }
-        let historie = RekordLogik.tage(katalogId: w.planUebung.uebung, planId: w.id, in: frueher)
-        return SatzVorhersageLogik.vorschlag(zeile: i, saetze: w.saetze, historie: historie, art: art,
+        return SatzVorhersageLogik.vorschlag(zeile: i, saetze: w.saetze, historie: historie(sitzung, w), art: art,
                                              schritt: LetztesMal.kgSchritt(geraet: katalog?.geraet), ziel: ziel,
                                              pause: w.planUebung.pause ?? PauseLogik.standard, heute: Datum.text(sitzung.umgebung.uhr()))
     }
