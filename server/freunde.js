@@ -69,7 +69,7 @@ async function uebersicht(k, env, h) {
       "SELECT konto, status, wert, aktualisiert FROM herausforderung_teilnehmer WHERE herausforderung = ? AND status IN ('eingeladen', 'dabei') ORDER BY rowid").bind(x.id).all();
     const teilnehmer = [];
     for (const t of ts) {
-      const z = t.konto === k.id ? null : verbunden(t.konto);
+      const z = t.konto === k.id ? null : aktiv.get(t.konto); // die Id bleibt auch in der Pause gleich
       teilnehmer.push({
         id: z ? z.id : (await h.sha256(`${x.id}:${t.konto}`)).slice(0, 16), verbunden: !!z, ich: t.konto === k.id,
         name: await name(t.konto), status: t.status, wert: t.wert, aktualisiert: t.aktualisiert ?? null,
@@ -189,7 +189,7 @@ async function werteMelden(k, request, env, h) {
   return h.json({ ok: true, gesetzt });
 }
 
-// "Heute" kommt von der App (Ortszeit); der Server nimmt das UTC-Datum und das von jetzt + 2 Stunden (Hagen), damit um Mitternacht nichts hakt.
+// "Heute" kommt von der App (Ortszeit); der Server nimmt das UTC-Datum und das von jetzt + 2 Stunden (Mitteleuropa, UTC+1/+2), damit um Mitternacht nichts hakt.
 const stupsTage = () => [0, 2 * 3600_000].map((d) => new Date(Date.now() + d).toISOString().slice(0, 10));
 
 async function reagieren(k, request, env, h) {

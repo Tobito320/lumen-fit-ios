@@ -335,6 +335,9 @@ test("Gruppe: Namen, Teilnehmer-Ids für Unverbundene, keine Konto-Id in irgende
   const ichSicht = (await hole(env, "ich", id)).teilnehmer;
   assert.deepEqual(ichSicht.map((t) => [t.name, t.verbunden, t.ich, t.wert]), [["Beispiel Ich", false, true, 0], ["Beispiel Profil Du", true, false, 40], ["Beispiel Fremd", true, false, 25]]);
   assert.deepEqual([ichSicht[1].id, ichSicht[2].id], [vd, vf]);
+  await einst(env, vd, "a", { pause: true });
+  assert.equal((await hole(env, "ich", id)).teilnehmer[1].id, vd, "Pause ändert die Id nicht");
+  await einst(env, vd, "a", {});
   // "du" kennt "fremd" nicht: Teilnehmer-Id aus Herausforderung und Konto, 16 Hex-Zeichen, nie die Konto-Id.
   const duSicht = (await hole(env, "du", id)).teilnehmer;
   const f = duSicht.find((t) => t.name === "Beispiel Fremd");
