@@ -54,18 +54,17 @@ final class CrewDienst {
     }
 
     init(umgebung: AppUmgebung, demo: Bool = false) {
-        self.umgebung = umgebung
-        datei = umgebung.konto.ordner.appendingPathComponent(Self.dateiName)
         #if DEBUG
-        self.demo = demo
+        let istDemo = demo
         #else
-        self.demo = false
+        let istDemo = false
         #endif
-        if self.demo {
-            antwort = Self.demoAntwort(jetzt: umgebung.uhr())
-        } else {
-            antwort = (try? Data(contentsOf: datei)).flatMap { try? LoveaVertrag.decoder().decode(CrewAntwort.self, from: $0) }
-        }
+        let pfad = umgebung.konto.ordner.appendingPathComponent(Self.dateiName)
+        self.umgebung = umgebung
+        self.demo = istDemo
+        datei = pfad
+        antwort = istDemo ? Self.demoAntwort(jetzt: umgebung.uhr())
+            : (try? Data(contentsOf: pfad)).flatMap { try? LoveaVertrag.decoder().decode(CrewAntwort.self, from: $0) }
     }
 
     private static func demoAntwort(jetzt: Date) -> CrewAntwort? {

@@ -31,7 +31,7 @@ struct CrewHerausforderungBlatt: View {
 
     /// `vorauswahl`: diese Person ist schon gewählt (von ihrer Seite aus).
     init(vorauswahl: String? = nil) {
-        _personen = State(initialValue: vorauswahl.map { [$0] } ?? [])
+        _personen = State(initialValue: vorauswahl.map { Set([$0]) } ?? [])
     }
 
     private var crew: [VerbindungEintrag] { CrewLogik.crew(GymCrewQuelle.eintraege(umgebung)) }
