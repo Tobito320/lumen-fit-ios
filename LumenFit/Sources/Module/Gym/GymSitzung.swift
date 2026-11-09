@@ -26,6 +26,10 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private(set) var entwurfAufgabe: Task<Void, Never>?
     /// Wie lange nach dem letzten Tipp ein Entwurf auf die Platte geht (Sekunden).
     static let entwurfVerzug: TimeInterval = 1.5
+    /// Der zuletzt gesetzte Haken (Plan-Id, Satz, Zeit): startet die Pause nach, wenn die Person bei der ersten Frage Ja zum Pausen-Timer sagt.
+    @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
+    /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
+    nonisolated static var pausenTimerAn: Bool { UserDefaults.standard.bool(forKey: GymAnzeige.pausenTimerSchluessel) }
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
     @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
     @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
@@ -281,7 +285,8 @@ final class GymSitzung: TrainingSteuerung {
             liste[u].saetze[i].ok = true
             let rekord = rekordPruefen(u, i)
             let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung))
-            setzePause(ziel.map { GymPauseStand(session: sid, plan: liste[u].id, satz: i, seit: jetzt, ziel: $0) })
+            letzterHaken = (liste[u].id, i, jetzt)
+            setzePause(Self.pausenTimerAn ? ziel.map { GymPauseStand(session: sid, plan: liste[u].id, satz: i, seit: jetzt, ziel: $0) } : nil)
             if let andere, andere != u { sende(andere) }
             sende(u)
             hakenZaehler += 1
@@ -469,6 +474,15 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     // MARK: - Pause
+
+    /// Nach dem Ja zur Frage "Pausen-Timer nutzen?": die Pause für den eben gesetzten Haken läuft ab seinem Zeitpunkt.
+    func pauseNachholen() {
+        guard let sid = sessionId, pause == nil, let l = letzterHaken, let u = liste.firstIndex(where: { $0.id == l.plan }),
+              liste[u].saetze.indices.contains(l.satz), liste[u].saetze[l.satz].ok == true,
+              let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung)) else { return }
+        setzePause(GymPauseStand(session: sid, plan: l.plan, satz: l.satz, seit: l.zeit, ziel: ziel))
+        liveSenden()
+    }
 
     /// "+15 s" oder "−15 s" auf die laufende Pause.
     func pauseAendern(sekunden: Int) {

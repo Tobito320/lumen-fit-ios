@@ -26,6 +26,9 @@ final class GesundheitsStand {
     /// Die Nächte wurden schon einmal ganz geholt; wer Schlaf erst später einschaltet, bekommt beim ersten Mal die vollen 60 Tage.
     @ObservationIgnored private var naechteGeholt = false
     @ObservationIgnored private let typen: @MainActor () -> Set<HealthTyp>
+    /// Ob die App nach Leserechten fragen darf (die Person hat Health im Onboarding oder unter Health-Zugriff erlaubt). Sonst liest sie nur,
+    /// was schon erlaubt ist, und zeigt nie still beim Start das Health-Blatt (09.11.2026: Rechte erst bei der Nutzung).
+    @ObservationIgnored private let darfFragen: @MainActor () -> Bool
 
     /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
     /// `importVerlauf` liefert den Stand der importierten Lovea-Ops (Schritte, Schlaf); er füllt nur, was Health nicht hat (`ImportVerlaufLogik`).
@@ -33,8 +36,10 @@ final class GesundheitsStand {
     init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] },
          importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() },
          eigeneNaechte: @escaping @MainActor () -> SchlafEigeneQuellen = { SchlafEigeneQuellen() },
-         typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) }) {
+         typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) },
+         darfFragen: @escaping @MainActor () -> Bool = { true }) {
         self.typen = typen
+        self.darfFragen = darfFragen
         self.eigeneNaechte = eigeneNaechte
         self.leser = leser
         self.uhr = uhr
@@ -110,7 +115,7 @@ final class GesundheitsStand {
         let anzahl = erstGeholt ? Self.nachladeTage : Self.ersteTage
         let von = Datum.addTage(heute, -(anzahl - 1))
         let gewollt = typen()
-        if !gewollt.isSubset(of: erfragt) {
+        if !gewollt.isSubset(of: erfragt), darfFragen() {
             zugriff = await leser.zugriff(fuer: gewollt)
             // Ein Fehler (z. B. Health gesperrt, weil iOS die App im Hintergrund bei gesperrtem iPhone startet) wird nicht gemerkt, sonst bliebe Health bis zum Neustart leer.
             if zugriff != .nichtVerfuegbar { erfragt.formUnion(gewollt) }

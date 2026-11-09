@@ -411,6 +411,25 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertNil(a.sitzung.entwurfAufgabe)
     }
 
+    func testOhnePraeferenzStartetDerHakenKeinePauseUndNachholenStartetSie() throws {
+        let a = try aufbau()
+        UserDefaults.standard.set(false, forKey: GymAnzeige.pausenTimerSchluessel)
+        defer { UserDefaults.standard.set(true, forKey: GymAnzeige.pausenTimerSchluessel) }
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.haken(0, 0)
+        XCTAssertNil(a.sitzung.pause, "Standard aus: nur der Haken")
+        XCTAssertEqual(a.sitzung.liste[0].saetze[0].ok, true)
+        a.uhr.vor(sekunden: 20)
+        // Die Frage "Pausen-Timer nutzen?" mit Ja: die Pause läuft ab dem Haken, nicht ab jetzt.
+        a.sitzung.pauseNachholen()
+        XCTAssertEqual(a.sitzung.pause?.plan, "a")
+        XCTAssertEqual(a.sitzung.pause?.satz, 0)
+        XCTAssertEqual(a.sitzung.pause?.seit, a.uhr.lesen - 20)
+        XCTAssertEqual(a.sitzung.pause?.ziel, 90)
+        a.sitzung.pauseNachholen()
+        XCTAssertEqual(a.sitzung.pause?.seit, a.uhr.lesen - 20, "läuft schon eine, bleibt sie")
+    }
+
     func testCardioAbschliessenTraegtLaufbandEin() throws {
         let a = try aufbau()
         var plan = GymTestAufbau.plan()

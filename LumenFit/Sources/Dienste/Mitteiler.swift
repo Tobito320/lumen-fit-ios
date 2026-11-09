@@ -14,6 +14,10 @@ struct SystemMitteiler: Mitteiler {
     }
 
     func zeige(id: String, titel: String, text: String, route: Route?) async {
+        // Rechte erst bei der ersten Mitteilung, nie beim Start (09.11.2026); einmal entschieden fragt iOS nicht mehr.
+        if await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined {
+            guard await erlaubnisHolen() else { return }
+        }
         let inhalt = UNMutableNotificationContent()
         inhalt.title = titel
         inhalt.body = text
