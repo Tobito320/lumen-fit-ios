@@ -5,6 +5,7 @@ import { kiFoto } from "./ki-foto.js";
 import { handleEssen } from "./essen.js";
 import { postfachApp, postfachAdmin } from "./postfach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
+import { freunde, freundeSeite } from "./freunde.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
@@ -644,6 +645,8 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/verbindungen" || url.pathname.startsWith("/verbindungen/")) {
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
+  if (url.pathname === "/freunde" || url.pathname.startsWith("/freunde/")) return freunde(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256 });
+  if (url.pathname.startsWith("/f/") && m === "GET") return freundeSeite(url);
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });
