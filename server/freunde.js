@@ -263,9 +263,15 @@ const htmlSeite = (status, kopf, koerper, extra = "") => new Response(
   + `a{display:inline-block;margin-top:16px;padding:14px 24px;border-radius:14px;background:#000;color:#fff;text-decoration:none;font-weight:600}</style></head>`
   + `<body><main><h1>${kopf}</h1>${koerper}</main></body></html>`, { status, headers: SEITEN_KOPF });
 
-export function freundeSeite(url) {
+// Öffentlicher TestFlight-Link (Variable TESTFLIGHT_LINK der Umgebung, z. B. per `wrangler secret put`): wer die App noch nicht hat, holt sie hier.
+// Nur die feste Form von Apple kommt in die Seite.
+const TESTFLIGHT_FORM = /^https:\/\/testflight\.apple\.com\/join\/[A-Za-z0-9]{6,12}$/;
+
+export function freundeSeite(url, env = {}) {
   const teile = url.pathname.split("/");
   if (teile.length !== 3 || teile[1] !== "f" || !TOKEN_FORM.test(teile[2])) return htmlSeite(404, "Link ungültig", "<p>Dieser Einladungs-Link passt nicht. Bitte um einen neuen.</p>");
   const ziel = `lumenfit://freund?d=${teile[2]}`;
-  return htmlSeite(200, "Einladung zu Lumen Fit", `<p>Du wurdest eingeladen, dich zu verbinden.</p><a href="${ziel}">In Lumen Fit öffnen</a>`, `<meta http-equiv="refresh" content="0;url=${ziel}">`);
+  const tf = typeof env.TESTFLIGHT_LINK === "string" && TESTFLIGHT_FORM.test(env.TESTFLIGHT_LINK) ? env.TESTFLIGHT_LINK : null;
+  const holen = tf ? `<p>Noch keine App?</p><a href="${tf}">Lumen Fit über TestFlight holen</a><p>Danach diesen Link noch einmal öffnen.</p>` : "";
+  return htmlSeite(200, "Einladung zu Lumen Fit", `<p>Du wurdest eingeladen, dich zu verbinden.</p><a href="${ziel}">In Lumen Fit öffnen</a>${holen}`, `<meta http-equiv="refresh" content="0;url=${ziel}">`);
 }

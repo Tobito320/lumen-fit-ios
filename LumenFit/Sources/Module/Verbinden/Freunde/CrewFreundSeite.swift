@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Eine Person der Crew: Status, Woche, Live-Einheit, Rekorde, letzte Trainings, Vergleich gemeinsamer Übungen, Herausfordern, Anfeuern oder Stups
-/// und die Einstellungen der Verbindung. Alles nur aus dem, was die Person mir zeigt; ohne Freigabe steht "nicht geteilt", nie eine 0.
+/// Eine Person der Crew: Status, Trainingspartner wählen, eure Woche, Zahlen der Woche, Live-Einheit, Rekorde und letzte Trainings mit Respekt, Vergleich
+/// gemeinsamer Übungen, Herausfordern und die Einstellungen der Verbindung. Alles nur aus dem, was die Person mir zeigt; ohne Freigabe steht
+/// "nicht geteilt", nie eine 0.
 struct CrewFreundSeite: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var herausfordern = false
+    /// Nur damit die Seite eine neue Wahl des Trainingspartners sofort zeigt.
+    @AppStorage(VerbindungenLogik.partnerSchluessel) private var gewaehlt: String?
 
     var body: some View {
         let eintrag = GymCrewQuelle.eintraege(umgebung).first { $0.id == id }
@@ -41,7 +44,13 @@ struct CrewFreundSeite: View {
                             .padding([.horizontal, .bottom], Abstand.l)
                     }
                 }
-                knoepfe(e, imGym: zeile?.zustand == .imGym, heute: heute)
+                knoepfe(e)
+                if let d = e.daten {
+                    VStack(alignment: .leading, spacing: Abstand.s) {
+                        kopf("Eure Woche")
+                        ListenKarte { CrewWocheZusammen(name: CrewLogik.name(e), datei: d).padding(Abstand.l) }
+                    }
+                }
                 woche(e, jetzt: jetzt)
                 if let d = e.daten { live(e, d, imGym: zeile?.zustand == .imGym, heute: heute) }
                 if let d = e.daten { rekorde(e, d, jetzt: jetzt) }
@@ -63,20 +72,21 @@ struct CrewFreundSeite: View {
 
     // MARK: Knöpfe
 
-    @ViewBuilder
-    private func knoepfe(_ e: VerbindungEintrag, imGym: Bool, heute: String) -> some View {
-        VStack(spacing: Abstand.s) {
+    private func knoepfe(_ e: VerbindungEintrag) -> some View {
+        let istPartner = VerbindungenLogik.partner(CrewLogik.crew(GymCrewQuelle.eintraege(umgebung)), gewaehlt: gewaehlt)?.id == e.id
+        return VStack(spacing: Abstand.s) {
             Button { herausfordern = true } label: {
                 Label("Herausfordern", systemImage: "flag.checkered").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
             .buttonStyle(.lumenHauptknopf)
-            if imGym {
-                CrewReaktionKnopf(eintrag: e, art: .anfeuern, ziel: CrewLogik.zielLive(tag: heute), beschriftet: true)
-            } else {
-                CrewReaktionKnopf(eintrag: e, art: .stups, ziel: CrewLogik.zielStups(tag: heute), beschriftet: true)
+            Button { umgebung.konto.partnerWaehlen(istPartner ? VerbindungenLogik.keinPartner : e.id) } label: {
+                Label(istPartner ? "Dein Trainingspartner" : "Als Trainingspartner wählen", systemImage: istPartner ? "person.2.fill" : "person.2")
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
             }
+            .buttonStyle(.bordered)
+            .accessibilityHint(istPartner ? "Tippen nimmt die Wahl zurück" : "Seine Karte steht dann auf Heute und im Training")
             if !CrewLogik.darfReagieren(e) {
-                Text(e.ich.pause ? "Die Verbindung ist pausiert." : "Diese Person teilt Gym nicht mit dir. Reaktionen gehen erst, wenn sie Gym freigibt.")
+                Text(e.ich.pause ? "Die Verbindung ist pausiert." : "Diese Person teilt Gym nicht mit dir. Respekt geht erst, wenn sie Gym freigibt.")
                     .font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -176,7 +186,7 @@ struct CrewFreundSeite: View {
             } else {
                 GymZeile(titel: titel, untertitel: untertitel)
             }
-            CrewReaktionKnopf(eintrag: e, art: .stark, ziel: CrewLogik.zielEinheit(tag: t.tag), text: untertitel)
+            CrewReaktionKnopf(eintrag: e, art: .respekt, ziel: CrewLogik.zielEinheit(tag: t.tag), text: untertitel)
                 .padding(.trailing, Abstand.s)
         }
     }

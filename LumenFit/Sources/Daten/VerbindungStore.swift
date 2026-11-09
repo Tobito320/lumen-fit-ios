@@ -45,9 +45,9 @@ final class VerbindungStore {
         if let f = freundeDatei?.lade() { gespeicherteFreunde = f }
     }
 
-    /// Liest den Partner-Stand neu. Ist die Einstellung `loveaVerbunden` aus, bleibt alles "nicht verbunden".
+    /// Liest den Partner-Stand (gewählter Trainingspartner) neu. Ist die Einstellung `loveaVerbunden` aus, kommt er nur vom Server, nie aus der Datei von Lovea.
     func aktualisiere(jetzt: Date) {
-        let neu: PartnerStand = (einstellungen?.werte.loveaVerbunden ?? true) ? bruecke.partner(jetzt: jetzt) : .nichtVerbunden
+        let neu: PartnerStand = (einstellungen?.werte.loveaVerbunden ?? true) ? bruecke.partner(jetzt: jetzt) : bruecke.partnerOhneLovea(jetzt: jetzt)
         guard neu != partner else { return }
         partner = neu
         ereignisse?.senden(.partnerAktualisiert)

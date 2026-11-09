@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Die Crew als Hub: Für dich (Reaktionen, Einladungen), Herausforderungen, Rangliste der Woche, letzte Trainings der Crew mit Reaktion, Freunde.
+/// Die Crew als Hub: Für dich (Reaktionen, Einladungen), Trainingspartner mit eurer Woche, Herausforderungen, Rangliste der Woche, letzte Trainings der
+/// Crew mit Respekt, Freunde (Einladen mit einem Tipp).
 /// Wer gerade trainiert und die Rekorde der Crew stehen schon auf der Startseite des Trainings (nicht doppelt). Gleich in beiden Aufbauten.
 /// Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
 struct CrewSeite: View {
@@ -20,7 +21,12 @@ struct CrewSeite: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.xl) {
+                if !dienst.ausstehend.isEmpty {
+                    Label("Ohne Netz gemacht: geht raus, sobald Netz da ist.", systemImage: "icloud.slash")
+                        .font(.footnote).foregroundStyle(palette.text2)
+                }
                 fuerDich
+                CrewPartnerAbschnitt()
                 herausforderungen
                 rangliste
                 trainings
@@ -215,7 +221,7 @@ struct CrewSeite: View {
                 GymZeile(titel: t.name, untertitel: untertitel)
             }
             if let e {
-                CrewReaktionKnopf(eintrag: e, art: .stark, ziel: CrewLogik.zielEinheit(tag: t.training.tag), text: untertitel)
+                CrewReaktionKnopf(eintrag: e, art: .respekt, ziel: CrewLogik.zielEinheit(tag: t.training.tag), text: untertitel)
                     .padding(.trailing, Abstand.s)
             }
         }
@@ -223,11 +229,13 @@ struct CrewSeite: View {
 
     // MARK: Freunde
 
-    /// Hinzufügen (Code, Scan, Link) und Einstellungen je Person wohnen in "Freunde und Partner"; hier nur der Weg dorthin.
+    /// Einladen mit einem Tipp (Link teilen); Code, Scan und Einstellungen je Person wohnen in "Freunde und Partner".
     private var freunde: some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             kopf("Freunde")
             ListenKarte {
+                CrewLinkTeilen(imHub: true)
+                Haarlinie()
                 NavigationLink { VerbindungenView() } label: {
                     GymZeile(titel: "Freunde hinzufügen und verwalten", untertitel: "Code, Link und was jede Person sieht") {
                         Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)

@@ -442,6 +442,17 @@ test("Landeseite /f/<token>: ohne Konto, mit Kopfzeilen, Knopf und Weiterleitung
   assert.equal(ohneDb.status, 200);
 });
 
+test("Landeseite: TestFlight-Link nur in Apples fester Form, sonst kein Knopf", async () => {
+  const token = "B".repeat(43);
+  const seite = async (env) => (await handleFetch(new Request(`https://x.test/f/${token}`), env)).text();
+  const env = await welt("ich");
+  assert.ok(!(await seite(env)).includes("TestFlight"), "ohne Variable kein Knopf");
+  assert.ok((await seite({ ...env, TESTFLIGHT_LINK: "https://testflight.apple.com/join/AbC123xy" })).includes('href="https://testflight.apple.com/join/AbC123xy"'));
+  for (const falsch of ["https://evil.test/join/AbC123xy", "https://testflight.apple.com/join/<b>x</b>", "javascript:alert(1)"]) {
+    assert.ok(!(await seite({ ...env, TESTFLIGHT_LINK: falsch })).includes("TestFlight holen"), falsch);
+  }
+});
+
 test("Landeseite nimmt nur die Token-Form: nichts Gefährliches kommt je in die Seite", async () => {
   const env = await welt();
   const gut = "a".repeat(43);

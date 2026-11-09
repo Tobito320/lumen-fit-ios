@@ -33,6 +33,22 @@ final class CrewDienstTests: XCTestCase {
         XCTAssertFalse(json.contains("ende"))
     }
 
+    /// Offline zuerst: ohne Netz bleibt Respekt gezeigt und wartet; Zurücknehmen kommt dahinter; die Warteschlange überlebt einen Neustart.
+    func testOhneNetzBleibtRespektGezeigtUndWartet() async {
+        let umgebung = AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)
+        let dienst = CrewDienst(umgebung: umgebung)
+        let ziel = CrewLogik.zielEinheit(tag: "2026-11-09")
+        let ok = await dienst.reagieren(an: "v1", art: .respekt, ziel: ziel)
+        XCTAssertTrue(ok)
+        XCTAssertTrue(dienst.istGesendet(an: "v1", art: .respekt, ziel: ziel))
+        XCTAssertEqual(dienst.ausstehend.map(\.methode), ["POST"])
+        XCTAssertNil(dienst.fehler)
+        await dienst.zuruecknehmen(an: "v1", art: .respekt, ziel: ziel)
+        XCTAssertFalse(dienst.istGesendet(an: "v1", art: .respekt, ziel: ziel))
+        XCTAssertEqual(dienst.ausstehend.map(\.methode), ["POST", "DELETE"])
+        XCTAssertEqual(CrewDienst(umgebung: umgebung).ausstehend.count, 2)
+    }
+
     #if DEBUG
     func testDemoHatZweiHerausforderungenUndDreiReaktionenOhneEchteNamen() {
         let a = CrewDemo.antwort(jetzt: CrewTestDaten.jetzt)

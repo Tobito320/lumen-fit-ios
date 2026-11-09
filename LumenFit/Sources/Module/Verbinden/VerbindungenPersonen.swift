@@ -140,10 +140,11 @@ struct VerbindungPersonView: View {
                 if !fehlt.isEmpty {
                     Text("Wird nicht geteilt: \(fehlt.map(\.name).joined(separator: ", "))").font(.footnote).foregroundStyle(palette.text2)
                 }
-                // Plan, Verlauf, Tagebuch und Körperwerte öffnen als eigene Ansichten: für den Lovea-Partner mit seinem Stand, für alle anderen mit dem der Person.
-                let stand = e.lovea ? PartnerAnsichtLogik.aktuellerStand(umgebung) : e.stand(jetzt: umgebung.uhr())
+                // Plan, Verlauf, Tagebuch und Körperwerte öffnen als eigene Ansichten: für den Trainingspartner mit dem Partner-Platz, für alle anderen mit dem der Person.
+                let istPartner = e.id == umgebung.konto.partnerId
+                let stand = istPartner ? PartnerAnsichtLogik.aktuellerStand(umgebung) : e.stand(jetzt: umgebung.uhr())
                 if let datei = PartnerAnsichtLogik.datei(stand) {
-                    PartnerEinstiegZeilen(einstiege: PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()), imFormular: true, stand: e.lovea ? nil : stand)
+                    PartnerEinstiegZeilen(einstiege: PartnerAnsichtLogik.einstiege(datei, jetzt: umgebung.uhr()), imFormular: true, stand: istPartner ? nil : stand)
                 }
             }
         }
