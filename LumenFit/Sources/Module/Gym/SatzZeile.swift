@@ -83,6 +83,7 @@ struct SatzZeile: View {
                     Text(zeiten).font(.footnote).foregroundStyle(palette.text2).monospacedDigit()
                 }
             }
+            SatzVorschlagAnzeige(sitzung: sitzung, uebung: uebung, satz: satz)
         }
         .padding(.horizontal, Abstand.m)
         .padding(.vertical, Abstand.xs)

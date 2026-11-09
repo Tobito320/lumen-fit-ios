@@ -564,7 +564,8 @@ struct TrainingLoveaUebungView: View {
             loeschen: { sitzung.satzLoeschen(i, s) },
             anstrengung: { anstrengungSatz = s },
             vorherUebernehmen: { sitzung.letztesMalUebernehmen(i, s) },
-            werte: { kg, wdh in sitzung.werteSetzen(i, s, kg: kg, wdh: wdh) }
+            werte: { kg, wdh in sitzung.werteSetzen(i, s, kg: kg, wdh: wdh) },
+            vorschlag: SatzVorschlagAnzeige(sitzung: sitzung, uebung: i, satz: s)
         )
         .listRowInsets(EdgeInsets(top: 3, leading: 12, bottom: 3, trailing: 12))
         .listRowSeparator(.hidden)
@@ -715,6 +716,8 @@ struct LoveaSatzZeile: View {
     var anstrengung: () -> Void = {}
     var vorherUebernehmen: () -> Void = {}
     var werte: (Double?, Int) -> Void = { _, _ in }
+    /// Satz-Vorschlag unter der Zeile (nur am ersten offenen Satz der Übung, sonst leer).
+    var vorschlag: SatzVorschlagAnzeige?
 
     @Environment(\.dynamicTypeSize) private var schriftGroesse
     private var fertig: Bool { satz.ok == true }
@@ -736,6 +739,7 @@ struct LoveaSatzZeile: View {
                     .foregroundStyle(Color.orange)
                     .padding(.leading, schriftGroesse.isAccessibilitySize ? 0 : 50)
             }
+            if let vorschlag { vorschlag.padding(.leading, schriftGroesse.isAccessibilitySize ? 0 : 50) }
         }
     }
 
