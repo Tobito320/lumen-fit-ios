@@ -80,7 +80,8 @@ struct SatzVorhersageLogikTests {
             (u("Bizepscurl mit Kurzhanteln", "Kurzhantel", "Bizeps", ["Unterarme"]), .isolation),
             (u("Trizepsdrücken am Kabelzug", "Kabelzug", "Trizeps", []), .isolation),
             (u("Beinbeuger liegend an der Maschine", "Maschine", "Beinbeuger", []), .isolation),
-            (u("Seitheben mit Kurzhanteln", "Kurzhantel", "Schultern", ["Trapez"]), .klein),
+            (u("Seitheben mit Kurzhanteln", "Kurzhantel", "Schultern", ["Trapez"]), .isolation),
+            (u("Crunches kniend am Kabelzug", "Kabelzug", "Bauch", []), .klein),
             (u("Wadenheben an der Maschine", "Maschine", "Waden", []), .klein),
             (u("Klimmzug assistiert", "Assistiert", "Latissimus", ["Bizeps"]), nil),
             (u("Laufband", "Maschine", "Herz-Kreislauf", [], koerper: "Cardio"), nil),
@@ -219,6 +220,18 @@ struct SatzVorhersageLogikTests {
     func fallendeWiederholungen() {
         #expect(imTraining([satz(6, 60, versagen: true), satz(6, 60, ok: false), satz(6, 60, ok: false)])
             == SatzVorschlag(kg: 55, wdh: 6, reserve: 1, grund: .leichter(5)))
+    }
+
+    @Test("Leichte Rampensätze ohne Aufwärm-Zeichen steuern nichts: der erste schwere Satz kommt aus der letzten Einheit")
+    func rampensatz() {
+        let historie = [einheit("2026-11-02", [satz(10, 60), satz(10, 60), satz(9, 60)])]
+        let zeilen = [satz(12, 40), satz(10, 60, ok: false), satz(10, 60, ok: false), satz(10, 60, ok: false)]
+        #expect(SatzVorhersageLogik.vorschlag(zeile: 1, saetze: zeilen, historie: historie, art: .isolation, schritt: 2.5, heute: heute)
+            == SatzVorschlag(kg: 62.5, wdh: 9, reserve: 1, grund: .mehrGewicht(2.5)))
+        // Ab 80 % des Arbeitsgewichts zählt der Satz: 55 × 10 mit 2 Reserve, Ermüdung 0,94, Ziel-Reserve 1: 10 Wiederholungen.
+        let schwer = [satz(10, 55), satz(10, 60, ok: false), satz(10, 60, ok: false), satz(10, 60, ok: false)]
+        #expect(SatzVorhersageLogik.vorschlag(zeile: 1, saetze: schwer, historie: historie, art: .isolation, schritt: 2.5, heute: heute)
+            == SatzVorschlag(kg: 55, wdh: 10, reserve: 1, grund: .ermuedung))
     }
 
     @Test("Letzter Satz der Übung: bis kurz vor Schluss")

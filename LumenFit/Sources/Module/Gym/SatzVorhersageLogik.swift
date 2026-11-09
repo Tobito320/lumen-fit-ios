@@ -12,7 +12,7 @@ enum VorhersageArt: Equatable, Sendable {
     case maschine
     /// Eingelenkig (Curl, Beinstrecker, Beinbeuger, Fliegende, Trizepsdrücken).
     case isolation
-    /// Kleine Muskeln (Waden, Unterarme, Bauch, Nacken, Seitheben, hintere Schulter).
+    /// Kleine Muskeln (Waden, Unterarme, Bauch, Nacken).
     case klein
 }
 
@@ -115,6 +115,8 @@ enum SatzVorhersageLogik {
     static let maxSprung = 0.10
     /// Eine Einheit unter diesem Anteil des Bestwerts davor war leicht (Deload oder schlechter Tag).
     static let leichtGrenze = 0.93
+    /// Ein abgehakter Satz unter diesem Anteil des vorgeschlagenen Arbeitsgewichts ist ein Rampensatz (nicht als Aufwärmen markiert) und steuert nichts.
+    static let rampenGrenze = 0.8
 
     // MARK: - Stärke
 
@@ -183,7 +185,6 @@ enum SatzVorhersageLogik {
 
     private static let kleinMuskeln: Set<String> = ["Waden", "Unterarme", "Bauch", "Nacken", "Schulterblattheber"]
     // Wörter in der Form von `UebungsKatalog.normal` (klein, ohne Umlaute, "ue" als "u", Bindestrich als Leerzeichen).
-    private static let kleinWorte = ["seitheben", "frontheben", "face pull", "reverse butterfly", "reverse fly"]
     private static let isolationWorte = [
         "curl", "fliegend", "butterfly", "flys", "beinstreck", "beinbeug", "extension", "kickback", "crunch", "shrug", "adduktor", "abduktor",
         "pullover", "uberzug", "uber kreuz", "trizepsdruck", "trizeps druck", "stirndruck", "french press", "pushdown", "pec deck",
@@ -199,7 +200,7 @@ enum SatzVorhersageLogik {
         let geraet = uebung?.geraet ?? ""
         guard geraet != "Assistiert", uebung?.istCardio != true else { return nil }
         let n = UebungsKatalog.normal(name)
-        if kleinMuskeln.contains(uebung?.muskel ?? "") || kleinWorte.contains(where: { n.contains($0) }) { return .klein }
+        if kleinMuskeln.contains(uebung?.muskel ?? "") { return .klein }
         if isolationWorte.contains(where: { n.contains($0) }) { return .isolation }
         guard verbundWorte.contains(where: { n.contains($0) }) || (uebung?.neben.count ?? 0) >= 3 else { return .isolation }
         return freieGeraete.contains(geraet) ? .grund : .maschine
@@ -253,10 +254,16 @@ enum SatzVorhersageLogik {
         if saetze[i].typ == "d" { return drop(nach: saetze[..<i].last(where: { $0.typ != "w" }), schritt: schritt) }
         let letzter = !saetze[(i + 1)...].contains { $0.typ != "w" }
         let rir = zielReserve(art, letzter: letzter, versagen: saetze[i].failure)
-        if let zuletzt = arbeit(saetze.filter { $0.ok == true }).last {
+        let erster = ersterSatz(historie: historie, bereich: bereich, rir: rir, schritt: schritt, heute: heute)
+        // Leichte Rampensätze vor dem schweren Satz (oft nicht als Aufwärmen markiert) steuern den nächsten Satz nicht.
+        let fertig = arbeit(saetze.filter { $0.ok == true }).filter { s in
+            guard let ziel = erster?.kg, let kg = s.kg else { return true }
+            return kg >= ziel * rampenGrenze
+        }
+        if let zuletzt = fertig.last {
             return imTraining(nach: zuletzt, bereich: bereich, rir: rir, schritt: schritt, pause: pause)
         }
-        return ersterSatz(historie: historie, bereich: bereich, rir: rir, schritt: schritt, heute: heute)
+        return erster
     }
 
     /// Erster Arbeitssatz der Einheit: doppelte Progression aus der letzten Einheit (oben im Bereich: mehr Gewicht; darin: eine Wiederholung mehr;
