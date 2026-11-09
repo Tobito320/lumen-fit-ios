@@ -7,7 +7,8 @@ import Observation
 /// ohne dass eine Oberfläche offen ist (SPEC 5.9, Vertrag 9). Dafür liest die Sitzung ihren Stand bei Bedarf aus dem `TrainingStore`
 /// (`ladeWennNoetig`) und hält sonst nichts fest, was der Store nicht auch weiß.
 ///
-/// Die Zeilen werden im Speicher geändert (Plus, Minus, Typ) und beim Haken gesendet, nicht bei jedem Tipp: ein Op je Haken.
+/// Die Zeilen werden im Speicher geändert (Plus, Minus, Typ) und beim Haken gesendet; ohne Haken gehen sie 1,5 s nach dem letzten Tipp
+/// als Entwurf raus (`entwurfSenden`), damit Absturz, Beenden durch iOS oder ein Update nichts verlieren: ein Op je Haken oder Ruhepause.
 /// Alle Zeiten kommen von `umgebung.uhr`. Kein Timer im Hintergrund: eine einzige schlafende Aufgabe bis zum Ende der Pause.
 @MainActor @Observable
 final class GymSitzung: TrainingSteuerung {
@@ -20,10 +21,20 @@ final class GymSitzung: TrainingSteuerung {
     /// Schon gemeldete Rekorde dieses Trainings ("plan|art|wert"): jeder Rekord erscheint einmal, auch bei Haken weg und wieder dran.
     @ObservationIgnored private var gemeldet: Set<String> = []
     @ObservationIgnored private var pauseGemeldet = false
+    /// Übungen (Plan-Ids) mit geänderten, noch nicht gesendeten Zeilen; `entwurfAufgabe` schreibt sie nach `entwurfVerzug`.
+    @ObservationIgnored private var entwurfOffen: Set<String> = []
+    @ObservationIgnored private(set) var entwurfAufgabe: Task<Void, Never>?
+    /// Wie lange nach dem letzten Tipp ein Entwurf auf die Platte geht (Sekunden).
+    static let entwurfVerzug: TimeInterval = 1.5
+    /// Der zuletzt gesetzte Haken (Plan-Id, Satz, Zeit): startet die Pause nach, wenn die Person bei der ersten Frage Ja zum Pausen-Timer sagt.
+    @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
+    /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
+    nonisolated static var pausenTimerAn: Bool { UserDefaults.standard.bool(forKey: GymAnzeige.pausenTimerSchluessel) }
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
     @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
     @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
-    @ObservationIgnored private var eigeneStores: [ProfilID: GymEigeneStore] = [:]
+    /// Je Raum, nicht je Profil: nach dem Wechsel A, B, A gibt es einen neuen Raum, ein Speicher am alten schriebe ins Leere.
+    @ObservationIgnored private var eigeneStores: [ObjectIdentifier: GymEigeneStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
 
     /// Das laufende Training, nil ohne.
@@ -99,9 +110,10 @@ final class GymSitzung: TrainingSteuerung {
     /// Die eigenen Übungen des aktiven Profils (Op `fit.gym.uebung`); ein Objekt je Profil.
     var eigene: GymEigeneStore? {
         guard let d = daten else { return nil }
-        if let vorhanden = eigeneStores[d.profil] { return vorhanden }
+        let schluessel = ObjectIdentifier(d.raum)
+        if let vorhanden = eigeneStores[schluessel] { return vorhanden }
         let neu = GymEigeneStore(raum: d.raum, uhr: umgebung.uhr)
-        eigeneStores[d.profil] = neu
+        eigeneStores[schluessel] = neu
         return neu
     }
 
@@ -147,6 +159,9 @@ final class GymSitzung: TrainingSteuerung {
             return
         }
         guard s.id != sessionId else { return }
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        entwurfOffen = []
         sessionId = s.id
         liste = WorkoutLogik.uebungen(s, tag: training?.tag(id: s.tag), frueher: fruehere(s))
         gemeldet = []
@@ -157,6 +172,9 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     private func zuruecksetzen() {
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        entwurfOffen = []
         sessionId = nil
         liste = []
         pauseAufgabe?.cancel()
@@ -202,6 +220,7 @@ final class GymSitzung: TrainingSteuerung {
     func beende(notiz: String?, ende: Date? = nil) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
+        entwurfSenden()
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }
         let rekorde = RekordLogik.anzahl(liste, frueher: fruehere(s))
         d.training.auschecken(sid, ende: ende, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
@@ -266,7 +285,8 @@ final class GymSitzung: TrainingSteuerung {
             liste[u].saetze[i].ok = true
             let rekord = rekordPruefen(u, i)
             let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung))
-            setzePause(ziel.map { GymPauseStand(session: sid, plan: liste[u].id, satz: i, seit: jetzt, ziel: $0) })
+            letzterHaken = (liste[u].id, i, jetzt)
+            setzePause(Self.pausenTimerAn ? ziel.map { GymPauseStand(session: sid, plan: liste[u].id, satz: i, seit: jetzt, ziel: $0) } : nil)
             if let andere, andere != u { sende(andere) }
             sende(u)
             hakenZaehler += 1
@@ -354,7 +374,7 @@ final class GymSitzung: TrainingSteuerung {
         ladeWennNoetig()
         guard liste.indices.contains(u) else { return }
         liste[u].saetze = f(liste[u].saetze)
-        if senden { sende(u) }
+        if senden { sende(u) } else { entwurfMerken(u) }
     }
 
     func gewicht(_ u: Int, _ i: Int, richtung: Int) {
@@ -454,6 +474,15 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     // MARK: - Pause
+
+    /// Nach dem Ja zur Frage "Pausen-Timer nutzen?": die Pause für den eben gesetzten Haken läuft ab seinem Zeitpunkt.
+    func pauseNachholen() {
+        guard let sid = sessionId, pause == nil, let l = letzterHaken, let u = liste.firstIndex(where: { $0.id == l.plan }),
+              liste[u].saetze.indices.contains(l.satz), liste[u].saetze[l.satz].ok == true,
+              let ziel = PauseLogik.nach(uebung: u, in: liste.map(\.planUebung)) else { return }
+        setzePause(GymPauseStand(session: sid, plan: l.plan, satz: l.satz, seit: l.zeit, ziel: ziel))
+        liveSenden()
+    }
 
     /// "+15 s" oder "−15 s" auf die laufende Pause.
     func pauseAendern(sekunden: Int) {
@@ -725,7 +754,29 @@ final class GymSitzung: TrainingSteuerung {
 
     private func sende(_ u: Int) {
         guard let t = training, let sid = sessionId, liste.indices.contains(u), !liste[u].planUebung.istCardio else { return }
+        entwurfOffen.remove(liste[u].id)
         t.saetzeSenden(sid, liste[u].planUebung, liste[u].saetze)
+    }
+
+    /// Merkt die Übung als geändert und plant das Schreiben: eine schlafende Aufgabe, jeder weitere Tipp startet sie neu.
+    private func entwurfMerken(_ u: Int) {
+        guard liste.indices.contains(u) else { return }
+        entwurfOffen.insert(liste[u].id)
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.entwurfVerzug))
+            guard !Task.isCancelled else { return }
+            self?.entwurfSenden()
+        }
+    }
+
+    /// Schreibt alle geänderten, noch nicht gesendeten Zeilen jetzt (Ende des Verzugs, Hintergrund, Beenden). Ohne Entwurf passiert nichts.
+    func entwurfSenden() {
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        let offen = entwurfOffen
+        entwurfOffen = []
+        for id in offen { if let u = liste.firstIndex(where: { $0.id == id }) { sende(u) } }
     }
 
     /// Stellt die Live Activity auf den Stand des Trainings (nil beendet sie). Die Aufgaben laufen der Reihe nach.

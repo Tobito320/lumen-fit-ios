@@ -66,8 +66,8 @@ final class BandPuls {
         let zeiten = BandNachrichtRegel.zeiten(staerke)
         if zeiten.count > 1, hintergrund == .invalid {
             hintergrund = UIApplication.shared.beginBackgroundTask(withName: "LumenFit-Band-Puls") { [weak self] in
-                // Zeit um: Fenster zurückgeben, sonst beendet iOS die App. Die übrigen Pulse fehlen dann.
-                Task { @MainActor in self?.hintergrundEnde() }
+                // Zeit um: Fenster sofort zurückgeben (der Handler läuft auf dem Hauptthread), sonst beendet iOS die App. Die übrigen Pulse fehlen dann.
+                MainActor.assumeIsolated { self?.hintergrundEnde() }
             }
         }
         return Task { @MainActor [weak self] in

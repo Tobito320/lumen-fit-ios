@@ -22,10 +22,17 @@ protocol HealthLeser: Sendable {
     func workouts(von: String, bis: String) async -> [HealthWorkout]
     /// `HKObserverQuery` mit Hintergrundlieferung: ruft `aenderung` bei neuen Daten, auch wenn iOS die App dafür im Hintergrund startet. Der Fake tut nichts.
     func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void)
+    /// Wie `beobachte(_:bei:)`, aber die Lieferung gilt für Health erst als verarbeitet, wenn `aenderung` ihr `fertig` ruft: so hält iOS die App
+    /// wach, bis der Abruf durch ist (sonst fror es sie mitten im Schreiben ein). Standard: wie `beobachte(_:bei:)`, sofort fertig (Fakes).
+    func beobachte(_ typen: Set<HealthTyp>, mitAbschluss aenderung: @escaping @Sendable (_ fertig: @escaping @Sendable () -> Void) -> Void)
 }
 
 extension HealthLeser {
     func schlafProben(von: String, bis: String) async -> [HealthSchlafProbe] { [] }
+
+    func beobachte(_ typen: Set<HealthTyp>, mitAbschluss aenderung: @escaping @Sendable (_ fertig: @escaping @Sendable () -> Void) -> Void) {
+        beobachte(typen) { aenderung {} }
+    }
 }
 
 /// Standard ohne Health (Vorschau ohne Daten): alles leer, `nichtVerfuegbar`.

@@ -161,10 +161,21 @@ struct GymEinstellungenBlatt: View {
     @AppStorage(GymPulsMessung.schluessel) private var pulsAn = false
     @AppStorage(GymAnzeige.satzzeitSchluessel) private var satzzeit = false
     @AppStorage(GymAnzeige.rpeSpalteSchluessel) private var rpeSpalte = GymAnzeige.rpeSpalteStandard
+    @AppStorage(GymAnzeige.pausenTimerSchluessel) private var pausenTimer = false
+    @AppStorage(GymAnzeige.pausenTimerGefragtSchluessel) private var pausenTimerGefragt = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Toggle("Pausen-Timer nach jedem Satz", isOn: $pausenTimer)
+                        .onChange(of: pausenTimer) { _, _ in pausenTimerGefragt = true }
+                } header: {
+                    Text("Präferenzen")
+                } footer: {
+                    Text("Aus: der Haken setzt nur den Satz. An: nach jedem Satz läuft die Pause der Übung (Standard 2:00), am Ende Haptik und Band.")
+                }
+                SatzVorhersageAbschnitt()
                 Section {
                     Toggle("Training nach Health schreiben", isOn: Binding(
                         get: { sitzung.einstellungen.healthSchreiben },

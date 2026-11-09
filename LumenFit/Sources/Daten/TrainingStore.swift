@@ -12,6 +12,8 @@ final class TrainingStore {
     @ObservationIgnored private let uhr: Uhr
     private var faltung = TrainingFaltung()
     private var cardioFaltung = CardioFaltung()
+    /// Die abgeleiteten Einheiten, bis die nächste gym-Op kommt: `sessions` wurde je Haken bis zu neunmal gelesen und jedes Mal aus allen Ops neu gebaut.
+    @ObservationIgnored private var sessionsGemerkt: [GymSession]?
 
     var ich: ProfilID { raum.profil }
 
@@ -20,14 +22,23 @@ final class TrainingStore {
         self.einstellungen = einstellungen
         self.ereignisse = ereignisse
         self.uhr = uhr
-        raum.beobachten(TrainingFaltung.arten) { [weak self] op in self?.faltung.anwenden(op) }
+        raum.beobachten(TrainingFaltung.arten) { [weak self] op in
+            self?.faltung.anwenden(op)
+            self?.sessionsGemerkt = nil
+        }
         raum.beobachten(CardioFaltung.arten) { [weak self] op in self?.cardioFaltung.anwenden(op) }
     }
 
     // MARK: - Lesen
 
     var plan: TrainingsPlan { faltung.plaene[ich] ?? .leer }
-    var sessions: [GymSession] { faltung.sessions(ich) }
+    var sessions: [GymSession] {
+        let f = faltung   // der Zugriff meldet die Abhängigkeit: jede Op ändert `faltung`, die Ansichten zeichnen dann neu
+        if let s = sessionsGemerkt { return s }
+        let s = f.sessions(ich)
+        sessionsGemerkt = s
+        return s
+    }
     func laufende(jetzt: Date? = nil) -> GymSession? {
         let t = jetzt ?? uhr()
         return sessions.first { TrainingLogik.laufend($0, jetzt: t) }

@@ -4,6 +4,7 @@
 import { kiFoto } from "./ki-foto.js";
 import { handleEssen } from "./essen.js";
 import { postfachApp, postfachAdmin } from "./postfach.js";
+import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { freunde, freundeSeite } from "./freunde.js";
 import { NAMEN } from "./nutzung-namen.js";
@@ -136,7 +137,8 @@ async function loveaFreigabe(request, env) {
   if (antwort) return antwort;
   if (!freigegeben(konto)) return json({ erlaubt: false });
   await spur(env, konto.id, "lovea_freigabe_gesehen", new Date().toISOString());
-  return json({ erlaubt: true, person: konto.lovea_person, importErledigt: !!(await merker(env, konto.id, "lovea_import")) });
+  return json({ erlaubt: true, person: konto.lovea_person, importErledigt: !!(await merker(env, konto.id, "lovea_import")),
+    essenExportErledigt: !!(await merker(env, konto.id, "essen_export")) });
 }
 
 // Spur des Servers selbst (unabhängig davon, ob die App je einen Beleg schickt): wann die App Freigabe und Ops zuletzt geholt hat. Ein Fehler hier stört den Weg nicht.
@@ -502,6 +504,45 @@ async function partnerLesen(request, env) {
   return json({ partner: r?.partner ?? null, aktualisiert: r?.aktualisiert ?? null });
 }
 
+// Essen zurück zu Lovea (09.11.2026): die App schickt ihre Essen-Ops, der Server reicht sie mit Key und Person an Lovea `POST /ops` durch.
+// Nur die Essen-Arten und Einstellungen (Ziele), `von` setzt der Server; doppelte Ids überspringt Lovea selbst (INSERT OR IGNORE).
+const EXPORT_ARTEN = new Set(["essen.setzen", "lebensmittel.setzen", "lebensmittel.favorit", "rezept.setzen", "fasten.setzen", "fasten.eintrag", "fasten.plan",
+  "food.anpassung", "koerper.setzen", "einstellung.setzen"]);
+async function loveaOpsSenden(request, env, holen) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
+  if (!env.LOVEA_KEY) return nein(503, "nicht eingerichtet");
+  const k = await koerper(request);
+  if (!istObjekt(k) || !Array.isArray(k.ops) || k.ops.length === 0 || k.ops.length > MAX_LIMIT) return nein(400, "ops");
+  const ops = [];
+  for (const op of k.ops) {
+    if (!istObjekt(op) || typeof op.id !== "string" || !op.id || typeof op.art !== "string" || typeof op.zeit !== "string" || !istObjekt(op.d)) return nein(400, "op");
+    if (!EXPORT_ARTEN.has(op.art)) return nein(400, "art");
+    ops.push({ id: op.id, art: op.art, von: konto.lovea_person, zeit: op.zeit, d: op.d });
+  }
+  let r;
+  try {
+    r = await holen(`${env.LOVEA_URL ?? "https://lovea.intern"}/ops`, {
+      method: "POST", headers: { "X-Lovea-Key": env.LOVEA_KEY, "X-Lovea-Person": konto.lovea_person, "content-type": "application/json" }, body: JSON.stringify({ ops }),
+    });
+  } catch {
+    return nein(502, "lovea");
+  }
+  if (!r.ok) return nein(502, "lovea");
+  const a = await r.json().catch(() => ({}));
+  return json({ ok: true, seq: typeof a.seq === "number" ? a.seq : null, uebersprungen: typeof a.uebersprungen === "number" ? a.uebersprungen : 0 });
+}
+
+// Der einmalige Essen-Export nach Lovea ist fertig: je Konto gemerkt (wie der Import), der erste Zeitpunkt bleibt.
+async function exportErledigt(request, env) {
+  const { konto, antwort } = await kontoPruefen(request, env);
+  if (antwort) return antwort;
+  if (!PERSONEN.includes(konto.lovea_person)) return nein(403, "nicht freigegeben");
+  await env.DB.prepare("INSERT OR IGNORE INTO konto_merker (konto, schluessel, wert) VALUES (?, 'essen_export', ?)").bind(konto.id, new Date().toISOString()).run();
+  return json({ ok: true });
+}
+
 // Proxy statt Schlüssel: nur GET /agent/ops, Person und Key setzt der Server, die App bekommt den Key nie.
 async function loveaOps(request, url, env, holen) {
   const { konto, antwort } = await kontoPruefen(request, env);
@@ -636,6 +677,8 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/config" && m === "GET") return config(request, env);
   if (url.pathname === "/lovea/freigabe" && m === "GET") return loveaFreigabe(request, env);
   if (url.pathname === "/lovea/agent/ops" && m === "GET") return loveaOps(request, url, env, holen);
+  if (url.pathname === "/lovea/ops" && m === "POST") return loveaOpsSenden(request, env, holen);
+  if (url.pathname === "/lovea/export-erledigt" && m === "POST") return exportErledigt(request, env);
   if (url.pathname === "/lovea/import-erledigt" && m === "POST") return importErledigt(request, env);
   if (url.pathname === "/lovea/import-beleg" && m === "POST") return importBeleg(request, env);
   if (url.pathname === "/diagnose/schlaf" && m === "POST") return schlafBelegAnnehmen(request, env);
@@ -651,6 +694,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });
   if (url.pathname.startsWith("/admin/")) return verwalten(request, url, env);
+  if (url.pathname.startsWith("/coach/")) return coach(request, url, env, { json, nein, koerper, lesen, gleich });
   return nein(404, "not found");
 }
 

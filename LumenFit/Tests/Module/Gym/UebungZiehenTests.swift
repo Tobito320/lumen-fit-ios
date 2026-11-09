@@ -24,7 +24,7 @@ final class UebungZiehenTests: XCTestCase {
         XCTAssertEqual(a.sitzung.liste.map(\.id), ["a", "b", "c"], "nach unten: an die Stelle der Zielübung")
     }
 
-    func testReihenfolgeBlattSpeichertDieNeueReihenfolgeInTrainingUndPlan() throws {
+    func testUmordnenSpeichertDieNeueReihenfolgeInTrainingUndPlan() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")
         a.sitzung.umordnen(["c", "b", "a"])

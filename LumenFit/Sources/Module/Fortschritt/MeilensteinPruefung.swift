@@ -232,9 +232,10 @@ enum MeilensteinPruefung {
     /// Gab es eine Woche, in der alle Gruppen aus `ganzerKoerper` gezählte Sätze hatten?
     static func hatGanzerKoerperWoche(_ sessions: [GymSession], katalog: (String) -> Uebung?) -> Bool {
         let sauber = SaetzeProMuskel.ohneAufwaermen(sessions)
-        let wochen = Set(sauber.map { Datum.montagDerWoche(Datum.text($0.start)) })
-        return wochen.contains { montag in
-            let teile = MuskelLogik.wochenSaetze(sauber, woche: montag, katalog: katalog)
+        // Einmal nach Woche gruppieren: je Woche alle Einheiten durchzugehen wuchs mit Wochen mal Einheiten (bei jedem Haken, Sekunden nach einem Jahr).
+        let proWoche = Dictionary(grouping: sauber) { Datum.montagDerWoche(Datum.text($0.start)) }
+        return proWoche.contains { woche in
+            let teile = MuskelLogik.wochenSaetze(woche.value, woche: woche.key, katalog: katalog)
             let gruppen = Set(teile.filter { $0.value > 0 }.keys.map(\.gruppe))
             return ganzerKoerper.allSatisfy { gruppen.contains($0) }
         }

@@ -179,13 +179,23 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
     /// Meldet `aenderung`, sobald neue Daten ankommen, auch wenn iOS die App dafür im Hintergrund startet.
     /// Der Abschluss geht sofort nach dem Anstoßen; die Arbeit danach hält `AppUmgebung.beobachteHealth` mit eigener Hintergrundzeit wach.
     func beobachte(_ typen: Set<HealthTyp>, bei aenderung: @escaping @Sendable () -> Void) {
+        beobachte(typen) { fertig in aenderung(); fertig() }
+    }
+
+    // @unchecked Sendable: der Abschluss-Block von HealthKit ist im SDK nicht als Sendable markiert, darf aber von jedem Thread einmal gerufen werden.
+    private struct Abschluss: @unchecked Sendable { let rufen: () -> Void }
+
+    func beobachte(_ typen: Set<HealthTyp>, mitAbschluss aenderung: @escaping @Sendable (_ fertig: @escaping @Sendable () -> Void) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         for typ in typen {
             for objekt in Self.lesetypen(typ) {
                 guard let probe = objekt as? HKSampleType else { continue }
                 let abfrage = HKObserverQuery(sampleType: probe, predicate: nil) { _, abschluss, fehler in
-                    if fehler == nil { aenderung() }
-                    abschluss()
+                    guard fehler == nil else { abschluss(); return }
+                    // Erst fertig melden, wenn der Abruf durch ist; genau einmal, auch wenn der Aufrufer es doppelt ruft.
+                    let block = Abschluss(rufen: abschluss)
+                    let einmal = EinmalSchalter()
+                    aenderung { if einmal.zuerst() { block.rufen() } }
                 }
                 speicher.execute(abfrage)
                 speicher.enableBackgroundDelivery(for: probe, frequency: .immediate) { _, _ in }

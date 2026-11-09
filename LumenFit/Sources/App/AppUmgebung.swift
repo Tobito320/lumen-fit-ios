@@ -78,7 +78,7 @@ final class AppUmgebung {
         self.profil = profile
         let anker = UmgebungsAnker()
         self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() },
-                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() })
+                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() }, darfFragen: { anker.healthErlaubt() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -112,17 +112,19 @@ final class AppUmgebung {
     /// Meldet die Health-Hintergrundlieferung für Schritte, Schlaf und Training an (synchron in `ModulStart.starteAlle`), aber nur für gewählte Bereiche.
     /// Ein später eingeschalteter Bereich meldet nur seine neuen Typen nach (nie doppelt). Neue Daten lösen `Ereignis.healthAktualisiert` und alle Abruf-Aufgaben aus.
     func beobachteHealth() {
-        guard let einstellungen = daten?.einstellungen.werte else { return }   // ohne Profil ist noch nichts gewählt; `auffrischen` ruft es nach dem Onboarding nochmal
-        let gewollt = Set<HealthTyp>([.schritte, .schlaf, .training]).intersection(einstellungen.healthTypen)
+        guard daten != nil else { return }   // ohne Profil ist noch nichts gewählt; `auffrischen` ruft es nach dem Onboarding nochmal
+        // Nur wirksame Bereiche: Schlaf wird für Konten ohne Server-Freigabe weder gelesen noch beobachtet (weniger Wecken im Hintergrund).
+        let gewollt = Set<HealthTyp>([.schritte, .schlaf, .training]).intersection(bereicheWirksam.healthTypen)
         let neu = gewollt.subtracting(beobachteteTypen)
         guard !neu.isEmpty else { return }
         beobachteteTypen.formUnion(neu)
-        healthLeser.beobachte(neu) { [weak self] in
+        healthLeser.beobachte(neu) { [weak self] fertig in
             Task { @MainActor in
-                // Der Health-Rückruf ist schon quittiert (`HKHealthLeser.beobachte`): ohne eigene Hintergrundzeit friert iOS die App mitten im Schreiben ein.
+                // Health wartet mit `fertig` auf den Abruf (die App bleibt so lange wach); die eigene Hintergrundzeit sichert die Aufgaben danach ab.
                 let zeit = HintergrundZeit("LumenFit-Health-Abruf")
                 await self?.fuehreAbrufAus()
                 zeit.ende()
+                fertig()
             }
         }
     }
@@ -136,7 +138,6 @@ final class AppUmgebung {
     /// Führt alle angemeldeten Abruf-Aufgaben nacheinander aus, höchstens 20 Sekunden: danach wird abgebrochen und die Funktion kehrt
     /// zurück, auch wenn eine Aufgabe den Abbruch nicht beachtet (sonst endet der Hintergrundlauf nie und iOS beendet die App hart).
     func fuehreAbrufAus() async {
-        ereignisse.senden(.healthAktualisiert)
         guard !abrufLaeuft else { return }
         abrufLaeuft = true
         defer { abrufLaeuft = false }
@@ -144,6 +145,9 @@ final class AppUmgebung {
         let arbeit = Task { @MainActor in
             // Erst Health, dann die Aufgaben: sonst schreiben Lovea-Datei und Server-Stand die Schritte von vorher. Nie die Rechte-Abfrage auslösen.
             if daten?.einstellungen.werte.healthGefragt == true { await gesundheit.aktualisiere() }
+            // Erst jetzt melden, einmal je Lieferung: die Leser (Heute, Meilensteine, Lovea-Datei, Widgets) sehen so die frischen Werte statt die alten
+            // (vorher meldete jeder der vier Health-Rückrufe sofort, und alle Leser rechneten vierfach auf dem Hauptakteur).
+            ereignisse.senden(.healthAktualisiert)
             for aufgabe in aufgaben {
                 if Task.isCancelled { return }
                 await aufgabe()
@@ -201,7 +205,10 @@ final class AppUmgebung {
 @MainActor private final class UmgebungsAnker {
     weak var umgebung: AppUmgebung?
 
-    func healthTypen() -> Set<HealthTyp> { (umgebung?.daten?.einstellungen.werte ?? Einstellungen()).healthTypen }
+    func healthTypen() -> Set<HealthTyp> { (umgebung?.bereicheWirksam ?? Einstellungen()).healthTypen }
+
+    /// Die Person hat Health erlaubt (Onboarding oder Health-Zugriff): erst dann fragt der Stand nach Leserechten.
+    func healthErlaubt() -> Bool { umgebung?.daten?.einstellungen.werte.healthGefragt == true }
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
 
@@ -281,7 +288,7 @@ final class EinmalSchalter: Sendable {
 }
 
 /// Hält die App für einen Abruf wach (höchstens die Zeit, die iOS gibt) und gibt die Zeit zurück, sobald `ende()` kommt oder iOS sie zurückfordert.
-@MainActor private final class HintergrundZeit {
+@MainActor final class HintergrundZeit {
     private var kennung = UIBackgroundTaskIdentifier.invalid
 
     init(_ name: String) {
