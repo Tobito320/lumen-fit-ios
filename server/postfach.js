@@ -15,6 +15,8 @@ function planPruefen(p) {
       if (!ist(u) || typeof u.id !== "string" || typeof u.uebung !== "string" || !reihe(u.saetze, 30)) return "Übung ungültig";
       if (!u.saetze.every((s) => ist(s) && Number.isInteger(s.wdh) && typeof s.failure === "boolean")) return "Satz ungültig";
     }
+    // Die App legt Übungen nach id ab: zwei gleiche in einem Tag ließen eine verschwinden.
+    if (new Set(t.uebungen.map((u) => u.id)).size !== t.uebungen.length) return "Übungs-id doppelt";
   }
   return null;
 }

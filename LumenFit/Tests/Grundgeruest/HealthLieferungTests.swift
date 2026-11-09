@@ -23,6 +23,13 @@ final class HealthLieferungTests: XCTestCase {
 
     @MainActor private final class Merker { var eintraege: [String] = [] }
 
+    /// Hält den ersten Abruf an, bis der Test ihn freigibt.
+    @MainActor private final class Schleuse {
+        var weiter: CheckedContinuation<Void, Never>?
+        var abrufe = 0
+        var zweiteFertig = false
+    }
+
     func testFertigKommtNachDemAbrufUndJedeLieferungMeldetGenauEinmal() async throws {
         let leser = LieferLeser()
         let u = AppUmgebung(ordner: try tempOrdner(), schluesselbund: SpeicherSchluesselbund(), http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
@@ -47,5 +54,30 @@ final class HealthLieferungTests: XCTestCase {
         XCTAssertEqual(merker.eintraege.filter { $0 == "abruf" }.count, 1, "die zweite Lieferung startet keinen zweiten Abruf")
         XCTAssertEqual(merker.eintraege.filter { $0 == "fertig" }.count, 2)
         XCTAssertEqual(merker.eintraege.filter { $0 == "ereignis" }.count, 1, "ein Ereignis je Abruf, nicht je Rückruf")
+    }
+
+    func testZweiteLieferungWaehrendAbrufWirdNachgeholt() async throws {
+        let u = AppUmgebung(ordner: try tempOrdner(), schluesselbund: SpeicherSchluesselbund(), http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
+                            leser: LieferLeser(), healthSchreiber: KeinHealthSchreiber(), bruecke: KeinePartnerBruecke(), uhr: { Date() }, passwortRunden: 1_000)
+        let schleuse = Schleuse()
+        u.beiAbruf {
+            schleuse.abrufe += 1
+            if schleuse.abrufe == 1 { await withCheckedContinuation { schleuse.weiter = $0 } }
+        }
+        let erste = Task { @MainActor in await u.fuehreAbrufAus() }
+        for _ in 0..<200 where schleuse.weiter == nil { try await Task.sleep(for: .milliseconds(10)) }
+        let halt = try XCTUnwrap(schleuse.weiter, "der erste Abruf läuft und steht")
+        // Eine zweite Lieferung, während der erste Abruf noch läuft: sie darf nicht sofort fertig melden.
+        let zweite = Task { @MainActor in
+            await u.fuehreAbrufAus()
+            schleuse.zweiteFertig = true
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertFalse(schleuse.zweiteFertig, "die zweite Lieferung wartet auf den Nachlauf")
+        halt.resume()
+        await erste.value
+        await zweite.value
+        XCTAssertEqual(schleuse.abrufe, 2, "der Nachlauf holt nach, was der erste Abruf verpasst haben kann")
+        XCTAssertTrue(schleuse.zweiteFertig)
     }
 }

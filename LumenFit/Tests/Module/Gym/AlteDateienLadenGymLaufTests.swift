@@ -10,7 +10,7 @@ final class AlteDateienLadenGymLaufTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_794_245_836)
 
     /// Eine App-Umgebung, deren Profilordner die alten Dateien schon enthält, bevor die App ihn das erste Mal liest (wie nach einem Update).
-    private func umgebungMitAltemStand(jetzt: Date) throws -> (AppUmgebung, TestUhr) {
+    private func umgebungMitAltemStand(jetzt: Date, datei: String = "gym-lauf-stand.jsonl") throws -> (AppUmgebung, TestUhr) {
         let uhr = TestUhr()
         uhr.setze(jetzt)
         UserDefaults.standard.set(true, forKey: GymAnzeige.pausenTimerSchluessel)   // der Test rechnet mit der Pause nach dem Haken
@@ -20,7 +20,7 @@ final class AlteDateienLadenGymLaufTests: XCTestCase {
         let profil = try u.profil.anlegen(name: "Beispiel", passwort: "")
         let ordner = u.profilOrdner(profil.id)
         try FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
-        let roh = try FixtureOrt.daten("Gym", "gym-lauf-stand.jsonl")
+        let roh = try FixtureOrt.daten("Gym", datei)
         let ops = String(decoding: roh, as: UTF8.self).replacingOccurrences(of: "test-a", with: profil.id.rawValue)
         try Data(ops.utf8).write(to: ordner.appendingPathComponent("ops.jsonl"))
         try Data(#"{"plan":"a","satz":0,"seit":1794246436,"session":"lauf-1","ziel":90}"#.utf8).write(to: ordner.appendingPathComponent("gym-pause.json"))
@@ -48,6 +48,32 @@ final class AlteDateienLadenGymLaufTests: XCTestCase {
         XCTAssertEqual(plan.ruhetage, [6, 7])
         XCTAssertEqual(plan.tage.first?.uebungen.first?.saetze.map(\.kg), [60, 60, 60])
         XCTAssertEqual(sitzung.training?.sessions.count, 2)
+    }
+
+    /// `gym-lauf-stand-abgerissen.jsonl`: dieselbe Datei, nur endet sie mitten in einem zweiten Haken (Absturz beim Schreiben, kein Zeilenende).
+    /// Der Log überspringt die kaputte Zeile, sichert sie in `ops.jsonl.defekt` und schreibt die Datei ohne sie neu; der neue Haken hängt dann sauber an.
+    func testAbgerissenerLetzterEintragUeberlebtDasUpdate() throws {
+        let (u, _) = try umgebungMitAltemStand(jetzt: start + 650, datei: "gym-lauf-stand-abgerissen.jsonl")
+        let ordner = u.profilOrdner(try XCTUnwrap(u.profil.aktiv?.id))
+        let opsDatei = ordner.appendingPathComponent("ops.jsonl")
+        let sitzung = GymSitzung(umgebung: u)
+        sitzung.ladeWennNoetig()
+        XCTAssertEqual(sitzung.sessionId, "lauf-1", "die laufende Einheit ist da")
+        XCTAssertEqual(sitzung.liste[0].saetze.map(\.ok), [true, nil, nil], "der erste Haken bleibt, der abgerissene zweite fehlt")
+        let defekt = ordner.appendingPathComponent("ops.jsonl.defekt")
+        let gesichert = String(decoding: try Data(contentsOf: defekt), as: UTF8.self)
+        XCTAssertTrue(gesichert.contains("op-lauf-3"), "die kaputte Zeile liegt gesichert daneben")
+        var vorherLog = LokalerOpLog(datei: opsDatei)
+        let opsVorher = vorherLog.lade().filter { $0.art == "gym.uebung" }.count
+        // Der neue Haken wird nach dem Laden sauber angehängt.
+        sitzung.haken(0, 1)
+        var log = LokalerOpLog(datei: opsDatei)
+        let ops = log.lade()
+        XCTAssertEqual(ops.filter { $0.art == "gym.uebung" }.count, opsVorher + 1, "genau eine Übungs-Op mehr, keine an die kaputte Zeile geklebt")
+        XCTAssertEqual(try Data(contentsOf: defekt), Data(gesichert.utf8), "keine neue kaputte Zeile entstanden")
+        let neu = GymSitzung(umgebung: u)
+        neu.ladeWennNoetig()
+        XCTAssertEqual(neu.liste[0].saetze.map(\.ok), [true, true, nil])
     }
 
     func testNachDemLadenGehtDasTrainingOhneBruchWeiter() throws {

@@ -7,7 +7,8 @@ import Foundation
 enum LoveaEssenExport {
     nonisolated static let arten: Set<String> = ["essen.setzen", "lebensmittel.setzen", "lebensmittel.favorit", "rezept.setzen", "fasten.setzen", "fasten.eintrag",
                                                 "fasten.plan", "food.anpassung", "koerper.setzen"]
-    nonisolated static let paket = 200
+    /// 50 Ops je Anfrage: der Server nimmt höchstens 256 KB und je Op 4 KB, 50 mal 4 KB passen sicher hinein.
+    nonisolated static let paket = 50
 
     /// Die Ziele als Lovea-Einstellungen. Feste Kennung je Feld und Wert: ein zweiter Lauf schickt nichts doppelt (Lovea überspringt bekannte Ids),
     /// ein geänderter Wert kommt als neue Op an. Nie eingerichtete Ziele (nur geschätzt) gehen nicht raus.

@@ -1,3 +1,4 @@
+import UIKit
 import XCTest
 @testable import LumenFit
 
@@ -384,6 +385,79 @@ final class GymSitzungTests: XCTestCase {
         let fertig = try XCTUnwrap(a.daten.training.sessions.first)
         XCTAssertEqual(fertig.laeufe.first?.stand?[1].kg, 65)
         XCTAssertEqual(fertig.laeufe.first?.stand?[1].wdh, 6)
+        XCTAssertNil(a.sitzung.entwurfAufgabe)
+    }
+
+    /// Der gespeicherte Stand der Übung `plan` in der laufenden Einheit; nil, solange nichts geschrieben ist.
+    private func gespeichert(_ a: GymTestAufbau, plan: String) -> [PlanSatz]? {
+        a.daten.training.laufende()?.laeufe.first { $0.plan == plan }?.stand
+    }
+
+    func testHintergrundSchreibtEntwurfOhneAnsicht() throws {
+        for name in [UIApplication.willResignActiveNotification, UIApplication.didEnterBackgroundNotification] {
+            let a = try aufbau()
+            a.sitzung.starte(planTag: "push")
+            a.sitzung.werteSetzen(1, 0, kg: 22.5, wdh: 9)
+            XCTAssertNil(gespeichert(a, plan: "b"), "noch im Verzug, keine Ansicht im Spiel")
+            NotificationCenter.default.post(name: name, object: nil)
+            XCTAssertEqual(gespeichert(a, plan: "b")?.first?.kg, 22.5, "\(name.rawValue): sofort auf der Platte, ohne auf die Aufgabe zu warten")
+            XCTAssertEqual(gespeichert(a, plan: "b")?.first?.wdh, 9)
+            XCTAssertNil(a.sitzung.entwurfAufgabe)
+        }
+    }
+
+    func testDauerTippenSchreibtSpaetestensNachFuenfSekunden() throws {
+        XCTAssertEqual(GymSitzung.entwurfWartezeit(seitErstem: 0), GymSitzung.entwurfVerzug)
+        XCTAssertEqual(GymSitzung.entwurfWartezeit(seitErstem: 4), 1, "Rest bis zur Obergrenze, kürzer als der Verzug")
+        XCTAssertLessThanOrEqual(GymSitzung.entwurfWartezeit(seitErstem: 5), 0, "Obergrenze erreicht: jetzt schreiben")
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.werteSetzen(1, 0, kg: 21, wdh: 8)   // erster offener Tipp
+        a.uhr.vor(sekunden: 3)
+        a.sitzung.werteSetzen(1, 0, kg: 22, wdh: 8)   // weniger als eine Verzugsspanne Pause, aber noch unter 5 s seit dem ersten
+        XCTAssertNil(gespeichert(a, plan: "b"))
+        a.uhr.vor(sekunden: 2.5)
+        a.sitzung.werteSetzen(1, 0, kg: 23, wdh: 8)   // 5,5 s seit dem ersten Tipp, ohne dass der Verzug je ablief
+        XCTAssertEqual(gespeichert(a, plan: "b")?.first?.kg, 23)
+        XCTAssertNil(a.sitzung.entwurfAufgabe)
+    }
+
+    func testBeendenMitStehenderUhrBehaeltEntwurfUndEnde() async throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.haken(0, 0)
+        a.sitzung.werteSetzen(0, 1, kg: 65, wdh: 6)   // ohne Haken, noch im Verzug
+        a.sitzung.beende()                            // keine `uhr.vor`: Haken, Entwurf und Ende tragen dieselbe Zeit
+        await a.sitzung.endeAufgabe?.value
+        let fertig = try XCTUnwrap(a.daten.training.sessions.first)
+        XCTAssertNotNil(fertig.ende, "die Einheit ist beendet")
+        XCTAssertEqual(fertig.laeufe.first?.stand?[0].ok, true)
+        XCTAssertEqual(fertig.laeufe.first?.stand?[1].kg, 65)
+        XCTAssertEqual(fertig.laeufe.first?.stand?[1].wdh, 6)
+        XCTAssertNil(a.daten.training.laufende())
+    }
+
+    func testEntwurfUeberlebtZuruecksetzen() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.werteSetzen(1, 0, kg: 24, wdh: 7)
+        XCTAssertNil(gespeichert(a, plan: "b"))
+        a.uhr.vor(sekunden: 4 * 3600)   // nach drei Stunden läuft nichts mehr: `ladeWennNoetig` setzt die Sitzung zurück
+        a.sitzung.ladeWennNoetig()
+        XCTAssertNil(a.sitzung.sessionId)
+        let vergessen = try XCTUnwrap(a.daten.training.vergessene())
+        XCTAssertEqual(vergessen.laeufe.first { $0.plan == "b" }?.stand?.first?.kg, 24, "der offene Entwurf ging vor dem Zurücksetzen raus")
+        XCTAssertEqual(vergessen.laeufe.first { $0.plan == "b" }?.stand?.first?.wdh, 7)
+    }
+
+    func testVerwerfenSchreibtKeinenEntwurfMehr() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.werteSetzen(1, 0, kg: 24, wdh: 7)
+        let vorher = a.daten.raum.ops(arten: ["gym.uebung"]).count
+        a.sitzung.verwerfen()
+        XCTAssertEqual(a.daten.raum.ops(arten: ["gym.uebung"]).count, vorher, "in die gelöschte Einheit kommt nichts mehr")
+        XCTAssertTrue(a.daten.training.sessions.isEmpty)
         XCTAssertNil(a.sitzung.entwurfAufgabe)
     }
 

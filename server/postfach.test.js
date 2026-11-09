@@ -70,3 +70,18 @@ test("Plan melden: nur mit planMelden am Konto, Admin liest den Stand", async ()
   const g = await ruf(env, "GET", `/admin/postfach/plan?konto=${ID}`, admin);
   assert.deepEqual(g.json.stand.plan, PLAN);
 });
+
+test("Plan mit doppelter Übungs-id in einem Tag -> 400, gleiche id an verschiedenen Tagen bleibt erlaubt", async () => {
+  const env = await aufbau();
+  await ruf(env, "PATCH", `/admin/konto/${ID}`, admin, { einstellungen: { planMelden: true } });
+  const u = (id) => ({ id, uebung: "eigen", name: "Bank", saetze: [{ wdh: 8, failure: false }] });
+  const tag = (id, uebungen) => ({ id, name: "Tag", wochentage: [1], uebungen });
+  const doppelt = { tage: [tag("t", [u("a"), u("b"), u("a")])] };
+  assert.equal((await ruf(env, "PUT", "/postfach/plan", kopf, { plan: doppelt })).status, 400);
+  const abgelegt = await ruf(env, "POST", "/admin/postfach", admin, { konto: ID, art: "gym.plan", daten: doppelt });
+  assert.equal(abgelegt.status, 400);
+  assert.match(abgelegt.json.fehler, /id doppelt/);
+  const verteilt = { tage: [tag("t1", [u("a"), u("b")]), tag("t2", [u("a")])] };
+  assert.equal((await ruf(env, "PUT", "/postfach/plan", kopf, { plan: verteilt })).status, 200);
+  assert.equal((await ruf(env, "POST", "/admin/postfach", admin, { konto: ID, art: "gym.plan", daten: verteilt })).status, 201);
+});
