@@ -74,46 +74,56 @@ function finde(liste, wert, schluessel, was) {
   const genau = liste.filter((x) => x.id === wert || schluessel(x).some((s) => klein(s) === w));
   const treffer = genau.length ? genau : liste.filter((x) => schluessel(x).some((s) => klein(s).includes(w)));
   if (treffer.length === 1) return treffer[0];
-  throw new Error(treffer.length ? `${was} "${wert}" ist mehrdeutig, nimm die id` : `${was} "${wert}" nicht gefunden`);
+  throw new CoachFehler(treffer.length ? `${was} "${wert}" ist mehrdeutig, nimm die id` : `${was} "${wert}" nicht gefunden`);
 }
 
+/** Fehler, deren Text an den Coach gehen darf (Prüfungen); alles andere wird generisch gemeldet. */
+class CoachFehler extends Error {}
+
+const FEHL_JE_MINUTE = 10;
 const kgOk = (k) => typeof k === "number" && Number.isFinite(k) && k >= 0 && k <= 500;
 const wdhOk = (w) => Number.isInteger(w) && w >= 1 && w <= 100;
 
 /** Kleine Änderungen an Übungen eines Plans: neuer Plan (Kopie), das Original bleibt. */
 export function aendern(plan, aenderungen) {
-  if (!Array.isArray(aenderungen) || !aenderungen.length || aenderungen.length > 20) throw new Error("aenderungen: 1 bis 20 Einträge");
+  if (!Array.isArray(aenderungen) || !aenderungen.length || aenderungen.length > 20) throw new CoachFehler("aenderungen: 1 bis 20 Einträge");
   const neu = structuredClone(plan);
   for (const a of aenderungen) {
-    if (!ist(a)) throw new Error("Änderung ungültig");
+    if (!ist(a)) throw new CoachFehler("Änderung ungültig");
     const tag = finde(neu.tage, a.tag ?? "", (t) => [t.name, tagLabel(t), ...t.wochentage.map((w) => TAGE[w])], "Tag");
     const u = finde(tag.uebungen, a.uebung ?? "", (x) => [uebungName(x), x.uebung], "Übung");
     if (u.minuten != null) {
-      if (!Number.isInteger(a.minuten) || a.minuten < 1 || a.minuten > 300) throw new Error(`${uebungName(u)} ist Cardio: nur minuten (1 bis 300)`);
+      if (!Number.isInteger(a.minuten) || a.minuten < 1 || a.minuten > 300) throw new CoachFehler(`${uebungName(u)} ist Cardio: nur minuten (1 bis 300)`);
       u.minuten = a.minuten;
       continue;
     }
     if (a.liste !== undefined) {
-      if (!Array.isArray(a.liste) || !a.liste.length || a.liste.length > 30) throw new Error("liste: 1 bis 30 Sätze");
-      u.saetze = a.liste.map((s) => {
-        if (!ist(s) || !wdhOk(s.wdh) || (s.kg != null && !kgOk(s.kg))) throw new Error("liste: je Satz wdh 1 bis 100, kg 0 bis 500");
-        return { wdh: s.wdh, ...(s.kg != null ? { kg: s.kg } : {}), failure: s.failure === true };
+      if (!Array.isArray(a.liste) || !a.liste.length || a.liste.length > 30) throw new CoachFehler("liste: 1 bis 30 Sätze");
+      const alt = u.saetze;
+      u.saetze = a.liste.map((s, i) => {
+        if (!ist(s) || !wdhOk(s.wdh) || (s.kg != null && !kgOk(s.kg))) throw new CoachFehler("liste: je Satz wdh 1 bis 100, kg 0 bis 500");
+        // Gleich viele Sätze: Felder des alten Satzes an derselben Stelle (typ, rpe, ...) bleiben. Sonst zählt nur, was kommt;
+        // typ "w" (Aufwärmen) oder null (Arbeitssatz) im Eintrag gewinnt immer.
+        const { kg: _kg, wdh: _w, failure: _f, ...rest } = a.liste.length === alt.length ? (alt[i] ?? {}) : {};
+        const satz = { ...rest, wdh: s.wdh, ...(s.kg != null ? { kg: s.kg } : {}), failure: s.failure === true };
+        if (typeof s.typ === "string") satz.typ = s.typ; else if (s.typ === null) delete satz.typ;
+        return satz;
       });
     }
     if (a.saetze !== undefined) {
-      if (!Number.isInteger(a.saetze) || a.saetze < 1 || a.saetze > 30) throw new Error("saetze: 1 bis 30");
+      if (!Number.isInteger(a.saetze) || a.saetze < 1 || a.saetze > 30) throw new CoachFehler("saetze: 1 bis 30");
       const vorlage = u.saetze.at(-1) ?? { wdh: 10, failure: false };
       u.saetze = a.saetze <= u.saetze.length ? u.saetze.slice(0, a.saetze) : [...u.saetze, ...Array.from({ length: a.saetze - u.saetze.length }, () => ({ ...vorlage }))];
     }
     if (a.wdh !== undefined) {
-      if (!wdhOk(a.wdh)) throw new Error("wdh: 1 bis 100");
+      if (!wdhOk(a.wdh)) throw new CoachFehler("wdh: 1 bis 100");
       u.saetze = u.saetze.map((s) => ({ ...s, wdh: a.wdh }));
     }
     if (a.kg !== undefined) {
-      if (!kgOk(a.kg)) throw new Error("kg: 0 bis 500");
+      if (!kgOk(a.kg)) throw new CoachFehler("kg: 0 bis 500");
       u.saetze = u.saetze.map((s) => (s.typ === "w" ? s : { ...s, kg: a.kg }));
     }
-    if (a.liste === undefined && a.saetze === undefined && a.wdh === undefined && a.kg === undefined) throw new Error("je Änderung mindestens kg, wdh, saetze oder liste");
+    if (a.liste === undefined && a.saetze === undefined && a.wdh === undefined && a.kg === undefined) throw new CoachFehler("je Änderung mindestens kg, wdh, saetze oder liste");
   }
   return neu;
 }
@@ -121,17 +131,30 @@ export function aendern(plan, aenderungen) {
 // Ganzer neuer Plan vom Coach: Katalog-ids prüfen, doppelte Katalognamen weg (sonst klebt der Name fest), Felder wie Splitname behalten.
 export function ganzerPlan(alt, plan) {
   const fehler = ERLAUBT["gym.plan"](plan);
-  if (fehler) throw new Error(fehler);
+  if (fehler) throw new CoachFehler(fehler);
   const neu = structuredClone(plan);
   for (const t of neu.tage) for (const u of t.uebungen) {
-    if (u.uebung === "eigen") { if (typeof u.name !== "string" || !u.name.trim()) throw new Error("eigene Übung braucht name"); continue; }
+    if (u.uebung === "eigen") { if (typeof u.name !== "string" || !u.name.trim()) throw new CoachFehler("eigene Übung braucht name"); continue; }
     const k = KATALOG.get(u.uebung);
-    if (!k) throw new Error(`Übung ${u.uebung} nicht im Katalog, erst gym_uebungen suchen oder uebung "eigen" mit name`);
+    if (!k) throw new CoachFehler(`Übung ${u.uebung} nicht im Katalog, erst gym_uebungen suchen oder uebung "eigen" mit name`);
     if (u.name === k.name) delete u.name;
-    for (const s of u.saetze) if (!wdhOk(s.wdh) || (s.kg != null && !kgOk(s.kg))) throw new Error(`${k.name}: wdh 1 bis 100, kg 0 bis 500`);
+    for (const s of u.saetze) if (!wdhOk(s.wdh) || (s.kg != null && !kgOk(s.kg))) throw new CoachFehler(`${k.name}: wdh 1 bis 100, kg 0 bis 500`);
   }
-  for (const f of ["ruhetage", "splitName", "wochen"]) if (!(f in neu) && f in alt) neu[f] = alt[f];
-  return neu;
+  for (const [f, w] of Object.entries(alt)) if (f !== "tage" && !(f in neu)) neu[f] = w;
+  // Der Coach kennt nicht jedes Feld (Notiz, Pause, Supersatz, Satz-Typ, RPE): was er nicht schickt, kommt aus dem alten Plan
+  // (Tag per id, Übung per id bei gleicher Katalog-Übung, Satz per Stelle).
+  const altTage = new Map((alt.tage ?? []).map((t) => [t.id, t]));
+  const altUebungen = new Map((alt.tage ?? []).flatMap((t) => t.uebungen.map((u) => [u.id, u])));
+  for (const t of neu.tage) {
+    for (const [f, w] of Object.entries(altTage.get(t.id) ?? {})) if (f !== "uebungen" && !(f in t)) t[f] = w;
+    for (const u of t.uebungen) {
+      const au = altUebungen.get(u.id);
+      if (!au || au.uebung !== u.uebung) continue;
+      for (const [f, w] of Object.entries(au)) if (f !== "saetze" && f !== "name" && !(f in u)) u[f] = w;
+      u.saetze = u.saetze.map((s, i) => ({ ...Object.fromEntries(Object.entries(au.saetze?.[i] ?? {}).filter(([f]) => !["wdh", "kg", "failure"].includes(f))), ...s }));
+    }
+  }
+  return JSON.parse(JSON.stringify(neu));
 }
 
 /** e1RM (Epley) und Bestwerte je Übung aus den Einheiten (kg in Zehnteln wie in partner_stand). */
@@ -180,13 +203,20 @@ async function vorschlagMerken(env, konto, v, lesen) {
   const jetzt = Date.now();
   const alt = (lesen(await lies(env, konto, "coach_vorschlaege")) ?? []);
   const liste = (Array.isArray(alt) ? alt : []).filter((x) => jetzt - x.zeit < VORSCHLAG_STUNDEN * 3600_000).slice(-(MAX_VORSCHLAEGE - 1));
-  const token = crypto.randomUUID().slice(0, 8);
+  const token = crypto.randomUUID();
   await schreib(env, konto, "coach_vorschlaege", [...liste, { ...v, token, zeit: jetzt }]);
   return token;
 }
 
 export async function coach(request, url, env, { json, nein, koerper, lesen, gleich }) {
-  if (!env.COACH_KEY || !gleich(request.headers.get("X-Coach-Key"), env.COACH_KEY)) return nein(401, "unauthorized");
+  // Öffentlicher Host: Schlüssel (32 Byte) plus Sperre nach FEHL_JE_MINUTE Fehlversuchen je Minute, dann auch für den richtigen Schlüssel.
+  const fenster = Math.floor(Date.now() / 60000);
+  const fehl = await env.DB.prepare("SELECT n FROM drossel WHERE schluessel = 'coach:fehl' AND fenster = ?").bind(fenster).first();
+  if ((fehl?.n ?? 0) >= FEHL_JE_MINUTE) return nein(429, "zu viele Fehlversuche, eine Minute warten");
+  if (!env.COACH_KEY || !gleich(request.headers.get("X-Coach-Key"), env.COACH_KEY)) {
+    await env.DB.prepare("INSERT INTO drossel (schluessel, fenster, n) VALUES ('coach:fehl', ?, 1) ON CONFLICT(schluessel) DO UPDATE SET n = CASE WHEN fenster = excluded.fenster THEN n + 1 ELSE 1 END, fenster = excluded.fenster").bind(fenster).run();
+    return nein(401, "unauthorized");
+  }
   const konto = (await env.DB.prepare("SELECT id FROM konten WHERE lovea_person = 'ahmed' AND gesperrt = 0 ORDER BY gesehen DESC LIMIT 1").first())?.id;
   if (!konto) return nein(404, "kein Konto für Ahmed");
   const m = request.method;
@@ -235,23 +265,29 @@ export async function coach(request, url, env, { json, nein, koerper, lesen, gle
     }
     if (p === "/coach/anwenden" && m === "POST") {
       const b = await koerper(request);
-      const liste = lesen(await lies(env, konto, "coach_vorschlaege"));
+      const rohListe = await lies(env, konto, "coach_vorschlaege");
+      const liste = lesen(rohListe);
       const v = Array.isArray(liste) ? liste.find((x) => typeof b?.token === "string" && x.token === b.token) : null;
       if (!v || Date.now() - v.zeit > VORSCHLAG_STUNDEN * 3600_000) return nein(404, "Token unbekannt oder abgelaufen. Neu vorschlagen.");
       const a = await aktuell(env, konto, lesen);
       if (!a || kanon(a.plan) !== v.basis) return nein(409, "Der Plan hat sich seit dem Vorschlag geändert. Neu lesen und neu vorschlagen.");
       const offen = await env.DB.prepare("SELECT COUNT(*) AS n FROM agent_postfach WHERE konto = ? AND abgeholt IS NULL").bind(konto).first();
       if (offen.n >= 20) return nein(429, "Zu viele offene Einträge im Postfach. Ahmed soll Lumen Fit öffnen.");
+      // Token zuerst verbrauchen: ein zweites anwenden mit demselben Token findet es nicht mehr.
+      const weg = await env.DB.prepare("UPDATE konto_merker SET wert = ? WHERE konto = ? AND schluessel = 'coach_vorschlaege' AND wert = ?")
+        .bind(JSON.stringify(liste.filter((x) => x.token !== v.token)), konto, rohListe).run();
+      if (!weg.meta?.changes) return nein(409, "Gleichzeitig geändert. Neu vorschlagen.");
       const jetzt = new Date().toISOString();
       await env.DB.prepare("INSERT INTO agent_postfach (konto, art, daten, erstellt) VALUES (?, 'gym.plan', ?, ?)").bind(konto, JSON.stringify(v.nachher), jetzt).run();
       const stapel = lesen(await lies(env, konto, "coach_stapel"));
       const s = Array.isArray(stapel) ? stapel : [];
       await schreib(env, konto, "coach_stapel", v.zurueck ? s.slice(0, -1) : [...s, { zeit: Date.now(), vorher: a.plan }].slice(-MAX_STAPEL));
-      await schreib(env, konto, "coach_vorschlaege", liste.filter((x) => x.token !== v.token));
       return json({ ok: true, aenderungen: v.zeilen, hinweis: "Liegt bereit. Lumen Fit zeigt es beim nächsten Öffnen (ein laufendes Training liest den neuen Tag sofort). Rückweg: gym_rueckgaengig." });
     }
   } catch (e) {
-    return nein(400, e.message);
+    if (e instanceof CoachFehler) return nein(400, e.message);
+    console.error("coach", e?.name);
+    return nein(500, "Fehler im Coach-Weg");
   }
   return nein(404, "not found");
 }

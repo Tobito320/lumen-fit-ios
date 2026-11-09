@@ -176,3 +176,53 @@ test("Coach: Katalogsuche und kein Plan gemeldet", async () => {
   assert.equal((await ruf(env, "GET", "/coach/plan", coachKopf)).json.plan, null);
   assert.equal((await ruf(env, "POST", "/coach/vorschlag", coachKopf, { aenderungen: [] })).status, 409);
 });
+
+// Ship-Review Build 17: Coach-Änderungen dürfen Felder, die er nicht kennt, nicht verlieren.
+const REICH = {
+  splitName: "PPL", ruhetage: [3], wochen: 4,
+  tage: [{ id: "t1", name: "Push", wochentage: [1], farbe: "blau", uebungen: [
+    { id: "u1", uebung: "jHAnWmT", notiz: "Sitz 4", pause: 150, supersatz: "s1", saetze: [{ wdh: 12, kg: 20, failure: false, typ: "w" }, { wdh: 8, kg: 40, failure: false, rpe: 8 }] },
+    { id: "u2", uebung: "goJ6ezq", supersatz: "s1", saetze: [{ wdh: 12, failure: false }] },
+  ] }],
+};
+
+test("Coach: liste gleicher Länge behält typ und rpe; andere Länge nur, was kommt; typ im Eintrag gewinnt", () => {
+  const gleich = aendern(REICH, [{ tag: "Push", uebung: "schrägbank", liste: [{ wdh: 10, kg: 25 }, { wdh: 6, kg: 45, failure: true }] }]);
+  assert.deepEqual(gleich.tage[0].uebungen[0].saetze, [{ wdh: 10, kg: 25, failure: false, typ: "w" }, { wdh: 6, kg: 45, failure: true, rpe: 8 }]);
+  assert.equal(gleich.tage[0].uebungen[0].notiz, "Sitz 4");
+  const anders = aendern(REICH, [{ tag: "Push", uebung: "schrägbank", liste: [{ wdh: 10, kg: 20, typ: "w" }, { wdh: 6, kg: 45 }, { wdh: 8, kg: 40 }] }]);
+  assert.deepEqual(anders.tage[0].uebungen[0].saetze.map((s) => s.typ ?? "-"), ["w", "-", "-"]);
+  const aus = aendern(REICH, [{ tag: "Push", uebung: "schrägbank", liste: [{ wdh: 10, kg: 30, typ: null }, { wdh: 6, kg: 45 }] }]);
+  assert.equal(aus.tage[0].uebungen[0].saetze[0].typ, undefined);
+});
+
+test("Coach: ganzer Plan behält Notiz, Pause, Supersatz, Satz-Typ, RPE und Tag-Felder; Tausch übernimmt sie nicht", async () => {
+  const env = await aufbau({ plan: REICH });
+  const plan = { tage: [{ id: "t1", name: "Push", wochentage: [1], uebungen: [
+    { id: "u1", uebung: "jHAnWmT", saetze: [{ wdh: 12, kg: 20, failure: false }, { wdh: 6, kg: 45, failure: false }] },
+    { id: "u2", uebung: "j9Q5crt", saetze: [{ wdh: 12, failure: false }] },
+  ] }] };
+  const v = await ruf(env, "POST", "/coach/vorschlag", coachKopf, { plan });
+  assert.equal(v.status, 200, JSON.stringify(v.json));
+  assert.equal(v.json.token.length, 36);
+  const a = await ruf(env, "POST", "/coach/anwenden", coachKopf, { token: v.json.token });
+  assert.equal(a.status, 200);
+  const neu = JSON.parse((await env.DB.prepare("SELECT daten FROM agent_postfach ORDER BY id DESC LIMIT 1").first()).daten);
+  assert.equal(neu.wochen, 4);
+  assert.equal(neu.tage[0].farbe, "blau");
+  const [u1, u2] = neu.tage[0].uebungen;
+  assert.deepEqual([u1.notiz, u1.pause, u1.supersatz], ["Sitz 4", 150, "s1"]);
+  assert.deepEqual(u1.saetze, [{ wdh: 12, kg: 20, failure: false, typ: "w" }, { wdh: 6, kg: 45, failure: false, rpe: 8 }]);
+  assert.equal(u2.supersatz, undefined);
+});
+
+test("Coach: dasselbe Token zweimal gibt nur einen Postfach-Eintrag; 10 Fehlversuche sperren eine Minute", async () => {
+  const env = await aufbau();
+  const v = await ruf(env, "POST", "/coach/vorschlag", coachKopf, { aenderungen: [{ tag: "Mo", uebung: "schrägbank", kg: 45 }] });
+  const [x, y] = await Promise.all([ruf(env, "POST", "/coach/anwenden", coachKopf, { token: v.json.token }), ruf(env, "POST", "/coach/anwenden", coachKopf, { token: v.json.token })]);
+  assert.equal([x.status, y.status].filter((s) => s === 200).length, 1);
+  assert.ok([x.status, y.status].some((s) => s === 404 || s === 409));
+  assert.equal((await env.DB.prepare("SELECT COUNT(*) AS n FROM agent_postfach").first()).n, 1);
+  for (let i = 0; i < 10; i++) assert.equal((await ruf(env, "GET", "/coach/plan", { "X-Coach-Key": "x".repeat(40) })).status, 401);
+  assert.equal((await ruf(env, "GET", "/coach/plan", coachKopf)).status, 429);
+});
