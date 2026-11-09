@@ -63,3 +63,9 @@ Fortschritt als stärkste Seite (Entscheidung 09.11. 23:52: „da gucke ich rein
 1. Startseite: Heute-Karte plus Woche plus Feed (Vorschlag) oder nur Feed wie Hevy?
 2. Band: entschieden, zu Lumen Alarm (09.11. 23:47).
 3. Gewohnheiten klein behalten oder ganz raus?
+
+## Entschieden am 10.11.2026 (Entwurf 3)
+- Aufteilung B: Tabs Startseite, Training (mit Plan, Kalender, Übungen), Fortschritt, Freunde, Profil ganz rechts. Gewählt im Chat aus Entwurf 3 (A: Fortschritt im Plan-Tab).
+- Essen und Schlaf stehen bis zum Umzug als zwei Zeilen oben im Profil (Wahl im Chat), danach raus.
+- Startseite ohne Freunde und ohne Partner-Punkte; Partner zeigt der Training-Tab, der Kalender und der Freunde-Tab.
+- Umsetzung: `docs/superpowers/plans/2026-11-10-lumen-fit-umbau1-b.md` (ersetzt die Aufgaben 4 bis 8 des ersten Plans).
