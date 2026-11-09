@@ -35,13 +35,6 @@ enum SatzVorhersageQuelle {
         return rechne(sitzung, uebung: u, satz: i, ziel: ziel)
     }
 
-    /// Das vorgeschlagene Arbeitsgewicht der Übung (erster offener Satz, der kein Aufwärmsatz ist), etwa als Start des Scheibenrechners; nil ohne.
-    static func arbeitsgewicht(_ sitzung: GymSitzung, uebung u: Int) -> Double? {
-        guard an, sitzung.liste.indices.contains(u),
-              let i = sitzung.liste[u].saetze.firstIndex(where: { $0.ok != true && $0.typ != "w" && $0.typ != "d" }) else { return nil }
-        return rechne(sitzung, uebung: u, satz: i, ziel: ziel)?.kg
-    }
-
     private static func rechne(_ sitzung: GymSitzung, uebung u: Int, satz i: Int, ziel: VorhersageZiel) -> SatzVorschlag? {
         let w = sitzung.liste[u]
         guard !w.planUebung.istCardio, !w.ausgelassen else { return nil }
@@ -53,9 +46,9 @@ enum SatzVorhersageQuelle {
     }
 }
 
-/// Der Vorschlag am Satz: "Vorschlag: 62,5 kg × 8 · 1 Wdh Reserve", darunter der Grund (bei der Langhantel mit Scheiben pro Seite). Ein Tipp trägt
-/// Gewicht und Wiederholungen in die Zeile ein. Steht nur am ersten offenen Satz einer Übung; ohne Vorschlag oder mit Schalter aus nichts.
-/// `aufPlatte`: auf der schwarzen Karte "Als Nächstes" (Schrift kommt von der Karte).
+/// Der Vorschlag am Satz, dezent wie Hevys "Previous"-Spalte: "Ziel 32,5 kg × 8" neben "Letztes Mal", ein Tipp trägt Gewicht und Wiederholungen ein.
+/// Grund und Reserve hört VoiceOver. Steht nur am ersten offenen Satz einer Übung und nur, solange die Zeile noch anders steht; mit Schalter aus nichts.
+/// `aufPlatte`: auf der schwarzen Karte "Als Nächstes" (weiße Schrift).
 struct SatzVorschlagAnzeige: View {
     let sitzung: GymSitzung
     let uebung: Int
@@ -68,58 +61,35 @@ struct SatzVorschlagAnzeige: View {
     @State private var uebernommen = 0
 
     var body: some View {
-        if an, let v = SatzVorhersageQuelle.vorschlag(sitzung, uebung: uebung, satz: satz, ziel: VorhersageZiel(rawValue: zielRoh) ?? .schwer) {
-            let passt = v.passt(sitzung.liste[uebung].saetze[satz])
+        if an, let v = SatzVorhersageQuelle.vorschlag(sitzung, uebung: uebung, satz: satz, ziel: VorhersageZiel(rawValue: zielRoh) ?? .schwer),
+           !v.passt(sitzung.liste[uebung].saetze[satz]) {
             Button {
                 sitzung.werteSetzen(uebung, satz, kg: v.kg, wdh: v.wdh)
                 uebernommen += 1
             } label: {
-                inhalt(v, passt: passt)
+                Text("Ziel \(v.text)")
+                    .font(.footnote.weight(.semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(farbe)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .frame(minHeight: Abstand.tippflaeche, alignment: .leading)
+                    .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .disabled(passt)
             .haptik(.auswahl, bei: uebernommen)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(vorleseText(v, passt: passt))
-            .accessibilityHint(passt ? "" : "Trägt Gewicht und Wiederholungen ein")
+            .accessibilityLabel(vorleseText(v))
+            .accessibilityHint("Trägt Gewicht und Wiederholungen ein")
         }
     }
 
-    private func inhalt(_ v: SatzVorschlag, passt: Bool) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
-            Image(systemName: passt ? "checkmark.circle.fill" : "arrow.up.forward.circle.fill")
-                .foregroundStyle(akzent)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(titel(v, passt: passt)).font(.footnote.weight(.semibold)).monospacedDigit()
-                Text(unterzeile(v)).font(.caption).foregroundStyle(nebenFarbe)
-            }
-            Spacer(minLength: 0)
-        }
-        .foregroundStyle(hauptFarbe)
-        .frame(minHeight: Abstand.tippflaeche, alignment: .leading)
-        .contentShape(.rect)
-    }
-
-    private func titel(_ v: SatzVorschlag, passt: Bool) -> String {
-        let kopf = passt ? "Vorschlag eingetragen" : "Vorschlag"
-        return [("\(kopf): \(v.text)"), v.reserveText].compactMap { $0 }.joined(separator: " · ")
-    }
-
-    private func unterzeile(_ v: SatzVorschlag) -> String {
-        let geraet = sitzung.liste.indices.contains(uebung) ? sitzung.katalog(sitzung.liste[uebung].planUebung)?.geraet : nil
-        let scheiben = v.kg.flatMap { SatzVorhersageLogik.scheiben(kg: $0, geraet: geraet) }
-        return [v.grund.text, scheiben.map { "pro Seite \($0)" }].compactMap { $0 }.joined(separator: " · ")
-    }
-
-    private func vorleseText(_ v: SatzVorschlag, passt: Bool) -> String {
+    private func vorleseText(_ v: SatzVorschlag) -> String {
         let wert = v.kg.map { "\(TrainingLogik.kgText($0)) Kilo, \(v.wdh) Wiederholungen" } ?? "\(v.wdh) Wiederholungen"
         let reserve = v.reserveText.map { ", \($0)" } ?? ""
-        return "\(passt ? "Vorschlag eingetragen" : "Vorschlag"): \(wert)\(reserve). \(v.grund.text)"
+        return "Vorschlag: \(wert)\(reserve). \(v.grund.text)"
     }
 
-    private var akzent: Color { aufPlatte ? .white : aufbau == .lovea ? .blue : palette.akzent }
-    private var hauptFarbe: Color { aufPlatte ? .white : aufbau == .lovea ? .primary : palette.text }
-    private var nebenFarbe: Color { aufPlatte ? .white.opacity(0.8) : aufbau == .lovea ? .secondary : palette.text2 }
+    private var farbe: Color { aufPlatte ? .white : aufbau == .lovea ? .blue : palette.akzent }
 }
 
 /// Die Einstellungen des Satz-Vorschlags im Blatt "Einstellungen fürs Training": an oder aus und das Ziel (schwer oder klassisch).

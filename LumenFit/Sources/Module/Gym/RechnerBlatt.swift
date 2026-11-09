@@ -58,7 +58,6 @@ struct RechnerBlatt: View {
 
     private var startwert: Double {
         guard sitzung.liste.indices.contains(index) else { return 60 }
-        if let vorschlag = SatzVorhersageQuelle.arbeitsgewicht(sitzung, uebung: index) { return vorschlag }
         let kg = sitzung.liste[index].saetze.filter { $0.typ != "w" }.compactMap(\.kg).max()
         return kg ?? 60
     }

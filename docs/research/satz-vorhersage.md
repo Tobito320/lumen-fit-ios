@@ -73,7 +73,11 @@ Volumen und Nähe zum Versagen runter (Rogerson 2024, Sports Med Open; Bell 2023
 
 Aus dem vorgeschlagenen Arbeitsgewicht: eine Aufwärmzeile 60 % × 6, zwei Zeilen 65 % × 5 und 85 % × 2, ab drei wie "Aufwärmsätze einfügen"
 (40 % × 10, 60 % × 5, 80 % × 3). Schwerere Aufwärmsätze helfen mehr als leichte (Ribeiro 2020, IJERPH). Gerundet auf den Geräteschritt.
-Dropsatz: 20 % leichter als der Satz davor. Scheiben pro Seite bei der Langhantel (20-kg-Stange, `ScheibenRechner`).
+Dropsatz: 20 % leichter als der Satz davor.
+
+## Anzeige (09.11.2026, Wunsch: simpel wie Hevy)
+
+Dezent in der Satz-Zeile wie Hevys "Previous"-Spalte: neben "Letztes Mal" steht "Ziel 32,5 kg × 8", ein Tipp trägt Gewicht und Wiederholungen ein. Grund und Reserve hört VoiceOver. Nur am ersten offenen Satz jeder Übung und nur, solange die Zeile anders steht; kein Scheiben- oder Aufwärmrechner.
 
 ## Quellen
 

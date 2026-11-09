@@ -232,13 +232,6 @@ enum SatzVorhersageLogik {
         }
     }
 
-    /// Scheiben pro Seite für Langhantel-Übungen ("20, 2 × 1,25"); nil, wenn es nicht genau aufgeht oder keine Langhantel ist.
-    static func scheiben(kg: Double, geraet: String?) -> String? {
-        guard geraet == "Langhantel" || geraet == "Olympia-Langhantel", kg > ScheibenRechner.stange else { return nil }
-        let e = ScheibenRechner.berechne(kg: kg)
-        return e.rest > 0 ? nil : ScheibenRechner.text(e)
-    }
-
     // MARK: - Vorschlag
 
     /// Der Vorschlag für Zeile `i` (offen, also ohne Haken). `saetze`: die Zeilen der Übung heute; `historie`: frühere Einheiten mit ihren gezählten Sätzen,

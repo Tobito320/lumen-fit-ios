@@ -267,7 +267,7 @@ struct SatzVorhersageLogikTests {
         #expect(imTraining([satz(8, 60), satz(8, 60, typ: "d", ok: false)]) == SatzVorschlag(kg: 47.5, wdh: 8, reserve: 0, grund: .drop))
     }
 
-    @Test("Texte, Scheiben und Vergleich mit der Zeile")
+    @Test("Texte und Vergleich mit der Zeile")
     func anzeige() {
         let v = SatzVorschlag(kg: 62.5, wdh: 8, reserve: 1, grund: .mehrGewicht(2.5))
         #expect(v.text == "62,5 kg × 8")
@@ -275,8 +275,5 @@ struct SatzVorhersageLogikTests {
         #expect(SatzVorschlag(kg: 40, wdh: 5, reserve: 0, grund: .aufwaermen(65)).reserveText == nil)
         #expect(v.passt(satz(8, 62.5, ok: false)))
         #expect(v.passt(satz(7, 62.5, ok: false)) == false)
-        #expect(SatzVorhersageLogik.scheiben(kg: 62.5, geraet: "Langhantel") == "20, 1,25")
-        #expect(SatzVorhersageLogik.scheiben(kg: 62.5, geraet: "Kurzhantel") == nil)
-        #expect(SatzVorhersageLogik.scheiben(kg: 15, geraet: "Langhantel") == nil)
     }
 }

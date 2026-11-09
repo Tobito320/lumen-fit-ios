@@ -73,6 +73,7 @@ struct SatzZeile: View {
                     .buttonStyle(.plain)
                     .accessibilityHint("Übernimmt Gewicht und Wiederholungen")
                 }
+                SatzVorschlagAnzeige(sitzung: sitzung, uebung: uebung, satz: satz)
                 Spacer(minLength: 0)
                 if let rekord = sitzung.rekordLabel["\(u.id)|\(satz)"], s.ok == true {
                     Label(rekord, systemImage: "trophy.fill").font(.footnote.weight(.semibold)).foregroundStyle(palette.akzent)
@@ -83,7 +84,6 @@ struct SatzZeile: View {
                     Text(zeiten).font(.footnote).foregroundStyle(palette.text2).monospacedDigit()
                 }
             }
-            SatzVorschlagAnzeige(sitzung: sitzung, uebung: uebung, satz: satz)
         }
         .padding(.horizontal, Abstand.m)
         .padding(.vertical, Abstand.xs)
