@@ -12,23 +12,8 @@ struct HabitsKarte: View {
     var zoom: Namespace.ID?
     @Environment(\.palette) private var palette
 
-    @Environment(\.lumenAufbau) private var aufbau
-
     var body: some View {
-        if aufbau == .lovea {
-            // Lovea `HabitsSektion.swift:141`: jede Gewohnheit ist eine eigene Karte in ihrer Farbe.
-            VStack(spacing: Abstand.m) {
-                ForEach(habits) { zeile in
-                    ListenKarte {
-                        HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom)
-                    }
-                    .kartenTint(zeile.habit.tint)
-                }
-                ListenKarte { verwalten }
-            }
-        } else {
-            standard
-        }
+        standard
     }
 
     private var verwalten: some View {

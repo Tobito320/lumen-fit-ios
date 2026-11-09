@@ -7,7 +7,6 @@ struct VerlaufGruppeSeite: View {
     let gruppe: MuskelGruppe
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var statistikOffen = false
     @State private var ziel: VerlaufZiel?
     @State private var tipp = 0
@@ -19,19 +18,6 @@ struct VerlaufGruppeSeite: View {
         let koerper = q.koerper
         let ohne = VerlaufLogik.ohneSaetze(q.sessions, gym: q.gym, heute: q.heute, jetzt: q.jetzt)
         ScrollView {
-            if aufbau == .lovea {
-                VerlaufLoveaGruppe(
-                    gruppe: gruppe, laeufe: laeufe, heute: q.heute, wochenSaetze: koerper.woche, erholung: koerper.erholung,
-                    oeffnen: { id in
-                        tipp += 1
-                        ziel = .uebung(id)
-                    },
-                    ohneSaetze: ohne,
-                    nachtragen: {
-                        tipp += 1
-                        ziel = .trainingstage
-                    })
-            } else {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 if z.woche.saetze == 0, !ohne.isEmpty {
                     VerlaufHinweis(tage: ohne) {
@@ -67,7 +53,6 @@ struct VerlaufGruppeSeite: View {
             }
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.m)
-            }
         }
         .lumenHintergrund()
         .navigationTitle(gruppe.name)
@@ -155,16 +140,12 @@ struct VerlaufUebungSeite: View {
     let uebungId: String
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         if let u = UebungsKatalog.nachId[uebungId] {
             let v = VerlaufLogik.uebung(u, VerlaufLogik.laeufe(q.sessions), heute: q.heute)
             ScrollView {
-                if aufbau == .lovea {
-                    VerlaufLoveaUebung(verlauf: v)
-                } else {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     if let e = v.e1rm {
                         HeroKarte {
@@ -202,7 +183,6 @@ struct VerlaufUebungSeite: View {
                 }
                 .padding(.horizontal, Abstand.l)
                 .padding(.vertical, Abstand.m)
-                }
             }
             .lumenHintergrund()
             .navigationTitle(u.name)

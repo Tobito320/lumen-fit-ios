@@ -6,7 +6,6 @@ import SwiftUI
 struct PlanView: View {
     let sitzung: GymSitzung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var tagId: IdentifiableText?
     @State private var bibliothek = false
     @State private var frei = false
@@ -17,8 +16,7 @@ struct PlanView: View {
 
     @ViewBuilder
     var body: some View {
-        // Lovea-Aufbau: die Seite "Splits" von Lovea (`PlanLoveaAufbau.swift`), dieselben Daten und Funktionen.
-        if aufbau == .lovea { PlanLoveaView(sitzung: sitzung) } else { lumenBody }
+        lumenBody
     }
 
     private var lumenBody: some View {

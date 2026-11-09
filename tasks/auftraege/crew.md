@@ -125,16 +125,16 @@ Typnamen mit Vorsilbe `Crew` (Ziel weit eindeutig, `bash scripts/typnamen-doppel
   Fehler zurück), Reaktion zurücknehmen, Einladungslink (https aus `KontoZugang.lade()?.server` plus `/f/<token>`). Demo (`-lumenFitDemo`, nur
   DEBUG): feste Beispiel-Antwort ohne Netz (zwei Herausforderungen, drei Reaktionen, Namen "Beispiel Freund A/B/C" wie `GymCrewDemo`).
   "Gesehen bis" für Reaktionen in `@AppStorage("fit.crew.gesehen")`.
-- Ansichten: `CrewSeite.swift` (Hub), `CrewFreundSeite.swift`, `CrewHerausforderungBlatt.swift` (Erstellen: Art Duell / Gruppe / Gemeinsam,
+- Ansichten: `FreundeTabView.swift` (Wurzel des Tabs Freunde, Aufteilung B vom 10.11.: Für dich, Trainingspartner mit eurer Woche, Rangliste,
+  Herausforderungen, Rekorde, Freunde mit Status und Einladen; kein Feed; ohne Freunde steht das Einladen oben; kein eigener NavigationStack), `CrewFreundSeite.swift`, `CrewHerausforderungBlatt.swift` (Erstellen: Art Duell / Gruppe / Gemeinsam,
   Maß, Übung aus den eigenen Übungen, Dauer, Personen, Ziel mit Vorschlag, Hinweis "Alle in dieser Herausforderung sehen deinen Namen und deinen
   Wert."), `CrewHerausforderungSeite.swift` (Stand mit Balken, Tage übrig, Annehmen, Ablehnen, Verlassen), `CrewEinstieg.swift` (Zeile im Gym-Tab:
   "Crew", darunter "2 im Gym · Duell: du führst · 1 neu", Chevron, öffnet die Crew-Seite per `NavigationLink`; auch ohne Personen sichtbar mit
   "Freunde einladen und herausfordern"), `CrewBestwertZeile.swift` (eine Zeile für die Übung im Training, nichts ohne Wert).
-- Einhängen (kleinste Diffs): `GymCrewAbschnitt` (in `Module/Gym/GymCrewZeilen.swift`) zeigt oben `CrewEinstieg`, auch ohne Crew-Zeilen; neuer
-  Parameter `nurEinstieg` für den Lovea-Aufbau (dort stehen die Crew-Zeilen schon oben in `werZeile`); in `GymStartView` nur die eine Zeile
-  `if aufbau == .lumen { GymCrewAbschnitt() }` wird `GymCrewAbschnitt(nurEinstieg: aufbau == .lovea)`. Crew-Zeilen werden antippbar (Freund-Seite).
-  `GymRekordPinnwandView` bekommt den Respekt-Knopf je Zeile. `CrewBestwertZeile` in `UebungsKarte.kopf` (unter dem Untertitel) und im Lovea-Aufbau
-  in `TrainingLoveaUebungView.kopf`.
+- Einhängen (kleinste Diffs): `GymCrewAbschnitt` (in `Module/Gym/GymCrewZeilen.swift`) zeigt oben `CrewEinstieg`, auch ohne Crew-Zeilen.
+  Crew-Zeilen werden antippbar (Freund-Seite), `GymCrewZeilen(grenze:)` zeigt im Tab Freunde alle. `GymRekordPinnwandView` bekommt den
+  Respekt-Knopf je Zeile. `CrewBestwertZeile` in `UebungsKarte.kopf` (unter dem Untertitel, beim Umsortieren aus). Den Tab hängt lumenfit ein
+  (`LumenFitTab`, Router, `RouteAnsicht`, `AppRootView`); Startseite ohne Freunde (Ahmed 10.11.).
 - Design: Bausteine des Grundgerüsts (`HeroKarte`, `ListenKarte`, `Pille`, `LeerZustand`, `FehlerKarte`, `lumenToast`, `RollZahl`, `Haarlinie`,
   `GymZeile`), Farben aus `palette`, Abstände `Abstand`, Tippflächen 44 pt, VoiceOver-Label je Zeile, keine Emojis, Texte Deutsch, keine
   Endlos-Animation, Reduce Motion beachten. Beide Aufbauten: Lumen und Lovea (`@Environment(\.lumenAufbau)`), die Crew-Seite darf in beiden gleich sein.

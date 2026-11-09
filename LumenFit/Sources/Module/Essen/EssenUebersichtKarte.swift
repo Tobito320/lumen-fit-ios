@@ -9,7 +9,6 @@ struct EssenUebersichtKarte: View {
     let verbrannt: Int?
     let oeffnen: @MainActor () -> Void
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var bewegungAus
 
     private var gegessen: Int { Int(summe.kcal.rounded()) }
@@ -35,19 +34,8 @@ struct EssenUebersichtKarte: View {
         .accessibilityHint("Zeigt alle Nährwerte des Tages")
     }
 
-    /// Lovea: gewöhnliche Karte mit Türkis-Tönung (`ErnaehrungView.swift:321`); sonst die Hero-Karte.
-    @ViewBuilder
     private func karte<V: View>(@ViewBuilder _ inhalt: () -> V) -> some View {
-        if aufbau == .lovea {
-            inhalt()
-                .foregroundStyle(palette.text)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Abstand.l)
-                .lumenKartenFlaeche()
-                .clipShape(.rect(cornerRadius: Rundung.karte, style: .continuous))
-        } else {
-            HeroKarte { inhalt() }
-        }
+        HeroKarte { inhalt() }
     }
 
     private func kennzahl(_ wert: Double, _ titel: String) -> some View {
@@ -64,10 +52,10 @@ struct EssenUebersichtKarte: View {
         let anteil = EssenTagebuchLogik.anteil(ist: Double(gegessen), soll: Double(ziele.kcal))
         return ZStack {
             Circle().trim(from: 0, to: 0.75)
-                .stroke(aufbau.farbe(LoveaDaten.essen, sonst: palette.aufAkzent).opacity(0.25), style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .stroke(palette.aufAkzent.opacity(0.25), style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(135))
             Circle().trim(from: 0, to: 0.75 * anteil)
-                .stroke(aufbau.farbe(rest >= 0 ? LoveaDaten.essen : LoveaDaten.ueber, sonst: palette.aufAkzent), style: StrokeStyle(lineWidth: 10, lineCap: .round, dash: rest >= 0 ? [] : [2, 14]))
+                .stroke(palette.aufAkzent, style: StrokeStyle(lineWidth: 10, lineCap: .round, dash: rest >= 0 ? [] : [2, 14]))
                 .rotationEffect(.degrees(135))
                 .animation(bewegungAus ? nil : Feder.weich, value: anteil)
             VStack(spacing: 0) {
@@ -88,8 +76,8 @@ struct EssenUebersichtKarte: View {
             Text(titel).font(.footnote).opacity(0.8).lineLimit(1).minimumScaleFactor(0.8)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(aufbau.farbe(LoveaDaten.essen, sonst: palette.aufAkzent).opacity(0.25))
-                    Capsule().fill(aufbau.farbe(LoveaDaten.essen, sonst: palette.aufAkzent)).frame(width: geo.size.width * anteil)
+                    Capsule().fill(palette.aufAkzent.opacity(0.25))
+                    Capsule().fill(palette.aufAkzent).frame(width: geo.size.width * anteil)
                         .animation(bewegungAus ? nil : Feder.weich, value: anteil)
                 }
             }

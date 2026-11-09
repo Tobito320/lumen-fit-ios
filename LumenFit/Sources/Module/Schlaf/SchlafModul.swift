@@ -6,8 +6,23 @@ enum SchlafModul {
     /// Art der Ops mit den Band-Nächten (schreibt das Modul verbinden).
     nonisolated static let bandArt = "fit.band.schlaf"
 
-    /// Idempotent und synchron: es gibt nichts zu starten (keine Ports, keine Aufgaben).
-    @MainActor static func start(_ umgebung: AppUmgebung) {}
+    @MainActor private static var gestartet = false
+
+    /// Idempotent und synchron: keine Ports. Schreibt die Brücke zu Lumen Alarm (`SchlafBruecke`) beim Start und danach bei jedem Vordergrund
+    /// und jeder Health- oder Band-Aktualisierung.
+    @MainActor static func start(_ umgebung: AppUmgebung) {
+        guard !gestartet else { return }
+        gestartet = true
+        SchlafBruecke.schreiben(umgebung)
+        Task { @MainActor in
+            for await ereignis in umgebung.ereignisse.strom() {
+                switch ereignis {
+                case .vordergrund, .healthAktualisiert, .profilGewechselt: SchlafBruecke.schreiben(umgebung)
+                default: break
+                }
+            }
+        }
+    }
 
     /// Füllt für `-lumenFitDemo` das Band: sechs erfundene Band-Nächte mit Phasen, leicht versetzt zur Nacht der Demo-Uhr, damit "doppelte Nacht",
     /// Quelle und Vergleich zu sehen sind. Feste Op-Kennungen je Tag: zweimal säen ändert nichts.

@@ -16,7 +16,7 @@ struct CrewEinstieg: View {
                                           personen: GymCrewQuelle.eintraege(umgebung).count)
         ListenKarte {
             NavigationLink {
-                CrewSeite()
+                FreundeTabView()
             } label: {
                 HStack(spacing: Abstand.m) {
                     Image(systemName: "person.3.fill")
@@ -25,7 +25,7 @@ struct CrewEinstieg: View {
                         .frame(width: 28)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Crew").font(.body.weight(.semibold)).foregroundStyle(palette.text)
+                        Text("Freunde").font(.body.weight(.semibold)).foregroundStyle(palette.text)
                         Text(text).font(.footnote).foregroundStyle(palette.text2).lineLimit(2).multilineTextAlignment(.leading)
                     }
                     Spacer(minLength: Abstand.s)
@@ -51,7 +51,7 @@ struct CrewEinstieg: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("Öffnet die Crew mit Herausforderungen und Rangliste")
+            .accessibilityHint("Öffnet Freunde mit Trainingspartner, Rangliste und Herausforderungen")
         }
         .task { await dienst.laden() }
     }

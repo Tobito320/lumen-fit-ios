@@ -140,7 +140,7 @@ struct CrewHerausforderungBlatt: View {
     private var personenAbschnitt: some View {
         Section("Mit wem") {
             if crew.isEmpty {
-                Text("Lade zuerst Freunde ein: Crew, Freunde hinzufügen und verwalten.").foregroundStyle(palette.text2)
+                Text("Lade zuerst Freunde ein: im Tab Freunde mit \"Freund einladen\".").foregroundStyle(palette.text2)
             }
             ForEach(crew) { e in
                 let an = personen.contains(e.id)

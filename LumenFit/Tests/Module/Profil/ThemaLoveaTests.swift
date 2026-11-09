@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Das Theme Lovea gibt es nur für Konten, die der Server freigibt (`KontoDienst.loveaErlaubt`), nie nach dem getippten Namen.
+/// Die Freigabe für Lovea (`KontoDienst.loveaErlaubt`) kommt vom Server, nie nach dem getippten Namen; ein Theme Lovea gibt es nicht mehr (ein Theme, Auftrag 09.11.).
 @MainActor
 final class ThemaLoveaTests: XCTestCase {
     private let zugang = KontoZugang(server: URL(string: "https://lumen.example.invalid/")!, appKey: "app-test-schluessel")
@@ -14,27 +14,13 @@ final class ThemaLoveaTests: XCTestCase {
         KontoDienst(zugang: zugang, schluesselbund: bund, http: lader, ordner: ordner, uhr: TestUhr().uhr, version: "0.0.1")
     }
 
-    func testOhneFreigabeGibtEsSechsThemesMitFreigabeSieben() {
-        let ohne = ProfilThemaWahl.verfuegbar(loveaErlaubt: false)
-        XCTAssertEqual(ohne.count, 6)
-        XCTAssertFalse(ohne.contains(.lovea))
-        XCTAssertEqual(ProfilThemaWahl.verfuegbar(loveaErlaubt: true).count, 7)
-        XCTAssertTrue(ProfilThemaWahl.verfuegbar(loveaErlaubt: true).contains(.lovea))
-        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: false).count, 12)
-        XCTAssertEqual(ProfilThemaWahl.kombinationen(loveaErlaubt: true).count, 14)
-    }
-
-    func testGespeichertesLoveaOhneFreigabeFaelltOhneAbsturzAufMonochromZurueck() throws {
+    func testGespeichertesLoveaFaelltOhneAbsturzAufDasEineThemeZurueck() throws {
         let e = try JSONDecoder().decode(Einstellungen.self, from: Data(#"{"thema":"lovea"}"#.utf8))
         XCTAssertEqual(e.thema, .lovea, "gespeichert wird nichts umgeschrieben")
-        XCTAssertEqual(ProfilThemaWahl.wirksam(e.thema, loveaErlaubt: false), .monochrom)
-        XCTAssertEqual(ProfilThemaWahl.wirksam(e.thema, loveaErlaubt: true), .lovea, "kommt die Freigabe wieder, gilt die Wahl wieder")
-        for thema in ThemaID.allCases where thema != .lovea {
-            XCTAssertEqual(ProfilThemaWahl.wirksam(thema, loveaErlaubt: false), thema, "\(thema) bleibt, wie es ist")
+        for thema in ThemaID.allCases {
+            XCTAssertEqual(ProfilThemaWahl.wirksam(thema, loveaErlaubt: false), .schlicht, "\(thema)")
+            XCTAssertEqual(ProfilThemaWahl.wirksam(thema, loveaErlaubt: true), .schlicht, "\(thema)")
         }
-        // Die Palette des Rückfalls ist die von Monochrom, nicht die von Lovea.
-        let wirksam = ProfilThemaWahl.wirksam(.lovea, loveaErlaubt: false)
-        XCTAssertEqual(LumenFarben.tokens(thema: wirksam, dunkel: false).akzent, LumenFarben.tokens(thema: .monochrom, dunkel: false).akzent)
     }
 
     func testDieFreigabeBleibtNachImportEndeUndOhneNetz() async throws {
@@ -49,18 +35,16 @@ final class ThemaLoveaTests: XCTestCase {
         XCTAssertTrue(offline.loveaErlaubt, "der gemerkte Stand gilt schon vor der ersten Antwort")
         await offline.aktualisiere(profilName: "Beispiel", erzwingen: true)
         XCTAssertTrue(offline.loveaErlaubt, "Netzfehler nimmt die Freigabe nicht zurück")
-        XCTAssertEqual(ProfilThemaWahl.wirksam(.lovea, loveaErlaubt: offline.loveaErlaubt), .lovea)
     }
 
-    func testLoveaFarbenFolgenDenSystemFlaechen() {
+    func testDasEineThemeMaltMitSystemFlaechen() {
         let hell = LumenFarben.tokens(thema: .lovea, dunkel: false)
         let dunkel = LumenFarben.tokens(thema: .lovea, dunkel: true)
-        // Lovea malt mit systemBackground und secondarySystemBackground (UIKit-Tabelle).
         XCTAssertEqual(hell.grund, 0xFFFFFF)
         XCTAssertEqual(hell.flaeche, 0xF2F2F7)
         XCTAssertEqual(dunkel.grund, 0x000000)
         XCTAssertEqual(dunkel.flaeche, 0x1C1C1E)
-        XCTAssertEqual(dunkel.akzent, 0xFF3B5C, "Lovea-Akzent im Dunkeln unverändert")
+        XCTAssertEqual(dunkel.akzent, LumenFarben.tokens(thema: .schlicht, dunkel: true).akzent, "kein eigener Akzent mehr")
     }
 
     func testFeierKommtNurEinmalProTagUndAnlass() {

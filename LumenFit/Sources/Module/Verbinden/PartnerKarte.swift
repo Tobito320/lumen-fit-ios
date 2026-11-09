@@ -83,7 +83,7 @@ struct PartnerKarte: View {
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
-            .accessibilityHint("Öffnet die Seite in der Crew")
+            .accessibilityHint("Öffnet die Seite der Person")
         } else {
             inhalt
                 .accessibilityElement(children: .combine)

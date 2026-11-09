@@ -21,7 +21,7 @@ struct CrewFreundSeite: View {
             }
         }
         .lumenHintergrund()
-        .navigationTitle(eintrag.map(CrewLogik.name) ?? "Crew")
+        .navigationTitle(eintrag.map(CrewLogik.name) ?? "Freund")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $herausfordern) { CrewHerausforderungBlatt(vorauswahl: id) }
         .modifier(CrewFehlerAnzeige(extra: .constant(nil)))

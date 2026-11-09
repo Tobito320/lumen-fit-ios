@@ -29,7 +29,6 @@ struct AppRootView: View {
             .bewegungsSchalter()
             .lumenTheme(ProfilThemaWahl.wirksam(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt), erscheinung: einstellungen.erscheinung)
             .toggleStyle(.lumenSchalter)
-            .environment(\.lumenAufbau, LumenAufbau.wahl(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt))
             .environment(\.haptikAn, einstellungen.haptik)
             // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
             .environment(\.locale, Locale(identifier: "de_DE"))
@@ -124,10 +123,9 @@ struct AppRootView: View {
                 einstellungen.aendere { $0.loveaVerbunden = false }
             }
         }
-        if await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http) {
-            (umgebung.trainingSteuerung as? GymSitzung)?.speicherNeuLaden()   // Studio, Geräte und Defekt-Notizen aus der Abgabe sind jetzt da
-        }
+        await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http)
         umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())   // der Partner-Stand vom Server liegt jetzt da
+        await LoveaEssenExport.starteWennOffen(konto: konto, daten: umgebung.daten, jetzt: umgebung.uhr())   // Essen zurück zu Lovea, nur mit Server-Schalter
         if let training = umgebung.daten?.training { await konto.postfachAbgleichen(training: training) }   // Pläne, die ein Agent abgelegt hat
     }
 }

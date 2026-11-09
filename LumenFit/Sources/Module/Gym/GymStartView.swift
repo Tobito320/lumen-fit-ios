@@ -1,4 +1,4 @@
-// Quelle: Lovea Health/GymNeu/GymStartView.swift (neu im Lumen-Design; im Lovea-Aufbau mit Partner-Zeile und Menü ⋯, ohne Körperwoche)
+// Quelle: Lovea Health/GymNeu/GymStartView.swift (neu im Lumen-Design)
 import SwiftUI
 
 /// Die Startseite des Trainings (Idee 27 und 29): Wochenleiste, der Plantag mit Zeitschätzung und Start, "Heute Beine statt Push",
@@ -9,7 +9,6 @@ struct GymStartView: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var gewaehlt: String?
     /// Ein anderer Plantag statt des geplanten, nur für heute ("Heute Beine statt Push").
     @State private var andererTag: String?
@@ -19,11 +18,7 @@ struct GymStartView: View {
     /// Die vergessene Einheit, deren Endzeit gerade eingetragen wird.
     @State private var endzeitFuer: GymSession?
     @State private var nachtragen = false
-    @State private var uebungenTag: PlanView.IdentifiableText?
-    /// Lovea-Aufbau: wohin das Menü ⋯ oder "Diese Woche anderes Split testen" führt (Push, wie Lovea `GymMenuZiel`).
-    @State private var menueZiel: GymMenueZiel?
-    @State private var freiGestartet = 0
-    /// Lumen-Aufbau: "Mehr" unten ist zu, bis man es öffnet.
+    /// "Mehr" unten ist zu, bis man es öffnet.
     @State private var mehrOffen = false
 
     var body: some View {
@@ -45,14 +40,6 @@ struct GymStartView: View {
         }
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
-        .sheet(item: $uebungenTag) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
-        .toolbar {
-            if aufbau == .lovea {
-                ToolbarItem(placement: .topBarTrailing) { loveaMenue }
-            }
-        }
-        .navigationDestination(item: $menueZiel) { menueSeite($0) }
-        .haptik(.erfolg, bei: freiGestartet)
         .task { sitzung.ladeWennNoetig() }
         .gymCrewAbruf()
     }
@@ -65,29 +52,20 @@ struct GymStartView: View {
         let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt)
         let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
         return VStack(alignment: .leading, spacing: Abstand.l) {
-            // Lumen-Aufbau: der große Start ganz oben, dann Woche und Tag, Letzte Einheiten; alles Seltene unter "Mehr".
-            if aufbau == .lumen, let knopf = stand.knopf { startKnopf(knopf, training: training).frame(maxWidth: .infinity) }
+            // Der große Start ganz oben, dann Woche und Tag, Letzte Einheiten; alles Seltene unter "Mehr".
+            if let knopf = stand.knopf { startKnopf(knopf, training: training).frame(maxWidth: .infinity) }
             wochenleiste(stand)
-            if aufbau == .lovea { werZeile(stand, jetzt: jetzt) }
-            // Lovea-Aufbau (`GymStartView.swift:89-95`): Wochenleiste, "Auschecken vergessen?", dann Kopf mit Start, dann die Abweichung (Testwoche, Verlegen).
-            if aufbau == .lovea, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             tagesKarte(stand, training: training, anderer: anderer)
-            if aufbau == .lumen, stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
-            if aufbau == .lovea {
-                verlegenKarte(stand, training: training)
-                uebungenUndSplit(stand, tag: anderer ?? stand.tag)
-                cardioKnoepfe
-                einstellungenKnopf
-            }
+            if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             letzte(training, jetzt: jetzt)
-            GymCrewAbschnitt(nurEinstieg: aufbau == .lovea)
+            GymCrewAbschnitt()
             GymRekordPinnwandView()
             PartnerKarte(bereich: .gym)
-            if aufbau == .lumen { mehrBereich(stand, training: training) }
+            mehrBereich(stand, training: training)
         }
     }
 
-    // MARK: Mehr (Lumen-Aufbau)
+    // MARK: Mehr
 
     private var cardioKnoepfe: some View {
         HStack(spacing: Abstand.s) {
@@ -100,7 +78,6 @@ struct GymStartView: View {
         }
         .buttonStyle(.bordered)
         .accessibilityHint("Cardio eintragen")
-        .gymTipp(.cardioSchnell, GymTippKontext())
     }
 
     private var einstellungenKnopf: some View {
@@ -137,14 +114,9 @@ struct GymStartView: View {
     // MARK: Wochenleiste
 
     private func wochenleiste(_ stand: GymStartStand) -> some View {
-        let gruen = aufbau.farbe(LoveaDaten.gymGruen, sonst: GymFarbe.gruen(schema: schema, kontrast: kontrast))
+        let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
         return VStack(alignment: .leading, spacing: Abstand.s) {
-            // Lumen-Aufbau (W-003): der Tag steht schon als Titel der Karte darunter.
-            if aufbau == .lovea {
-                Text(GymStartLogik.titel(datum: stand.gewaehlt, heute: stand.heute, tag: stand.tag))
-                    .font(.title3.weight(.bold)).foregroundStyle(palette.text)
-                    .accessibilityAddTraits(.isHeader)
-            }
+            // W-003: der Tag steht schon als Titel der Karte darunter.
             HStack(spacing: Abstand.xs) {
                 ForEach(stand.woche) { t in
                     Button {
@@ -170,116 +142,6 @@ struct GymStartView: View {
         }
     }
 
-    // MARK: Übungsliste und Split (Lovea `GymStartView.swift:97-99`)
-
-    @ViewBuilder
-    private func uebungenUndSplit(_ stand: GymStartStand, tag: TrainingsTag?) -> some View {
-        if let tag, !tag.uebungen.isEmpty {
-            ListenKarte {
-                ForEach(Array(tag.uebungen.enumerated()), id: \.element.id) { i, u in
-                    if i > 0 { Haarlinie() }
-                    Button { uebungenTag = PlanView.IdentifiableText(id: tag.id) } label: {
-                        HStack {
-                            Text(u.anzeigeName).font(.headline).foregroundStyle(palette.text)
-                            Spacer(minLength: Abstand.s)
-                            Text(u.istCardio ? "\(u.minuten ?? 20) min" : "\(u.saetze.count) × \(u.saetze.first?.wdh ?? 10)")
-                                .font(.subheadline).monospacedDigit().foregroundStyle(palette.text2)
-                        }
-                        .padding(Abstand.l)
-                        .frame(minHeight: Abstand.tippflaeche)
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        Text("Split").font(.footnote.weight(.semibold)).textCase(.uppercase).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
-        ListenKarte {
-            Button { umgebung.router.oeffne(.gym(.plaene)) } label: {
-                HStack {
-                    Text(stand.splitName ?? "Dein Plan").font(.headline).foregroundStyle(palette.text)
-                    Spacer(minLength: Abstand.s)
-                    Text("\(stand.planTage) Tage").font(.subheadline).foregroundStyle(palette.text2)
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                }
-                .padding(Abstand.l)
-                .frame(minHeight: Abstand.tippflaeche)
-                .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            // Lovea `GymStartView.swift:100-105`: nicht während einer Testwoche.
-            if stand.planTage > 0, stand.testHinweis == nil {
-                Haarlinie()
-                Button { menueZiel = .splits } label: {
-                    PlanLoveaPfeilZeile(titel: "Diese Woche anderes Split testen", unter: "Nur diese Woche, danach gilt dein Plan wieder")
-                        .padding(.horizontal, Abstand.l)
-                }
-                .buttonStyle(.federnd)
-            }
-        }
-    }
-
-    // MARK: Partner-Zeile und Menü ⋯ (Lovea `GymStartView.swift:110`, `:361`)
-
-    /// "Partner 54 min · 27 Sätze   Du geplant: Push": zuerst der Partner (nur wenn verbunden), dann du. Der Punkt davor wie im Wochenstreifen (dunkel = du, hell = Partner).
-    private func werZeile(_ stand: GymStartStand, jetzt: Date) -> some View {
-        let partner = GymPartnerLogik.partner(PartnerAnsichtLogik.aktuellerStand(umgebung))
-        let crew = GymCrewQuelle.zeilen(umgebung, datum: stand.gewaehlt)
-        // Eine Zeile je Person der Crew; ohne Verbindungen bleibt es beim bisherigen Partner (älterer Weg).
-        return VStack(alignment: .leading, spacing: Abstand.s) {
-            if !crew.isEmpty {
-                GymCrewZeilen(zeilen: crew)
-            } else if let partner {
-                person(partner.profilName, GymPartnerLogik.status(partner, datum: stand.gewaehlt, heute: stand.heute, jetzt: jetzt), punkt: palette.text2)
-            }
-            person("Du", stand.status, punkt: palette.text)
-        }
-        .font(.footnote)
-    }
-
-    private func person(_ name: String, _ status: String, punkt: Color) -> some View {
-        HStack(spacing: 5) {
-            Circle().fill(punkt).frame(width: 6, height: 6).accessibilityHidden(true)
-            Text(name).fontWeight(.semibold).foregroundStyle(palette.text)
-            Text(status).foregroundStyle(palette.text2).monospacedDigit()
-        }
-        .lineLimit(1)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var loveaMenue: some View {
-        let partner = GymPartnerLogik.partner(PartnerAnsichtLogik.aktuellerStand(umgebung))
-        return Menu {
-            if let partner { Button("Plan von \(partner.profilName)", systemImage: "person.2") { menueZiel = .partnerPlan } }
-            Button("Verlauf", systemImage: "clock.arrow.circlepath") { menueZiel = .verlauf }
-            Button("Messungen", systemImage: "ruler") { menueZiel = .messungen }
-            Button("Übungen", systemImage: "list.bullet") { menueZiel = .uebungen }
-            Button("Split wechseln", systemImage: "square.grid.2x2") { menueZiel = .splits }
-            // Eigenes Ding ohne Plan: leer starten, Übungen und Cardio im Training dazu (nur ohne laufende Einheit).
-            if sitzung.training?.laufende() == nil {
-                Button("Freies Training", systemImage: "figure.strengthtraining.traditional") {
-                    sitzung.starteFrei()
-                    freiGestartet += 1
-                }
-            }
-        } label: {
-            Image(systemName: "ellipsis").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
-        }
-        .accessibilityLabel("Mehr")
-        .loveaTipp(.loveaStartMehr)
-    }
-
-    @ViewBuilder
-    private func menueSeite(_ ziel: GymMenueZiel) -> some View {
-        switch ziel {
-        case .partnerPlan: PartnerPlanAnsicht()
-        case .verlauf: TrainingVerlaufView()
-        case .messungen: PartnerKoerperWeiche { MessungenView() }
-        case .uebungen: UebungsSucheView()
-        case .splits: PlanLoveaView(sitzung: sitzung)
-        }
-    }
-
     // MARK: Plantag
 
     private func tagesKarte(_ stand: GymStartStand, training: TrainingStore, anderer: TrainingsTag?) -> some View {
@@ -287,8 +149,8 @@ struct GymStartView: View {
         let abweichung = anderer.flatMap { GymStartStand.abweichung(geplant: stand.tag, gewaehlt: $0) }
         return HeroKarte(platte: true) {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                // Lumen-Aufbau (W-003): "noch nicht" sagt nichts Neues, nur Abweichung oder Erledigtes steht oben.
-                if aufbau == .lovea || abweichung != nil || stand.status != "noch nicht" {
+                // W-003: "noch nicht" sagt nichts Neues, nur Abweichung oder Erledigtes steht oben.
+                if abweichung != nil || stand.status != "noch nicht" {
                     Text(abweichung ?? stand.status).font(.footnote.weight(.semibold)).textCase(.uppercase)
                 }
                 if let tag {
@@ -296,7 +158,7 @@ struct GymStartView: View {
                         .accessibilityAddTraits(.isHeader)
                     Text(ZeitSchaetzung.umfang(tag)).font(.subheadline)
                     // Ohne Zeitfenster wiederholt das Urteil nur die Dauer ("ca. 24 min" unter "etwa 25 min").
-                    if aufbau == .lovea || stand.slotMinuten != nil {
+                    if stand.slotMinuten != nil {
                         let urteil = ZeitSchaetzung.urteil(tag, slotMinuten: stand.slotMinuten)
                         Label(urteil.titel, systemImage: urteil.warnt ? "exclamationmark.triangle.fill" : "timer").font(.subheadline)
                         if let tipp = urteil.tipp { Text(tipp.text).font(.footnote) }
@@ -307,7 +169,6 @@ struct GymStartView: View {
                 }
                 if stand.knopf != nil {
                     HStack(spacing: Abstand.s) {
-                        if aufbau == .lovea, let knopf = stand.knopf { startKnopf(knopf, training: training) }
                         andereTageMenue(training: training, aktuell: tag)
                     }
                     .frame(minHeight: Abstand.tippflaeche)
@@ -340,8 +201,7 @@ struct GymStartView: View {
                 Button(t.name.isEmpty ? "Training" : t.name) { andererTag = t.id }
             }
             if andererTag != nil { Button("Zurück zum Plan") { andererTag = nil } }
-            // Lovea-Aufbau: wirklich frei, ohne den Tag von heute (Lumen-Aufbau nimmt ihn wie bisher).
-            Button("Freies Training") { if aufbau == .lovea { sitzung.starteFrei() } else { sitzung.starte(planTag: nil) } }
+            Button("Freies Training") { sitzung.starte(planTag: nil) }
         } label: {
             Label("Anderer Tag", systemImage: "arrow.left.arrow.right").font(.subheadline.weight(.semibold)).frame(minHeight: Abstand.tippflaeche)
         }
@@ -436,22 +296,10 @@ struct GymStartView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                if aufbau == .lovea {
-                    Haarlinie()
-                    Button { nachtragen = true } label: {
-                        GymZeile(titel: "Training nachtragen", untertitel: "Start, Ende und Trainingstag von Hand eintragen") {
-                            Image(systemName: "plus").accessibilityHidden(true)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
             }
         }
     }
 }
-
-/// Wohin das Menü ⋯ der Startseite im Lovea-Aufbau führt (Lovea `GymMenuZiel`; der Editor kommt in Lumen über die Übungsliste).
-enum GymMenueZiel: Hashable { case partnerPlan, verlauf, messungen, uebungen, splits }
 
 /// Die zwei Schnellknöpfe für Cardio ohne Training.
 enum CardioWahl: String, Identifiable { case laufband, stairmaster; var id: String { rawValue } }

@@ -7,7 +7,6 @@ struct KonsistenzKategorienBlatt: View {
     let ordner: URL?
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var stand = KonsistenzEinstellung.standard
     @State private var geladen = false
     @State private var neu = 0
@@ -55,10 +54,7 @@ struct KonsistenzKategorienBlatt: View {
         } header: {
             Text("Kategorien")
         } footer: {
-            // Lovea (KonsistenzKategorienBlatt.swift:56): die Standardfarbe ist dort Rosa.
-            Text(aufbau == .lovea
-                 ? "Wischen zum Löschen. Training ohne Kategorie bleibt rosa. Trainierst du zwei Kategorien am selben Tag, teilt sich das Kästchen diagonal."
-                 : "Wischen zum Löschen. Training ohne Kategorie bekommt die Hauptfarbe. Trainierst du zwei Kategorien am selben Tag, teilt sich das Kästchen diagonal.")
+            Text("Wischen zum Löschen. Training ohne Kategorie bekommt die Hauptfarbe. Trainierst du zwei Kategorien am selben Tag, teilt sich das Kästchen diagonal.")
         }
     }
 

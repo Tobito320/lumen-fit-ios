@@ -62,19 +62,9 @@ struct CrewPinnwandEintrag: Identifiable, Equatable, Sendable {
     var id: String { "\(person)-\(rekord.tag)-\(rekord.uebung)" }
 }
 
-/// Das letzte Training einer Person der Crew.
-struct CrewTraining: Identifiable, Equatable, Sendable {
-    var person: String
-    var name: String
-    var training: PartnerTrainingKurz
-    var id: String { "\(person)-\(training.tag)" }
-}
-
 /// Reine Regeln der Crew (Herausforderungen, Rangliste, Reaktionen). Ohne Netz und Oberfläche testbar.
 enum CrewLogik {
     nonisolated static let zielLaenge = 80
-    nonisolated static let trainingsTage = 7
-    nonisolated static let trainingsMax = 5
 
     // MARK: Crew
 
@@ -381,15 +371,6 @@ enum CrewLogik {
         return Array(sortiert.prefix(GymRekordPinnwandLogik.zeilenMax))
     }
 
-    /// Je Person das letzte Training der letzten sieben Tage, neueste zuerst, höchstens fünf.
-    static func letzteTrainings(eintraege: [VerbindungEintrag], jetzt: Date) -> [CrewTraining] {
-        let ab = Datum.addTage(Datum.text(jetzt), -trainingsTage)
-        let liste = crew(eintraege).compactMap { e -> CrewTraining? in
-            guard let d = e.daten, let t = GymPartnerLogik.einheiten(d).first(where: { $0.tag >= ab }) else { return nil }
-            return CrewTraining(person: e.id, name: name(e), training: t)
-        }
-        return Array(liste.sorted { $0.training.tag != $1.training.tag ? $0.training.tag > $1.training.tag : $0.name < $1.name }.prefix(trainingsMax))
-    }
 
     /// Gemeinsame Übungen: bestes geschätztes 1RM aus meinen Einheiten gegen das aus den Einheiten der Person. Nach Name sortiert.
     static func vergleich(sessions: [GymSession], datei: ZusammenfassungDatei?) -> [CrewVergleich] {
@@ -424,7 +405,7 @@ enum CrewLogik {
 
     /// "Crew-Bestwert: Beispiel Freund A 80 kg × 8"
     static func bestwertText(_ b: CrewBestwert) -> String {
-        "Crew-Bestwert: \(b.name) \(TrainingLogik.kgText(b.kg)) kg × \(b.wdh)"
+        "Bestwert bei Freunden: \(b.name) \(TrainingLogik.kgText(b.kg)) kg × \(b.wdh)"
     }
 
     // MARK: Einstieg

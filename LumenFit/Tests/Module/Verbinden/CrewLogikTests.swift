@@ -216,7 +216,7 @@ final class CrewLogikTests: XCTestCase {
         let e = [T.eintrag("a", name: "A", daten: a), T.eintrag("b", name: "B", daten: b), T.eintrag("c", name: "C", daten: ohne)]
         let best = CrewLogik.bestwert(uebung: "bankdrücken", eintraege: e)
         XCTAssertEqual(best, CrewBestwert(name: "A", kg: 80, wdh: 8), "80 × 8 (e1RM 101) schlägt 85 × 5 (99)")
-        XCTAssertEqual(best.map(CrewLogik.bestwertText), "Crew-Bestwert: A 80 kg × 8")
+        XCTAssertEqual(best.map(CrewLogik.bestwertText), "Bestwert bei Freunden: A 80 kg × 8")
         XCTAssertNil(CrewLogik.bestwert(uebung: "Kniebeuge", eintraege: e))
     }
 

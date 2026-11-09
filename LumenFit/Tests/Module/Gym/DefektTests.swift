@@ -1,7 +1,7 @@
 import XCTest
 @testable import LumenFit
 
-/// Defekt-Notizen: Alter, "Noch defekt?" nach 30 Tagen, je Studio, Datei im Profilordner, Zurück zu Original.
+/// Defekt-Notizen: Alter, "Noch defekt?" nach 30 Tagen, alte Dateien lesbar, Zurück zu Original.
 @MainActor
 final class DefektTests: XCTestCase {
     func testAlterUndText() {
@@ -11,26 +11,6 @@ final class DefektTests: XCTestCase {
         XCTAssertEqual(DefektLogik.alterText(n, heute: "2026-10-13"), "vor 3 Tagen")
         XCTAssertFalse(DefektLogik.veraltet(n, heute: "2026-11-09"))
         XCTAssertTrue(DefektLogik.veraltet(n, heute: "2026-11-10"))
-    }
-
-    func testMeldenErledigenBestaetigenUndJeStudio() throws {
-        let ordner = try tempOrdner()
-        let s = DefektStore(ordner: ordner)
-        s.melden(text: "  wackelt  ", studio: "Studio A", uebung: "x", am: "2026-10-01")
-        XCTAssertEqual(s.offen(studio: "studio a ", uebung: "x")?.text, "wackelt") // Schreibweise egal
-        XCTAssertNil(s.offen(studio: "Studio B", uebung: "x"))
-        s.bestaetigen(studio: "Studio A", uebung: "x", am: "2026-11-15")
-        XCTAssertEqual(s.offen(studio: "Studio A", uebung: "x")?.gemeldetAm, "2026-11-15")
-        s.erledigen(studio: "Studio A", uebung: "x", am: "2026-11-16")
-        XCTAssertNil(s.offen(studio: "Studio A", uebung: "x"))
-    }
-
-    func testDieNotizenUeberlebenEinenNeustartUndLeererTextIstOhneText() throws {
-        let ordner = try tempOrdner()
-        DefektStore(ordner: ordner).melden(text: "   ", studio: "", uebung: "y", am: "2026-10-01")
-        let neu = DefektStore(ordner: ordner)
-        XCTAssertNotNil(neu.offen(studio: "", uebung: "y"))
-        XCTAssertNil(neu.offen(studio: "", uebung: "y")?.text)
     }
 
     func testAlteDateiOhneFelderIstLesbar() throws {

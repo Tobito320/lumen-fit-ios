@@ -2,27 +2,25 @@ import SwiftUI
 import XCTest
 @testable import LumenFit
 
-/// Der Lovea-Aufbau des Gym-Tabs: Wahl der Seite, ein laufendes Training übersteht den Theme-Wechsel, getippte Werte.
+/// Der Gym-Tab: Wahl der Seite, ein laufendes Training übersteht den Seitenwechsel, getippte Werte.
 @MainActor
 final class GymSeiteTests: XCTestCase {
-    func testLaufendesTrainingZeigtImLoveaAufbauDieLoveaSeite() {
-        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: true, aufbau: .lovea), .loveaLauf)
-        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: true, aufbau: .lumen), .lauf)
+    func testLaufendesTrainingZeigtDieLaufSeite() {
+        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: true), .lauf)
     }
 
-    func testOhneTrainingGiltDieStartseiteInBeidenAufbauten() {
-        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: false, aufbau: .lovea), .start)
-        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: false, aufbau: .lumen), .start)
+    func testOhneTrainingGiltDieStartseite() {
+        XCTAssertEqual(GymSeite.wahl(bereich: .training, laeuft: false), .start)
     }
 
     func testPlanUndFortschrittFolgenDemBereich() {
         for laeuft in [false, true] {
-            XCTAssertEqual(GymSeite.wahl(bereich: .plaene, laeuft: laeuft, aufbau: .lumen), .plan)
-            XCTAssertEqual(GymSeite.wahl(bereich: .fortschritt, laeuft: laeuft, aufbau: .lumen), .fortschritt)
+            XCTAssertEqual(GymSeite.wahl(bereich: .plaene, laeuft: laeuft), .plan)
+            XCTAssertEqual(GymSeite.wahl(bereich: .fortschritt, laeuft: laeuft), .fortschritt)
         }
     }
 
-    func testDasTrainingUeberstehtDenThemeWechsel() throws {
+    func testDasTrainingUeberstehtDenSeitenwechsel() throws {
         let a = try GymTestAufbau(ordner: try tempOrdner())
         a.daten.training.planSichern(GymTestAufbau.plan())
         a.sitzung.starte(planTag: "push")
@@ -30,9 +28,9 @@ final class GymSeiteTests: XCTestCase {
         let sid = a.sitzung.sessionId
         let pause = a.sitzung.pause
         XCTAssertNotNil(sid)
-        // Der Aufbau wechselt (Theme Lovea an und aus): dieselbe Sitzung, dieselbe Pause, dasselbe Training.
-        for aufbau in [LumenAufbau.lovea, .lumen, .lovea] {
-            _ = GymSeite.wahl(bereich: .training, laeuft: a.sitzung.sessionId != nil, aufbau: aufbau)
+        // Die Seite wechselt (Training, Pläne, Training): dieselbe Sitzung, dieselbe Pause, dasselbe Training.
+        for bereich in [GymBereich.training, .plaene, .training] {
+            _ = GymSeite.wahl(bereich: bereich, laeuft: a.sitzung.sessionId != nil)
             XCTAssertEqual(a.sitzung.sessionId, sid)
             XCTAssertEqual(a.sitzung.pause, pause)
             XCTAssertEqual(a.sitzung.liste[0].saetze[0].ok, true)
@@ -58,11 +56,5 @@ final class GymSeiteTests: XCTestCase {
         XCTAssertEqual(LetztesMal.setzeWerte(zeilen, 0, kg: 60, wdh: -3)[0].wdh, 0)
         XCTAssertEqual(LetztesMal.setzeWerte(zeilen, 0, kg: 60, wdh: 500)[0].wdh, 100)
         XCTAssertEqual(LetztesMal.setzeWerte(zeilen, 4, kg: 10, wdh: 5), zeilen)
-    }
-
-    func testAnstrengungHatInLoveaAndereFarbenAlsInLumen() {
-        XCTAssertEqual(LoveaTraining.farbe(.versagen), .purple)
-        XCTAssertEqual(LoveaTraining.farbe(.leicht), .gray)
-        XCTAssertNotEqual(LoveaTraining.farbe(.versagen), AnstrengungFarbe.farbe(.versagen))
     }
 }

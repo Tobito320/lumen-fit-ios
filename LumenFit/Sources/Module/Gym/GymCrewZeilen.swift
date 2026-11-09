@@ -17,10 +17,12 @@ enum GymCrewQuelle {
 /// Eine Zeile je Person der Crew: Punkt, Name, Status; darunter bei einer Person im Gym ihr letzter Satz. Höchstens sechs, dann "+ n". Keine Animation.
 struct GymCrewZeilen: View {
     let zeilen: [CrewZeile]
+    /// Höchstens so viele Zeilen, der Rest als "+ n" (im Tab Freunde alle).
+    var grenze = GymCrewLogik.sichtbar
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let sichtbar = zeilen.prefix(GymCrewLogik.sichtbar)
+        let sichtbar = zeilen.prefix(grenze)
         let rest = zeilen.count - sichtbar.count
         VStack(alignment: .leading, spacing: Abstand.s) {
             ForEach(Array(sichtbar)) { zeile in
@@ -52,14 +54,12 @@ struct GymCrewZeilen: View {
     }
 }
 
-/// Die Crew als Abschnitt im Gym-Tab: oben immer der Einstieg zur Crew-Seite, darunter die Personen (ohne Personen nur der Einstieg).
-/// `nurEinstieg`: Lovea-Aufbau, dort stehen die Crew-Zeilen schon oben in der Wer-Zeile.
+/// Die Freunde als Abschnitt im Gym-Tab: oben immer der Einstieg zum Tab-Inhalt Freunde, darunter die Personen (ohne Personen nur der Einstieg).
 struct GymCrewAbschnitt: View {
-    var nurEinstieg = false
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        let zeilen = nurEinstieg ? [] : GymCrewQuelle.zeilen(umgebung)
+        let zeilen = GymCrewQuelle.zeilen(umgebung)
         VStack(alignment: .leading, spacing: Abstand.s) {
             CrewEinstieg()
             if !zeilen.isEmpty { GymCrewZeilen(zeilen: zeilen) }

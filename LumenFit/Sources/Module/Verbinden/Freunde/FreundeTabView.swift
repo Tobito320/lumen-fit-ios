@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Die Crew als Hub: Für dich (Reaktionen, Einladungen), Trainingspartner mit eurer Woche, Herausforderungen, Rangliste der Woche, letzte Trainings der
-/// Crew mit Respekt, Freunde (Einladen mit einem Tipp).
-/// Wer gerade trainiert und die Rekorde der Crew stehen schon auf der Startseite des Trainings (nicht doppelt). Gleich in beiden Aufbauten.
+/// Der Tab Freunde (Aufteilung B, 10.11.2026): Für dich (Reaktionen, Einladungen), Trainingspartner mit eurer Woche, Rangliste der Woche,
+/// Herausforderungen, Rekorde der Freunde, Freunde mit Status und Einladen mit einem Tipp. Kein Feed (Design 09.11.2026); die Trainings einer Person
+/// stehen auf ihrer Seite. Ohne Freunde steht das Einladen oben. Wurzel des Tabs ohne eigenen NavigationStack (den gibt das Tab-Gerüst).
 /// Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
-struct CrewSeite: View {
+struct FreundeTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @AppStorage(CrewDienst.gesehenSchluessel) private var gesehen: Double = 0
@@ -16,7 +16,6 @@ struct CrewSeite: View {
 
     private var dienst: CrewDienst { CrewDienst.von(umgebung) }
     private var eintraege: [VerbindungEintrag] { GymCrewQuelle.eintraege(umgebung) }
-    private func eintrag(_ id: String) -> VerbindungEintrag? { eintraege.first { $0.id == id } }
 
     var body: some View {
         ScrollView {
@@ -25,18 +24,19 @@ struct CrewSeite: View {
                     Label("Ohne Netz gemacht: geht raus, sobald Netz da ist.", systemImage: "icloud.slash")
                         .font(.footnote).foregroundStyle(palette.text2)
                 }
+                if eintraege.isEmpty { freunde }
                 fuerDich
                 CrewPartnerAbschnitt()
-                herausforderungen
                 rangliste
-                trainings
-                freunde
+                herausforderungen
+                GymRekordPinnwandView()
+                if !eintraege.isEmpty { freunde }
             }
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.xl)
         }
         .lumenHintergrund()
-        .navigationTitle("Crew")
+        .navigationTitle("Freunde")
         .refreshable {
             await umgebung.konto.verbindungenNeuLaden()
             await dienst.laden(erzwingen: true)
@@ -129,7 +129,7 @@ struct CrewSeite: View {
             }
             ListenKarte {
                 if liste.isEmpty {
-                    GymZeile(titel: "Noch keine Herausforderung", untertitel: "Duell, Gruppe oder ein gemeinsames Ziel mit deiner Crew.")
+                    GymZeile(titel: "Noch keine Herausforderung", untertitel: "Duell, Gruppe oder ein gemeinsames Ziel mit deinen Freunden.")
                 } else {
                     ForEach(Array(liste.enumerated()), id: \.element.id) { i, h in
                         if i > 0 { Haarlinie() }
@@ -167,7 +167,7 @@ struct CrewSeite: View {
                     }
                 }
                 if zeilen.count < 2 {
-                    Text("Sobald deine Crew Gym und Training teilt, steht sie hier.")
+                    Text("Sobald deine Freunde Gym und Training teilen, stehen sie hier.")
                         .font(.footnote).foregroundStyle(palette.text2).padding(Abstand.l)
                 }
             }
@@ -189,50 +189,15 @@ struct CrewSeite: View {
         .accessibilityLabel("Platz \(z.rang), \(z.name), \(CrewLogik.wertText(z.wert, mass))")
     }
 
-    // MARK: Letzte Trainings
-
-    @ViewBuilder
-    private var trainings: some View {
-        let jetzt = umgebung.uhr()
-        let liste = CrewLogik.letzteTrainings(eintraege: eintraege, jetzt: jetzt)
-        if !liste.isEmpty {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Letzte Trainings der Crew")
-                ListenKarte {
-                    ForEach(Array(liste.enumerated()), id: \.element.id) { i, t in
-                        if i > 0 { Haarlinie() }
-                        trainingZeile(t, heute: Datum.text(jetzt))
-                    }
-                }
-            }
-        }
-    }
-
-    private func trainingZeile(_ t: CrewTraining, heute: String) -> some View {
-        let e = eintrag(t.person)
-        let einheit = e?.daten.flatMap { GymPartnerLogik.einheit(am: t.training.tag, in: $0) }
-        let untertitel = CrewTexte.trainingText(t.training, heute: heute)
-        return HStack(spacing: 0) {
-            if let einheit {
-                NavigationLink { GymPartnerEinheitView(name: t.name, einheit: einheit) } label: { GymZeile(titel: t.name, untertitel: untertitel) }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Zeigt die Sätze")
-            } else {
-                GymZeile(titel: t.name, untertitel: untertitel)
-            }
-            if let e {
-                CrewReaktionKnopf(eintrag: e, art: .respekt, ziel: CrewLogik.zielEinheit(tag: t.training.tag), text: untertitel)
-                    .padding(.trailing, Abstand.s)
-            }
-        }
-    }
-
     // MARK: Freunde
 
-    /// Einladen mit einem Tipp (Link teilen); Code, Scan und Einstellungen je Person wohnen in "Freunde und Partner".
+    /// Wer gerade trainiert oder zuletzt trainiert hat (antippbar), Einladen mit einem Tipp (Link teilen); Code, Scan und Einstellungen je Person
+    /// wohnen in "Freunde hinzufügen und verwalten".
     private var freunde: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
+        let zeilen = GymCrewQuelle.zeilen(umgebung)
+        return VStack(alignment: .leading, spacing: Abstand.s) {
             kopf("Freunde")
+            if !zeilen.isEmpty { GymCrewZeilen(zeilen: zeilen, grenze: .max) }
             ListenKarte {
                 CrewLinkTeilen(imHub: true)
                 Haarlinie()

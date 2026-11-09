@@ -82,7 +82,6 @@ final class SatzStartTests: XCTestCase {
         let aktionen: [() -> Void] = [
             { a.sitzung.satzLoeschen(0, 2) },
             { a.sitzung.satzKopieren(0, 1) },
-            { a.sitzung.aufwaermen(0, arbeit: 60) },
             { a.sitzung.auslassen(0) },
         ]
         for aktion in aktionen {
@@ -100,7 +99,7 @@ final class SatzStartTests: XCTestCase {
         XCTAssertEqual(a.sitzung.laufenderSatz(0), 0)
     }
 
-    func testOhneStartBleibtAllesWieImLumenAufbau() throws {
+    func testOhneStartBleibtAllesWieBisher() throws {
         let a = try aufbau()
         a.sitzung.haken(0, 0)
         a.uhr.vor(sekunden: 100)

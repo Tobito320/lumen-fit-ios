@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "Rekorde der Crew": die neuesten Rekorde der Personen (Übung und Wert), lokal aus den freigegebenen Einheiten berechnet. Ohne Rekord nichts.
+/// "Rekorde deiner Freunde": die neuesten Rekorde der Personen (Übung und Wert), lokal aus den freigegebenen Einheiten berechnet. Ohne Rekord nichts.
 struct GymRekordPinnwandView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -12,7 +12,7 @@ struct GymRekordPinnwandView: View {
         let rekorde = CrewLogik.pinnwand(eintraege: eintraege, jetzt: jetzt)
         if !rekorde.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                Text("Rekorde der Crew").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
+                Text("Rekorde deiner Freunde").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
                 ForEach(rekorde) { eintrag in
                     let r = eintrag.rekord
                     HStack(spacing: Abstand.s) {

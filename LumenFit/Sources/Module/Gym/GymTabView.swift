@@ -4,7 +4,6 @@ import SwiftUI
 /// ein Tipp auf den Tab führt sofort ins Training. Plan und Fortschritt liegen im Plan-Tab (`PlanTabView`).
 struct TrainingTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var sitzung: GymSitzung?
 
     var body: some View {
@@ -22,9 +21,8 @@ struct TrainingTabView: View {
     private var inhalt: some View {
         if let sitzung {
             // Beide Aufbauten zeigen dieselbe Sitzung: ein Theme-Wechsel tauscht nur die Darstellung, das Training läuft weiter.
-            switch GymSeite.wahl(bereich: .training, laeuft: sitzung.sessionId != nil, aufbau: aufbau) {
+            switch GymSeite.wahl(bereich: .training, laeuft: sitzung.sessionId != nil) {
             case .lauf: TrainingLaufView(sitzung: sitzung)
-            case .loveaLauf: TrainingLoveaView(sitzung: sitzung)
             case .start, .plan, .fortschritt: GymStartView(sitzung: sitzung)
             }
         } else {
@@ -37,7 +35,6 @@ struct TrainingTabView: View {
 /// `.training` gibt es hier nicht und zählt als Plan.
 struct PlanTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var bereich: GymBereich
     @State private var sitzung: GymSitzung?
 
@@ -65,9 +62,9 @@ struct PlanTabView: View {
     @ViewBuilder
     private var inhalt: some View {
         if let sitzung {
-            switch GymSeite.wahl(bereich: bereich, laeuft: sitzung.sessionId != nil, aufbau: aufbau) {
+            switch GymSeite.wahl(bereich: bereich, laeuft: sitzung.sessionId != nil) {
             case .fortschritt: FortschrittSegmentView()
-            case .plan, .start, .lauf, .loveaLauf: PlanView(sitzung: sitzung)
+            case .plan, .start, .lauf: PlanView(sitzung: sitzung)
             }
         } else {
             Spacer()

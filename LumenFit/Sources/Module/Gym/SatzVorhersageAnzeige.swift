@@ -57,7 +57,6 @@ struct SatzVorschlagAnzeige: View {
     @AppStorage(SatzVorhersageQuelle.anSchluessel) private var an = true
     @AppStorage(SatzVorhersageQuelle.zielSchluessel) private var zielRoh = VorhersageZiel.schwer.rawValue
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var uebernommen = 0
 
     var body: some View {
@@ -89,7 +88,7 @@ struct SatzVorschlagAnzeige: View {
         return "Vorschlag: \(wert)\(reserve). \(v.grund.text)"
     }
 
-    private var farbe: Color { aufPlatte ? .white : aufbau == .lovea ? .blue : palette.akzent }
+    private var farbe: Color { aufPlatte ? .white : palette.akzent }
 }
 
 /// Die Einstellungen des Satz-Vorschlags im Blatt "Einstellungen fürs Training": an oder aus und das Ziel (schwer oder klassisch).

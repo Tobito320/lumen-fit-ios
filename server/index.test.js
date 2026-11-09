@@ -179,7 +179,7 @@ test("Lovea-Freigabe: nur für freigegebenes Konto, nennt Person, nie den Key", 
   assert.deepEqual(r.json, { erlaubt: false });
   await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { loveaVerbinden: true }, lovea_person: "annika" } });
   r = await ruf(env, "GET", "/lovea/freigabe", { headers: app() });
-  assert.deepEqual(r.json, { erlaubt: true, person: "annika", importErledigt: false, essenExportErledigt: false });
+  assert.deepEqual(r.json, { erlaubt: true, person: "annika", importErledigt: false, essenExportErledigt: false, essenExportAn: false });
   assert.ok(!r.text.includes("lovea-geheim"));
 });
 
@@ -250,6 +250,10 @@ test("Essen-Export: Ops gehen mit Key und Person an Lovea POST /ops, fremde Arte
   assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.essenExportErledigt, false);
   assert.equal((await ruf(env, "POST", "/lovea/export-erledigt", { headers: app() })).status, 200);
   assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.essenExportErledigt, true);
+  // Der globale Schalter essenExport schaltet den Export der App an.
+  assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.essenExportAn, false);
+  assert.equal((await ruf(env, "PATCH", "/admin/config", { headers: admin, body: { essenExport: true } })).status, 200);
+  assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.essenExportAn, true);
 });
 
 test("Lovea-Proxy: Fehler von Lovea werden zu 502 ohne Inhalt, andere Pfade gibt es nicht", async () => {
@@ -282,7 +286,7 @@ test("Import-erledigt: nur mit Person, der erste Zeitpunkt bleibt, Freigabe meld
   await registrieren(env);
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 403, "ohne lovea_person nicht");
   await freigeben(env, ID, "ahmed");
-  assert.deepEqual((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json, { erlaubt: true, person: "ahmed", importErledigt: false, essenExportErledigt: false });
+  assert.deepEqual((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json, { erlaubt: true, person: "ahmed", importErledigt: false, essenExportErledigt: false, essenExportAn: false });
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);
   const erste = env.DB.roh.prepare("SELECT wert FROM konto_merker WHERE schluessel = 'lovea_import'").get().wert;
   assert.equal((await ruf(env, "POST", "/lovea/import-erledigt", { headers: app() })).status, 200);

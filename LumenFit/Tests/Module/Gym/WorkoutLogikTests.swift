@@ -106,8 +106,6 @@ final class WorkoutLogikTests: XCTestCase {
         liste[0].saetze.append(satz(8, 60))
         XCTAssertEqual(WorkoutLogik.neuerTag(tag, liste)?.uebungen[0].saetze.count, 3)
 
-        XCTAssertEqual(WorkoutLogik.scheiben(kg: 80), [25, 5])
-        XCTAssertEqual(WorkoutLogik.scheiben(kg: 20), [])
         let warm = WorkoutLogik.aufwaermen(arbeit: 60)
         XCTAssertEqual(warm.map(\.kg), [25, 35, 47.5])
         XCTAssertEqual(warm.map(\.kuerzel), ["W", "W", "W"])
