@@ -17,7 +17,7 @@
 - Nichts entfernen, was die Spec nicht als "weg" nennt. Essen und Schlaf bleiben erreichbar (Dashboard-Kacheln), bis Build 20.
 - Oberflächentexte Deutsch mit Umlauten, Bezeichner ASCII, keine Emojis. Tippflächen 44 pt, jedes Symbol ohne Text hat ein Label.
 - Vor jedem Commit `swift-syntax-check <Dateien>` und `bash scripts/check-schnell.sh`; vor jedem Push `swift-kompilieren` (Exit 0). Kein Merge in `main`, kein TestFlight durch Arbeiter.
-- Commits kurz auf Deutsch mit den vom System vorgegebenen Co-Authored-By- und Claude-Session-Zeilen.
+- Commits kurz auf Deutsch mit den vom System vorgegebenen Co-Authored-By- und Claude-Session-Zeilen. NIE ein Personenname im Commit-Text (Namens-Gate): statt "(Ahmed 09.11.)" immer "(Wunsch vom 09.11.2026)"; vor dem Push `NAMEN_STRENG=1 bash scripts/namen-gate.sh`.
 
 ## Review Focus
 
@@ -41,7 +41,7 @@
 
 - [ ] **Step 1: Failing Tests** in `FarbenKontrastTests`: `testAlleThemenHabenDieselbePalette()` (für alle `ThemaID.allCases`: `tokens(thema:dunkel:)` gleich den beiden Zeilen oben) und bestehende Kontrastprüfung (Text 4,5:1, Bedienelemente 3,0:1) über die zwei Zeilen; in `AlteDateienLadenTests`: `testAlteFarbweltLaedtMitEinemTheme()` (Datei `einstellungen.json` mit `"thema":"wald","erscheinung":"dunkel"` lädt, `ProfilThemaWahl.wirksam(.wald, loveaErlaubt: true) == .schlicht`, `erscheinung == .dunkel` bleibt).
 - [ ] **Step 2:** `swift-syntax-check` der Tests, dann Umsetzung: `tokens` auf die zwei Zeilen reduzieren (Kommentar mit Ahmeds Satz "Ein theme. Dark/white. Kein wählbarer Theme."), `Muster.swift` löschen, Aufrufer auf `palette.grund`, `AussehenView` behält nur den Picker "Erscheinung" (System, Hell, Dunkel), `ProfilThemaWahl.waehle` entfällt (Aufrufer prüfen), `wirksam` → `.schlicht`; `python3 -I docs/research/kontrast.py` auf die zwei Zeilen.
-- [ ] **Step 3:** `swift-syntax-check` aller geänderten Dateien, `bash scripts/check-schnell.sh`, Commit `Ein Theme hell/dunkel nach System, Farbwelten und Muster raus (Ahmed 09.11.)`.
+- [ ] **Step 3:** `swift-syntax-check` aller geänderten Dateien, `bash scripts/check-schnell.sh`, Commit `Ein Theme hell/dunkel nach System, Farbwelten und Muster raus (Wunsch vom 09.11.2026)`.
 
 ### Task 2: Lovea-Farbwelt als zweite Oberfläche raus
 
@@ -55,7 +55,7 @@
 
 - [ ] **Step 1:** `GymSeiteTests` auf die neue Signatur umschreiben (zwei Fälle: `laeuft` → `.lauf`, sonst `.start`); `swift-syntax-check`.
 - [ ] **Step 2:** Dateien löschen, dann `grep -rn "lumenAufbau\|LumenAufbau\|aufbau == \.lovea\|loveaLauf" LumenFit Gemeinsam` muss leer sein; Zweige entfernen, nicht Funktionen umbenennen. `SupersatzLogik` und `PauseLogik.nach` bleiben (alte Pläne tragen `supersatz`), nur die Setter in `GymSitzung` gehen.
-- [ ] **Step 3:** `swift-syntax-check` aller Dateien, `bash scripts/check-schnell.sh --alle`, `cd <worktree> && swift-kompilieren` (Exit 0, sonst Fehler beheben), Commit `Lovea-Farbwelt als zweite Oberfläche raus, eine Oberfläche (Ahmed 09.11.)`.
+- [ ] **Step 3:** `swift-syntax-check` aller Dateien, `bash scripts/check-schnell.sh --alle`, `cd <worktree> && swift-kompilieren` (Exit 0, sonst Fehler beheben), Commit `Lovea-Farbwelt als zweite Oberfläche raus, eine Oberfläche (Wunsch vom 09.11.2026)`.
 - [ ] **Step 4:** Soll-Liste im Vault: Zeilen "Nur Farbwelt Lovea" und "Farbwelt Lovea" unter "Bewusst gestrichen 09.11." mit Zitat "Weg, eine Oberfläche".
 
 ### Task 3: Toter Code und TipKit raus
@@ -66,7 +66,7 @@
 - Test: `RauchTests` grün; `GymSitzungTests` grün.
 
 - [ ] **Step 1:** Löschen, `grep -rn "StudioStore\|GeraeteStore\|DefektStore\|gymTipp\|GymTipps" LumenFit` leer; `swift-syntax-check`, `check-schnell`.
-- [ ] **Step 2:** `swift-kompilieren` Exit 0, Commit `Toter Code raus: Studio, Geräte-Einstellung, Defekte, TipKit (Ahmed 04.11. und 09.11.)`.
+- [ ] **Step 2:** `swift-kompilieren` Exit 0, Commit `Toter Code raus: Studio, Geräte-Einstellung, Defekte, TipKit (Wunsch vom 04.11. und 09.11.2026)`.
 
 ### Task 4: Drei Tabs wie Hevy
 
@@ -79,7 +79,7 @@
 
 - [ ] **Step 1: Failing Tests:** `BereicheTests.testDreiTabsImmerSichtbar()` (für jede Einstellung `router.zeigt(tab) == true` für alle drei), `RouteURLTests.testRoutenLandenAufDemRichtigenTab()` (`LumenFitTab.fuer(.essen(.heute)) == .profil`, `.gym(.plaene) == .training`, `.profil(.ziele) == .profil`, `.heute == .start`), `RauchTests` (App mit laufendem Training startet, Tab Training zeigt `TrainingLaufView`).
 - [ ] **Step 2:** Umsetzen. `Router.oeffne(_ route:)`: `.essen(.heute)` → `wechsle(.profil, [route])`, `.schlaf(.letzteNacht)` → `wechsle(.profil, [route])`, `.gym(.plaene)/.gym(.fortschritt)` → `wechsle(.training, [route])`, `.profil(_)` → `wechsle(.profil, [])` bzw. Unterseite als Pfad. `TabView` bleibt die System-Leiste (iOS 26, `.tabBarMinimizeBehavior(.onScrollDown)`), Tint ist der Akzent aus Aufgabe 1.
-- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Drei Tabs wie Hevy: Startseite, Training, Profil (Ahmed 09.11.)`.
+- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Drei Tabs wie Hevy: Startseite, Training, Profil (Wunsch vom 09.11.2026)`.
 
 ### Task 5: Profil-Tab mit Zahlen, Diagramm, Dashboard und Workouts
 
@@ -106,7 +106,7 @@
 
 - [ ] **Step 1: Failing Tests** `testVergangeneTageZeigenTrainiertNieGeplant()`, `testKommendeTageZeigenDenPlantagNachWochentag()`, `testHeuteKannTrainiertUndGeplantSein()`, `testPartnerTageUndPartnerPlanWerdenMarkiert()`, `testRasterBeginntMontagUndEndetSonntagMitFremdtagen()` (Monat 2026-11: erster Rastertag 2026-10-26, letzter 2026-12-06), `testOhnePartnerKeineMarken()`.
 - [ ] **Step 2:** Logik, dann Ansicht: Kopf mit Pfeilen und `monatText`, Wochentagszeile Mo–So, `LazyVGrid` mit 7 Spalten, Tag als Kreis: gefüllt (trainiert), Umriss (geplant), kleiner zweiter Punkt unten in zweiter Farbe (Partner trainiert gefüllt, geplant Umriss), heute mit Ring; Legende "Du · Partner"; Tipp auf einen Tag zeigt unter dem Raster die Einheit (`EinheitNachlesenView` für die Session dieses Tages) oder "Geplant: <Name>" oder "Ruhetag". VoiceOver je Tag: "9. November, trainiert, Partner geplant".
-- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Kalender im Profil: Trainings, geplante Tage nach vorn und Partner (Ahmed 09.11.)`.
+- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Kalender im Profil: Trainings, geplante Tage nach vorn und Partner (Wunsch vom 09.11.2026)`.
 
 ### Task 7: Startseite kompakt
 
@@ -122,7 +122,7 @@
 
 - [ ] **Step 1: Failing Test** `LetzteEinheitKarteTests.testLetzteBeendeteEinheitNeuesteZuerstOhneLaufende()`.
 - [ ] **Step 2:** Umsetzen und löschen; `grep -rn "Tagesform\|EnergieBank\|EinsichtenKarte\|HinweiseKarte\|SchritteKarte" LumenFit` leer (außer Widgets-Snapshot, der nur Schritte-Zahlen liest). Leerzustände: ohne Plan `LeerZustand(... "Split wählen")`, ohne Einheit "Noch kein Training".
-- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Startseite kompakt: Heute-Karte, Woche, letzte Einheit, Gewohnheiten, Gewicht (Ahmed 09.11.)`.
+- [ ] **Step 3:** `swift-syntax-check`, `check-schnell`, `swift-kompilieren` Exit 0, Commit `Startseite kompakt: Heute-Karte, Woche, letzte Einheit, Gewohnheiten, Gewicht (Wunsch vom 09.11.2026)`.
 
 ### Task 8: Soll-Liste, Spec und Testliste
 

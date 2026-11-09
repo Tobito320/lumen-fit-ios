@@ -8,7 +8,6 @@ struct PlanTagBlatt: View {
     let tagId: String
     @Environment(\.dismiss) private var schliessen
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var suche = false
     @State private var name = ""
     @State private var loeschen = false
@@ -19,12 +18,7 @@ struct PlanTagBlatt: View {
 
     @ViewBuilder
     var body: some View {
-        // Lovea-Aufbau: der Editor von Lovea (`PlanLoveaEditor.swift`) als Blatt, mit "Fertig".
-        if aufbau == .lovea {
-            NavigationStack { PlanLoveaEditorView(sitzung: sitzung, start: tagId, blatt: true) }
-        } else {
-            lumenBody
-        }
+        lumenBody
     }
 
     private var lumenBody: some View {

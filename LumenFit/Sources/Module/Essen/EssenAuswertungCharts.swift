@@ -38,7 +38,6 @@ struct EssenKennzahlSpalte: View {
     let titel: String
     var mittig = false
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         VStack(alignment: mittig ? .center : .leading, spacing: Abstand.xs) {
@@ -60,14 +59,13 @@ struct EssenKalorienDiagramm: View {
     let wachstum: Double
     let beschreibung: EssenReiheBeschreibung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         Chart {
             ForEach(buckets) { bucket in
                 if let wert = AnalyseLogik.bucketSchnitt(bucket, werte) {
                     BarMark(x: .value("Zeit", AnalyseLogik.label(bucket, gruppierung)), y: .value("kcal", wert * wachstum))
-                        .foregroundStyle(aufbau.farbe(LoveaDaten.essen, sonst: palette.text.opacity(0.85)))
+                        .foregroundStyle(palette.text.opacity(0.85))
                         .cornerRadius(3)
                 }
             }
@@ -93,12 +91,11 @@ struct EssenMakroSektor: View {
     let sichtbar: Bool
     let beschreibung: EssenReiheBeschreibung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         Chart(schnitte) { m in
             SectorMark(angle: .value(m.name, m.energie), innerRadius: .ratio(0.62), angularInset: 1.5)
-                .foregroundStyle(aufbau.farbe(LoveaDaten.essen.opacity(m.deckkraft), sonst: palette.text.opacity(m.deckkraft)))
+                .foregroundStyle(palette.text.opacity(m.deckkraft))
                 .cornerRadius(3)
         }
         .opacity(sichtbar ? 1 : 0)
@@ -116,16 +113,15 @@ struct EssenMessLinie: View {
     let wachstum: Double
     let beschreibung: EssenReiheBeschreibung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         let untergrenze = (reihe.map(\.wert).min() ?? 0)
         Chart(reihe) { punkt in
             // Die Linie wächst aus dem Tiefpunkt der Reihe, nicht aus 0: sonst staucht die Achse die Kurve beim Zeichnen.
             LineMark(x: .value("Tag", Datum.datum(punkt.tag)), y: .value(einheit, untergrenze + (punkt.wert - untergrenze) * wachstum))
-                .foregroundStyle(aufbau.farbe(LoveaDaten.essen, sonst: palette.text))
+                .foregroundStyle(palette.text)
             PointMark(x: .value("Tag", Datum.datum(punkt.tag)), y: .value(einheit, untergrenze + (punkt.wert - untergrenze) * wachstum))
-                .foregroundStyle(aufbau.farbe(LoveaDaten.essen, sonst: palette.text))
+                .foregroundStyle(palette.text)
         }
         .chartYScale(domain: .automatic(includesZero: false))
         .chartXAxis { AxisMarks(values: .automatic(desiredCount: achsenWerte)) { _ in AxisValueLabel().font(.caption).foregroundStyle(palette.text2) } }

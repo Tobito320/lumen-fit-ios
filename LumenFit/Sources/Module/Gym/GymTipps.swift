@@ -53,7 +53,7 @@ struct GymTipSplitFuerDich: GymTipErklaerung {
     var message: Text? { Text("Zeigt die Splits, die wir für dich empfehlen.") }
 }
 
-// Hinweise im Lovea-Aufbau (`LumenAufbau.lovea`): Loveas Wortlaut (`App/AppErklaerungen.swift`), wo er sich vom Lumen-Text unterscheidet. Eigene Typen
+// Hinweise im früheren Lovea-Aufbau: Loveas Wortlaut (`App/AppErklaerungen.swift`), wo er sich vom Lumen-Text unterscheidet. Eigene Typen
 // mit eigener Kennung, damit der Lumen-Text und TipKits "einmal"-Zähler der Lumen-Hinweise unberührt bleiben. Gleiche Texte (Beenden, Volumen,
 // Cardio, Satz wischen) teilen sich die Lumen-Typen.
 

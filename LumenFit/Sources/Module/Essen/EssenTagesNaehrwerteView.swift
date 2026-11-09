@@ -9,7 +9,6 @@ struct EssenTagesNaehrwerteView: View {
 
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var bewegungAus
 
     init(tag: String) { self.tag = tag }
@@ -123,7 +122,7 @@ struct EssenTagesNaehrwerteView: View {
             Chart {
                 ForEach(werte, id: \.name) { w in
                     BarMark(x: .value("kcal", w.kcal), y: .value("Mahlzeit", w.name))
-                        .foregroundStyle(aufbau.farbe(LoveaDaten.essen, sonst: palette.text.opacity(0.75)))
+                        .foregroundStyle(palette.text.opacity(0.75))
                         .cornerRadius(4)
                 }
             }
