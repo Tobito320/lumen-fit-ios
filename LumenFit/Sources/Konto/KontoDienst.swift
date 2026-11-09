@@ -359,6 +359,9 @@ final class KontoDienst {
         let jetzt = uhr()
         if !erzwingen, let letzter = letzterPartnerUpload, jetzt.timeIntervalSince(letzter) >= 0, jetzt.timeIntervalSince(letzter) < Self.pauseFuer(daten) { return }
         letzterPartnerUpload = jetzt
+        // Oft im Hintergrund gestartet (Health-Lieferung, Wechsel in den Hintergrund): die Anfrage darf zu Ende laufen, sonst reißt iOS sie ab (`partner_put.netz`).
+        let zeit = HintergrundZeit("LumenFit-Partner-Upload")
+        defer { zeit.ende() }
         if let r = await sendeMitKonto("/partner", methode: "PUT", body: daten, kennung: kennung), r.status == 200 || r.status == 400 {
             partnerAusstehend = nil   // 400: der Server mag diese Form nie; nicht endlos wiederholen
         }
@@ -410,6 +413,8 @@ final class KontoDienst {
         // Ohne neuen Inhalt startet die Pause nicht, sonst bliebe ein Fehler kurz danach bis zu 5 Minuten liegen.
         guard !nutzung.faellig(heute: Datum.text(jetzt), ersterInSitzung: false, zwischendurch: true).isEmpty else { return }
         letzterNutzungsUpload = jetzt
+        let zeit = HintergrundZeit("LumenFit-Nutzung-Upload")   // läuft beim Wechsel in den Hintergrund, braucht eigene Zeit
+        defer { zeit.ende() }
         await nutzungUebertragen(kennung, zwischendurch: true)
     }
 

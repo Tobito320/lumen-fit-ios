@@ -24,7 +24,7 @@ struct TrainingLaufView: View {
                 kopf
                 GymMitlaufZeile()
                 NaechsterSatzKarte(sitzung: sitzung)
-                ForEach(sitzung.liste.indices, id: \.self) { i in
+                ForEach(Array(sitzung.liste.enumerated()), id: \.element.id) { i, _ in
                     UebungsKarte(sitzung: sitzung, index: i)
                 }
                 Button { suche = true } label: {

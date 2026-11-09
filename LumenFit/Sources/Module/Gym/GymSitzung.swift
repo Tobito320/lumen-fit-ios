@@ -29,7 +29,8 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
     @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
     @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
-    @ObservationIgnored private var eigeneStores: [ProfilID: GymEigeneStore] = [:]
+    /// Je Raum, nicht je Profil: nach dem Wechsel A, B, A gibt es einen neuen Raum, ein Speicher am alten schriebe ins Leere.
+    @ObservationIgnored private var eigeneStores: [ObjectIdentifier: GymEigeneStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
 
     /// Das laufende Training, nil ohne.
@@ -105,9 +106,10 @@ final class GymSitzung: TrainingSteuerung {
     /// Die eigenen Übungen des aktiven Profils (Op `fit.gym.uebung`); ein Objekt je Profil.
     var eigene: GymEigeneStore? {
         guard let d = daten else { return nil }
-        if let vorhanden = eigeneStores[d.profil] { return vorhanden }
+        let schluessel = ObjectIdentifier(d.raum)
+        if let vorhanden = eigeneStores[schluessel] { return vorhanden }
         let neu = GymEigeneStore(raum: d.raum, uhr: umgebung.uhr)
-        eigeneStores[d.profil] = neu
+        eigeneStores[schluessel] = neu
         return neu
     }
 

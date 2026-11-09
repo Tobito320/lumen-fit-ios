@@ -433,7 +433,7 @@ struct TrainingFaltung: Sendable {
         }
     }
 
-    // ponytail: derived on every read (a few hundred events per person); cache per person if lists lag.
+    // Derived on every read; `TrainingStore.sessions` keeps the result until the next op (thousands of ops per person after a year).
     func sessions(_ p: ProfilID) -> [GymSession] {
         TrainingLogik.sessions(Array((eintraege[p] ?? [:]).values))
     }

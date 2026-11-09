@@ -5,6 +5,8 @@ import SwiftUI
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
+    @State private var trainingSitzung: GymSitzung?
+    @State private var trainingBlatt = false
 
     var body: some View {
         List {
@@ -18,6 +20,10 @@ struct ProfilBlattView: View {
             ProfilAbschnitt {
                 link("Aussehen", .profilAussehen, symbol: "paintpalette.fill", wert: themaName) { AussehenView() }
                 link("Ziele und Körper", .profilZiele, symbol: "target") { ZieleView() }
+                // Trainings-Einstellungen auch hier erreichbar (Wunsch vom 09.11.2026), das Zahnrad im Training bleibt.
+                if umgebung.bereicheWirksam.gymAn {
+                    Button { trainingBlatt = true } label: { ProfilListenZeile("Training", symbol: "dumbbell.fill") }
+                }
                 link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
                 link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
                 // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
@@ -31,6 +37,9 @@ struct ProfilBlattView: View {
         .profilListe()
         .defaultScrollAnchor(startAnker)
         .navigationTitle("Profil")
+        .sheet(isPresented: $trainingBlatt) { if let trainingSitzung { GymEinstellungenBlatt(sitzung: trainingSitzung) } }
+        // Die Sitzung entsteht hier, nicht im Körper: `GymSitzung.von` setzt den Port, das darf nicht beim Zeichnen passieren.
+        .task { trainingSitzung = GymSitzung.von(umgebung) }
     }
 
     /// Oben; nur das Debug-Bild der CI startet unten (Start-Argument `-lumenFitScroll unten`), damit die untere Hälfte im Bild zu sehen ist.
