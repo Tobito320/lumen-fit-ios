@@ -356,6 +356,19 @@ test("Gruppe: Namen, Teilnehmer-Ids für Unverbundene, keine Konto-Id in irgende
   assert.equal((await hole(env, "vier", id)), undefined, "Unbeteiligte sehen nichts");
 });
 
+test("Gruppe: wer noch nicht angenommen hat, bleibt für Unverbundene ohne Namen", async () => {
+  const env = await welt("ich", "du", "fremd");
+  const vd = await verbinden(env, "ich", "du");
+  const vf = await verbinden(env, "ich", "fremd");
+  const id = (await erstellen(env, "ich", duell([vd, vf]))).json.id;
+  await ruf(env, "du", "POST", `/freunde/herausforderungen/${id}/annehmen`);
+  const vorher = (await hole(env, "du", id)).teilnehmer.find((t) => !t.ich && !t.verbunden);
+  assert.deepEqual([vorher.name, vorher.status], ["Eingeladen", "eingeladen"]);
+  assert.equal((await hole(env, "ich", id)).teilnehmer.find((t) => t.id === vf).name, "Beispiel Fremd", "der Ersteller ist verbunden und sieht den Namen");
+  await ruf(env, "fremd", "POST", `/freunde/herausforderungen/${id}/annehmen`);
+  assert.equal((await hole(env, "du", id)).teilnehmer.find((t) => !t.ich && !t.verbunden).name, "Beispiel Fremd");
+});
+
 test("Die Liste zeigt nur eingeladen oder dabei, Ende höchstens 14 Tage her", async () => {
   const env = await welt("ich", "du");
   const vd = await verbinden(env, "ich", "du");

@@ -70,9 +70,11 @@ async function uebersicht(k, env, h) {
     const teilnehmer = [];
     for (const t of ts) {
       const z = t.konto === k.id ? null : aktiv.get(t.konto); // die Id bleibt auch in der Pause gleich
+      // Wer noch nicht angenommen hat, hat nicht eingewilligt: Unverbundene sehen dann keinen Namen.
+      const anonym = !z && t.konto !== k.id && t.status === "eingeladen";
       teilnehmer.push({
         id: z ? z.id : (await h.sha256(`${x.id}:${t.konto}`)).slice(0, 16), verbunden: !!z, ich: t.konto === k.id,
-        name: await name(t.konto), status: t.status, wert: t.wert, aktualisiert: t.aktualisiert ?? null,
+        name: anonym ? "Eingeladen" : await name(t.konto), status: t.status, wert: t.wert, aktualisiert: t.aktualisiert ?? null,
       });
     }
     herausforderungen.push({
