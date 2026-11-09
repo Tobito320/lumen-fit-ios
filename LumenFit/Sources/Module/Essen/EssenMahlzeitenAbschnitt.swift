@@ -12,7 +12,6 @@ struct EssenMahlzeitenAbschnitt: View {
     let hinzufuegen: @MainActor (Mahlzeit) -> Void
     let alsGericht: @MainActor (Mahlzeit) -> Void
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
@@ -37,7 +36,7 @@ struct EssenMahlzeitenAbschnitt: View {
                     ZStack {
                         Circle().stroke(palette.haar, lineWidth: 4)
                         Circle().trim(from: 0, to: anteil)
-                            .stroke(aufbau.farbe(LoveaDaten.essen, sonst: palette.akzent), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                            .stroke(palette.akzent, style: StrokeStyle(lineWidth: 4, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                             .animation(bewegungAus ? nil : Feder.weich, value: anteil)
                         Image(systemName: m.symbol).font(.body).foregroundStyle(palette.text2)

@@ -223,11 +223,6 @@ enum WorkoutLogik {
     /// Pausenziel nach "+15 s" / "−15 s": nie unter 15 Sekunden.
     static func pauseZiel(_ ziel: Int, um sek: Int) -> Int { max(15, ziel + sek) }
 
-    /// Scheiben pro Seite für `kg` auf der Stange, schwerste zuerst (`ScheibenRechner`).
-    static func scheiben(kg: Double, stange: Double = 20) -> [Double] {
-        ScheibenRechner.berechne(kg: kg, stange: stange).proSeite
-    }
-
     /// Drei Aufwärmsätze aus dem Arbeitsgewicht: 40 % × 10, 60 % × 5, 80 % × 3, auf 2,5 kg gerundet (`AufwaermRechner`).
     static func aufwaermen(arbeit: Double) -> [PlanSatz] { AufwaermRechner.saetze(arbeit: arbeit) }
 

@@ -1,6 +1,5 @@
 // Quelle: Lovea Health/Einstellung/EinstellGedaechtnis.swift (Datei im Profilordner statt UserDefaults)
 import Foundation
-import Observation
 
 /// Was jemand an einem Gerät eingestellt hat: Bankstufe, Sitzhöhe, Polster und eine freie Notiz. Leere Felder = nicht gesetzt.
 struct GeraeteWerte: Codable, Equatable, Sendable {
@@ -62,27 +61,4 @@ struct GeraeteEinstellungDatei: Codable, Equatable, Sendable {
 
     /// Katalog-Id, bei eigenen Übungen der Name.
     static func uebungsSchluessel(_ u: PlanUebung) -> String { u.uebung == PlanUebung.eigen ? u.anzeigeName : u.uebung }
-}
-
-@MainActor @Observable
-final class GeraeteStore {
-    @ObservationIgnored private let ordner: URL?
-    private var stand: GeraeteEinstellungDatei
-
-    init(ordner: URL? = nil) {
-        self.ordner = ordner
-        stand = GeraeteEinstellungDatei.lesen(ordner)
-    }
-
-    func werte(studio: String, uebung: String) -> GeraeteWerte? {
-        stand.eintraege[DefektLogik.schluessel(studio: studio, uebung: uebung)]
-    }
-
-    /// Überschreibt; leere Werte löschen den Eintrag.
-    func setzen(_ werte: GeraeteWerte, studio: String, uebung: String) {
-        let k = DefektLogik.schluessel(studio: studio, uebung: uebung)
-        let sauber = werte.bereinigt
-        if sauber.istLeer { stand.eintraege[k] = nil } else { stand.eintraege[k] = sauber }
-        if let ordner { GeraeteEinstellungDatei.datei(ordner).speichere(stand) }
-    }
 }

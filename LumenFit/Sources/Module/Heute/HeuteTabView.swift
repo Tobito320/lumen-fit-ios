@@ -16,17 +16,15 @@ struct HeuteTabView: View {
     @State private var deckkraft = 1.0
     @Namespace private var zoom
     @Environment(\.bewegungAus) private var bewegungAus
-    @Environment(\.lumenAufbau) private var aufbau
 
     var body: some View {
         ScrollView {
             if let modell, let stand = modell.stand {
-                // Die eine Wahl dieses Tabs: Lovea-Aufbau (Theme Lovea mit Freigabe) oder der heutige Aufbau.
-                if aufbau == .lovea { loveaInhalt(stand, modell) } else { inhalt(stand, modell) }
+                inhalt(stand, modell)
             }
         }
-        .navigationTitle(aufbau == .lovea ? "" : "Heute")
-        .navigationBarTitleDisplayMode(aufbau == .lovea ? .inline : .automatic)
+        .navigationTitle("Heute")
+        .navigationBarTitleDisplayMode(.automatic)
         .lumenHintergrund()
         .toolbar { ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() } }
         .sheet(item: $blatt) { blatt in
@@ -66,18 +64,6 @@ struct HeuteTabView: View {
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
         .simultaneousGesture(tagWischen, including: ueberall ? .all : .subviews)
-    }
-
-    /// Der Aufbau von Lovea (`HeuteLoveaAufbau.swift`). Die Tagwahl wischt dort nur auf der Woche (eine Woche je Zug), der Inhalt gleitet beim Tagwechsel wie bisher.
-    private func loveaInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        HeuteLoveaInhalt(stand: s, modell: m, blaettere: { blaettere($0) }, springe: { springe(zu: $0) }, kalender: { blatt = .kalender },
-                         oeffneBlatt: { blatt = $0 }, oeffneHabit: { habitSeite = $0 }, starte: { starte($0) }, zoom: zoom)
-            .id(s.tag)
-            .offset(x: versatz)
-            .opacity(deckkraft)
-            .transition(.opacity)
-            .padding(.horizontal, 16)
-            .padding(.bottom, Abstand.xl)
     }
 
     /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).

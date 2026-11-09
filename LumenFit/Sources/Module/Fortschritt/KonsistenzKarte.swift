@@ -41,7 +41,6 @@ struct KonsistenzKarte: View {
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
-    @Environment(\.lumenAufbau) private var aufbau
 
     /// nil = Gesamt, sonst ein einzelnes Jahr; Standard ist das laufende Jahr (gesetzt beim Erscheinen).
     @State private var auswahl: Int?
@@ -55,13 +54,11 @@ struct KonsistenzKarte: View {
 
     private var ordner: URL? { umgebung.daten?.ordner }
 
-    // Lovea (KonsistenzKarte.swift:171-179): die Karte ist immer dunkel, Training ohne Kategorie rosa, Schrift system (im dunklen Schema weiß/grau).
-    private var lovea: Bool { aufbau == .lovea }
-    private var text: Color { lovea ? Color.primary : palette.text }
-    private var text2: Color { lovea ? Color.secondary : palette.text2 }
-    private var pille: Color { lovea ? Color(red: 0.11, green: 0.11, blue: 0.125) : palette.grund }
-    private var neutral: Color { lovea ? Color(red: 0.941, green: 0.376, blue: 0.620) : GymFarbe.gruen(schema: schema, kontrast: kontrast) }
-    private var leer: Color { lovea ? Color(red: 0.165, green: 0.165, blue: 0.18) : palette.haar }
+    private var text: Color { palette.text }
+    private var text2: Color { palette.text2 }
+    private var pille: Color { palette.grund }
+    private var neutral: Color { GymFarbe.gruen(schema: schema, kontrast: kontrast) }
+    private var leer: Color { palette.haar }
 
     var body: some View {
         let heute = Datum.text(umgebung.uhr())
@@ -75,29 +72,13 @@ struct KonsistenzKarte: View {
             legende
             detail
             ForEach(jahre) { j in
-                if lovea {
-                    Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1).accessibilityHidden(true)
-                } else {
-                    Haarlinie()
-                }
+                Haarlinie()
                 jahrBlock(j, fuellungen: fuellungen, farben: farben)
             }
-            if lovea, sessions.isEmpty {
-                Text("Noch kein Training. Sobald du im Gym eincheckst, füllt sich das Raster.").font(.footnote).foregroundStyle(Color.secondary)
-            }
         }
-        Group {
-            if lovea {
-                stapel
-                    .padding(16)
-                    .background { RoundedRectangle(cornerRadius: Rundung.karte, style: .continuous).fill(Color(red: 0.04, green: 0.04, blue: 0.045)) }
-                    .environment(\.colorScheme, .dark)
-            } else {
-                DiagrammKarte(aussage: KonsistenzKarteLogik.aussage(jahre, auswahl: auswahl),
-                              kernzeile: sessions.isEmpty ? "Sobald du im Gym eincheckst, füllt sich das Raster." : "Tipp auf einen Tag zeigt das Training.") {
-                    stapel
-                }
-            }
+        DiagrammKarte(aussage: KonsistenzKarteLogik.aussage(jahre, auswahl: auswahl),
+                      kernzeile: sessions.isEmpty ? "Sobald du im Gym eincheckst, füllt sich das Raster." : "Tipp auf einen Tag zeigt das Training.") {
+            stapel
         }
         .sheet(isPresented: $kategorienOffen, onDismiss: { einstellung = KonsistenzKategorienDatei.lesen(ordner) }) {
             KonsistenzKategorienBlatt(ordner: ordner)
@@ -120,9 +101,7 @@ struct KonsistenzKarte: View {
     private func kopf(verfuegbar: [Int]) -> some View {
         HStack(spacing: Abstand.s) {
             Text("Konsistenz")
-                .font(lovea ? .title2.bold() : .headline)
-                .lineLimit(lovea ? 2 : nil)
-                .minimumScaleFactor(lovea ? 0.8 : 1)
+                .font(.headline)
                 .foregroundStyle(text)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: Abstand.s)
@@ -209,7 +188,7 @@ struct KonsistenzKarte: View {
 
     private func jahrBlock(_ j: KonsistenzLogik.Jahr, fuellungen: [String: KonsistenzFuellung], farben: [String: Color]) -> some View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
-            Text(String(j.jahr)).font(lovea ? .title2.bold() : .title3.bold()).foregroundStyle(text)
+            Text(String(j.jahr)).font(.title3.bold()).foregroundStyle(text)
             raster(j, fuellungen: fuellungen, farben: farben)
         }
         .accessibilityElement(children: .ignore)
@@ -223,8 +202,8 @@ struct KonsistenzKarte: View {
 
     private func raster(_ j: KonsistenzLogik.Jahr, fuellungen: [String: KonsistenzFuellung], farben: [String: Color]) -> some View {
         let gewaehlterTag = gewaehlt
-        let farbenSatz = RasterFarben(leer: leer, neutral: neutral, schrift: lovea ? Color(white: 0.62) : palette.text2,
-                                      auswahl: lovea ? Color.white : palette.text, kategorien: farben)
+        let farbenSatz = RasterFarben(leer: leer, neutral: neutral, schrift: palette.text2,
+                                      auswahl: palette.text, kategorien: farben)
         return GeometryReader { geo in
             Canvas { ctx, size in
                 Self.zeichnen(j, in: &ctx, size: size, gewaehlt: gewaehlterTag, fuellungen: fuellungen, farben: farbenSatz)

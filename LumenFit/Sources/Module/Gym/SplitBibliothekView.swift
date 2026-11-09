@@ -57,7 +57,7 @@ struct SplitBibliothekView: View {
                 chip("Alle", aktiv: art == nil) { art = nil }
                 ForEach(Array(SplitLogik.artWahl.enumerated()), id: \.offset) { _, a in
                     if a.id == "fuerdich" {
-                        chip(a.text, aktiv: art == a.id) { art = a.id }.gymTipp(.splitFuerDich, GymTippKontext())
+                        chip(a.text, aktiv: art == a.id) { art = a.id }
                     } else {
                         chip(a.text, aktiv: art == a.id) { art = a.id }
                     }

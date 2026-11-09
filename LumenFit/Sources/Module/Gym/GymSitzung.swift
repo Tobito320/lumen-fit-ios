@@ -30,9 +30,6 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
     /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
     nonisolated static var pausenTimerAn: Bool { UserDefaults.standard.bool(forKey: GymAnzeige.pausenTimerSchluessel) }
-    @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
-    @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
-    @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
     /// Je Raum, nicht je Profil: nach dem Wechsel A, B, A gibt es einen neuen Raum, ein Speicher am alten schriebe ins Leere.
     @ObservationIgnored private var eigeneStores: [ObjectIdentifier: GymEigeneStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
@@ -82,31 +79,6 @@ final class GymSitzung: TrainingSteuerung {
     var tag: TrainingsTag? { training?.tag(id: laufende?.tag) }
     var einstellungen: Einstellungen { daten?.einstellungen.werte ?? Einstellungen() }
 
-    /// Nach dem Lovea-Import: die Dateien (`studio.json`, `geraete.json`, `defekte.json`) können sich geändert haben, die Speicher lesen sie neu.
-    func speicherNeuLaden() {
-        studios = [:]
-        geraeteStores = [:]
-        defektStores = [:]
-    }
-
-    /// Das Studio-Profil des aktiven Profils; ein Objekt je Profil.
-    var studio: StudioStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = studios[d.profil] { return vorhanden }
-        let neu = StudioStore(ordner: d.ordner)
-        studios[d.profil] = neu
-        return neu
-    }
-
-    /// Die Defekt-Notizen des aktiven Profils (`defekte.json`); ein Objekt je Profil.
-    var defekte: DefektStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = defektStores[d.profil] { return vorhanden }
-        let neu = DefektStore(ordner: d.ordner)
-        defektStores[d.profil] = neu
-        return neu
-    }
-
     /// Die eigenen Übungen des aktiven Profils (Op `fit.gym.uebung`); ein Objekt je Profil.
     var eigene: GymEigeneStore? {
         guard let d = daten else { return nil }
@@ -119,15 +91,6 @@ final class GymSitzung: TrainingSteuerung {
 
     /// Katalog- oder eigene Übung zu einem Planeintrag (`PlanUebung.katalog` kennt die eigenen nicht).
     func katalog(_ p: PlanUebung) -> Uebung? { p.katalog ?? eigene?.finde(p.uebung) }
-
-    /// Die Geräte-Einstellungen des aktiven Profils (`geraete.json`); ein Objekt je Profil.
-    var geraete: GeraeteStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = geraeteStores[d.profil] { return vorhanden }
-        let neu = GeraeteStore(ordner: d.ordner)
-        geraeteStores[d.profil] = neu
-        return neu
-    }
 
     var cardioPuls: GymCardioPuls? {
         guard let d = daten else { return nil }
@@ -467,12 +430,6 @@ final class GymSitzung: TrainingSteuerung {
         }
     }
 
-    /// Aufwärmsätze aus dem Arbeitsgewicht der Übung (`AufwaermRechner`), vor die Arbeitssätze.
-    func aufwaermen(_ u: Int, arbeit: Double, stufen: [AufwaermRechner.Stufe] = AufwaermRechner.standard) {
-        satzLaufEnde(u)
-        aendere(u, senden: true) { AufwaermRechner.einfuegen(in: $0, arbeit: arbeit, stufen: stufen) }
-    }
-
     // MARK: - Pause
 
     /// Nach dem Ja zur Frage "Pausen-Timer nutzen?": die Pause für den eben gesetzten Haken läuft ab seinem Zeitpunkt.
@@ -639,34 +596,7 @@ final class GymSitzung: TrainingSteuerung {
         liveSenden()
     }
 
-    // MARK: - Plan: Notiz, Pause je Übung, Supersatz, Plan aktualisieren
-
-    /// Die Notiz bleibt an der Übung und steht beim nächsten Training wieder da.
-    func notiz(_ u: Int, _ text: String) {
-        guard let t = training, liste.indices.contains(u) else { return }
-        let sauber = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let wert: String? = sauber.isEmpty ? nil : sauber
-        liste[u].planUebung.notiz = wert
-        t.planSichern(TrainingLogik.aendern(t.plan, planUebung: liste[u].id) { $0.notiz = wert })
-    }
-
-    /// Eigene Pause der Übung in Sekunden (0 = ohne Ziel, nil = Standard).
-    func pauseZiel(_ u: Int, _ sekunden: Int?) {
-        guard let t = training, liste.indices.contains(u) else { return }
-        liste[u].planUebung.pause = sekunden
-        t.planSichern(TrainingLogik.aendern(t.plan, planUebung: liste[u].id) { $0.pause = sekunden })
-    }
-
-    /// Koppelt die Übung mit der nächsten im Tag (Supersatz) oder löst die Kopplung.
-    func supersatz(_ u: Int, an: Bool) {
-        guard let t = training, liste.indices.contains(u) else { return }
-        let neu = SupersatzLogik.koppeln(liste.map(\.planUebung), u, an: an)
-        for i in liste.indices { liste[i].planUebung.supersatz = neu[i].supersatz }
-        if var tagNeu = tag {
-            for k in tagNeu.uebungen.indices { tagNeu.uebungen[k].supersatz = liste.first { $0.id == tagNeu.uebungen[k].id }?.planUebung.supersatz }
-            t.planSichern(TrainingLogik.tagSetzen(t.plan, tagNeu))
-        }
-    }
+    // MARK: - Plan: Reihenfolge, Plan aktualisieren
 
     /// Ziehen und Ablegen: die Übung `von` (Plan-Id) kommt an die Stelle der Übung `auf`. Der Plantag bekommt dieselbe Reihenfolge, damit sie bleibt.
     func verschieben(_ von: String, auf: String) {
@@ -699,24 +629,6 @@ final class GymSitzung: TrainingSteuerung {
         guard let t = training, let neu = WorkoutLogik.alsTag(liste, name: name) else { return }
         t.planSichern(TrainingLogik.tagSetzen(t.plan, neu))
         if einheitZuordnen, let s = laufende { t.tagSetzen(s, neu.id) }
-    }
-
-    // MARK: - Beenden mit Rückfragen (Lovea-Aufbau)
-
-    /// Ob "Plan aktualisieren?" gefragt wird: Tag da und der Aufbau hat sich geändert.
-    var planFrageNoetig: Bool { tag != nil && neuerTag != nil }
-    /// Ob "Als Trainingstag speichern?" gefragt wird: kein Tag, aber etwas Abgehaktes.
-    var freiFrageNoetig: Bool { tag == nil && WorkoutLogik.alsTag(liste, name: "") != nil }
-
-    /// Der erste Schritt nach "Beenden" (Lovea `beenden`): erst "so lange im Gym?", sonst gleich die Plan-Frage.
-    func ersterBeendenSchritt() -> BeendenSchritt {
-        let zuLang = laufende.map { TrainingLogik.zuLang(start: $0.start, ende: umgebung.uhr()) } ?? false
-        return BeendenAblauf.ersterSchritt(zuLang: zuLang, planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
-    }
-
-    /// Der Schritt nach "Ja, stimmt" (Lovea `abschliessen`).
-    func naechsterBeendenSchritt() -> BeendenSchritt {
-        BeendenAblauf.weiter(planFrage: planFrageNoetig, freiFrage: freiFrageNoetig)
     }
 
     // MARK: - Cardio

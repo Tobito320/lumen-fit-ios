@@ -8,7 +8,6 @@ enum GymModul {
         let sitzung = GymSitzung(umgebung: umgebung, puls: GymPulsMessung())
         umgebung.trainingSteuerung = sitzung
         sitzung.ladeWennNoetig()
-        GymTipps.konfiguriere()   // TipKit einmal, im Test-Host und bei -lumenFitDemo nicht
         _ = sitzung.eigene   // eigene Übungen (Op fit.gym.uebung) schon beim Start falten
         PlanBilder.beobachte(umgebung)   // Bilder der Plan-Übungen vorab holen (Idee 26)
         // Zurück in der App: ein Training, das im Hintergrund per Intent oder Band begann, übernimmt die Sitzung.

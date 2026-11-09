@@ -19,7 +19,6 @@ struct EssenTabView: View {
     var bereich: EssenBereich = .heute
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var gewaehlt: String?
     @State private var blatt: EssenBlatt?
     @State private var toast: ToastInhalt?
@@ -107,30 +106,19 @@ struct EssenTabView: View {
         let woche = WochenanalyseLogik.berechne(bis: heute, eintraege: { essen.eintraege($0) }, ziele: { essen.ernaehrungsZiele(tag: $0) })
         return ScrollView {
             VStack(spacing: Abstand.xl) {
-                if aufbau == .lovea {
-                    // Lovea `ErnaehrungView.swift:81-83`: KI-Aufträge stehen über dem Tageskopf.
-                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
-                }
                 EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
                 VStack(spacing: Abstand.xl) {
-                    if aufbau != .lovea {
-                        EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
-                    }
-                    ForEach(essen.anpassung.sichtbar.filter { aufbau == .lovea || $0 != "koerper" }, id: \.self) { abschnitt($0, daten, summe, ziele) }
+                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
+                    ForEach(essen.anpassung.sichtbar.filter { $0 != "koerper" }, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
                         LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
                                     handlung: "Etwas eintragen") { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
                     }
-                    if aufbau == .lovea {
+                    // Körperwerte, Donut und Protein der Woche hinter "Mehr".
+                    MehrKlappe("Makros und Körperwerte", untertitel: "Donut, Protein der Woche, Gewicht", offen: $mehrOffen) {
+                        if essen.anpassung.sichtbar.contains("koerper") { abschnitt("koerper", daten, summe, ziele) }
                         if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
                         proteinKarte(woche)
-                    } else {
-                        // Lumen: Körperwerte, Donut und Protein der Woche hinter "Mehr".
-                        MehrKlappe("Makros und Körperwerte", untertitel: "Donut, Protein der Woche, Gewicht", offen: $mehrOffen) {
-                            if essen.anpassung.sichtbar.contains("koerper") { abschnitt("koerper", daten, summe, ziele) }
-                            if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
-                            proteinKarte(woche)
-                        }
                     }
                     if fastenSichtbar(essen) { EssenFastenKarte(essen: essen) }
                     favoritenAbschnitt(essen)
@@ -226,9 +214,9 @@ struct EssenTabView: View {
         .accessibilityLabel("Ziele und Auswertung")
     }
 
-    /// Fasten: Lovea-Aufbau wie bisher; sonst erst nach dem Schalter in "Tagebuch anpassen" oder mit vorhandenen Fasten-Daten.
+    /// Fasten: erst nach dem Schalter in "Tagebuch anpassen" oder mit vorhandenen Fasten-Daten.
     private func fastenSichtbar(_ essen: EssenStore) -> Bool {
-        aufbau == .lovea || EssenTagebuchLogik.fastenSichtbar(an: umgebung.daten?.einstellungen.werte.fastenAn ?? false, hatDaten: !essen.fastenEintraege.isEmpty)
+        EssenTagebuchLogik.fastenSichtbar(an: umgebung.daten?.einstellungen.werte.fastenAn ?? false, hatDaten: !essen.fastenEintraege.isEmpty)
     }
 
     // MARK: - Tag, Gewicht, Health

@@ -1,6 +1,5 @@
 // Quelle: Lovea Health/Studio/StudioProfil.swift (ohne feste Studios und Personen; Datei im Profilordner statt UserDefaults)
 import Foundation
-import Observation
 
 /// Studio und Trainings-Slot des Profils. `name` ist ein freies Textfeld (Vorschläge kommen aus `PrivateDaten.json`, `StudioVorgaben`).
 /// `slotStart` in Minuten seit Mitternacht, nil = keine feste Uhrzeit.
@@ -33,35 +32,6 @@ struct StudioProfil: Codable, Equatable, Sendable {
     /// Name ohne Leerraum; leer heißt "noch kein Studio gewählt".
     var anzeigeName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
     var hatStudio: Bool { !anzeigeName.isEmpty }
-}
-
-/// Das Studio-Profil des aktiven Profils (`studio.json` im Profilordner). Ohne Ordner nur im Speicher (Vorschau, Tests).
-@MainActor @Observable
-final class StudioStore {
-    @ObservationIgnored private let datei: JSONDatei<StudioProfil>?
-    private var gespeichert = StudioProfil.standard
-
-    var profil: StudioProfil {
-        get { gespeichert }
-        set { setze(newValue) }
-    }
-
-    init(ordner: URL? = nil) {
-        datei = ordner.map { JSONDatei<StudioProfil>($0.appendingPathComponent("studio.json")) }
-        if let alt = datei?.lade() { gespeichert = alt }
-    }
-
-    func setze(_ neu: StudioProfil) {
-        guard neu != gespeichert else { return }
-        gespeichert = neu
-        datei?.speichere(neu)
-    }
-
-    func aendere(_ f: (inout StudioProfil) -> Void) {
-        var neu = gespeichert
-        f(&neu)
-        setze(neu)
-    }
 }
 
 /// Ein Studio-Vorschlag aus `PrivateDaten.json`: nur Name und Öffnungszeiten, nie die Adresse.

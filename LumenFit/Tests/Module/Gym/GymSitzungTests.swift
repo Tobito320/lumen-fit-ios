@@ -310,38 +310,13 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertEqual(a.sitzung.dran?.uebung, 0)
     }
 
-    func testNotizUndEigenePauseBleibenImPlan() throws {
-        let a = try aufbau()
-        a.sitzung.starte(planTag: "push")
-        a.sitzung.notiz(0, "  Sitz auf Stufe 4  ")
-        a.sitzung.pauseZiel(0, 60)
-        let u = try XCTUnwrap(a.daten.training.plan.tage[0].uebungen.first { $0.id == "a" })
-        XCTAssertEqual(u.notiz, "Sitz auf Stufe 4")
-        XCTAssertEqual(u.pause, 60)
-        a.sitzung.notiz(0, " ")
-        XCTAssertNil(a.daten.training.plan.tage[0].uebungen[0].notiz)
-    }
-
-    func testSupersatzKoppelnSchreibtDenPlan() throws {
-        let a = try aufbau()
-        a.sitzung.starte(planTag: "push")
-        a.sitzung.supersatz(0, an: true)
-        XCTAssertEqual(a.daten.training.plan.tage[0].uebungen[0].supersatz, true)
-        XCTAssertEqual(a.sitzung.liste[0].planUebung.supersatz, true)
-        a.sitzung.supersatz(0, an: false)
-        XCTAssertNil(a.daten.training.plan.tage[0].uebungen[0].supersatz)
-    }
-
-    func testEinUebungDazuUndAufwaermsaetze() throws {
+    func testEinUebungDazuUndWiederWeg() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")
         let k = try XCTUnwrap(UebungsKatalog.nachId["znQUdHY"])
         a.sitzung.uebungDazu(k)
         XCTAssertEqual(a.sitzung.liste.count, 3)
         XCTAssertTrue(a.sitzung.liste[2].extra)
-        a.sitzung.aufwaermen(0, arbeit: 60)
-        XCTAssertEqual(a.sitzung.liste[0].saetze.map(\.typ), ["w", "w", "w", nil, nil, nil])
-        XCTAssertEqual(a.sitzung.liste[0].saetze.first?.kg, 25)
         a.sitzung.uebungWeg(2)
         XCTAssertEqual(a.sitzung.liste.count, 2)
     }

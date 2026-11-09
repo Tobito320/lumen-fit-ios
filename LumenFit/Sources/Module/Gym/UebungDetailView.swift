@@ -9,7 +9,6 @@ struct UebungDetailView: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.lumenAufbau) private var aufbau
     @Environment(\.colorScheme) private var schema
     @Environment(\.colorSchemeContrast) private var kontrast
     @State private var reiter: Reiter
@@ -90,13 +89,9 @@ struct UebungDetailView: View {
         return ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 // Schleife der GIF-Bilder nur hier, nur sichtbar, nicht bei Reduce Motion und Stromsparmodus (`GymGifLogik`).
-                if aufbau == .lovea {
-                    UebungLoveaGif(id: u.id, name: u.name, koerper: u.koerper)
-                } else {
-                    GymUebungGif(id: u.id, koerper: u.koerper)
-                        .aspectRatio(1.4, contentMode: .fit)
-                        .frame(maxWidth: .infinity)
-                }
+                GymUebungGif(id: u.id, koerper: u.koerper)
+                    .aspectRatio(1.4, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
                 VStack(alignment: .leading, spacing: Abstand.xs) {
                     Text(u.name).font(.title2.bold()).foregroundStyle(palette.text)
                     Text(GymEigeneLogik.istEigene(u.id) ? "Primär: \(u.muskel) · Eigene" : "Primär: \(u.muskel)").font(.subheadline).foregroundStyle(palette.text2)

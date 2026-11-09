@@ -36,7 +36,6 @@ private struct SchlafTabInhalt: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.openURL) private var openURL
-    @Environment(\.lumenAufbau) private var aufbau
     @State private var band: [BandSchlafOp] = []
     @State private var position: String?
     @State private var version = 0
@@ -55,10 +54,8 @@ private struct SchlafTabInhalt: View {
                 } else {
                     leer(uebersicht)
                 }
-                if aufbau != .lovea || uebersicht.letzte == nil {
-                    SchlafDoppelKarte()
-                    PartnerKarte(bereich: .schlaf)
-                }
+                SchlafDoppelKarte()
+                PartnerKarte(bereich: .schlaf)
             }
             .scrollTargetLayout()
             .padding(.horizontal, Abstand.l)
@@ -101,18 +98,6 @@ private struct SchlafTabInhalt: View {
     @ViewBuilder
     private func inhalt(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
         SchlafCard(nacht: letzte, titel: u.titelLetzte, zielMinuten: u.ziel(fuer: letzte.nacht.tag), lumi: u.lumi(jetzt: umgebung.uhr()))
-        if aufbau == .lovea {
-            // Reihenfolge wie Lovea `SchlafDetailView`: Letzte Nacht, Ihr beide, Schlafziel, Nächte, Schlaf und Training; Lumen-Karten danach.
-            SchlafDoppelKarte()
-            PartnerKarte(bereich: .schlaf)
-            ListenKarte { zielZeile; Haarlinie(); verlaufZeile }.buttonStyle(.plain)
-            leistungsAbschnitt(u)
-            phasen(u, letzte)
-            wochenAbschnitt(u)
-            erholungsAbschnitt(u)
-            ruheAbschnitt(u)
-            ListenKarte { quelleZeile(u, letzte) }.buttonStyle(.plain)
-        } else {
         phasen(u, letzte)
         wochenAbschnitt(u)
         erholungKarte(u)
@@ -123,19 +108,12 @@ private struct SchlafTabInhalt: View {
             leistungsAbschnitt(u)
             weiter(u, letzte)
         }
-        }
     }
 
     @ViewBuilder
     private func wochenAbschnitt(_ u: SchlafUebersicht) -> some View {
         SchlafAbschnittKopf("Woche")
         SchlafWochenKarte(woche: u.woche, zielMinuten: u.zielMinuten)
-    }
-
-    @ViewBuilder
-    private func erholungsAbschnitt(_ u: SchlafUebersicht) -> some View {
-        erholungKarte(u)
-        werteAbschnitt(u)
     }
 
     @ViewBuilder
