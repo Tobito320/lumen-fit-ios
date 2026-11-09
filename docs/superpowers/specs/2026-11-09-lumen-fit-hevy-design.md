@@ -49,14 +49,14 @@ Lumen Fit soll das tun, was Hevy gut macht (Training loggen, Pläne, Verlauf, Fr
 - Medaillen bleiben klein, Lumi-Figur geht; Habits bleiben klein (Ahmeds meistgenutzte Funktion: 105 Tipps).
 
 ## Was weg geht (Bestandsaufnahme, Zeilen gerundet)
-Essen 11.900 (zu Lovea) · Lovea-Farbwelt 4.200 · Partner-Ansichten über Lovea 3.100 (ersetzt durch Freunde) · Schlaf 2.900 (zu Lumen Alarm) · Körper-Silhouette und Erholung 2.400 (Messungen bleiben) · KI-Foto 2.200 (mit Essen) · Tagesform, Energie-Bank, Tages-Formen 2.000 · Studio, Geräte, Defekte 1.200 (toter Code) · Farbwelten und Muster 1.200 · Konsistenz, Rückblick, FitPassport 1.100 · Einsichten, Hinweise, Ringplatte, Schritte-Detail 1.000 · elf Widgets, Spotlight, Steuerelement ~2.000 · Fasten 700 · Lumi-Figur 400 · TipKit 225.
+Essen 11.900 (zu Lovea) · Lovea-Farbwelt 4.200 · Partner-Ansichten über Lovea 3.100 (ersetzt durch Freunde) · Schlaf 2.900 (zu Lumen Alarm) · Körper-Silhouette und Erholung 2.400 (Messungen bleiben) · KI-Foto 2.200 (mit Essen) · Tagesform, Energie-Bank, Tages-Formen 2.000 · Studio, Geräte, Defekte 1.200 (toter Code) · Farbwelten und Muster 1.200 · Konsistenz, Rückblick, FitPassport 1.100 · Einsichten, Hinweise, Ringplatte, Schritte-Detail 1.000 · zehn Widgets, Essen-Live-Aktivität, Siri, Spotlight, Steuerelement ~2.000 (es bleiben: Training-Live-Aktivität mit „Satz fertig“, Gewohnheiten-Widgets, Gym-Woche-Widget; Entscheidung 09.11. 23:49) · Fasten 700 · Lumi-Figur 400 · TipKit 225.
 
 ## Was neu kommt
-Kalender mit Plan und Partner · Profil-Tab mit Statistik-Diagramm und Dashboard · Routinen-Karten im Training (Build 19) · Feed, Likes, Trainingspartner, Bestenliste (fitfreunde) · Satz-Vorschlag (Build 17) · ein Theme.
+Verlauf wie Hevy: Karte „Letztes Training“ auf der Startseite, Einheiten je Woche, Details lesbar (Entscheidung 09.11. 23:50, dem Besitzer sehr wichtig) · Kalender mit Plan und Partner · Profil-Tab mit Statistik-Diagramm und Dashboard · Routinen-Karten im Training (Build 19) · Freunde: Freundesliste, Trainingspartner, Rangliste, geplante Tage, kein Feed (Zweig fit-crew) · Satz-Vorschlag (Build 17) · ein Theme.
 
 ## Builds
 - 18: ein Theme, Lovea-Farbwelt raus, toter Code raus, drei Tabs, Profil-Tab mit Dashboard und Kalender, Startseite kompakt, Essen-Export und Schlaf-Brücke (Schalter). Plan: `docs/superpowers/plans/2026-11-09-lumen-fit-hevy-umbau1.md`.
-- 19: Feed und Freunde (fit-crew), Training-Tab mit Routinen und Routine-Editor, Widgets kürzen.
+- 19: Freunde (fit-crew), Training-Tab mit Routinen und Routine-Editor, Verlauf wie Hevy, Widgets kürzen (Live-Aktivität, Gewohnheiten, Gym-Woche bleiben).
 - 20: Essen und Schlaf raus, Partner-Ansichten raus (nach Ahmeds Test der Lovea- und Lumen-Alarm-Builds).
 
 ## Offen für Ahmed
