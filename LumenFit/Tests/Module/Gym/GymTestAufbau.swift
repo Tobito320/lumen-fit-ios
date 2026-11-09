@@ -52,6 +52,7 @@ struct GymTestAufbau {
     init(ordner: URL, healthSchreiben: Bool = false) throws {
         let uhr = TestUhr()
         let schreiber = self.schreiber
+        UserDefaults.standard.set(true, forKey: GymAnzeige.pausenTimerSchluessel)   // die Tests rechnen mit der Pause nach dem Haken
         let u = AppUmgebung(ordner: ordner, schluesselbund: SpeicherSchluesselbund(), http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
                             leser: LeererHealthLeser(), healthSchreiber: schreiber, bruecke: KeinePartnerBruecke(), uhr: uhr.uhr, passwortRunden: 1_000)
         _ = try u.profil.anlegen(name: "Beispiel", passwort: "demo")

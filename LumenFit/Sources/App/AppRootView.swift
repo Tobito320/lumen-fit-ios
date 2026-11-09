@@ -119,8 +119,7 @@ struct AppRootView: View {
         if let einstellungen = umgebung.daten?.einstellungen {
             let verbunden = einstellungen.werte.loveaVerbunden
             if konto.loveaErlaubt, !LoveaFreigabe.demoAktiv, !verbunden {
-                einstellungen.aendere { $0.loveaVerbunden = true }
-                Task { _ = await umgebung.mitteiler.erlaubnisHolen() }
+                einstellungen.aendere { $0.loveaVerbunden = true }   // Mitteilungsrechte holt der Mitteiler bei der ersten Mitteilung
             } else if konto.freigabeAktuell, !konto.loveaErlaubt, verbunden {
                 einstellungen.aendere { $0.loveaVerbunden = false }
             }

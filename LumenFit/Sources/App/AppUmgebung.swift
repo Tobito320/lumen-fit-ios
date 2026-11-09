@@ -78,7 +78,7 @@ final class AppUmgebung {
         self.profil = profile
         let anker = UmgebungsAnker()
         self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() },
-                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() })
+                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() }, darfFragen: { anker.healthErlaubt() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -206,6 +206,9 @@ final class AppUmgebung {
     weak var umgebung: AppUmgebung?
 
     func healthTypen() -> Set<HealthTyp> { (umgebung?.bereicheWirksam ?? Einstellungen()).healthTypen }
+
+    /// Die Person hat Health erlaubt (Onboarding oder Health-Zugriff): erst dann fragt der Stand nach Leserechten.
+    func healthErlaubt() -> Bool { umgebung?.daten?.einstellungen.werte.healthGefragt == true }
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }
 

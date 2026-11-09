@@ -16,6 +16,11 @@ struct TrainingLaufView: View {
     @State private var startzeit: GymSession?
     @Environment(\.bewegungAus) private var ruhig
     @Environment(\.scenePhase) private var phase
+    /// Reihenfolge-Modus (Knopf oben): die Karten klappen zu und lassen sich ziehen, nach dem Ablegen wieder normal.
+    @State private var umordnen = false
+    @State private var pausenFrage = false
+    @AppStorage(GymAnzeige.pausenTimerSchluessel) private var pausenTimer = false
+    @AppStorage(GymAnzeige.pausenTimerGefragtSchluessel) private var pausenTimerGefragt = false
 
     var body: some View {
         let _ = sitzung.pauseEndeZaehler // die Karte baut sich neu, wenn die Pause endet
@@ -24,8 +29,9 @@ struct TrainingLaufView: View {
                 kopf
                 GymMitlaufZeile()
                 NaechsterSatzKarte(sitzung: sitzung)
+                if sitzung.liste.count > 1 { reihenfolgeKnopf }
                 ForEach(Array(sitzung.liste.enumerated()), id: \.element.id) { i, _ in
-                    UebungsKarte(sitzung: sitzung, index: i)
+                    UebungsKarte(sitzung: sitzung, index: i, kompakt: umordnen) { withAnimation(ruhig ? nil : Feder.schnell) { umordnen = false } }
                 }
                 Button { suche = true } label: {
                     Label("Übung hinzufügen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
@@ -66,6 +72,25 @@ struct TrainingLaufView: View {
         .task { sitzung.ladeWennNoetig() }
         // In den Hintergrund: geänderte Zeilen ohne Haken sofort schreiben, nicht erst nach dem Verzug (iOS kann die App gleich einfrieren).
         .onChange(of: phase) { _, neu in if neu == .background { sitzung.entwurfSenden() } }
+        // Pausen-Timer ist Standard aus: beim ersten Haken einmal fragen, danach steht es unter Einstellungen, Präferenzen.
+        .onChange(of: sitzung.hakenZaehler) { _, _ in if !pausenTimerGefragt { pausenFrage = true } }
+        .alert("Pausen-Timer nutzen?", isPresented: $pausenFrage) {
+            Button("Ja") { pausenTimer = true; pausenTimerGefragt = true; sitzung.pauseNachholen() }
+            Button("Nein") { pausenTimerGefragt = true }
+        } message: {
+            Text("Nach jedem Satz läuft dann eine Pause mit Haptik am Ende. Du änderst das jederzeit unter Einstellungen, Präferenzen.")
+        }
+    }
+
+    /// Ein Knopf über allen Übungen: Reihenfolge ändern. Im Modus bekommt jede Übung einen Rahmen, die Sätze klappen zu, Ziehen und Ablegen
+    /// tauscht die Plätze; nach dem Ablegen ist alles wieder normal.
+    private var reihenfolgeKnopf: some View {
+        Button { withAnimation(ruhig ? nil : Feder.schnell) { umordnen.toggle() } } label: {
+            Label(umordnen ? "Fertig" : "Reihenfolge", systemImage: umordnen ? "checkmark" : "arrow.up.arrow.down")
+                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityHint(umordnen ? "Beendet das Umordnen" : "Übungen ziehen und ablegen, die Sätze klappen dabei zu")
     }
 
     // MARK: Kopf

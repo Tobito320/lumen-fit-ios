@@ -1,25 +1,34 @@
 import Foundation
 import HealthKit
+import os
 
-/// Schreibt Krafttraining und Gewicht nach Health. Fragt die Schreibrechte erst beim ersten Speichern.
-// @unchecked Sendable: HKHealthStore ist thread-sicher, aber im SDK nicht als Sendable markiert.
+/// Schreibt Krafttraining und Gewicht nach Health. Fragt die Schreibrechte erst beim ersten Speichern, je Typ, und nur solange die Person noch
+/// nicht entschieden hat: ein weggewischtes Blatt kommt höchstens einmal je Lauf wieder, "Nicht erlauben" nie (Ändern geht in Health).
+// @unchecked Sendable: HKHealthStore ist thread-sicher, aber im SDK nicht als Sendable markiert; `gefragt` liegt unter einem Lock.
 final class HKHealthSchreiber: HealthSchreiber, @unchecked Sendable {
     private let speicher = HKHealthStore()
     private let gewichtTyp = HKQuantityType(.bodyMass)
+    /// Typen, für die in diesem Lauf schon gefragt wurde.
+    private let gefragt = OSAllocatedUnfairLock(initialState: Set<String>())
 
     init() {}
 
-    private func erlaubt() async -> Bool {
+    private func erlaubt(_ typ: HKSampleType) async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
-        let schreiben: Set<HKSampleType> = [HKObjectType.workoutType(), gewichtTyp]
+        switch speicher.authorizationStatus(for: typ) {
+        case .sharingAuthorized: return true
+        case .sharingDenied: return false
+        default: break
+        }
+        guard gefragt.withLock({ $0.insert(typ.identifier).inserted }) else { return false }
         do {
-            try await speicher.requestAuthorization(toShare: schreiben, read: [])
-            return true
+            try await speicher.requestAuthorization(toShare: [typ], read: [])
+            return speicher.authorizationStatus(for: typ) == .sharingAuthorized
         } catch { return false }
     }
 
     func speichere(training: GymSession) async -> Bool {
-        guard let ende = training.ende, ende > training.start, await erlaubt() else { return false }
+        guard let ende = training.ende, ende > training.start, await erlaubt(HKObjectType.workoutType()) else { return false }
         let konfiguration = HKWorkoutConfiguration()
         konfiguration.activityType = .traditionalStrengthTraining
         let bauer = HKWorkoutBuilder(healthStore: speicher, configuration: konfiguration, device: .local())
@@ -31,7 +40,7 @@ final class HKHealthSchreiber: HealthSchreiber, @unchecked Sendable {
     }
 
     func speichere(gewichtKg: Double, am datum: Date) async -> Bool {
-        guard gewichtKg > 0, await erlaubt() else { return false }
+        guard gewichtKg > 0, await erlaubt(gewichtTyp) else { return false }
         let menge = HKQuantity(unit: .gramUnit(with: .kilo), doubleValue: gewichtKg)
         let probe = HKQuantitySample(type: gewichtTyp, quantity: menge, start: datum, end: datum)
         do {
