@@ -25,7 +25,7 @@ belegt, steht als Entscheidung da.
 | Freie Grundübung (Langhantel, Kurzhantel, SZ, Kettlebell, Körpergewicht) | 4 bis 8 | 6 bis 10 | 2 (1) |
 | Grundübung an Maschine, Kabel, Multipresse, Schlitten | 6 bis 10 | 8 bis 12 | 1 (0) |
 | Isolation | 6 bis 10 | 8 bis 12 | 1 (0) |
-| Kleine Muskeln (Waden, Unterarme, Bauch, Nacken, Seitheben, hintere Schulter) | 8 bis 12 | 10 bis 15 | 1 (0) |
+| Kleine Muskeln (Waden, Unterarme, Bauch, Nacken) | 8 bis 12 | 10 bis 15 | 1 (0) |
 
 Muskelaufbau ist über weite Lastbereiche gleich, solange die Sätze nah ans Versagen gehen (Schoenfeld 2017, JSCR; Lopez 2021, MSSE; Schoenfeld 2021,
 Sports). Nähe zum Versagen zählt für Wachstum mehr als für Kraft (Robinson 2024, Sports Med); 1 bis 2 Reserve waren so gut wie Versagen (Refalo 2024,
@@ -45,7 +45,9 @@ Aus der letzten Einheit derselben Übung (schwerster Arbeitssatz, ohne Aufwärm-
 
 ## Nächster Satz im Training (Autoregulation)
 
-Die Stärke von heute kommt aus dem zuletzt abgehakten Satz (Gewicht, Wiederholungen, Reserve), abzüglich der Ermüdung bis zum nächsten Satz:
+Die Stärke von heute kommt aus dem zuletzt abgehakten Satz (Gewicht, Wiederholungen, Reserve), abzüglich der Ermüdung bis zum nächsten Satz.
+Leichte Rampensätze (unter 80 % des vorgeschlagenen Arbeitsgewichts, oft nicht als Aufwärmen markiert, etwa 45 → 65 → 65 kg am Latzug) zählen
+dafür nicht; bis zum ersten schweren Satz gilt der Vorschlag aus der letzten Einheit.
 
 | Reserve des letzten Satzes | Verlust je Satz bei 3 bis 4 min Pause |
 |---|---|
