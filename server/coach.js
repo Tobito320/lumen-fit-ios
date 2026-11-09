@@ -204,7 +204,7 @@ export async function coach(request, url, env, { json, nein, koerper, lesen, gle
       const gewicht = (h.koerper?.gewicht ?? []).at(-1);
       return json({
         stand: z?.aktualisiert ?? null, hinweis: "Nur die letzten Einheiten, die die App teilt (bis 30). kg in kg.",
-        trainings_gesamt: v.trainings ?? null, serie_wochen: v.serieWochen ?? null, im_gym: v.imGym ?? false,
+        trainings: v.trainings ?? null, gesamt: v.gesamt ?? null, serie_wochen: v.serieWochen ?? null, im_gym: v.imGym ?? false,
         koerpergewicht: gewicht ? { tag: gewicht.tag, kg: gewicht.zehntel / 10 } : null,
         ...verlauf(Array.isArray(v.einheiten) ? v.einheiten : []),
       });
