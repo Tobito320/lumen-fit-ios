@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("elf Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren", "lumenfit_plan_setzen", "lumenfit_plan_lesen"]);
+test("17 Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren", "lumenfit_plan_setzen", "lumenfit_plan_lesen", "lumenfit_verlauf", "lumenfit_uebungen", "lumenfit_plan_vorschlag", "lumenfit_plan_anwenden", "lumenfit_plan_rueckgaengig", "lumenfit_einladen"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -89,4 +89,36 @@ test("plan_setzen: ohne anwenden nur Vorschau (kein Abruf), mit anwenden POST in
   await assert.rejects(werkzeugAufrufen("lumenfit_plan_setzen", { konto: "abc", plan: { tage: [] }, anwenden: true }, opt), /tage/);
   await werkzeugAufrufen("lumenfit_plan_lesen", { konto: "abc" }, opt);
   assert.equal(aufrufe[1].url, "https://live.test/admin/postfach/plan?konto=abc");
+});
+
+test("Coach-Wege: X-Coach-Key statt Admin-Key, Vorschlag, Anwenden, Rückgängig, Suche", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "ADMIN", coachKey: "COACH", basis: { live: "https://l.test", test: "https://t.test" } };
+  await werkzeugAufrufen("lumenfit_verlauf", {}, opt);
+  await werkzeugAufrufen("lumenfit_uebungen", { suche: "bank drücken", umgebung: "test" }, opt);
+  await werkzeugAufrufen("lumenfit_plan_vorschlag", { aenderungen: [{ tag: "Push", uebung: "Bank", kg: 60 }] }, opt);
+  await werkzeugAufrufen("lumenfit_plan_anwenden", { token: "t1" }, opt);
+  await werkzeugAufrufen("lumenfit_plan_rueckgaengig", {}, opt);
+  assert.deepEqual(aufrufe.map((x) => `${x.opt.method} ${x.url}`), [
+    "GET https://l.test/coach/verlauf", "GET https://t.test/coach/uebungen?suche=bank%20dr%C3%BCcken",
+    "POST https://l.test/coach/vorschlag", "POST https://l.test/coach/anwenden", "POST https://l.test/coach/rueckgaengig"]);
+  for (const x of aufrufe) { assert.equal(x.opt.headers["X-Coach-Key"], "COACH"); assert.equal(x.opt.headers["X-Admin-Key"], undefined); }
+  assert.deepEqual(JSON.parse(aufrufe[2].opt.body), { aenderungen: [{ tag: "Push", uebung: "Bank", kg: 60 }] });
+  assert.deepEqual(JSON.parse(aufrufe[3].opt.body), { token: "t1" });
+  await assert.rejects(werkzeugAufrufen("lumenfit_plan_vorschlag", {}, opt), /aenderungen/);
+  await assert.rejects(werkzeugAufrufen("lumenfit_plan_anwenden", {}, opt), /token/);
+  await assert.rejects(werkzeugAufrufen("lumenfit_uebungen", { suche: " " }, opt), /suche/);
+  await werkzeugAufrufen("lumenfit_plan_lesen", { konto: "k" }, opt);
+  assert.equal(aufrufe.at(-1).opt.headers["X-Admin-Key"], "ADMIN");
+});
+
+test("einladen: Status und Einladen rufen die CLI mit passenden Argumenten, Fehler mit Exit-Code", async () => {
+  const argvs = [];
+  const einladen = async (argv) => { argvs.push(argv); return argv[0] === "x@y.de" ? { code: 2, text: "asc.json fehlt" } : { code: 0, text: "ok" }; };
+  assert.deepEqual(await werkzeugAufrufen("lumenfit_einladen", { status: true }, { einladen }), { ok: true, ausgabe: "ok" });
+  await werkzeugAufrufen("lumenfit_einladen", { status: true, email: "a@b.de" }, { einladen });
+  await werkzeugAufrufen("lumenfit_einladen", { email: " c@d.de ", gruppe: "Wir" }, { einladen });
+  await assert.rejects(werkzeugAufrufen("lumenfit_einladen", { email: "x@y.de" }, { einladen }), /Exit 2: asc.json fehlt/);
+  await assert.rejects(werkzeugAufrufen("lumenfit_einladen", {}, { einladen }), /email oder status/);
+  assert.deepEqual(argvs, [["--status"], ["--status", "a@b.de"], ["c@d.de", "--gruppe", "Wir"], ["x@y.de"]]);
 });
