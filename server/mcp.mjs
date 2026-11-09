@@ -112,6 +112,11 @@ export const WERKZEUGE = [
     inputSchema: { type: "object", properties: { umgebung } },
   },
   {
+    name: "lumenfit_freunde",
+    description: "Freunde in Lumen Fit (nur Konto-IDs und Zahlen, keine Namen oder Werte; Namen über lumenfit_konten): je Konto Freunde, Anfragen, offene Einladungen, Herausforderungen, Reaktionen 30 Tage, letzte Aktivität; dazu Verbindungen (Status, sichtbare Bereiche) und Herausforderungen mit Teilnehmern. Optional nur ein Konto.",
+    inputSchema: { type: "object", properties: { umgebung, konto: kontoId } },
+  },
+  {
     name: "lumenfit_einladen",
     description: "TestFlight-Tester für Lumen Fit (App Store Connect API vom PC, Sekunden statt CI): status=true zeigt Builds mit Beta-Prüfung, Gruppe Freunde mit Public Link und Zählern (mit email: deren Status). Mit email und ohne status lädt ein: Tester anlegen, in Gruppe, neuesten Build zuordnen, Prüfung einreichen. Einladen schickt Apple eine Mail an die Person: nur auf Ahmeds Wort.",
     inputSchema: { type: "object", properties: { email: { type: "string" }, status: { type: "boolean" }, gruppe: { type: "string", description: "Standard Freunde" } } },
@@ -170,6 +175,7 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, coach
       pfad += `?tage=${a.tage}`;
     }
   }
+  else if (name === "lumenfit_freunde") pfad = `/admin/freunde${typeof a.konto === "string" && a.konto ? `?konto=${encodeURIComponent(a.konto)}` : ""}`;
   else if (name === "lumenfit_import_beleg") pfad = "/admin/import-beleg";
   else if (name === "lumenfit_schlaf_beleg") {
     if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
@@ -222,7 +228,7 @@ async function antworten(msg) {
       protocolVersion: params?.protocolVersion ?? "2025-06-18",
       capabilities: { tools: {} },
       serverInfo: { name: "lumenfit", version: "1.0.0" },
-      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Fehler (lumenfit_fehler), Auswertung (lumenfit_auswertung), Schalter je Konto und global ändern, Konten sperren. Ahmeds Plan klein ändern mit lumenfit_plan_vorschlag (Vorschau, token) und erst nach seinem Ja lumenfit_plan_anwenden, Rückweg lumenfit_plan_rueckgaengig; Training lumenfit_verlauf; Tester lumenfit_einladen (Einladen nur auf Ahmeds Wort). Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
+      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Fehler (lumenfit_fehler), Auswertung (lumenfit_auswertung), Schalter je Konto und global ändern, Konten sperren. Ahmeds Plan klein ändern mit lumenfit_plan_vorschlag (Vorschau, token) und erst nach seinem Ja lumenfit_plan_anwenden, Rückweg lumenfit_plan_rueckgaengig; Training lumenfit_verlauf; Freunde lumenfit_freunde; Tester lumenfit_einladen (Einladen nur auf Ahmeds Wort). Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
     };
   }
   if (method === "ping") return {};

@@ -8,8 +8,8 @@ function falschesHolen() {
   return { aufrufe, holen };
 }
 
-test("17 Werkzeuge, alle mit lumenfit_-Namen", () => {
-  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren", "lumenfit_plan_setzen", "lumenfit_plan_lesen", "lumenfit_verlauf", "lumenfit_uebungen", "lumenfit_plan_vorschlag", "lumenfit_plan_anwenden", "lumenfit_plan_rueckgaengig", "lumenfit_einladen"]);
+test("18 Werkzeuge, alle mit lumenfit_-Namen", () => {
+  assert.deepEqual(WERKZEUGE.map((w) => w.name), ["lumenfit_konten", "lumenfit_konto_setzen", "lumenfit_nutzung", "lumenfit_fehler", "lumenfit_auswertung", "lumenfit_import_beleg", "lumenfit_schlaf_beleg", "lumenfit_config_setzen", "lumenfit_konto_sperren", "lumenfit_plan_setzen", "lumenfit_plan_lesen", "lumenfit_verlauf", "lumenfit_uebungen", "lumenfit_plan_vorschlag", "lumenfit_plan_anwenden", "lumenfit_plan_rueckgaengig", "lumenfit_freunde", "lumenfit_einladen"]);
 });
 
 test("konten: GET /admin/konten auf live, Admin-Key im Header", async () => {
@@ -121,4 +121,13 @@ test("einladen: Status und Einladen rufen die CLI mit passenden Argumenten, Fehl
   await assert.rejects(werkzeugAufrufen("lumenfit_einladen", { email: "x@y.de" }, { einladen }), /Exit 2: asc.json fehlt/);
   await assert.rejects(werkzeugAufrufen("lumenfit_einladen", {}, { einladen }), /email oder status/);
   assert.deepEqual(argvs, [["--status"], ["--status", "a@b.de"], ["c@d.de", "--gruppe", "Wir"], ["x@y.de"]]);
+});
+
+test("freunde: GET /admin/freunde mit Admin-Key, optional ein Konto", async () => {
+  const { aufrufe, holen } = falschesHolen();
+  const opt = { holen, key: "ADMIN", basis: { live: "https://l.test" } };
+  await werkzeugAufrufen("lumenfit_freunde", {}, opt);
+  await werkzeugAufrufen("lumenfit_freunde", { konto: "a b" }, opt);
+  assert.deepEqual(aufrufe.map((x) => x.url), ["https://l.test/admin/freunde", "https://l.test/admin/freunde?konto=a%20b"]);
+  assert.equal(aufrufe[0].opt.headers["X-Admin-Key"], "ADMIN");
 });
