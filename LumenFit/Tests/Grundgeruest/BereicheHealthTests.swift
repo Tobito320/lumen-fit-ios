@@ -86,6 +86,11 @@ final class BereicheHealthTests: XCTestCase {
         XCTAssertEqual(leser.beobachtet, [[.schritte, .training]])
         u.daten?.einstellungen.aendere { $0.setze(.schlaf, an: true) }
         u.beobachteHealth()
+        XCTAssertEqual(leser.beobachtet.count, 1, "Schlaf ohne Server-Freigabe: nichts Neues beobachtet")
+        var frei = ServerConfig()
+        frei.schlafSichtbar = true
+        u.konto.uebernimm(frei)
+        u.beobachteHealth()
         XCTAssertEqual(leser.beobachtet.last, [.schlaf])
         u.beobachteHealth()
         XCTAssertEqual(leser.beobachtet.count, 2, "nie doppelt")
@@ -96,6 +101,9 @@ final class BereicheHealthTests: XCTestCase {
         let u = try umgebung(leser: leser)
         XCTAssertFalse(ProfilBereiche.schalte(.gym, an: false, in: u), "ohne Profil passiert nichts")
         try u.profil.anlegen(name: "Test", passwort: "abcd")
+        var frei = ServerConfig()
+        frei.schlafSichtbar = true
+        u.konto.uebernimm(frei)   // Schlaf gibt es nur mit Server-Freigabe
         XCTAssertTrue(ProfilBereiche.schalte(.schlaf, an: false, in: u))
         XCTAssertTrue(ProfilBereiche.schalte(.essen, an: false, in: u))
         XCTAssertFalse(ProfilBereiche.schalte(.gym, an: false, in: u), "der letzte Bereich bleibt an")
