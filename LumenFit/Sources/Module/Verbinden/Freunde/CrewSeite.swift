@@ -1,23 +1,17 @@
 import SwiftUI
 
-/// Die Crew als Hub: Für dich (Reaktionen, Einladungen), Jetzt im Gym, Herausforderungen, Rangliste der Woche, Rekorde und letzte Trainings der Crew
-/// mit Reaktion, Freunde einladen. Gleich in beiden Aufbauten. Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
+/// Die Crew als Hub: Für dich (Reaktionen, Einladungen), Herausforderungen, Rangliste der Woche, letzte Trainings der Crew mit Reaktion, Freunde.
+/// Wer gerade trainiert und die Rekorde der Crew stehen schon auf der Startseite des Trainings (nicht doppelt). Gleich in beiden Aufbauten.
+/// Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
 struct CrewSeite: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @AppStorage(CrewDienst.gesehenSchluessel) private var gesehen: Double = 0
     @State private var mass: CrewMass = .tage
-    @State private var blatt: Blatt?
-    @State private var link: URL?
-    @State private var linkLaedt = false
+    @State private var herausfordern = false
     /// Der Stand von "gesehen" beim Öffnen: alles danach ist für diesen Besuch "neu" markiert.
     @State private var gesehenBeimOeffnen: Double?
     @State private var aktionFehler: String?
-
-    private enum Blatt: String, Identifiable {
-        case herausfordern, code, scan
-        var id: String { rawValue }
-    }
 
     private var dienst: CrewDienst { CrewDienst.von(umgebung) }
     private var eintraege: [VerbindungEintrag] { GymCrewQuelle.eintraege(umgebung) }
@@ -27,12 +21,10 @@ struct CrewSeite: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.xl) {
                 fuerDich
-                jetztImGym
                 herausforderungen
                 rangliste
-                GymRekordPinnwandView()
                 trainings
-                einladen
+                freunde
             }
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.xl)
@@ -46,13 +38,7 @@ struct CrewSeite: View {
         .task { await dienst.laden(erzwingen: true) }
         .onAppear { if gesehenBeimOeffnen == nil { gesehenBeimOeffnen = gesehen } }
         .onDisappear { gesehen = umgebung.uhr().timeIntervalSince1970 }
-        .sheet(item: $blatt) { b in
-            switch b {
-            case .herausfordern: CrewHerausforderungBlatt()
-            case .code: VerbindungCodeBlatt()
-            case .scan: VerbindungScanBlatt()
-            }
-        }
+        .sheet(isPresented: $herausfordern) { CrewHerausforderungBlatt() }
         .modifier(CrewFehlerAnzeige(extra: $aktionFehler))
         .gymCrewAbruf()
     }
@@ -122,34 +108,6 @@ struct CrewSeite: View {
         }
     }
 
-    // MARK: Jetzt im Gym
-
-    @ViewBuilder
-    private var jetztImGym: some View {
-        let zeilen = GymCrewQuelle.zeilen(umgebung).filter { $0.zustand == .imGym }
-        if !zeilen.isEmpty {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Jetzt im Gym")
-                ListenKarte {
-                    ForEach(Array(zeilen.enumerated()), id: \.element.id) { i, z in
-                        if i > 0 { Haarlinie() }
-                        HStack(spacing: 0) {
-                            NavigationLink { CrewFreundSeite(id: z.id) } label: {
-                                GymZeile(titel: z.name, untertitel: z.mitlauf.map(GymMitlaufLogik.text) ?? z.status)
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("Öffnet die Seite der Person")
-                            if let e = eintrag(z.id) {
-                                CrewReaktionKnopf(eintrag: e, art: .anfeuern, ziel: CrewLogik.zielLive(tag: Datum.text(umgebung.uhr())))
-                                    .padding(.trailing, Abstand.s)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: Herausforderungen
 
     private var herausforderungen: some View {
@@ -159,7 +117,7 @@ struct CrewSeite: View {
             HStack {
                 kopf("Herausforderungen")
                 Spacer()
-                Button { blatt = .herausfordern } label: {
+                Button { herausfordern = true } label: {
                     Label("Herausfordern", systemImage: "flag.checkered").font(.footnote.weight(.semibold)).frame(minHeight: Abstand.tippflaeche)
                 }
             }
@@ -263,44 +221,21 @@ struct CrewSeite: View {
         }
     }
 
-    // MARK: Einladen
+    // MARK: Freunde
 
-    private var einladen: some View {
+    /// Hinzufügen (Code, Scan, Link) und Einstellungen je Person wohnen in "Freunde und Partner"; hier nur der Weg dorthin.
+    private var freunde: some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            kopf("Freunde einladen")
+            kopf("Freunde")
             ListenKarte {
-                Button { blatt = .code } label: { GymZeile(titel: "Code zeigen", untertitel: "Zehn Minuten gültig") { symbol("qrcode") } }
-                    .buttonStyle(.plain)
-                Haarlinie()
-                Button { blatt = .scan } label: { GymZeile(titel: "Code scannen") { symbol("qrcode.viewfinder") } }
-                    .buttonStyle(.plain)
-                Haarlinie()
-                if let link {
-                    ShareLink(item: link, message: Text("Trainier mit mir in Lumen Fit. Der Link gilt 24 Stunden.")) {
-                        GymZeile(titel: "Link teilen", untertitel: "24 Stunden gültig") { symbol("square.and.arrow.up") }
+                NavigationLink { VerbindungenView() } label: {
+                    GymZeile(titel: "Freunde hinzufügen und verwalten", untertitel: "Code, Link und was jede Person sieht") {
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                     }
-                    .buttonStyle(.plain)
-                } else {
-                    Button {
-                        Task {
-                            linkLaedt = true
-                            link = await dienst.einladungsLink()
-                            linkLaedt = false
-                        }
-                    } label: {
-                        GymZeile(titel: "Link erstellen", untertitel: "Zum Teilen per Nachricht, 24 Stunden gültig") {
-                            if linkLaedt { ProgressView() } else { symbol("link") }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(linkLaedt)
                 }
+                .buttonStyle(.plain)
             }
         }
-    }
-
-    private func symbol(_ name: String) -> some View {
-        Image(systemName: name).font(.body).foregroundStyle(palette.text2).accessibilityHidden(true)
     }
 }
 
