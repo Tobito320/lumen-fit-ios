@@ -15,6 +15,7 @@ struct TrainingLaufView: View {
     @State private var cardioIndex = 0
     @State private var startzeit: GymSession?
     @Environment(\.bewegungAus) private var ruhig
+    @Environment(\.scenePhase) private var phase
 
     var body: some View {
         let _ = sitzung.pauseEndeZaehler // die Karte baut sich neu, wenn die Pause endet
@@ -63,6 +64,8 @@ struct TrainingLaufView: View {
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
         .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
         .task { sitzung.ladeWennNoetig() }
+        // In den Hintergrund: geänderte Zeilen ohne Haken sofort schreiben, nicht erst nach dem Verzug (iOS kann die App gleich einfrieren).
+        .onChange(of: phase) { _, neu in if neu == .background { sitzung.entwurfSenden() } }
     }
 
     // MARK: Kopf

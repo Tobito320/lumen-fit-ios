@@ -371,6 +371,46 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertEqual(neu.liste[0].saetze[0].ok, true)
     }
 
+    func testGeaenderteZeilenOhneHakenGehenAlsEntwurfRausUndUeberlebenEinenNeustart() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.gewicht(0, 1, richtung: 1)
+        a.sitzung.wiederholungen(0, 1, richtung: -1)
+        let kg = LetztesMal.kg(60, richtung: 1, schritt: LetztesMal.kgSchritt(geraet: UebungsKatalog.nachId["EIeI8Vf"]?.geraet))
+        XCTAssertNil(a.daten.training.laufende()?.laeufe.first?.stand, "noch nicht geschrieben: erst nach dem Verzug")
+        XCTAssertNotNil(a.sitzung.entwurfAufgabe)
+        a.sitzung.entwurfSenden()
+        XCTAssertNil(a.sitzung.entwurfAufgabe)
+        let neu = GymSitzung(umgebung: a.umgebung)
+        neu.ladeWennNoetig()
+        XCTAssertEqual(neu.liste[0].saetze[1].kg, kg)
+        XCTAssertEqual(neu.liste[0].saetze[1].wdh, 7)
+        XCTAssertNil(neu.liste[0].saetze[1].ok, "kein Haken, nur die Werte")
+    }
+
+    func testDerEntwurfGehtNachDemVerzugVonSelbstRaus() async throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.werteSetzen(1, 0, kg: 22.5, wdh: 9)
+        await a.sitzung.entwurfAufgabe?.value
+        let stand = a.daten.training.laufende()?.laeufe.first { $0.plan == "b" }?.stand
+        XCTAssertEqual(stand?.first?.kg, 22.5)
+        XCTAssertEqual(stand?.first?.wdh, 9)
+    }
+
+    func testBeendenSchreibtOffeneEntwuerfeMit() async throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.haken(0, 0)
+        a.sitzung.werteSetzen(0, 1, kg: 65, wdh: 6)   // ohne Haken, noch im Verzug
+        a.sitzung.beende()
+        await a.sitzung.endeAufgabe?.value
+        let fertig = try XCTUnwrap(a.daten.training.sessions.first)
+        XCTAssertEqual(fertig.laeufe.first?.stand?[1].kg, 65)
+        XCTAssertEqual(fertig.laeufe.first?.stand?[1].wdh, 6)
+        XCTAssertNil(a.sitzung.entwurfAufgabe)
+    }
+
     func testCardioAbschliessenTraegtLaufbandEin() throws {
         let a = try aufbau()
         var plan = GymTestAufbau.plan()

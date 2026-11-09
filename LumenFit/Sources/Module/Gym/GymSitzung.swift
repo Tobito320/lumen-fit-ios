@@ -7,7 +7,8 @@ import Observation
 /// ohne dass eine Oberfläche offen ist (SPEC 5.9, Vertrag 9). Dafür liest die Sitzung ihren Stand bei Bedarf aus dem `TrainingStore`
 /// (`ladeWennNoetig`) und hält sonst nichts fest, was der Store nicht auch weiß.
 ///
-/// Die Zeilen werden im Speicher geändert (Plus, Minus, Typ) und beim Haken gesendet, nicht bei jedem Tipp: ein Op je Haken.
+/// Die Zeilen werden im Speicher geändert (Plus, Minus, Typ) und beim Haken gesendet; ohne Haken gehen sie 1,5 s nach dem letzten Tipp
+/// als Entwurf raus (`entwurfSenden`), damit Absturz, Beenden durch iOS oder ein Update nichts verlieren: ein Op je Haken oder Ruhepause.
 /// Alle Zeiten kommen von `umgebung.uhr`. Kein Timer im Hintergrund: eine einzige schlafende Aufgabe bis zum Ende der Pause.
 @MainActor @Observable
 final class GymSitzung: TrainingSteuerung {
@@ -20,6 +21,11 @@ final class GymSitzung: TrainingSteuerung {
     /// Schon gemeldete Rekorde dieses Trainings ("plan|art|wert"): jeder Rekord erscheint einmal, auch bei Haken weg und wieder dran.
     @ObservationIgnored private var gemeldet: Set<String> = []
     @ObservationIgnored private var pauseGemeldet = false
+    /// Übungen (Plan-Ids) mit geänderten, noch nicht gesendeten Zeilen; `entwurfAufgabe` schreibt sie nach `entwurfVerzug`.
+    @ObservationIgnored private var entwurfOffen: Set<String> = []
+    @ObservationIgnored private(set) var entwurfAufgabe: Task<Void, Never>?
+    /// Wie lange nach dem letzten Tipp ein Entwurf auf die Platte geht (Sekunden).
+    static let entwurfVerzug: TimeInterval = 1.5
     @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
     @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
     @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
@@ -147,6 +153,9 @@ final class GymSitzung: TrainingSteuerung {
             return
         }
         guard s.id != sessionId else { return }
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        entwurfOffen = []
         sessionId = s.id
         liste = WorkoutLogik.uebungen(s, tag: training?.tag(id: s.tag), frueher: fruehere(s))
         gemeldet = []
@@ -157,6 +166,9 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     private func zuruecksetzen() {
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        entwurfOffen = []
         sessionId = nil
         liste = []
         pauseAufgabe?.cancel()
@@ -202,6 +214,7 @@ final class GymSitzung: TrainingSteuerung {
     func beende(notiz: String?, ende: Date? = nil) {
         ladeWennNoetig()
         guard let d = daten, let s = laufende, let sid = sessionId else { return }
+        entwurfSenden()
         if let letzte = pauseAbschliessen(umgebung.uhr()) { sende(letzte) }
         let rekorde = RekordLogik.anzahl(liste, frueher: fruehere(s))
         d.training.auschecken(sid, ende: ende, saetze: saetzeZahl, rekorde: rekorde, kcal: puls.kcal, puls: puls.schnitt, notiz: notiz)
@@ -354,7 +367,7 @@ final class GymSitzung: TrainingSteuerung {
         ladeWennNoetig()
         guard liste.indices.contains(u) else { return }
         liste[u].saetze = f(liste[u].saetze)
-        if senden { sende(u) }
+        if senden { sende(u) } else { entwurfMerken(u) }
     }
 
     func gewicht(_ u: Int, _ i: Int, richtung: Int) {
@@ -725,7 +738,29 @@ final class GymSitzung: TrainingSteuerung {
 
     private func sende(_ u: Int) {
         guard let t = training, let sid = sessionId, liste.indices.contains(u), !liste[u].planUebung.istCardio else { return }
+        entwurfOffen.remove(liste[u].id)
         t.saetzeSenden(sid, liste[u].planUebung, liste[u].saetze)
+    }
+
+    /// Merkt die Übung als geändert und plant das Schreiben: eine schlafende Aufgabe, jeder weitere Tipp startet sie neu.
+    private func entwurfMerken(_ u: Int) {
+        guard liste.indices.contains(u) else { return }
+        entwurfOffen.insert(liste[u].id)
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.entwurfVerzug))
+            guard !Task.isCancelled else { return }
+            self?.entwurfSenden()
+        }
+    }
+
+    /// Schreibt alle geänderten, noch nicht gesendeten Zeilen jetzt (Ende des Verzugs, Hintergrund, Beenden). Ohne Entwurf passiert nichts.
+    func entwurfSenden() {
+        entwurfAufgabe?.cancel()
+        entwurfAufgabe = nil
+        let offen = entwurfOffen
+        entwurfOffen = []
+        for id in offen { if let u = liste.firstIndex(where: { $0.id == id }) { sende(u) } }
     }
 
     /// Stellt die Live Activity auf den Stand des Trainings (nil beendet sie). Die Aufgaben laufen der Reihe nach.
