@@ -58,8 +58,14 @@ struct KontoStand: Codable, Equatable, Sendable {
     var importMeldungOffen = false
     /// Die Lovea-Person des Kontos laut Server (Text; nur gemerkt, solange `loveaErlaubt` gilt). Prüfung der Übernahme für Lumen Alarm: nur "nicht leer" und "gleich".
     var loveaPerson: String?
+    /// Essen zurück zu Lovea (09.11.2026): der Server schaltet den Export (`essenExportAn`), gesendet sind die ersten `essenExportAnzahl` Essen-Ops des Logs
+    /// (er hängt nur an), `essenExportZiele` ist der zuletzt gesendete Stand der Ziele, `essenExportErledigt` der erste volle Lauf (auch vom Server gemeldet).
+    var essenExportAn = false
+    var essenExportAnzahl = 0
+    var essenExportZiele: String?
+    var essenExportErledigt = false
 
-    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen, loveaPerson }
+    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen, loveaPerson, essenExportAn, essenExportAnzahl, essenExportZiele, essenExportErledigt }
 
     init() {}
 
@@ -70,6 +76,10 @@ struct KontoStand: Codable, Equatable, Sendable {
         loveaImportErledigt = (try? c.decodeIfPresent(Bool.self, forKey: .loveaImportErledigt)) ?? false
         importMeldungOffen = (try? c.decodeIfPresent(Bool.self, forKey: .importMeldungOffen)) ?? false
         loveaPerson = (try? c.decodeIfPresent(String.self, forKey: .loveaPerson)) ?? nil
+        essenExportAn = (try? c.decodeIfPresent(Bool.self, forKey: .essenExportAn)) ?? false
+        essenExportAnzahl = max(0, (try? c.decodeIfPresent(Int.self, forKey: .essenExportAnzahl)) ?? 0)
+        essenExportZiele = (try? c.decodeIfPresent(String.self, forKey: .essenExportZiele)) ?? nil
+        essenExportErledigt = (try? c.decodeIfPresent(Bool.self, forKey: .essenExportErledigt)) ?? false
     }
 }
 
@@ -98,6 +108,11 @@ final class KontoDienst {
     var loveaPerson: String? { stand.loveaErlaubt ? stand.loveaPerson : nil }
     /// Der Server gibt das Konto frei und der einmalige Import ist noch nicht gelaufen (nie in der Demo).
     var loveaImportOffen: Bool { stand.loveaErlaubt && !stand.loveaImportErledigt }
+    /// Der Server hat den Essen-Export angeschaltet und das Konto ist für Lovea freigegeben (nie in der Demo).
+    var essenExportAn: Bool { loveaErlaubt && stand.essenExportAn }
+    var essenExportAnzahl: Int { stand.essenExportAnzahl }
+    var essenExportZiele: String? { stand.essenExportZiele }
+    var essenExportErledigt: Bool { stand.essenExportErledigt }
     /// Zähler für den Nutzungs-Bündel (Bereiche und Funktionen, keine Inhalte); wird beim Abgleich einmal je Start gesendet.
     let nutzung: NutzungSpeicher
     /// Die Verbindungen zu anderen Personen (QR-Einladung, Lovea-Partner) so, wie der Server sie zuletzt gemeldet hat.
@@ -261,13 +276,15 @@ final class KontoDienst {
             if let neu = ServerConfig.zusammen(stand.config, antwort: c.daten) { uebernimm(neu) }
         }
         if let f = await sende(anfrage("/lovea/freigabe", kennung: kennung)), f.status == 200 {
-            struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool?; var person: String? }
+            struct Antwort: Decodable { var erlaubt: Bool?; var importErledigt: Bool?; var person: String?; var essenExportErledigt: Bool?; var essenExportAn: Bool? }
             // Nur ein vorhandenes `erlaubt` ändert den Stand: true gibt frei, false nimmt zurück, fehlend (`{}`) ändert nichts.
             if let a = try? JSONDecoder().decode(Antwort.self, from: f.daten), let erlaubt = a.erlaubt {
                 stand.loveaErlaubt = erlaubt
                 stand.loveaPerson = erlaubt ? a.person : nil
                 // Der Server vergisst das nicht (Neuinstallation); ein ausdrückliches false (Merker zurückgesetzt) gilt, solange keine eigene Meldung aussteht.
                 if let erledigt = a.importErledigt, !stand.importMeldungOffen { stand.loveaImportErledigt = erledigt }
+                if let an = a.essenExportAn { stand.essenExportAn = an }
+                if a.essenExportErledigt == true { stand.essenExportErledigt = true }
                 freigabeAktuell = true
                 sichere()
             }
@@ -281,6 +298,29 @@ final class KontoDienst {
     /// Eine Anfrage mit den Kopfzeilen des Kontos. nil bei Netzfehler.
     func sendeMitKonto(_ pfad: String, methode: String, body: Data? = nil, kennung: KontoKennung) async -> (status: Int, daten: Data)? {
         await sende(anfrage(pfad, methode: methode, post: body, kennung: kennung))
+    }
+
+    // MARK: - Essen-Export nach Lovea
+
+    /// Schickt Ops an Lovea (`POST /lovea/ops`, der Server setzt Key und Person). Rückgabe: Status; nil ohne Netz oder ohne angemeldetes Gerät.
+    func loveaOpsSenden(_ ops: [Op]) async -> Int? {
+        struct Paket: Encodable { var ops: [Op] }
+        guard let k = registrierteKennung(), let koerper = try? JSONEncoder().encode(Paket(ops: ops)) else { return nil }
+        return await sendeMitKonto("/lovea/ops", methode: "POST", body: koerper, kennung: k)?.status
+    }
+
+    /// Merkt, was gesendet ist: so viele Essen-Ops von vorn, und der Stand der Ziele.
+    func essenExportMerken(anzahl: Int, ziele: String?) {
+        stand.essenExportAnzahl = anzahl
+        stand.essenExportZiele = ziele
+        sichere()
+    }
+
+    /// Der erste volle Lauf ist durch: lokal merken und dem Server melden (Merker je Konto).
+    func essenExportAbgeschlossen() async {
+        stand.essenExportErledigt = true
+        sichere()
+        if let k = registrierteKennung() { _ = await sendeMitKonto("/lovea/export-erledigt", methode: "POST", kennung: k) }
     }
 
     // MARK: - Einmal-Import

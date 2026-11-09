@@ -128,6 +128,7 @@ struct AppRootView: View {
             (umgebung.trainingSteuerung as? GymSitzung)?.speicherNeuLaden()   // Studio, Geräte und Defekt-Notizen aus der Abgabe sind jetzt da
         }
         umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())   // der Partner-Stand vom Server liegt jetzt da
+        await LoveaEssenExport.starteWennOffen(konto: konto, daten: umgebung.daten, jetzt: umgebung.uhr())   // Essen zurück zu Lovea, nur mit Server-Schalter
         if let training = umgebung.daten?.training { await konto.postfachAbgleichen(training: training) }   // Pläne, die ein Agent abgelegt hat
     }
 }

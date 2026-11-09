@@ -136,8 +136,9 @@ async function loveaFreigabe(request, env) {
   if (antwort) return antwort;
   if (!freigegeben(konto)) return json({ erlaubt: false });
   await spur(env, konto.id, "lovea_freigabe_gesehen", new Date().toISOString());
+  // essenExportAn: globaler Schalter `essenExport` (lumenfit_config_setzen), erst an, wenn Lovea die Essen-Daten wieder zeigt (09.11.2026).
   return json({ erlaubt: true, person: konto.lovea_person, importErledigt: !!(await merker(env, konto.id, "lovea_import")),
-    essenExportErledigt: !!(await merker(env, konto.id, "essen_export")) });
+    essenExportErledigt: !!(await merker(env, konto.id, "essen_export")), essenExportAn: (await globaleConfig(env)).essenExport === true });
 }
 
 // Spur des Servers selbst (unabhängig davon, ob die App je einen Beleg schickt): wann die App Freigabe und Ops zuletzt geholt hat. Ein Fehler hier stört den Weg nicht.
