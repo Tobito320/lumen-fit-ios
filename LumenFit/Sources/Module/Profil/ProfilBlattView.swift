@@ -56,7 +56,7 @@ struct ProfilBlattView: View {
     }
 
     private var themaName: String? {
-        umgebung.daten.map { ProfilThemaWahl.wirksam($0.einstellungen.werte.thema, loveaErlaubt: umgebung.konto.loveaErlaubt).anzeigeName }
+        umgebung.daten.map { $0.einstellungen.werte.erscheinung.anzeigeName }
     }
 
     private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {

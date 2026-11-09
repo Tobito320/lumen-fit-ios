@@ -3,7 +3,7 @@ import XCTest
 @testable import LumenFit
 
 /// WCAG-2.2-Kontrast der Farb-Tokens, gleiche Paarungen und Grenzen wie `docs/research/kontrast.py`:
-/// Text und Akzent 4,5:1, Rand von Bedienelementen 3:1. Die Zahlen stehen als Hex in `LumenFarben.tokens`.
+/// Text und Akzent 4,5:1, Rand von Bedienelementen 3:1. Die Zahlen stehen als Hex in `LumenFarben.tokens` (eine Zeile hell, eine dunkel).
 final class FarbenKontrastTests: XCTestCase {
     private func linear(_ kanal: UInt32) -> Double {
         let c = Double(kanal) / 255
@@ -25,16 +25,18 @@ final class FarbenKontrastTests: XCTestCase {
         XCTAssertEqual(kontrast(0x808080, 0x808080), 1, accuracy: 0.0001)
     }
 
-    /// Die einzigen Paare, die unter 4,5:1 bleiben dürfen: Lovea malt sie selbst so (Systemwerte und `#FF3B5C`), das Theme gibt sie 1:1 wieder
-    /// (Auftrag 30.10.: "1:1 wie Lovea", durchfallende Lovea-Werte nicht von selbst ändern). Für sie gilt die Untergrenze 3:1; alle anderen Themes und Paare bleiben streng.
-    /// Zahlen: docs/theme-lovea-vergleich.md. Wer abdunkeln will, ändert die Tokens und leert diese Liste.
-    private static let loveaBekannt: Set<String> = [
-        "lovea hell: text2 auf grund", "lovea hell: text2 auf flaeche",
-        "lovea hell: akzent auf grund", "lovea hell: akzent auf flaeche", "lovea hell: aufAkzent auf akzent",
-        "lovea dunkel: aufAkzent auf akzent",
-    ]
+    /// Ein Theme (Auftrag 09.11.): hell und dunkel, für jede gespeicherte `ThemaID` dieselben Zeilen.
+    private static let hell: [UInt32] = [0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x0B5ED7, 0xFFFFFF]
+    private static let dunkel: [UInt32] = [0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0x5B9DFF, 0x0B0C0E]
 
-    private func grenze(_ schluessel: String) -> Double { Self.loveaBekannt.contains(schluessel) ? 3.0 : 4.5 }
+    private func zeile(_ t: LumenFarben.Tokens) -> [UInt32] { [t.grund, t.flaeche, t.text, t.text2, t.rand, t.haar, t.akzent, t.aufAkzent] }
+
+    func testAlleThemenHabenDieselbePalette() {
+        for thema in ThemaID.allCases {
+            XCTAssertEqual(zeile(LumenFarben.tokens(thema: thema, dunkel: false)), Self.hell, "\(thema) hell")
+            XCTAssertEqual(zeile(LumenFarben.tokens(thema: thema, dunkel: true)), Self.dunkel, "\(thema) dunkel")
+        }
+    }
 
     func testAlleThemesInBeidenModiHaltenDieGrenzen() {
         for thema in ThemaID.allCases {
@@ -43,11 +45,11 @@ final class FarbenKontrastTests: XCTestCase {
                 let name = "\(thema) \(dunkel ? "dunkel" : "hell")"
                 for (flaeche, bezeichnung) in [(t.grund, "grund"), (t.flaeche, "flaeche")] {
                     XCTAssertGreaterThanOrEqual(kontrast(t.text, flaeche), 4.5, "\(name): text auf \(bezeichnung)")
-                    XCTAssertGreaterThanOrEqual(kontrast(t.text2, flaeche), grenze("\(name): text2 auf \(bezeichnung)"), "\(name): text2 auf \(bezeichnung)")
-                    XCTAssertGreaterThanOrEqual(kontrast(t.akzent, flaeche), grenze("\(name): akzent auf \(bezeichnung)"), "\(name): akzent auf \(bezeichnung)")
+                    XCTAssertGreaterThanOrEqual(kontrast(t.text2, flaeche), 4.5, "\(name): text2 auf \(bezeichnung)")
+                    XCTAssertGreaterThanOrEqual(kontrast(t.akzent, flaeche), 4.5, "\(name): akzent auf \(bezeichnung)")
                     XCTAssertGreaterThanOrEqual(kontrast(t.rand, flaeche), 3.0, "\(name): rand auf \(bezeichnung)")
                 }
-                XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzent, t.akzent), grenze("\(name): aufAkzent auf akzent"), "\(name): aufAkzent auf akzent")
+                XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzent, t.akzent), 4.5, "\(name): aufAkzent auf akzent")
             }
         }
     }
