@@ -235,6 +235,57 @@ async function linkEinladung(k, env, h) {
   return h.json({ token, laeuftAb: new Date(laeuftAb).toISOString(), sekunden: LINK_MS / 1000 }, 201);
 }
 
+// Verwaltung, GET /admin/freunde (X-Admin-Key prüft index.js): je Konto nur Zahlen, dazu Verbindungen und Herausforderungen mit Konto-Ids.
+// Keine Namen, keine Werte, kein Übungsname, kein Reaktionstext; Namen liefert /admin/konten. ?konto=<id> zeigt nur dieses Konto.
+export async function freundeAdmin(url, env, h) {
+  const nur = url.searchParams.get("konto");
+  if (nur !== null && !h.ID_FORM.test(nur)) return h.nein(400, "konto: Konto-Id");
+  const alle = async (sql) => (await env.DB.prepare(sql).all()).results;
+  const konten = (await alle("SELECT id FROM konten ORDER BY gesehen DESC")).filter((k) => nur === null || k.id === nur);
+  if (!konten.length && nur !== null) return h.nein(404, "unbekannt");
+  const verbindungen = await alle("SELECT * FROM verbindungen ORDER BY erstellt");
+  const herausforderungen = await alle("SELECT id, ersteller, art, modus, ende, erstellt, abgebrochen FROM herausforderungen ORDER BY ende DESC");
+  const teilnehmer = await alle("SELECT herausforderung, konto, status, aktualisiert FROM herausforderung_teilnehmer");
+  const reaktionen = await alle("SELECT von, an, zeit FROM reaktionen");
+  const einladungen = (await env.DB.prepare("SELECT konto FROM einladungen WHERE benutzt = 0 AND laeuft_ab > ?").bind(Date.now()).all()).results;
+  const jetzt = new Date().toISOString();
+  const seit = vor(30 * TAG_MS);
+  const status = (x) => (x.abgebrochen ? "abgebrochen" : x.ende < jetzt ? "beendet" : "laeuft");
+  const laeuft = new Set(herausforderungen.filter((x) => status(x) === "laeuft").map((x) => x.id));
+  const offen = verbindungen.filter((v) => v.status === "anfrage" || v.status === "aktiv");
+  const zahl = (liste, f) => liste.filter(f).length;
+  const mit = (x) => teilnehmer.filter((t) => t.herausforderung === x.id);
+  return h.json({
+    stand: jetzt,
+    konten: konten.map(({ id }) => ({
+      konto: id,
+      freunde: zahl(offen, (v) => v.status === "aktiv" && (v.a === id || v.b === id)),
+      anfragen_raus: zahl(offen, (v) => v.status === "anfrage" && v.a === id),
+      anfragen_rein: zahl(offen, (v) => v.status === "anfrage" && v.b === id),
+      einladungen_offen: zahl(einladungen, (e) => e.konto === id),
+      herausforderungen_laufend: zahl(teilnehmer, (t) => t.konto === id && t.status === "dabei" && laeuft.has(t.herausforderung)),
+      herausforderungen_eingeladen: zahl(teilnehmer, (t) => t.konto === id && t.status === "eingeladen" && laeuft.has(t.herausforderung)),
+      reaktionen_raus_30t: zahl(reaktionen, (r) => r.von === id && r.zeit >= seit),
+      reaktionen_rein_30t: zahl(reaktionen, (r) => r.an === id && r.zeit >= seit),
+      // Letzte Änderung mit Beteiligung des Kontos: Verbindung, eigene Herausforderung, eigener Wert, gesendete Reaktion.
+      letzte_aktivitaet: [
+        ...verbindungen.filter((v) => v.a === id || v.b === id).map((v) => v.geaendert),
+        ...herausforderungen.filter((x) => x.ersteller === id).map((x) => x.erstellt),
+        ...teilnehmer.filter((t) => t.konto === id).map((t) => t.aktualisiert),
+        ...reaktionen.filter((r) => r.von === id).map((r) => r.zeit),
+      ].filter(Boolean).sort().at(-1) ?? null,
+    })),
+    verbindungen: offen.filter((v) => nur === null || v.a === nur || v.b === nur).map((v) => ({
+      id: v.id, a: v.a, b: v.b, status: v.status, auto: !!v.auto,
+      a_sieht: erlaubteBereiche(v, "a", h), b_sieht: erlaubteBereiche(v, "b", h), erstellt: v.erstellt, geaendert: v.geaendert,
+    })),
+    herausforderungen: herausforderungen.filter((x) => nur === null || x.ersteller === nur || mit(x).some((t) => t.konto === nur)).map((x) => ({
+      id: x.id, art: x.art, modus: x.modus, status: status(x), ende: x.ende, ersteller: x.ersteller,
+      teilnehmer: mit(x).map((t) => ({ konto: t.konto, status: t.status })),
+    })),
+  });
+}
+
 export async function freunde(request, url, env, h) {
   const { konto: k, antwort } = await h.kontoPruefen(request, env);
   if (antwort) return antwort;

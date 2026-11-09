@@ -6,7 +6,7 @@ import { handleEssen } from "./essen.js";
 import { postfachApp, postfachAdmin } from "./postfach.js";
 import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
-import { freunde, freundeSeite } from "./freunde.js";
+import { freunde, freundeSeite, freundeAdmin } from "./freunde.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
@@ -618,6 +618,7 @@ async function verwalten(request, url, env) {
     const { results } = await env.DB.prepare("SELECT zeit, daten FROM schlaf_belege WHERE konto = ? ORDER BY id DESC LIMIT ?").bind(id, limit).all();
     return json({ konto: id, belege: results.map((z) => ({ zeit: z.zeit, daten: lesen(z.daten) })) });
   }
+  if (url.pathname === "/admin/freunde" && m === "GET") return freundeAdmin(url, env, { json, nein, lesen, ID_FORM });
   if (url.pathname.startsWith("/admin/postfach")) {
     const r = await postfachAdmin(request, url, env, { json, nein, koerper, lesen, ID_FORM });
     if (r) return r;

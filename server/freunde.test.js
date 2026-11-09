@@ -470,3 +470,54 @@ test("Landeseite nimmt nur die Token-Form: nichts Gefährliches kommt je in die 
   }
   assert.equal((await ruf(env, null, "POST", `/f/${gut}`)).status, 404, "nur GET");
 });
+
+// Verwaltung: nur mit Admin-Schlüssel, je Konto Zahlen und Ids, nie Namen, Werte, Übungsnamen oder Reaktionstexte.
+const admin = async (env, pfad, schluessel = "admin-key-test") => {
+  const r = await handleFetch(new Request("https://x.test" + pfad, { headers: schluessel ? { "X-Admin-Key": schluessel } : {} }), env);
+  const text = await r.text();
+  return { status: r.status, text, json: r.status === 200 ? JSON.parse(text) : null };
+};
+
+test("Verwaltung /admin/freunde: nur mit Admin-Schlüssel, Zahlen und Ids je Konto, ?konto filtert", async () => {
+  const env = await welt("ich", "du", "fremd", "vier");
+  assert.equal((await admin(env, "/admin/freunde", null)).status, 401);
+  assert.equal((await admin(env, "/admin/freunde", "falsch")).status, 401);
+  assert.equal((await ruf(env, "ich", "GET", "/admin/freunde")).status, 401, "App-Schlüssel reicht nicht");
+  const vd = await verbinden(env, "ich", "du");
+  // fremd fragt bei ich an, ich nimmt nicht an: offene Anfrage.
+  const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: e.token })).status, 201);
+  assert.equal((await ruf(env, "ich", "POST", "/freunde/einladung")).status, 201);
+  const x = (await erstellen(env, "ich", duell([vd], { art: "uebung", uebung: "Geheimübung" }))).json.id;
+  assert.equal((await ruf(env, "ich", "PUT", "/freunde/werte", { werte: [{ id: x, wert: 7 }] })).status, 200);
+  assert.equal((await ruf(env, "du", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "einheit:2026-11-09", text: "Geheimtext" })).status, 201);
+
+  const r = await admin(env, "/admin/freunde");
+  assert.equal(r.status, 200);
+  for (const verboten of ["Beispiel", "Geheimübung", "Geheimtext", "geheimnis", '"wert":', '"uebung":', '"name":', '"text":', '"ziel":']) assert.ok(!r.text.includes(verboten), `${verboten} in der Antwort`);
+  const je = Object.fromEntries(r.json.konten.map((k) => [k.konto, k]));
+  assert.equal(r.json.konten.length, 4);
+  const { konto: _i, letzte_aktivitaet: li, ...ich } = je[KONTEN.ich.id];
+  assert.deepEqual(ich, { freunde: 1, anfragen_raus: 0, anfragen_rein: 1, einladungen_offen: 1, herausforderungen_laufend: 1, herausforderungen_eingeladen: 0, reaktionen_raus_30t: 0, reaktionen_rein_30t: 1 });
+  assert.match(li, /^\d{4}-\d\d-\d\dT/);
+  const { konto: _d, letzte_aktivitaet: ld, ...du } = je[KONTEN.du.id];
+  assert.deepEqual(du, { freunde: 1, anfragen_raus: 0, anfragen_rein: 0, einladungen_offen: 0, herausforderungen_laufend: 0, herausforderungen_eingeladen: 1, reaktionen_raus_30t: 1, reaktionen_rein_30t: 0 });
+  assert.ok(ld);
+  assert.equal(je[KONTEN.fremd.id].anfragen_raus, 1);
+  assert.deepEqual(je[KONTEN.vier.id], { konto: KONTEN.vier.id, freunde: 0, anfragen_raus: 0, anfragen_rein: 0, einladungen_offen: 0, herausforderungen_laufend: 0, herausforderungen_eingeladen: 0, reaktionen_raus_30t: 0, reaktionen_rein_30t: 0, letzte_aktivitaet: null });
+  assert.equal(r.json.verbindungen.length, 2);
+  const aktiv = r.json.verbindungen.find((v) => v.id === vd);
+  assert.deepEqual([aktiv.status, aktiv.auto, aktiv.a_sieht, aktiv.b_sieht], ["aktiv", false, ["schritte", "gym"], ["schritte", "gym"]]);
+  assert.deepEqual(r.json.verbindungen.find((v) => v.id !== vd).status, "anfrage");
+  assert.equal(r.json.herausforderungen.length, 1);
+  const h = r.json.herausforderungen[0];
+  assert.deepEqual([h.id, h.art, h.modus, h.status, h.ersteller], [x, "uebung", "gegen", "laeuft", KONTEN.ich.id]);
+  assert.deepEqual(h.teilnehmer.map((t) => t.status).sort(), ["dabei", "eingeladen"]);
+
+  const nurDu = (await admin(env, `/admin/freunde?konto=${KONTEN.du.id}`)).json;
+  assert.deepEqual([nurDu.konten.length, nurDu.konten[0].konto, nurDu.verbindungen.length, nurDu.herausforderungen.length], [1, KONTEN.du.id, 1, 1]);
+  const nurVier = (await admin(env, `/admin/freunde?konto=${KONTEN.vier.id}`)).json;
+  assert.deepEqual([nurVier.konten.length, nurVier.verbindungen.length, nurVier.herausforderungen.length], [1, 0, 0]);
+  assert.equal((await admin(env, `/admin/freunde?konto=${"e".repeat(32)}`)).status, 404);
+  assert.equal((await admin(env, "/admin/freunde?konto=x!")).status, 400);
+});
