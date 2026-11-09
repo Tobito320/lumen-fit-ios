@@ -123,9 +123,7 @@ struct AppRootView: View {
                 einstellungen.aendere { $0.loveaVerbunden = false }
             }
         }
-        if await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http) {
-            (umgebung.trainingSteuerung as? GymSitzung)?.speicherNeuLaden()   // Studio, Geräte und Defekt-Notizen aus der Abgabe sind jetzt da
-        }
+        await umgebung.loveaImport.starteWennOffen(konto: konto, daten: umgebung.daten, lader: umgebung.http)
         umgebung.daten?.verbindung.aktualisiere(jetzt: umgebung.uhr())   // der Partner-Stand vom Server liegt jetzt da
         await LoveaEssenExport.starteWennOffen(konto: konto, daten: umgebung.daten, jetzt: umgebung.uhr())   // Essen zurück zu Lovea, nur mit Server-Schalter
         if let training = umgebung.daten?.training { await konto.postfachAbgleichen(training: training) }   // Pläne, die ein Agent abgelegt hat

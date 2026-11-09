@@ -1,6 +1,5 @@
 // Quelle: Lovea Health/Defekt/DefektNotizen.swift (Datei im Profilordner statt UserDefaults)
 import Foundation
-import Observation
 
 /// "Gerät kaputt oder wackelig": eine Notiz je Studio und Übung. Tage als `yyyy-MM-dd`.
 struct DefektNotiz: Codable, Equatable, Sendable {
@@ -62,43 +61,3 @@ enum DefektLogik {
     }
 }
 
-/// Die Defekt-Notizen des Profils. Liegen im Profilordner (`defekte.json`), werden nicht synchronisiert: die Notiz hängt am Studio.
-@MainActor @Observable
-final class DefektStore {
-    @ObservationIgnored private let datei: JSONDatei<[String: DefektNotiz]>?
-    private var tabelle: [String: DefektNotiz] = [:]
-
-    init(ordner: URL? = nil) {
-        datei = ordner.map { JSONDatei<[String: DefektNotiz]>($0.appendingPathComponent("defekte.json")) }
-        if let alt = datei?.lade() { tabelle = alt }
-    }
-
-    /// Nur die offene Notiz; erledigte zählen nicht.
-    func offen(studio: String, uebung: String) -> DefektNotiz? {
-        tabelle[DefektLogik.schluessel(studio: studio, uebung: uebung)].flatMap { $0.istOffen ? $0 : nil }
-    }
-
-    /// Meldet neu; eine frühere Notiz (auch eine erledigte) wird überschrieben. Leerer Text = ohne Text.
-    func melden(text: String, studio: String, uebung: String, am tag: String) {
-        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        sichern(DefektNotiz(text: t.isEmpty ? nil : t, gemeldetAm: tag), studio, uebung)
-    }
-
-    func erledigen(studio: String, uebung: String, am tag: String) {
-        guard var n = tabelle[DefektLogik.schluessel(studio: studio, uebung: uebung)] else { return }
-        n.erledigtAm = tag
-        sichern(n, studio, uebung)
-    }
-
-    /// "Noch defekt?" mit Ja: das Datum rückt auf heute.
-    func bestaetigen(studio: String, uebung: String, am tag: String) {
-        guard var n = tabelle[DefektLogik.schluessel(studio: studio, uebung: uebung)], n.istOffen else { return }
-        n.gemeldetAm = tag
-        sichern(n, studio, uebung)
-    }
-
-    private func sichern(_ n: DefektNotiz, _ studio: String, _ uebung: String) {
-        tabelle[DefektLogik.schluessel(studio: studio, uebung: uebung)] = n
-        datei?.speichere(tabelle)
-    }
-}

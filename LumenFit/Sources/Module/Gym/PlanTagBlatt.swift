@@ -105,7 +105,6 @@ struct PlanTagBlatt: View {
             }
             Section("Übungen · \(ZeitSchaetzung.umfang(tag))") {
                 if tag.uebungen.isEmpty { Text("Noch keine Übungen.").foregroundStyle(palette.text2) }
-                GymTippZeile(art: .planZeile, kontext: GymTippKontext(planUebungen: tag.uebungen.count))
                 ForEach(tag.uebungen) { u in
                     UebungsPlanZeile(tag: tag, uebungId: u.id, sichern: sichern)
                         .swipeActions(edge: .leading) {

@@ -78,7 +78,6 @@ struct GymStartView: View {
         }
         .buttonStyle(.bordered)
         .accessibilityHint("Cardio eintragen")
-        .gymTipp(.cardioSchnell, GymTippKontext())
     }
 
     private var einstellungenKnopf: some View {

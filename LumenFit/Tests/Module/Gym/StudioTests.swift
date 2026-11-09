@@ -114,23 +114,6 @@ final class StudioTests: XCTestCase {
         XCTAssertEqual(StudioProfil(name: "  Testhalle ").anzeigeName, "Testhalle")
     }
 
-    func testStoreBehaeltDieWahlNachNeustart() throws {
-        let ordner = try tempOrdner()
-        let a = StudioStore(ordner: ordner)
-        XCTAssertEqual(a.profil, .standard)
-        a.aendere { $0.name = "Teststudio"; $0.slotStart = 7 * 60; $0.oeffnung = rund }
-        let b = StudioStore(ordner: ordner)
-        XCTAssertEqual(b.profil.name, "Teststudio")
-        XCTAssertEqual(b.profil.slotStart, 7 * 60)
-        XCTAssertEqual(b.profil.oeffnung, rund)
-    }
-
-    func testStoreOhneOrdnerBleibtImSpeicher() {
-        let s = StudioStore()
-        s.profil = StudioProfil(name: "Nur im Speicher")
-        XCTAssertEqual(s.profil.name, "Nur im Speicher")
-    }
-
     // MARK: Vorgaben aus PrivateDaten.json
 
     private let privat = Data("""

@@ -30,9 +30,6 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
     /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
     nonisolated static var pausenTimerAn: Bool { UserDefaults.standard.bool(forKey: GymAnzeige.pausenTimerSchluessel) }
-    @ObservationIgnored private var studios: [ProfilID: StudioStore] = [:]
-    @ObservationIgnored private var geraeteStores: [ProfilID: GeraeteStore] = [:]
-    @ObservationIgnored private var defektStores: [ProfilID: DefektStore] = [:]
     /// Je Raum, nicht je Profil: nach dem Wechsel A, B, A gibt es einen neuen Raum, ein Speicher am alten schriebe ins Leere.
     @ObservationIgnored private var eigeneStores: [ObjectIdentifier: GymEigeneStore] = [:]
     @ObservationIgnored private var cardioPulse: [ProfilID: GymCardioPuls] = [:]
@@ -82,31 +79,6 @@ final class GymSitzung: TrainingSteuerung {
     var tag: TrainingsTag? { training?.tag(id: laufende?.tag) }
     var einstellungen: Einstellungen { daten?.einstellungen.werte ?? Einstellungen() }
 
-    /// Nach dem Lovea-Import: die Dateien (`studio.json`, `geraete.json`, `defekte.json`) können sich geändert haben, die Speicher lesen sie neu.
-    func speicherNeuLaden() {
-        studios = [:]
-        geraeteStores = [:]
-        defektStores = [:]
-    }
-
-    /// Das Studio-Profil des aktiven Profils; ein Objekt je Profil.
-    var studio: StudioStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = studios[d.profil] { return vorhanden }
-        let neu = StudioStore(ordner: d.ordner)
-        studios[d.profil] = neu
-        return neu
-    }
-
-    /// Die Defekt-Notizen des aktiven Profils (`defekte.json`); ein Objekt je Profil.
-    var defekte: DefektStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = defektStores[d.profil] { return vorhanden }
-        let neu = DefektStore(ordner: d.ordner)
-        defektStores[d.profil] = neu
-        return neu
-    }
-
     /// Die eigenen Übungen des aktiven Profils (Op `fit.gym.uebung`); ein Objekt je Profil.
     var eigene: GymEigeneStore? {
         guard let d = daten else { return nil }
@@ -119,15 +91,6 @@ final class GymSitzung: TrainingSteuerung {
 
     /// Katalog- oder eigene Übung zu einem Planeintrag (`PlanUebung.katalog` kennt die eigenen nicht).
     func katalog(_ p: PlanUebung) -> Uebung? { p.katalog ?? eigene?.finde(p.uebung) }
-
-    /// Die Geräte-Einstellungen des aktiven Profils (`geraete.json`); ein Objekt je Profil.
-    var geraete: GeraeteStore? {
-        guard let d = daten else { return nil }
-        if let vorhanden = geraeteStores[d.profil] { return vorhanden }
-        let neu = GeraeteStore(ordner: d.ordner)
-        geraeteStores[d.profil] = neu
-        return neu
-    }
 
     var cardioPuls: GymCardioPuls? {
         guard let d = daten else { return nil }
