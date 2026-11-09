@@ -175,6 +175,7 @@ struct GymEinstellungenBlatt: View {
                 } footer: {
                     Text("Aus: der Haken setzt nur den Satz. An: nach jedem Satz läuft die Pause der Übung (Standard 2:00), am Ende Haptik und Band.")
                 }
+                SatzVorhersageAbschnitt()
                 Section {
                     Toggle("Training nach Health schreiben", isOn: Binding(
                         get: { sitzung.einstellungen.healthSchreiben },
@@ -188,7 +189,6 @@ struct GymEinstellungenBlatt: View {
                 } footer: {
                     Text("Satz-Zeit: nach der Pause läuft die Uhr des Satzes; beim Haken wird die Dauer gemerkt. RPE: nach dem Haken erscheint die Anstrengung an der Zeile.")
                 }
-                SatzVorhersageAbschnitt()
                 Section {
                     Toggle("Puls und Energie messen", isOn: $pulsAn)
                 } footer: {
