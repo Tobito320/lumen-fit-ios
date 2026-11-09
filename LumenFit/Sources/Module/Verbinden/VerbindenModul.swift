@@ -137,7 +137,8 @@ final class VerbindenDienste {
         let werte = daten.einstellungen.werte
         daten.verbindung.aktualisiere(jetzt: jetzt)
         spiegleFreigaben(daten)
-        if werte.loveaVerbunden {
+        // Mitteilungen ("im Gym", Rekord) kommen vom Trainingspartner, auch ohne Lovea.
+        if werte.loveaVerbunden || daten.verbindung.verbunden {
             await regelnFuer(daten).verarbeite(daten.verbindung.partner, einstellungen: werte, jetzt: jetzt)
         }
         bruecke.schreibe()   // Datei für Lovea (mit Schalter) und Stand für den Server (nur mit aktiver Verbindung)

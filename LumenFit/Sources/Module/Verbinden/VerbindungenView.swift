@@ -92,9 +92,10 @@ private struct VerbindungenInhalt: View {
     }
 
     private var hinzufuegenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten und enthält keine Gesundheitsdaten.") {
+        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten, der Link einmal für 24 Stunden. Beide enthalten keine Gesundheitsdaten.") {
             Button { codeOffen = true } label: { Label("Mein Code zeigen", systemImage: "qrcode") }.frame(minHeight: Abstand.tippflaeche)
             Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }.frame(minHeight: Abstand.tippflaeche)
+            CrewLinkTeilen()
         }
     }
 

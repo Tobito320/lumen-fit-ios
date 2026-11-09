@@ -6,6 +6,7 @@ import { handleEssen } from "./essen.js";
 import { postfachApp, postfachAdmin } from "./postfach.js";
 import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
+import { freunde, freundeSeite, freundeAdmin } from "./freunde.js";
 import { NAMEN } from "./nutzung-namen.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
@@ -618,6 +619,7 @@ async function verwalten(request, url, env) {
     const { results } = await env.DB.prepare("SELECT zeit, daten FROM schlaf_belege WHERE konto = ? ORDER BY id DESC LIMIT ?").bind(id, limit).all();
     return json({ konto: id, belege: results.map((z) => ({ zeit: z.zeit, daten: lesen(z.daten) })) });
   }
+  if (url.pathname === "/admin/freunde" && m === "GET") return freundeAdmin(url, env, { json, nein, lesen, ID_FORM });
   if (url.pathname.startsWith("/admin/postfach")) {
     const r = await postfachAdmin(request, url, env, { json, nein, koerper, lesen, ID_FORM });
     if (r) return r;
@@ -688,6 +690,8 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   if (url.pathname === "/verbindungen" || url.pathname.startsWith("/verbindungen/")) {
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
+  if (url.pathname === "/freunde" || url.pathname.startsWith("/freunde/")) return freunde(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256 });
+  if (url.pathname.startsWith("/f/") && m === "GET") return freundeSeite(url, env);
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });

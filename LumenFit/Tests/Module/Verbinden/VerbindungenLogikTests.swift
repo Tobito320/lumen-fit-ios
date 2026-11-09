@@ -128,6 +128,35 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertNil(d.heute.kcal, "Essen sieht diese Verbindung nicht")
     }
 
+    // MARK: Trainingspartner (frei gewählt, unabhängig von Lovea)
+
+    func testTrainingspartnerGewaehltSonstLoveaPersonKeinerHeisstKeiner() {
+        let lovea = VerbindungEintrag(id: "l", name: "L", lovea: true)
+        let freund = VerbindungEintrag(id: "f", name: "F")
+        let pausiert = VerbindungEintrag(id: "p", name: "P", ich: VerbindungEinstellung(pause: true))
+        let liste = [lovea, freund, pausiert]
+        XCTAssertEqual(VerbindungenLogik.partner(liste, gewaehlt: "f")?.id, "f")
+        XCTAssertEqual(VerbindungenLogik.partner(liste, gewaehlt: nil)?.id, "l", "ohne Wahl wie bisher die Lovea-Person")
+        XCTAssertEqual(VerbindungenLogik.partner(liste, gewaehlt: "p")?.id, "l", "pausiert: zurück zur Vorgabe")
+        XCTAssertEqual(VerbindungenLogik.partner(liste, gewaehlt: "weg")?.id, "l")
+        XCTAssertNil(VerbindungenLogik.partner(liste, gewaehlt: VerbindungenLogik.keinPartner))
+        XCTAssertNil(VerbindungenLogik.partner([freund], gewaehlt: nil), "ohne Wahl und ohne Lovea-Person keiner")
+    }
+
+    func testGewaehlterFreundKommtVomServerDieDateiVonLoveaNurFuerDieLoveaPerson() {
+        let jetzt = Date(timeIntervalSince1970: 1_800_000_000)
+        let datei = ZusammenfassungDatei(version: 1, geschrieben: jetzt, profilName: "Datei", freigaben: [.schritte], heute: TagesZusammenfassung(tag: "2026-10-29", schritte: 1), ereignisse: [])
+        let server = ZusammenfassungDatei(version: 1, geschrieben: jetzt, profilName: "Freund", freigaben: [.gym], heute: TagesZusammenfassung(tag: "2026-10-29", gymTageWoche: 2), ereignisse: [])
+        let liste = VerbindungenAntwort(verbindungen: [VerbindungEintrag(id: "l", name: "L", lovea: true, siehst: ["schritte"]), VerbindungEintrag(id: "f", name: "F", siehst: ["gym"])])
+        XCTAssertEqual(ServerPartnerBruecke.waehle(liste: liste, server: server, innen: .verbunden(datei), jetzt: jetzt, gewaehlt: "f"), .verbunden(server))
+        XCTAssertEqual(ServerPartnerBruecke.waehle(liste: liste, server: nil, innen: .verbunden(datei), jetzt: jetzt, gewaehlt: "f"), .nichtVerbunden,
+                       "die Datei von Lovea ist kein Ersatz für einen anderen Freund")
+        guard case .verbunden = ServerPartnerBruecke.waehle(liste: liste, server: nil, innen: .verbunden(datei), jetzt: jetzt, gewaehlt: nil) else {
+            return XCTFail("Lovea-Person mit Datei erwartet")
+        }
+        XCTAssertEqual(ServerPartnerBruecke.waehle(liste: liste, server: server, innen: .verbunden(datei), jetzt: jetzt, gewaehlt: VerbindungenLogik.keinPartner), .nichtVerbunden)
+    }
+
     // MARK: Form der Server-Antworten (Wortlaut wie `server/verbindungen.js` sie schickt)
 
     func testAntwortDesServersLaesstSichLesen() throws {

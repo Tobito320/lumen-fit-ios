@@ -79,16 +79,33 @@ extension KontoDienst {
     private func uebernimm(_ neu: VerbindungenAntwort) {
         let alt = verbindungen.antwort
         verbindungen.setze(neu)
-        // Die Lovea-Person liegt im bisherigen Partner-Platz. Ohne aktive Lovea-Verbindung gibt es dort nichts (die Datei von Lovea ist dann kein Ersatz).
+        partnerDateiSchreiben()
+        if alt?.teilen != neu.teilen { hochladenFreigeben() }
+        if alt != neu { beiVerbindungenGeaendert?() }
+    }
+
+    /// Der Trainingspartner (gewählter Freund, ohne Wahl die Lovea-Person) liegt im bisherigen Partner-Platz. Ohne ihn gibt es dort nichts (die Datei von
+    /// Lovea ist dann kein Ersatz).
+    private func partnerDateiSchreiben() {
         let datei = ordner.appendingPathComponent(Self.partnerDatei)
-        if let d = verbindungen.lovea?.daten, let daten = try? LoveaVertrag.encoder().encode(d) {
+        if let d = VerbindungenLogik.partner(verbindungen.personen, gewaehlt: VerbindungenLogik.gewaehlterPartner)?.daten,
+           let daten = try? LoveaVertrag.encoder().encode(d) {
             try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
             try? daten.write(to: datei, options: .atomic)
         } else {
             try? FileManager.default.removeItem(at: datei)
         }
-        if alt?.teilen != neu.teilen { hochladenFreigeben() }
-        if alt != neu { beiVerbindungenGeaendert?() }
+    }
+
+    /// Die Verbindungs-Id des Trainingspartners, wie die Ansichten ihn zeigen; nil ohne.
+    var partnerId: String? { VerbindungenLogik.partner(verbindungen.personen, gewaehlt: VerbindungenLogik.gewaehlterPartner)?.id }
+
+    /// Ein Freund wird Trainingspartner (`VerbindungenLogik.keinPartner`: keiner, nil: wieder die Lovea-Person). Wirkt sofort und ohne Netz; jede Seite
+    /// wählt für sich.
+    func partnerWaehlen(_ id: String?) {
+        UserDefaults.standard.set(id, forKey: VerbindungenLogik.partnerSchluessel)
+        partnerDateiSchreiben()
+        beiVerbindungenGeaendert?()
     }
 
     /// Nach einer Änderung: neu holen und weitergeben. Gibt `false` zurück, wenn der Server nicht antwortet.
@@ -153,9 +170,8 @@ extension KontoDienst {
     /// Entfernen: auf dem Server (sofort für beide Seiten) und lokal samt den gespeicherten Daten dieser Person.
     func verbindungEntfernen(_ id: String) async -> Bool {
         guard await aktion("/verbindungen/\(id)", "DELETE", neuLaden: false) else { return false }
-        let warLovea = verbindungen.lovea?.id == id
         verbindungen.entferneLokal(id)
-        if warLovea { try? FileManager.default.removeItem(at: ordner.appendingPathComponent(Self.partnerDatei)) }
+        partnerDateiSchreiben()
         beiVerbindungenGeaendert?()
         await verbindungenNeuLaden()
         return true

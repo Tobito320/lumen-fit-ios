@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Die Partner-Karte (Idee 82): Heute, Schlaf, Essen und Gym betten sie ein. Sie zeigt nur, was die verbundene Person freigibt und die Datei enthält.
+/// Die Karte des Trainingspartners (Idee 82, ab 09.11.2026 ein frei gewählter Freund statt fest der Lovea-Person): Heute, Schlaf, Essen und Gym betten sie
+/// ein, im Training mit "Eure Woche". Sie zeigt nur, was die Person freigibt und die Datei enthält.
 /// Nicht verbunden, veraltet, falsche Version, nichts freigegeben: gar nichts, nicht einmal einen Platzhalter oder eine Fehlermeldung.
 struct PartnerKarte: View {
     let bereich: PartnerBereich
@@ -25,17 +26,11 @@ struct PartnerKarte: View {
     private func karte(_ datei: ZusammenfassungDatei, _ zeilen: [PartnerAnzeige.Zeile], _ einstiege: [PartnerAnsichtLogik.Einstieg]) -> some View {
         let name = datei.profilName
         return ListenKarte {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Partner")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(palette.text2)
-                Text(name)
-                    .font(.headline)
-                    .foregroundStyle(palette.text)
+            kopf(name)
+            if bereich == .gym {
+                Haarlinie()
+                CrewWocheZusammen(name: name, datei: datei).padding(Abstand.l)
             }
-            .padding(Abstand.l)
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(.isHeader)
             ForEach(zeilen) { zeile in
                 Haarlinie()
                 if zeile.titel == "Schritte", !PartnerVergleich.partnerSchritte(datei).isEmpty {
@@ -59,6 +54,41 @@ struct PartnerKarte: View {
         .karteScrollt()
         .sheet(isPresented: $vergleichOffen) { SchritteVergleichSeite(partner: datei) }
         .haptik(.auswahl, bei: vergleichOffen)
+    }
+
+    /// "Trainingspartner" und der Name; ein Tipp öffnet seine Seite in der Crew (wenn die Verbindung bekannt ist).
+    @ViewBuilder
+    private func kopf(_ name: String) -> some View {
+        let inhalt = HStack {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Trainingspartner")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(palette.text2)
+                Text(name)
+                    .font(.headline)
+                    .foregroundStyle(palette.text)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(Abstand.l)
+        .contentShape(.rect)
+        if let id = umgebung.konto.partnerId {
+            NavigationLink { CrewFreundSeite(id: id) } label: {
+                HStack {
+                    inhalt
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).padding(.trailing, Abstand.l)
+                        .accessibilityHidden(true)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityHint("Öffnet die Seite der Person")
+        } else {
+            inhalt
+                .accessibilityElement(children: .combine)
+                .accessibilityAddTraits(.isHeader)
+        }
     }
 
     private func zeileInhalt(_ zeile: PartnerAnzeige.Zeile) -> some View {

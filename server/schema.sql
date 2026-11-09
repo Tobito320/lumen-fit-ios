@@ -104,3 +104,34 @@ CREATE TABLE IF NOT EXISTS agent_postfach (
   abgeholt TEXT
 );
 CREATE INDEX IF NOT EXISTS agent_postfach_konto ON agent_postfach (konto, abgeholt, id);
+-- Crew (freunde.js): Herausforderungen zwischen verbundenen Konten. Jede App meldet nur ihre eigene Zahl je Herausforderung, nie Rohdaten.
+CREATE TABLE IF NOT EXISTS herausforderungen (
+  id TEXT PRIMARY KEY, ersteller TEXT NOT NULL,
+  art TEXT NOT NULL,            -- tage | saetze | volumen | rekorde | uebung
+  modus TEXT NOT NULL,          -- gegen | gemeinsam
+  ziel INTEGER,                 -- nur gemeinsam: Summe aller
+  uebung TEXT,                  -- nur art uebung: Übungsname, bis 40 Zeichen
+  start TEXT NOT NULL, ende TEXT NOT NULL, erstellt TEXT NOT NULL,
+  abgebrochen INTEGER NOT NULL DEFAULT 0
+);
+-- Crew: wer in einer Herausforderung ist, mit dem zuletzt gemeldeten Wert.
+CREATE TABLE IF NOT EXISTS herausforderung_teilnehmer (
+  herausforderung TEXT NOT NULL, konto TEXT NOT NULL,
+  status TEXT NOT NULL,         -- eingeladen | dabei | abgelehnt | ausgetreten
+  wert INTEGER NOT NULL DEFAULT 0, aktualisiert TEXT,
+  PRIMARY KEY (herausforderung, konto)
+);
+-- Crew: Herausforderungen eines Kontos schnell finden.
+CREATE INDEX IF NOT EXISTS herausforderung_teilnehmer_konto ON herausforderung_teilnehmer (konto);
+-- Feste Reaktionen zwischen aktiven Verbindungen, nach 30 Tagen gelöscht.
+CREATE TABLE IF NOT EXISTS reaktionen (
+  id TEXT PRIMARY KEY, von TEXT NOT NULL, an TEXT NOT NULL,
+  art TEXT NOT NULL,            -- respekt | stark | anfeuern | stups
+  ziel TEXT NOT NULL,           -- worauf, bis 80 Zeichen: rekord:<tag>:<übung> | einheit:<tag> | live:<tag> | stups:<tag>
+  text TEXT NOT NULL DEFAULT '',-- Anzeige vom Sender, bis 80 Zeichen, z. B. "Kniebeuge 120 kg × 5"
+  zeit TEXT NOT NULL
+);
+-- Crew: dieselbe Reaktion (Art und Ziel) zwischen zwei Konten gibt es nur einmal.
+CREATE UNIQUE INDEX IF NOT EXISTS reaktionen_eindeutig ON reaktionen (von, an, art, ziel);
+-- Crew: Reaktionen an ein Konto nach Zeit.
+CREATE INDEX IF NOT EXISTS reaktionen_an ON reaktionen (an, zeit);

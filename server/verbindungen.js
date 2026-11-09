@@ -24,6 +24,7 @@ function tokenNeu() {
   const b = crypto.getRandomValues(new Uint8Array(32)); // 256 Bit
   return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
+export { tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS }; // auch für die Link-Einladung in freunde.js
 
 async function drosseln(env, schluessel) {
   const fenster = Math.floor(Date.now() / 60000);
@@ -157,7 +158,8 @@ const UNGUELTIG = (h) => h.nein(404, "Einladung ungültig oder abgelaufen");
 
 async function einladungAnlegen(k, env, h) {
   if (!(await drosseln(env, `einladung:${k.id}`))) return h.nein(429, "zu schnell");
-  await env.DB.prepare("DELETE FROM einladungen WHERE konto = ? OR laeuft_ab < ?").bind(k.id, Date.now() - 3600_000).run();
+  // Nur die eigenen kurzen QR-Codes und Abgelaufenes: eine 24-h-Link-Einladung (freunde.js) bleibt.
+  await env.DB.prepare("DELETE FROM einladungen WHERE (konto = ? AND laeuft_ab <= ?) OR laeuft_ab < ?").bind(k.id, Date.now() + EINLADUNG_MS, Date.now() - 3600_000).run();
   const token = tokenNeu();
   const laeuftAb = Date.now() + EINLADUNG_MS;
   await env.DB.prepare("INSERT INTO einladungen (hash, konto, laeuft_ab, benutzt) VALUES (?, ?, ?, 0)").bind(await h.sha256(token), k.id, laeuftAb).run();
