@@ -24,7 +24,7 @@ final class LoveaEssenExportTests: XCTestCase {
 
     private func datenMitEssen() throws -> DatenSatz {
         let satz = DatenSatz(profil: .testA, ordner: try tempOrdner(), ereignisse: EreignisKanal(), uhr: { Date() })
-        satz.raum.senden("essen.setzen", ["id": "e1", "kcal": 500])
+        satz.raum.senden("essen.setzen", ["id": JSONValue.string("e1"), "kcal": .number(500)])
         satz.raum.senden("gym.checkin", ["session": "s1"])   // kein Essen: geht nicht mit
         satz.raum.senden("fasten.plan", ["plan": "16:8"])
         return satz
@@ -60,10 +60,12 @@ final class LoveaEssenExportTests: XCTestCase {
         XCTAssertEqual(lader.anfragen.filter { $0.url?.path == "/lovea/export-erledigt" }.count, 1)
 
         // Zweiter Lauf ohne Neues: nichts geht raus. Eine neue Op: nur sie.
-        XCTAssertEqual(await LoveaEssenExport.starteWennOffen(konto: konto, daten: daten, jetzt: Date()), 0)
+        let gesendet0 = await LoveaEssenExport.starteWennOffen(konto: konto, daten: daten, jetzt: Date())
+        XCTAssertEqual(gesendet0, 0)
         XCTAssertEqual(opsAnfragen(lader).count, 2)
-        daten.raum.senden("essen.setzen", ["id": "e2", "kcal": 300])
-        XCTAssertEqual(await LoveaEssenExport.starteWennOffen(konto: konto, daten: daten, jetzt: Date()), 1)
+        daten.raum.senden("essen.setzen", ["id": JSONValue.string("e2"), "kcal": .number(300)])
+        let gesendet1 = await LoveaEssenExport.starteWennOffen(konto: konto, daten: daten, jetzt: Date())
+        XCTAssertEqual(gesendet1, 1)
         let letzte = try XCTUnwrap(opsAnfragen(lader).last?["ops"] as? [[String: Any]])
         XCTAssertEqual(letzte.count, 1)
         XCTAssertEqual(konto.essenExportAnzahl, 3)
