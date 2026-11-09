@@ -27,7 +27,7 @@ Lumen Fit soll das tun, was Hevy gut macht (Training loggen, Pläne, Verlauf, Fr
 - Datenkern bleibt: Op-Log je Profil, `gym.*`-Ops, `TrainingsPlan`; gespeicherte Typen nur mit optionalen Feldern erweitern; `AlteDateienLadenTests`.
 - Server-Verträge bleiben (`/config`, `/partner`, `/verbindungen`, `/postfach`, `/coach/*`, `/lovea/*`); Essen-Wege verschwinden erst mit dem Essen.
 - Freunde, Feed, Trainingspartner, Bestenliste baut die Sitzung fitfreunde (Zweig `fit-crew`); diese Spec nennt nur, wo sie erscheinen.
-- Band und AirPods bleiben nur für Ahmed und Annika (Server-Schalter), Band-Nächte gehen per Brücke an Lumen Alarm.
+- Band, Schritte, Schlaf und alles an Health wandern zu Lumen Alarm (nur für den Besitzer). Lumen Fit fragt Schritte und Schlaf nur von dort ab und misst nichts über AirPods oder Gurt (Entscheidung 09.11.2026 23:47 im Entwurf-Kommentar). Bis Lumen Alarm das kann, bleibt das Band-Modul unverändert in Lumen Fit; Band-Nächte gehen bis dahin per Brücke an Lumen Alarm.
 
 ## Entschieden (Ahmed, 09.11.2026)
 - Ein Theme hell/dunkel nach System, kein wählbares Theme.
@@ -44,7 +44,7 @@ Lumen Fit soll das tun, was Hevy gut macht (Training loggen, Pläne, Verlauf, Fr
 - Startseite: Karte "Heute" (geplanter Tag, Training starten), Wochenleiste du und Partner, letzte Einheit, Gewohnheiten klein (Wasser, Creatin, Gym), Gewicht als Zeile; ab Build 19 darunter der Feed der Freunde.
 - Profil: Kopf mit Name und Zahnrad, Zahlen Workouts und Freunde, Diagramm Dauer/Volumen/Wiederholungen je Woche, Dashboard mit Statistiken, Übungen, Messungen, Kalender, darunter die Liste der Workouts. Alle Einstellungen hinter dem Zahnrad (bisheriges Profil-Blatt, ohne Farbwelt).
 - Übergang: Solange Essen und Schlaf noch da sind, erscheinen sie als Kacheln im Dashboard (Schlaf nur freigegeben), nicht als Tabs. So ist die Leiste schon richtig und nichts verschwindet.
-- Band bleibt in Lumen Fit (Schritte, Puls, Nächte an Lumen Alarm), Abfragen seltener.
+- (gekippt am 09.11. 23:47) Band geht zu Lumen Alarm, siehe Rahmen.
 - Widgets: Training-Live-Aktivität und ein Gym-Woche-Widget bleiben; die übrigen elf, Spotlight und Steuerelement gehen in Build 19.
 - Medaillen bleiben klein, Lumi-Figur geht; Habits bleiben klein (Ahmeds meistgenutzte Funktion: 105 Tipps).
 
@@ -61,5 +61,5 @@ Kalender mit Plan und Partner · Profil-Tab mit Statistik-Diagramm und Dashboard
 
 ## Offen für Ahmed
 1. Startseite: Heute-Karte plus Woche plus Feed (Vorschlag) oder nur Feed wie Hevy?
-2. Band in Lumen Fit lassen oder später zu Lumen Alarm?
+2. Band: entschieden, zu Lumen Alarm (09.11. 23:47).
 3. Gewohnheiten klein behalten oder ganz raus?
