@@ -73,6 +73,7 @@ struct SatzZeile: View {
                     .buttonStyle(.plain)
                     .accessibilityHint("Übernimmt Gewicht und Wiederholungen")
                 }
+                SatzVorschlagAnzeige(sitzung: sitzung, uebung: uebung, satz: satz)
                 Spacer(minLength: 0)
                 if let rekord = sitzung.rekordLabel["\(u.id)|\(satz)"], s.ok == true {
                     Label(rekord, systemImage: "trophy.fill").font(.footnote.weight(.semibold)).foregroundStyle(palette.akzent)

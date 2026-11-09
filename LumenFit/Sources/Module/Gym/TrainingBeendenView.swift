@@ -178,6 +178,7 @@ struct GymEinstellungenBlatt: View {
                 } footer: {
                     Text("Satz-Zeit: nach der Pause läuft die Uhr des Satzes; beim Haken wird die Dauer gemerkt. RPE: nach dem Haken erscheint die Anstrengung an der Zeile.")
                 }
+                SatzVorhersageAbschnitt()
                 Section {
                     Toggle("Puls und Energie messen", isOn: $pulsAn)
                 } footer: {

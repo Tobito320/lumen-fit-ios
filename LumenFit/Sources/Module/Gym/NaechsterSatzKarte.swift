@@ -54,6 +54,7 @@ struct NaechsterSatzKarte: View {
                 .font(.system(size: heldenGroesse, weight: .bold, design: .rounded)).monospacedDigit()
         }
         if let letztes = naechsterSatzText { Text(letztes).font(.subheadline) }
+        if let dran = sitzung.dran { SatzVorschlagAnzeige(sitzung: sitzung, uebung: dran.uebung, satz: dran.satz, aufPlatte: true) }
         HStack(spacing: Abstand.s) {
             Button("−15 s") { weniger += 1; sitzung.pauseAendern(sekunden: -PauseLogik.schritt) }
                 .accessibilityLabel("15 Sekunden weniger")
@@ -81,6 +82,7 @@ struct NaechsterSatzKarte: View {
             } else {
                 Text("Satz \(dran.satz + 1) von \(u.saetze.count)\(u.planUebung.supersatz == true ? " · Supersatz" : "")").font(.subheadline)
                 if let letztes = naechsterSatzText { Text(letztes).font(.subheadline) }
+                SatzVorschlagAnzeige(sitzung: sitzung, uebung: dran.uebung, satz: dran.satz, aufPlatte: true)
             }
         } else {
             LumiView(stimmung: .stolz, groesse: 56)
