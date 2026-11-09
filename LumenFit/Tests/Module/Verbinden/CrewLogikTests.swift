@@ -236,6 +236,13 @@ final class CrewLogikTests: XCTestCase {
         XCTAssertFalse(CrewLogik.darfReagieren(T.eintrag("a", pause: true, daten: T.datei(freigaben: [.gym]))))
     }
 
+    func testWertText() {
+        XCTAssertEqual(CrewLogik.wertText(8_400, .volumen), "8.400 kg")
+        XCTAssertEqual(CrewLogik.wertText(1, .tage), "1 Tag")
+        XCTAssertEqual(CrewLogik.wertText(12, .saetze), "12 Sätze")
+        XCTAssertEqual(CrewLogik.wertText(35, .uebung), "35 ‰")
+    }
+
     func testEinstiegText() {
         XCTAssertEqual(CrewLogik.einstiegText(imGym: 2, herausforderung: "Duell: du führst", neu: 1, personen: 3), "2 im Gym · Duell: du führst · 1 neu")
         XCTAssertEqual(CrewLogik.einstiegText(imGym: 0, herausforderung: nil, neu: 0, personen: 0), "Freunde einladen und herausfordern")

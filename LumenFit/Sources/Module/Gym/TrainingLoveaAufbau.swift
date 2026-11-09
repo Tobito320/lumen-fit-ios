@@ -506,10 +506,13 @@ struct TrainingLoveaUebungView: View {
         Button { detail = u.planUebung.uebung } label: {
             HStack(spacing: 12) {
                 LoveaUebungBild(sitzung: sitzung, uebung: u.planUebung, groesse: 56)
-                Text(u.planUebung.anzeigeName)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(Color.blue)
-                    .multilineTextAlignment(.leading)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(u.planUebung.anzeigeName)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.blue)
+                        .multilineTextAlignment(.leading)
+                    CrewBestwertZeile(uebung: u.planUebung.anzeigeName)
+                }
                 Spacer(minLength: 0)
             }
             .contentShape(.rect)

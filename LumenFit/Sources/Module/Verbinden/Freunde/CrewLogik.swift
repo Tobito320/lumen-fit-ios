@@ -216,6 +216,18 @@ enum CrewLogik {
         return w
     }
 
+    /// "8.400 kg", "1 Tag", "12 Sätze", "35 ‰".
+    static func wertText(_ wert: Int, _ mass: CrewMass) -> String {
+        let zahl = wert.formatted(.number.locale(Locale(identifier: "de_DE")))
+        guard wert == 1 else { return "\(zahl) \(mass.einheit)" }
+        switch mass {
+        case .tage: return "1 Tag"
+        case .saetze: return "1 Satz"
+        case .rekorde: return "1 Rekord"
+        case .volumen, .uebung: return "\(zahl) \(mass.einheit)"
+        }
+    }
+
     // MARK: Rangliste
 
     static func rangliste(_ mass: CrewMass, ich: CrewWoche, eintraege: [VerbindungEintrag], jetzt: Date) -> [CrewRang] {
