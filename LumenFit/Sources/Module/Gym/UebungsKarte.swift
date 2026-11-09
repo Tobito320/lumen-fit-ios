@@ -69,6 +69,7 @@ struct UebungsKarte: View {
                 Text(u.planUebung.anzeigeName)
                     .font(.headline).foregroundStyle(palette.text).lineLimit(3)
                 Text(untertitel(u)).font(.footnote).foregroundStyle(palette.text2)
+                CrewBestwertZeile(uebung: u.planUebung.anzeigeName)
                 if let notiz = u.planUebung.notiz {
                     Label(notiz, systemImage: "note.text").font(.footnote).foregroundStyle(palette.text2)
                 }

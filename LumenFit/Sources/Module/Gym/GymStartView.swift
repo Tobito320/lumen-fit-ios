@@ -80,7 +80,7 @@ struct GymStartView: View {
                 einstellungenKnopf
             }
             letzte(training, jetzt: jetzt)
-            if aufbau == .lumen { GymCrewAbschnitt() }
+            GymCrewAbschnitt(nurEinstieg: aufbau == .lovea)
             GymRekordPinnwandView()
             PartnerKarte(bereich: .gym)
             if aufbau == .lumen { mehrBereich(stand, training: training) }

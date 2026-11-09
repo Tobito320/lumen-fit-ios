@@ -24,18 +24,25 @@ struct GymCrewZeilen: View {
         let rest = zeilen.count - sichtbar.count
         VStack(alignment: .leading, spacing: Abstand.s) {
             ForEach(Array(sichtbar)) { zeile in
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Circle().fill(zeile.zustand == .imGym ? palette.akzent : palette.text2).frame(width: 6, height: 6).accessibilityHidden(true)
-                        Text(zeile.name).fontWeight(.semibold).foregroundStyle(palette.text)
-                        Text(zeile.status).foregroundStyle(palette.text2).monospacedDigit()
+                // Antippbar: die Seite der Person (Crew).
+                NavigationLink { CrewFreundSeite(id: zeile.id) } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline, spacing: 5) {
+                            Circle().fill(zeile.zustand == .imGym ? palette.akzent : palette.text2).frame(width: 6, height: 6).accessibilityHidden(true)
+                            Text(zeile.name).fontWeight(.semibold).foregroundStyle(palette.text)
+                            Text(zeile.status).foregroundStyle(palette.text2).monospacedDigit()
+                        }
+                        if let satz = zeile.mitlauf {
+                            Text(GymMitlaufLogik.text(satz)).font(.caption).foregroundStyle(palette.text2).padding(.leading, 11)
+                        }
                     }
-                    if let satz = zeile.mitlauf {
-                        Text(GymMitlaufLogik.text(satz)).font(.caption).foregroundStyle(palette.text2).padding(.leading, 11)
-                    }
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
+                    .contentShape(.rect)
                 }
-                .lineLimit(2)
+                .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
+                .accessibilityHint("Öffnet die Seite der Person")
             }
             if rest > 0 {
                 Text("+ \(rest)").foregroundStyle(palette.text2).accessibilityLabel("und \(rest) weitere")
@@ -45,20 +52,19 @@ struct GymCrewZeilen: View {
     }
 }
 
-/// Die Crew als Abschnitt im Gym-Tab (Lumen-Aufbau); ohne Personen nichts, nicht einmal eine Überschrift.
+/// Die Crew als Abschnitt im Gym-Tab: oben immer der Einstieg zur Crew-Seite, darunter die Personen (ohne Personen nur der Einstieg).
+/// `nurEinstieg`: Lovea-Aufbau, dort stehen die Crew-Zeilen schon oben in der Wer-Zeile.
 struct GymCrewAbschnitt: View {
+    var nurEinstieg = false
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
 
     var body: some View {
-        let zeilen = GymCrewQuelle.zeilen(umgebung)
-        if !zeilen.isEmpty {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                Text("Crew").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
-                GymCrewZeilen(zeilen: zeilen)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        let zeilen = nurEinstieg ? [] : GymCrewQuelle.zeilen(umgebung)
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            CrewEinstieg()
+            if !zeilen.isEmpty { GymCrewZeilen(zeilen: zeilen) }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
