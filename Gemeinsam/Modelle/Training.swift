@@ -135,6 +135,8 @@ struct GymEintrag: Equatable, Sendable {
     var art: String
     var zeit: Date
     var d: GymD
+    /// Reihenfolge des Eingangs: bei gleicher `zeit` (zwei Ops in derselben Millisekunde, etwa Entwurf und Pause beim Beenden) gilt die spätere.
+    var folge: Int = 0
 }
 
 /// One try at an exercise: started (or ticked directly, `start == nil`), ended, done or not.
@@ -196,7 +198,7 @@ enum TrainingLogik {
     /// All sessions of one person, newest start first. Deleted ones and ones without check-in are left out.
     static func sessions(_ eintraege: [GymEintrag]) -> [GymSession] {
         var nachSession: [String: [GymEintrag]] = [:]
-        for e in eintraege.sorted(by: { $0.zeit < $1.zeit }) { nachSession[e.d.session, default: []].append(e) }
+        for e in eintraege.sorted(by: { ($0.zeit, $0.folge) < ($1.zeit, $1.folge) }) { nachSession[e.d.session, default: []].append(e) }
         return nachSession.compactMap { session($0.key, $0.value) }.sorted { $0.start > $1.start }
     }
 
@@ -422,6 +424,7 @@ struct TrainingFaltung: Sendable {
     private(set) var plaene: [ProfilID: TrainingsPlan] = [:]
     private var planZeit: [ProfilID: Date] = [:]
     private var eintraege: [ProfilID: [String: GymEintrag]] = [:]
+    private var folge = 0
 
     mutating func anwenden(_ op: Op) {
         if op.art == "gym.plan" {
@@ -429,7 +432,8 @@ struct TrainingFaltung: Sendable {
             plaene[op.von] = plan
             planZeit[op.von] = op.zeit
         } else if Self.arten.contains(op.art), let d = op.daten(GymD.self) {
-            eintraege[op.von, default: [:]][op.id] = GymEintrag(art: op.art, zeit: op.zeit, d: d)
+            folge += 1
+            eintraege[op.von, default: [:]][op.id] = GymEintrag(art: op.art, zeit: op.zeit, d: d, folge: folge)
         }
     }
 

@@ -47,6 +47,9 @@ final class SchlafModulTests: XCTestCase {
         let tag = Datum.text(uhr.lesen)
         let health = [SchlafTestBau.nacht(tag, minuten: 450, phasen: true)]
         let u = try umgebung(health: health, uhr: uhr)
+        var frei = ServerConfig()
+        frei.schlafSichtbar = true
+        u.konto.uebernimm(frei)   // Schlaf liest Health nur mit Server-Freigabe
         await u.gesundheit.aktualisiere()
         u.daten?.ziele.setze({ var z = Ziele(); z.schlafMinuten = 420; return z }())
         let band = BandSchlafOp(tag: Datum.addTage(tag, -1), start: SchlafTestBau.zeit(Datum.addTage(tag, -2), 23), ende: SchlafTestBau.zeit(Datum.addTage(tag, -1), 7), phasen: [])

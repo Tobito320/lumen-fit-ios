@@ -13,6 +13,7 @@ final class AlteDateienLadenGymLaufTests: XCTestCase {
     private func umgebungMitAltemStand(jetzt: Date) throws -> (AppUmgebung, TestUhr) {
         let uhr = TestUhr()
         uhr.setze(jetzt)
+        UserDefaults.standard.set(true, forKey: GymAnzeige.pausenTimerSchluessel)   // der Test rechnet mit der Pause nach dem Haken
         let wurzel = try tempOrdner()
         let u = AppUmgebung(ordner: wurzel, schluesselbund: SpeicherSchluesselbund(), http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
                             leser: LeererHealthLeser(), healthSchreiber: KeinHealthSchreiber(), bruecke: KeinePartnerBruecke(), uhr: uhr.uhr, passwortRunden: 1_000)

@@ -403,6 +403,7 @@ final class GymSitzungTests: XCTestCase {
         a.sitzung.starte(planTag: "push")
         a.sitzung.haken(0, 0)
         a.sitzung.werteSetzen(0, 1, kg: 65, wdh: 6)   // ohne Haken, noch im Verzug
+        a.uhr.vor(sekunden: 30)
         a.sitzung.beende()
         await a.sitzung.endeAufgabe?.value
         let fertig = try XCTUnwrap(a.daten.training.sessions.first)
