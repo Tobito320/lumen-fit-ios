@@ -46,7 +46,7 @@ private struct LumenThemeModifier: ViewModifier {
 }
 
 extension View {
-    /// Setzt Palette, Tint, Erscheinung und Muster-Thema aus Thema und Erscheinung.
+    /// Setzt Palette, Tint und Erscheinung aus Thema und Erscheinung (alle Themes liefern dieselbe Palette).
     func lumenTheme(_ thema: ThemaID, erscheinung: Erscheinung) -> some View {
         modifier(LumenThemeModifier(thema: thema, erscheinung: erscheinung))
     }

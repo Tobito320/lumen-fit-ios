@@ -36,27 +36,11 @@ enum LumenFarben {
     /// Token-Zeile: grund, flaeche, text, text2, rand, haar, akzent, aufAkzent.
     typealias Tokens = (grund: UInt32, flaeche: UInt32, text: UInt32, text2: UInt32, rand: UInt32, haar: UInt32, akzent: UInt32, aufAkzent: UInt32)
 
+    /// Ein Theme, hell und dunkel nach System (Auftrag 09.11.: "Ein theme. Dark/white. Kein wählbarer Theme."). `thema` bleibt als Parameter,
+    /// weil gespeicherte Einstellungen und Widget-Snapshots noch alle `ThemaID`-Werte tragen; jeder Wert liefert dieselbe Zeile.
     static func tokens(thema: ThemaID, dunkel: Bool) -> Tokens {
-        switch (thema, dunkel) {
-        // Schlicht (W-003): fast schwarz oder hell, flache Karten, eine Farbe. Der Akzent ist das Trainieren-Grün (`ring`/`tief`), sonst nichts Buntes.
-        case (.schlicht, false): (0xF6F7F8, 0xFFFFFF, 0x0B0C0E, 0x5B616B, 0x848A93, 0xE3E5E8, 0x16742F, 0xFFFFFF)
-        case (.schlicht, true): (0x0B0C0E, 0x17191C, 0xF2F3F5, 0x9A9FA6, 0x7D828A, 0x212327, 0xA6FF00, 0x0B0C0E)
-        case (.monochrom, false): (0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x000000, 0xFFFFFF)
-        case (.monochrom, true), (.graphit, true): (0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0xFFFFFF, 0x000000)
-        case (.graphit, false): (0xF2F2F7, 0xFFFFFF, 0x1C1C1E, 0x5A5A5E, 0x85858A, 0xD1D1D6, 0x1C1C1E, 0xFFFFFF)
-        case (.stahl, false): (0xF5F7FA, 0xE8EDF3, 0x0B1220, 0x566377, 0x7B8798, 0xD6DDE6, 0x1F4E79, 0xFFFFFF)
-        case (.stahl, true): (0x0B1220, 0x151E2E, 0xF2F5FA, 0x9AA8BC, 0x7B8BA3, 0x243146, 0x7FB2E5, 0x0B1220)
-        case (.glut, false): (0xFFF8F3, 0xFFEBDD, 0x1A0E05, 0x6B4A33, 0x9A7258, 0xF0D5C0, 0xA84300, 0xFFFFFF)
-        case (.glut, true): (0x0D0D0D, 0x1A1A1A, 0xF5F5F5, 0x9A9A9A, 0x808080, 0x2A2A2A, 0xFF6A00, 0x000000)
-        case (.wald, false): (0xF7F8F6, 0xE9ECE6, 0x111611, 0x566156, 0x7A877A, 0xD8DDD4, 0x2F5D3A, 0xFFFFFF)
-        case (.wald, true): (0x0C120D, 0x172019, 0xEEF3EE, 0x9DAE9D, 0x7E907F, 0x2A3A2D, 0x8FC79A, 0x0C120D)
-        // Lovea 1:1 (docs/theme-lovea-vergleich.md): Lovea malt mit System-Farben (systemBackground, secondarySystemBackground, label, secondaryLabel,
-        // Hex aus der UIKit-Tabelle) und dem Akzent #FF3B5C (Lovea `Color.loveaRose`). Ein paar Paare fallen unter 4,5:1 und sind in Lovea selbst so
-        // (hell: Akzent auf Weiß 3,48:1, secondaryLabel 3,44:1; weiße Schrift auf dem Akzent 3,48:1). Sie stehen mit Absicht so da; FarbenKontrastTests kennt
-        // genau diese Paare und verlangt für sie 3:1. Ob abgedunkelt wird, entscheidet der Besitzer.
-        case (.lovea, false): (0xFFFFFF, 0xF2F2F7, 0x000000, 0x8A8A8E, 0x8A8A8E, 0xC6C6C8, 0xFF3B5C, 0xFFFFFF)
-        case (.lovea, true): (0x000000, 0x1C1C1E, 0xFFFFFF, 0x8D8D93, 0x8E8E93, 0x38383A, 0xFF3B5C, 0xFFFFFF)
-        }
+        dunkel ? (0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0x5B9DFF, 0x0B0C0E)
+               : (0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x0B5ED7, 0xFFFFFF)
     }
 
     /// Erhöhter Kontrast: `text2` wird `text`, `rand` wird `text2`, `haar` wird `rand` (design.md 3.7).

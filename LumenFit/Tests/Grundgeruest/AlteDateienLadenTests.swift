@@ -112,6 +112,17 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(EinstellungenStore(ordner: andere).werte.thema, .wald, "eigene Wahl bleibt")
     }
 
+    /// Ein Theme (Auftrag 09.11.): alte Farbwelten laden weiter, wirken aber alle als Schlicht; die übrigen Einstellungen bleiben.
+    func testAlteFarbweltLaedtMitEinemTheme() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"thema":"wald","erscheinung":"dunkel"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))
+        let store = EinstellungenStore(ordner: ordner)
+        XCTAssertEqual(store.werte.thema, .wald, "gespeichert wird nichts umgeschrieben")
+        XCTAssertEqual(ProfilThemaWahl.wirksam(store.werte.thema, loveaErlaubt: true), .schlicht)
+        XCTAssertEqual(ProfilThemaWahl.wirksam(.lovea, loveaErlaubt: true), .schlicht)
+        XCTAssertEqual(store.werte.erscheinung, .dunkel, "Erscheinung bleibt")
+    }
+
     func testEinUnbekanntesThemeErgibtDenStandardUndBehaeltDenRest() throws {
         let ordner = try tempOrdner()
         try Data(#"{"thema":"neonpink","haptik":false,"gewichtsEinheit":"stone"}"#.utf8).write(to: ordner.appendingPathComponent("einstellungen.json"))

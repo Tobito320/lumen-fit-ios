@@ -1,17 +1,13 @@
 import SwiftUI
 
-/// Grundfläche der Bildschirme: `grund` mit dem Kopf-Muster des Themes (läuft nach unten aus). Reicht unter Tab- und Navigationsleiste.
+/// Grundfläche der Bildschirme: einfarbig `grund`. Reicht unter Tab- und Navigationsleiste.
 struct Hintergrund: View {
     @Environment(\.palette) private var palette
-    @Environment(\.lumenThema) private var thema
 
     var body: some View {
-        ZStack {
-            palette.grund
-            MusterFlaeche(thema: thema, ort: .kopf)
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
+        palette.grund
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
 }
 

@@ -4,13 +4,14 @@ import XCTest
 /// Der Aufbau der Health-Seiten folgt dem Theme und der Freigabe des Servers: Lovea mit Freigabe heißt Lovea-Aufbau, alles andere der heutige Aufbau.
 @MainActor
 final class LumenAufbauTests: XCTestCase {
-    func testLoveaMitFreigabeHatDenLoveaAufbau() {
-        XCTAssertEqual(LumenAufbau.wahl(.lovea, loveaErlaubt: true), .lovea)
+    /// Seit dem einen Theme (Auftrag 09.11.) wirkt Lovea nie mehr als Theme: der Lovea-Aufbau ist nicht mehr zu wählen (Aufgabe 2 löscht ihn ganz).
+    func testLoveaMitFreigabeHatKeinenLoveaAufbauMehr() {
+        XCTAssertEqual(LumenAufbau.wahl(.lovea, loveaErlaubt: true), .lumen)
     }
 
     func testLoveaOhneFreigabeIstMonochromMitDemHeutigenAufbau() {
         XCTAssertEqual(LumenAufbau.wahl(.lovea, loveaErlaubt: false), .lumen)
-        XCTAssertEqual(ProfilThemaWahl.wirksam(.lovea, loveaErlaubt: false), .monochrom, "gleiche Regel wie das Aussehen")
+        XCTAssertEqual(ProfilThemaWahl.wirksam(.lovea, loveaErlaubt: false), .schlicht, "gleiche Regel wie das Aussehen")
     }
 
     func testAndereThemesBehaltenDenHeutigenAufbauMitUndOhneFreigabe() {

@@ -46,8 +46,6 @@ struct WidgetFarben {
     let bewegen: Color
     let trainieren: Color
     let erholen: Color
-    /// Das Muster des Themes nur in Vollfarbe und nicht bei erhöhtem Kontrast.
-    let muster: Bool
 
     static func bau(thema: ThemaID, erscheinung: Erscheinung?, systemDunkel: Bool, kontrastHoch: Bool, modus: WidgetRenderingMode) -> WidgetFarben {
         let dunkel = WidgetAnzeige.dunkel(erscheinung: erscheinung, system: systemDunkel)
@@ -55,8 +53,7 @@ struct WidgetFarben {
         let voll = modus == .fullColor
         func daten(_ b: Datenbereich) -> Color { voll ? LumenFarben.tief(b, dunkel: dunkel, kontrastHoch: kontrastHoch) : .primary }
         return WidgetFarben(thema: thema, dunkel: dunkel, vollfarbe: voll, grund: p.grund, text: voll ? p.text : .primary, text2: voll ? p.text2 : .secondary,
-                            akzent: voll ? p.akzent : .primary, bewegen: daten(.bewegen), trainieren: daten(.trainieren), erholen: daten(.erholen),
-                            muster: voll && !kontrastHoch)
+                            akzent: voll ? p.akzent : .primary, bewegen: daten(.bewegen), trainieren: daten(.trainieren), erholen: daten(.erholen))
     }
 
     func daten(_ bereich: Datenbereich) -> Color {
@@ -71,22 +68,11 @@ struct WidgetFarben {
     var aufTrainieren: Color { vollfarbe ? (dunkel ? .black : .white) : Color(white: 0) }
 }
 
-/// Der Hintergrund: Token `grund` des Themes, dazu das Muster des Themes (ohne Animation, ohne `drawingGroup`).
+/// Der Hintergrund: einfarbig Token `grund` (ohne Muster).
 struct WidgetHintergrund: View {
     let farben: WidgetFarben
 
-    var body: some View {
-        ZStack {
-            farben.grund
-            if farben.muster {
-                let deckkraft = MusterZeichner.deckkraft(thema: farben.thema, dunkel: farben.dunkel, ort: .karte)
-                Canvas { kontext, groesse in
-                    MusterZeichner.zeichne(thema: farben.thema, ort: .karte, groesse: groesse, farbe: farben.akzent.opacity(deckkraft), in: &kontext)
-                }
-                .accessibilityHidden(true)
-            }
-        }
-    }
+    var body: some View { farben.grund }
 }
 
 /// Rahmen jedes Widgets: Farben aus Theme und Modus, Hintergrund über `containerBackground` (getönt ersetzt ihn das System), Link beim Tippen.
