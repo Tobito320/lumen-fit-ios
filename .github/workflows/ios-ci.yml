@@ -247,6 +247,45 @@ jobs:
             xcrun simctl shutdown "$ID" || true
           done
           ls -l screenshots/lovea-* || true
+      # App-Store-Bilder (6,9 Zoll, 1320x2868): iPhone 17 Pro Max, dunkel, Uhrzeit 9:41, je Sprache de-DE und en-US mit Demo-Daten.
+      # Hochladen danach vom PC: node scripts/asc-store.mjs bilder <Ordner store>. Darf den Lauf nie röten.
+      - name: Store-Bilder
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        timeout-minutes: 14
+        run: |
+          set -u
+          APP=$(find derived/Build/Products -maxdepth 3 -name 'LumenFit.app' | head -n 1)
+          test -n "$APP"
+          FIX="$PWD/LumenFit/Tests/Fixtures"
+          ID=$(xcrun simctl list devices available -j | jq -r '[.devices[][] | select(.name == "iPhone 17 Pro Max")][0].udid // empty')
+          if [ -z "$ID" ]; then echo "Kein iPhone 17 Pro Max"; exit 0; fi
+          xcrun simctl boot "$ID" || true
+          xcrun simctl bootstatus "$ID" -b
+          xcrun simctl install "$ID" "$APP"
+          xcrun simctl privacy "$ID" grant motion com.onlyus.lumen-fit || true
+          xcrun simctl ui "$ID" appearance dark
+          xcrun simctl status_bar "$ID" override --time "9:41" --dataNetwork wifi --wifiBars 3 --cellularBars 4 --batteryState charged --batteryLevel 100 || true
+          for sprache in "de-DE|de|de_DE" "en-US|en|en_US"; do
+            IFS='|' read -r ordner lang locale <<< "$sprache"
+            mkdir -p "screenshots/store/$ordner"
+            for aufnahme in \
+              "01-heute|-lumenFitTab heute" \
+              "02-training|-lumenFitTab training" \
+              "03-laufend|-lumenFitTraining YES -lumenFitRoute lumenfit://gym?bereich=training" \
+              "04-fortschritt|-lumenFitTab fortschritt" \
+              "05-uebung|-lumenFitRoute lumenfit://uebung?id=2gPfomN" \
+              "06-stats|-lumenFitTab freunde" \
+              "07-erfolge|-lumenFitRoute lumenfit://profil?bereich=meilensteine"; do
+              name="${aufnahme%%|*}"
+              # shellcheck disable=SC2086
+              xcrun simctl launch --terminate-running-process "$ID" com.onlyus.lumen-fit -AppleLanguages "($lang)" -AppleLocale "$locale" -lumenFitDemo YES -lumenFitFixtures "$FIX" ${aufnahme#*|}
+              sleep 8
+              xcrun simctl io "$ID" screenshot "screenshots/store/$ordner/$name.png"
+            done
+          done
+          xcrun simctl shutdown "$ID" || true
+          ls -l screenshots/store/* || true
       - name: Screenshots hochladen
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
