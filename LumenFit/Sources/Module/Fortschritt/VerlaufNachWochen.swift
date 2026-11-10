@@ -9,7 +9,7 @@ extension FortschrittQuelle {
 
     /// Das letzte beendete Training mit allen Zahlen; nil ohne Einheit.
     var letztesTraining: EinheitDaten? {
-        guard let s = FortschrittLogik.nachWochen(sessions, heute: heute).first?.sessions.first else { return nil }
+        guard let s = FortschrittLogik.nachWochen(sessions, heute: heute, jetzt: jetzt).first?.sessions.first else { return nil }
         return FortschrittLogik.einheit(s, titel: einheitTitel(s), frueher: sessions)
     }
 }
@@ -19,12 +19,13 @@ extension FortschrittQuelle {
 struct VerlaufNachWochen: View {
     let sessions: [GymSession]
     let heute: String
+    var jetzt: Date?
     @State private var offen: Set<String> = []
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let gruppen = FortschrittLogik.nachWochen(sessions, heute: heute)
+        let gruppen = FortschrittLogik.nachWochen(sessions, heute: heute, jetzt: jetzt)
         let q = FortschrittQuelle(umgebung: umgebung)
         VStack(alignment: .leading, spacing: Abstand.l) {
             ForEach(Array(gruppen.enumerated()), id: \.offset) { i, g in

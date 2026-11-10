@@ -62,7 +62,7 @@ struct FortschrittTabView: View {
     @ViewBuilder
     private func training(_ q: FortschrittQuelle) -> some View {
         let heute = q.heute
-        let vergleich = FortschrittLogik.vergleich(q.sessions, plan: q.plan, heute: heute)
+        let vergleich = FortschrittLogik.vergleich(q.sessions, plan: q.plan, heute: heute, jetzt: q.jetzt)
         let rest = FortschrittLogik.geplantRest(q.plan, sessions: q.sessions, heute: heute)
         VStack(alignment: .leading, spacing: Abstand.s) {
             FortschrittAbschnitt(titel: "Wie geht's dir")
@@ -78,7 +78,7 @@ struct FortschrittTabView: View {
 
     @ViewBuilder
     private func einheiten(_ q: FortschrittQuelle) -> some View {
-        if FortschrittLogik.nachWochen(q.sessions, heute: q.heute).isEmpty {
+        if FortschrittLogik.nachWochen(q.sessions, heute: q.heute, jetzt: q.jetzt).isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 FortschrittAbschnitt(titel: "Einheiten")
                 LeerZustand(stimmung: .bereit, satz: "Noch keine beendete Einheit. Nach dem Beenden steht sie hier.").lumenKartenFlaeche()
@@ -86,9 +86,9 @@ struct FortschrittTabView: View {
         } else {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 FortschrittAbschnitt(titel: "Einheiten")
-                EinheitenKarte(sessions: q.sessions, heute: q.heute)
+                EinheitenKarte(sessions: q.sessions, heute: q.heute, jetzt: q.jetzt)
             }
-            VerlaufNachWochen(sessions: q.sessions, heute: q.heute)
+            VerlaufNachWochen(sessions: q.sessions, heute: q.heute, jetzt: q.jetzt)
         }
     }
 

@@ -6,13 +6,14 @@ import SwiftUI
 struct EinheitenKarte: View {
     let sessions: [GymSession]
     let heute: String
+    var jetzt: Date?
     @State private var art = StatistikArt.dauer
     @Environment(\.palette) private var palette
 
     var body: some View {
-        let werte = FortschrittLogik.wochen(sessions, heute: heute, art: art)
-        let jetzt = werte.last?.wert ?? 0
-        let text = Self.text(jetzt, art: art)
+        let werte = FortschrittLogik.wochen(sessions, heute: heute, jetzt: jetzt, art: art)
+        let dieseWoche = werte.last?.wert ?? 0
+        let text = Self.text(dieseWoche, art: art)
         VStack(alignment: .leading, spacing: Abstand.m) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Diese Woche").font(.footnote).foregroundStyle(palette.text2)
