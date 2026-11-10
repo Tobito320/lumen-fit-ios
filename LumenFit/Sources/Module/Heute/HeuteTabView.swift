@@ -66,7 +66,9 @@ struct HeuteTabView: View {
                 HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
                             verwalte: { blatt = .habits }, zoom: zoom, kompakt: true)
             }
-            GewichtKarte(gewicht: s.gewicht, eintragen: { blatt = .gewicht }, ziel: { blatt = .gewichtZiel }, alleEintraege: { alleEintraege = true })
+            if umgebung.daten?.einstellungen.werte.gewichtMitzaehlen ?? true {
+                GewichtKarte(gewicht: s.gewicht, eintragen: { blatt = .gewicht }, ziel: { blatt = .gewichtZiel }, alleEintraege: { alleEintraege = true })
+            }
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)

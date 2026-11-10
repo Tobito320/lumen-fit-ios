@@ -286,6 +286,12 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertNil(VerbindungenLogik.token(aus: "http://example.org/f/\(token)"), "nur https")
     }
 
+    func testLiveServerZeigtDieWebseiteImQRCode() {
+        let seite = VerbindungenLogik.seite(server: URL(string: "https://lumen-fit-live.beispiel.workers.dev")!, token: token)
+        XCTAssertEqual(seite.absoluteString, "https://lumen-fit.pages.dev/f/\(token)")
+        XCTAssertEqual(VerbindungenLogik.token(aus: seite.absoluteString), token)
+    }
+
     func testCodeGrossKleinLeerzeichenUndBindestrichEgal() {
         XCTAssertEqual(VerbindungenLogik.code(aus: "K7Q2-9FXA"), "K7Q29FXA")
         XCTAssertEqual(VerbindungenLogik.code(aus: " k7q2 9fxa\n"), "K7Q29FXA")

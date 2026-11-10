@@ -249,7 +249,9 @@ final class HeuteModell {
 
         // Gewohnheiten
         // Gym- und Protein-Gewohnheit gehören zu ihrem Bereich und fehlen mit ihm (die Werte bleiben gespeichert).
-        let habits: [HeuteHabitZeile] = daten.habits.sichtbar.filter { ($0.id != Habit.gym.id || bereiche.gymAn) && ($0.id != Habit.protein.id || bereiche.essenAn) }.map { h in
+        // Creatin ist eine "nur Heute"-Gewohnheit: sie erscheint, wenn sie unter Präferenzen > Mitzählen an ist.
+        let creatin = daten.einstellungen.werte.creatinMitzaehlen ? [Habit.creatin] : []
+        let habits: [HeuteHabitZeile] = (daten.habits.sichtbar + creatin).filter { ($0.id != Habit.gym.id || bereiche.gymAn) && ($0.id != Habit.protein.id || bereiche.essenAn) }.map { h in
             let wert = daten.habits.wert(h.id, heute)
             let ziel = daten.habits.habitZiel(h.id)
             let werte = daten.habits.werte(h.id)

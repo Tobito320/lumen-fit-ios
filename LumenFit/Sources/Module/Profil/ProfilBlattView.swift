@@ -13,6 +13,7 @@ struct ProfilBlattView: View {
     @State private var splitsOffen = false
     @State private var teilenLaedt = false
     @State private var teilenFehler = false
+    @State private var statsOffen = false
 
     var body: some View {
         let gymAn = umgebung.bereicheWirksam.gymAn
@@ -25,6 +26,10 @@ struct ProfilBlattView: View {
             ProfilAbschnitt {
                 link(String(localized: "Präferenzen"), .profilZiele, symbol: "slider.horizontal.3", farbe: Bereichsfarbe.gewicht, wert: praeferenzenWert) {
                     ProfilPraeferenzenView()
+                }
+                // Stats: wer mich sieht (Privat, Freunde, Öffentlich), Baustein aus Verbinden/Stats.
+                Button { statsOffen = true } label: {
+                    ProfilListenZeile(String(localized: "Stats"), symbol: "chart.bar.fill", wert: StatsLogik.sichtbarkeitText(umgebung.daten?.einstellungen.werte ?? Einstellungen()), farbe: Bereichsfarbe.freunde)
                 }
                 // Trainings-Einstellungen auch hier erreichbar (Wunsch vom 09.11.2026), das Zahnrad im Training bleibt.
                 if gymAn {
@@ -48,6 +53,7 @@ struct ProfilBlattView: View {
         .sheet(isPresented: $trainingBlatt) { if let trainingSitzung { GymEinstellungenBlatt(sitzung: trainingSitzung) } }
         .sheet(isPresented: $splitsOffen) { if let trainingSitzung { SplitBibliothekView(sitzung: trainingSitzung) } }
         .sheet(isPresented: $einladenOffen) { VerbindungCodeBlatt() }
+        .sheet(isPresented: $statsOffen) { StatsEinstellungBlatt() }
         .alert("Kein Code möglich", isPresented: $teilenFehler) {
             Button("OK", role: .cancel) {}
         } message: {

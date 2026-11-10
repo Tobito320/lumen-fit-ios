@@ -6,7 +6,7 @@ import SwiftUI
 /// Eine Übung im Detail (Route `.uebung(id:)`, Entwurf `uebung`): oben die Animation, Name und "Muskel · Gerät", darunter drei Reiter.
 /// Anleitung (So geht's, Muskeln und Gerät, außerhalb des Trainings "Andere Varianten"), Verlauf (schwerstes Set, Diagramm mit Wahl des Werts, jede Einheit
 /// mit ihren Sätzen), Rekorde (persönliche Rekorde). Alles wird aus den Einheiten gerechnet, nichts Neues gespeichert.
-/// Platz für "Im Vergleich" (Freunde) im Reiter Rekorde: kommt als Baustein `StatsVergleichKarte(uebungID:)`, bis dahin ohne Abschnitt.
+/// "Im Vergleich" (Freunde und Alle) im Reiter Rekorde: Baustein `StatsVergleichKarte(uebungID:)` aus Stats.
 struct UebungDetailView: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
@@ -198,6 +198,7 @@ struct UebungDetailView: View {
             if let erste = tage.first {
                 Text("Aus \(tage.count) Einheiten seit \(Datum.anzeige(Datum.text(erste.datum)))").font(.footnote).foregroundStyle(palette.text2)
             }
+            StatsVergleichKarte(uebungID: id)
         }
     }
 

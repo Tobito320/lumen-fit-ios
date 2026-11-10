@@ -224,8 +224,12 @@ enum VerbindungenLogik {
     /// Was unter "Code eingeben" steht oder gescannt wurde: ein Token (Link, Seite, nackt) oder ein Code. nil, wenn es keins von beiden ist.
     nonisolated static func einladung(aus text: String?) -> String? { token(aus: text) ?? code(aus: text) }
 
-    /// Der Inhalt des QR-Codes: die Seite des Servers. Die iPhone-Kamera öffnet sie; mit App startet sie Lumen Fit, ohne App zeigt sie TestFlight.
-    nonisolated static func seite(server: URL, token: String) -> URL { server.appendingPathComponent("f").appendingPathComponent(token) }
+    /// Der Inhalt des QR-Codes: die Einladungsseite. Die iPhone-Kamera öffnet sie; mit App startet sie Lumen Fit, ohne App zeigt sie den App Store.
+    /// Beim Live-Server die öffentliche Webseite (leitet /f/ an den Server weiter), damit die Server-Adresse nicht im Link steht.
+    nonisolated static func seite(server: URL, token: String) -> URL {
+        let basis = server.host()?.hasPrefix("lumen-fit-live.") == true ? URL(string: "https://lumen-fit.pages.dev")! : server
+        return basis.appendingPathComponent("f").appendingPathComponent(token)
+    }
 
     nonisolated static func istToken(_ text: String) -> Bool {
         text.utf8.count == 43 && text.utf8.allSatisfy { ($0 >= 48 && $0 <= 57) || ($0 >= 65 && $0 <= 90) || ($0 >= 97 && $0 <= 122) || $0 == 45 || $0 == 95 }
