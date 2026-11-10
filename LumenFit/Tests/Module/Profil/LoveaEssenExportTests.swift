@@ -9,9 +9,9 @@ final class LoveaEssenExportTests: XCTestCase {
     private func antwort(_ status: Int, _ json: String = "{}") -> SkriptLader.Antwort { .init(status: status, daten: Data(json.utf8), fehler: nil) }
 
     /// Ein angemeldetes Konto mit Lovea-Freigabe; `exportAn` ist der Server-Schalter. Die letzte Antwort gilt für alle weiteren Aufrufe.
-    private func angemeldet(exportAn: Bool, danach: SkriptLader.Antwort) async throws -> (KontoDienst, SkriptLader) {
+    private func angemeldet(exportAn: Bool, danach: SkriptLader.Antwort...) async throws -> (KontoDienst, SkriptLader) {
         let freigabe = #"{"erlaubt":true,"person":"person-a","importErledigt":true,"essenExportErledigt":false,"essenExportAn":\#(exportAn)}"#
-        let lader = SkriptLader([antwort(201), antwort(200, #"{"config":{}}"#), antwort(200, freigabe), antwort(404), antwort(200, #"{"partner":null}"#), antwort(200), danach])
+        let lader = SkriptLader([antwort(201), antwort(200, #"{"config":{}}"#), antwort(200, freigabe), antwort(404), antwort(200, #"{"partner":null}"#), antwort(200)] + danach)
         let d = KontoDienst(zugang: zugang, schluesselbund: SpeicherSchluesselbund(), http: lader, ordner: try tempOrdner(), uhr: { Date() }, version: "0.0.1")
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         return (d, lader)
@@ -78,6 +78,17 @@ final class LoveaEssenExportTests: XCTestCase {
         XCTAssertEqual(opsAnfragen(lader).count, 1)
         XCTAssertEqual(konto.essenExportAnzahl, 0)
         XCTAssertFalse(konto.essenExportErledigt)
+    }
+
+    func testAbgelehntesPaketGehtEinzelnUndUeberspringtNurDasAbgelehnte() async throws {
+        let (konto, lader) = try await angemeldet(exportAn: true, danach: antwort(400), antwort(200), antwort(400), antwort(200))
+        let n = await LoveaEssenExport.starteWennOffen(konto: konto, daten: try datenMitEssen(), jetzt: Date())
+        XCTAssertEqual(n, 1, "ein Op angenommen, eins übersprungen")
+        let anfragen = opsAnfragen(lader)
+        XCTAssertEqual(anfragen.count, 3, "Paket, dann zwei einzeln")
+        XCTAssertEqual((anfragen.last?["ops"] as? [Any])?.count, 1)
+        XCTAssertEqual(konto.essenExportAnzahl, 2, "der Export hängt nicht an dem abgelehnten Op")
+        XCTAssertTrue(konto.essenExportErledigt)
     }
 
     func testAlterKontoStandOhneExportFelderLaedt() throws {

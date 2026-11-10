@@ -36,9 +36,20 @@ enum LoveaEssenExport {
         var zaehler = 0
         while gesendet < alle.count {
             let teil = Array(alle[gesendet..<min(gesendet + paket, alle.count)])
-            guard await konto.loveaOpsSenden(teil) == 200 else { return zaehler == 0 ? nil : zaehler }
+            let status = await konto.loveaOpsSenden(teil)
+            if status == 400 {
+                // Der Server lehnt das ganze Paket ab, wenn ein Op seine Grenzen reißt: einzeln nachsenden und nur das Abgelehnte überspringen,
+                // sonst hinge der Export für immer an demselben Paket. Schon Angenommenes doppelt zu senden ist harmlos (Lovea kennt die id).
+                for op in teil {
+                    let einzeln = await konto.loveaOpsSenden([op])
+                    guard einzeln == 200 || einzeln == 400 else { return zaehler == 0 ? nil : zaehler }
+                    if einzeln == 200 { zaehler += 1 }
+                }
+            } else {
+                guard status == 200 else { return zaehler == 0 ? nil : zaehler }
+                zaehler += teil.count
+            }
             gesendet += teil.count
-            zaehler += teil.count
             konto.essenExportMerken(anzahl: gesendet, ziele: konto.essenExportZiele)
         }
         let ziele = daten.essen.ernaehrungsZiele
