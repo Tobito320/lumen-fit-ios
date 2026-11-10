@@ -27,7 +27,8 @@ final class GeschafftLogikTests: XCTestCase {
         let g = try stand(a)
         XCTAssertEqual(g.titel, "Push")
         XCTAssertEqual(g.saetze, 5)
-        XCTAssertEqual(g.volumen, 3 * 60 * 8 + 2 * 20 * 8)
+        // Satz 1 von a startet mit den 50 kg vom letzten Mal (WorkoutLogik.zeilen, SPEC Geschichte 4), die Sätze 2 und 3 mit den 60 kg aus dem Plan.
+        XCTAssertEqual(g.volumen, (50 + 60 + 60) * 8 + 2 * 20 * 8)
         XCTAssertEqual(g.sekunden, 47 * 60, accuracy: 1)
         XCTAssertEqual(g.rekorde.count, 1, "nur Übung a hat ein früheres Training, das erste Mal ist kein Rekord")
         XCTAssertEqual(g.rekorde.first?.text, "60 kg × 8")
