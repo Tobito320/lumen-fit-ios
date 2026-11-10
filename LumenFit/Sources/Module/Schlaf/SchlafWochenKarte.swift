@@ -75,13 +75,13 @@ struct SchlafSaeulen: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(sprechText)
         .accessibilityChartDescriptor(SchlafDiagrammBeschreibung(
-            titel: "Schlaf je Nacht", zusammenfassung: sprechText, achseX: "Tag", reihe: "Schlafdauer",
+            titel: String(localized: "Schlaf je Nacht"), zusammenfassung: sprechText, achseX: String(localized: "Tag"), reihe: String(localized: "Schlafdauer"),
             punkte: tage.compactMap { t in t.minuten.map { SchlafDiagrammBeschreibung.Punkt(name: Datum.anzeige(t.tag), minuten: Double($0)) } }))
     }
 
     private var sprechText: String {
         let mit = tage.compactMap { t in t.minuten.map { "\(Datum.anzeige(t.tag)) \(SchlafFormat.sprechDauer($0))" } }
-        return mit.isEmpty ? "Keine Nächte" : mit.joined(separator: ", ")
+        return mit.isEmpty ? String(localized: "Keine Nächte") : mit.joined(separator: ", ")
     }
 
     @ViewBuilder
@@ -115,16 +115,16 @@ struct SchlafWochenKarte: View {
     @Environment(\.palette) private var palette
 
     private var aussage: String {
-        guard let schnitt = woche.diese.schnittMinuten else { return "Diese Woche: noch keine Nacht" }
-        return "Im Schnitt \(SchlafFormat.dauer(schnitt)) pro Nacht"
+        guard let schnitt = woche.diese.schnittMinuten else { return String(localized: "Diese Woche: noch keine Nacht") }
+        return String(localized: "Im Schnitt \(SchlafFormat.dauer(schnitt)) pro Nacht")
     }
 
     private var kernzeile: String {
         let n = woche.diese.unterSechsStunden
         switch n {
-        case 0: return "Keine Nacht unter 6 Stunden"
-        case 1: return "1 Nacht unter 6 Stunden"
-        default: return "\(n) Nächte unter 6 Stunden"
+        case 0: return String(localized: "Keine Nacht unter 6 Stunden")
+        case 1: return String(localized: "1 Nacht unter 6 Stunden")
+        default: return String(localized: "\(n) Nächte unter 6 Stunden")
         }
     }
 

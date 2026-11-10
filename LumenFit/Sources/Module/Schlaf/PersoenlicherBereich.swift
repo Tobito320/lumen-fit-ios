@@ -4,11 +4,11 @@ import Foundation
 enum SchlafVitalInfo {
     static func name(_ art: VitalArt) -> String {
         switch art {
-        case .ruhepuls: "Ruhepuls"
+        case .ruhepuls: String(localized: "Ruhepuls")
         case .hrv: "HRV"
         case .sauerstoff: "SpO2"
-        case .atemfrequenz: "Atmung"
-        case .temperatur: "Temperatur"
+        case .atemfrequenz: String(localized: "Atmung")
+        case .temperatur: String(localized: "Temperatur")
         case .vo2max: "VO2max"
         }
     }
@@ -26,12 +26,12 @@ enum SchlafVitalInfo {
     /// Für VoiceOver ausgeschrieben.
     static func sprechEinheit(_ art: VitalArt) -> String {
         switch art {
-        case .ruhepuls: "Schläge pro Minute"
-        case .atemfrequenz: "Atemzüge pro Minute"
-        case .hrv: "Millisekunden"
-        case .sauerstoff: "Prozent"
-        case .temperatur: "Grad Celsius"
-        case .vo2max: "Milliliter pro Kilogramm und Minute"
+        case .ruhepuls: String(localized: "Schläge pro Minute")
+        case .atemfrequenz: String(localized: "Atemzüge pro Minute")
+        case .hrv: String(localized: "Millisekunden")
+        case .sauerstoff: String(localized: "Prozent")
+        case .temperatur: String(localized: "Grad Celsius")
+        case .vo2max: String(localized: "Milliliter pro Kilogramm und Minute")
         }
     }
 
@@ -78,9 +78,9 @@ struct PersoenlicherBereich: Equatable, Sendable {
 
         var name: String {
             switch self {
-            case .niedrig: "unter deinem Bereich"
-            case .normal: "in deinem Bereich"
-            case .hoch: "über deinem Bereich"
+            case .niedrig: String(localized: "unter deinem Bereich")
+            case .normal: String(localized: "in deinem Bereich")
+            case .hoch: String(localized: "über deinem Bereich")
             }
         }
     }
@@ -173,19 +173,19 @@ struct PersoenlicherBereich: Equatable, Sendable {
     /// "52 bis 74 ms".
     var bereichText: String {
         let stellen = SchlafVitalInfo.stellen(art)
-        return "\(SchlafFormat.zahl(untereGrenze, stellen: stellen)) bis \(SchlafFormat.zahl(obereGrenze, stellen: stellen)) \(SchlafVitalInfo.einheit(art))"
+        return String(localized: "\(SchlafFormat.zahl(untereGrenze, stellen: stellen)) bis \(SchlafFormat.zahl(obereGrenze, stellen: stellen)) \(SchlafVitalInfo.einheit(art))")
     }
 
     /// "Mit 68 ms liegst du in deinem Bereich (52 bis 74 ms)."
     var lageSatz: String {
-        "Mit \(SchlafVitalInfo.text(art, aktuell)) liegst du \(lage.name) (\(bereichText))."
+        String(localized: "Mit \(SchlafVitalInfo.text(art, aktuell)) liegst du \(lage.name) (\(bereichText)).")
     }
 
     /// Satz für den Chip: "4 % über deinem Schnitt".
     var schnittText: String {
         let p = abweichungProzent
-        if p == 0 { return "wie dein Schnitt" }
-        return "\(abs(p)) % \(p > 0 ? "über" : "unter") deinem Schnitt"
+        if p == 0 { return String(localized: "wie dein Schnitt") }
+        return p > 0 ? String(localized: "\(abs(p)) % über deinem Schnitt") : String(localized: "\(abs(p)) % unter deinem Schnitt")
     }
 }
 
@@ -212,7 +212,7 @@ struct SchlafVitalStand: Equatable, Sendable, Identifiable {
     /// "vom 18.09.", wenn der aktuelle Wert nicht von heute oder gestern ist; sonst `nil`.
     var datumHinweis: String? {
         guard let aktuell, aktuell.tag < Datum.addTage(heute, -PersoenlicherBereich.frischTage) else { return nil }
-        return "vom \(SchlafFormat.kurzesDatum(aktuell.tag))"
+        return String(localized: "vom \(SchlafFormat.kurzesDatum(aktuell.tag))")
     }
 
     /// Der Bereich, wenn er auf einem Wert von heute oder gestern steht (für den Erholungs-Satz).
@@ -220,15 +220,15 @@ struct SchlafVitalStand: Equatable, Sendable, Identifiable {
 
     /// Text unter dem Wert: der Trend gegen den Schnitt, oder was fehlt.
     var untertitel: String {
-        guard aktuell != nil else { return "Keine Daten" }
+        guard aktuell != nil else { return String(localized: "Keine Daten") }
         let hinweis = datumHinweis.map { " · \($0)" } ?? ""
         if let bereich { return bereich.schnittText + hinweis }
-        return "Zu wenig Daten für deinen Schnitt (\(vorhanden) von \(PersoenlicherBereich.mindestWerte))" + hinweis
+        return String(localized: "Zu wenig Daten für deinen Schnitt (\(vorhanden) von \(PersoenlicherBereich.mindestWerte))") + hinweis
     }
 
     /// Ein Satz für VoiceOver mit Name, Wert und Trend.
     var sprechSatz: String {
-        guard let aktuell else { return "\(SchlafVitalInfo.name(art)): keine Daten. In Health prüfen." }
+        guard let aktuell else { return String(localized: "\(SchlafVitalInfo.name(art)): keine Daten. In Health prüfen.") }
         return "\(SchlafVitalInfo.name(art)) \(SchlafVitalInfo.sprechText(art, aktuell.wert)), \(untertitel)"
     }
 }

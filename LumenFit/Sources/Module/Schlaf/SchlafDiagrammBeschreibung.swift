@@ -18,7 +18,7 @@ struct SchlafDiagrammBeschreibung: AXChartDescriptorRepresentable {
     func makeChartDescriptor() -> AXChartDescriptor {
         let x = AXCategoricalDataAxisDescriptor(title: achseX, categoryOrder: punkte.map(\.name))
         let hoechster = max(punkte.map(\.minuten).max() ?? 0, 60)
-        let y = AXNumericDataAxisDescriptor(title: "Dauer", range: 0...hoechster, gridlinePositions: []) { wert in
+        let y = AXNumericDataAxisDescriptor(title: String(localized: "Dauer"), range: 0...hoechster, gridlinePositions: []) { wert in
             SchlafFormat.sprechDauer(Int(wert.rounded()))
         }
         let serie = AXDataSeriesDescriptor(name: reihe, isContinuous: false, dataPoints: punkte.map { AXDataPoint(x: $0.name, y: $0.minuten) })

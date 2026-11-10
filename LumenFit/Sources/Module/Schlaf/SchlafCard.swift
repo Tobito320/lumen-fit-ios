@@ -11,13 +11,13 @@ struct SchlafCard: View {
 
     private var minuten: Int { nacht.nacht.schlafMinuten }
 
-    private var zeiten: String { "\(Datum.uhrzeit(nacht.nacht.von)) bis \(Datum.uhrzeit(nacht.nacht.bis))" }
+    private var zeiten: String { String(localized: "\(Datum.uhrzeit(nacht.nacht.von)) bis \(Datum.uhrzeit(nacht.nacht.bis))") }
 
     /// Symbol und Text zum Ziel: nie nur Farbe.
     private var zielZeile: (symbol: String, text: String) {
-        guard zielMinuten > 0 else { return ("moon.zzz.fill", "Kein Ziel gesetzt") }
-        if minuten >= zielMinuten { return ("checkmark", "Ziel erreicht") }
-        return ("arrow.down", "\(SchlafFormat.dauer(zielMinuten - minuten)) unter deinem Ziel")
+        guard zielMinuten > 0 else { return ("moon.zzz.fill", String(localized: "Kein Ziel gesetzt")) }
+        if minuten >= zielMinuten { return ("checkmark", String(localized: "Ziel erreicht")) }
+        return ("arrow.down", String(localized: "\(SchlafFormat.dauer(zielMinuten - minuten)) unter deinem Ziel"))
     }
 
     /// "02:10–02:40, 04:05–04:20": Wach in der Nacht und Nickerchen aus den Schlafphasen (Lovea `SchlafCard`).
@@ -26,12 +26,12 @@ struct SchlafCard: View {
     }
 
     private var sprechText: String {
-        var teile = ["\(titel): \(SchlafFormat.sprechDauer(minuten)) geschlafen", "von \(zeiten)"]
-        if zielMinuten > 0 { teile.append("Ziel \(SchlafFormat.sprechDauer(zielMinuten))") }
+        var teile = [String(localized: "\(titel): \(SchlafFormat.sprechDauer(minuten)) geschlafen"), String(localized: "von \(zeiten)")]
+        if zielMinuten > 0 { teile.append(String(localized: "Ziel \(SchlafFormat.sprechDauer(zielMinuten))")) }
         teile.append(zielZeile.text)
         teile.append(lumi.beschreibung)
-        if !nacht.nacht.wachPhasen.isEmpty { teile.append("Wach in der Nacht: " + zeitText(nacht.nacht.wachPhasen)) }
-        if let n = nacht.nacht.nickerchen, !n.isEmpty { teile.append("Nickerchen: " + zeitText(n)) }
+        if !nacht.nacht.wachPhasen.isEmpty { teile.append(String(localized: "Wach in der Nacht: \(zeitText(nacht.nacht.wachPhasen))")) }
+        if let n = nacht.nacht.nickerchen, !n.isEmpty { teile.append(String(localized: "Nickerchen: \(zeitText(n))")) }
         return teile.joined(separator: ", ")
     }
 
@@ -51,7 +51,7 @@ struct SchlafCard: View {
                                 .lineLimit(1)
                             Text("h").font(.title3.weight(.semibold))
                         }
-                        Text(zeiten + (zielMinuten > 0 ? " · Ziel \(SchlafFormat.stundenMinuten(zielMinuten))" : ""))
+                        Text(zielMinuten > 0 ? String(localized: "\(zeiten) · Ziel \(SchlafFormat.stundenMinuten(zielMinuten))") : zeiten)
                             .font(.subheadline.weight(.medium))
                             .monospacedDigit()
                     }
@@ -67,11 +67,11 @@ struct SchlafCard: View {
                 Label(zielZeile.text, systemImage: zielZeile.symbol)
                     .font(.subheadline.weight(.semibold))
                 if !nacht.nacht.wachPhasen.isEmpty {
-                    Label("Wach in der Nacht: " + zeitText(nacht.nacht.wachPhasen), systemImage: "eye")
+                    Label(String(localized: "Wach in der Nacht: \(zeitText(nacht.nacht.wachPhasen))"), systemImage: "eye")
                         .font(.footnote.weight(.medium)).monospacedDigit()
                 }
                 if let n = nacht.nacht.nickerchen, !n.isEmpty {
-                    Label("Nickerchen: " + zeitText(n), systemImage: "powersleep")
+                    Label(String(localized: "Nickerchen: \(zeitText(n))"), systemImage: "powersleep")
                         .font(.footnote.weight(.medium)).monospacedDigit()
                 }
             }

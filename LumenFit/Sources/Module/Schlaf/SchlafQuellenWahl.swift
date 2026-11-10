@@ -45,10 +45,11 @@ struct SchlafGewaehlteNacht: Equatable, Sendable, Identifiable {
 
     /// Ein Satz fürs Detail: welche Quelle gilt und warum.
     var erklaerung: String {
-        guard !weitere.isEmpty else { return "Quelle: \(quelle.name)." }
-        let namen = weitere.map(\.name).joined(separator: " und ")
-        let grund = hatPhasen ? "diese Quelle die Schlafphasen kennt" : "diese Quelle genauer misst"
-        return "Quelle: \(quelle.name). Auch gemeldet von: \(namen). Es zählt \(quelle.name), weil \(grund)."
+        guard !weitere.isEmpty else { return String(localized: "Quelle: \(quelle.name).") }
+        let namen = weitere.map(\.name).formatted(.list(type: .and))
+        return hatPhasen
+            ? String(localized: "Quelle: \(quelle.name). Auch gemeldet von: \(namen). Es zählt \(quelle.name), weil diese Quelle die Schlafphasen kennt.")
+            : String(localized: "Quelle: \(quelle.name). Auch gemeldet von: \(namen). Es zählt \(quelle.name), weil diese Quelle genauer misst.")
     }
 }
 

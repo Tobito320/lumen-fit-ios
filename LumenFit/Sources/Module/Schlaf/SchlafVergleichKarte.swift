@@ -16,12 +16,12 @@ struct SchlafVergleichKarte: View {
                     .font(.headline)
                     .foregroundStyle(palette.text)
                     .accessibilityAddTraits(.isHeader)
-                zeile("Einschlafen", band: nacht.band.map { Datum.uhrzeit($0.von) }, health: nacht.health.map { Datum.uhrzeit($0.von) },
-                      unterschied: abweichung.map { SchlafVergleich.abstand($0.einschlafen, mehr: "später", weniger: "früher") })
-                zeile("Aufwachen", band: nacht.band.map { Datum.uhrzeit($0.bis) }, health: nacht.health.map { Datum.uhrzeit($0.bis) },
-                      unterschied: abweichung.map { SchlafVergleich.abstand($0.aufwachen, mehr: "später", weniger: "früher") })
-                zeile("Schlafdauer", band: nacht.band.map { SchlafFormat.dauer($0.minuten) }, health: nacht.health.map { SchlafFormat.dauer($0.minuten) },
-                      unterschied: abweichung.map { SchlafVergleich.abstand($0.dauer, mehr: "länger", weniger: "kürzer") })
+                zeile(String(localized: "Einschlafen"), band: nacht.band.map { Datum.uhrzeit($0.von) }, health: nacht.health.map { Datum.uhrzeit($0.von) },
+                      unterschied: abweichung.map { SchlafVergleich.abstand($0.einschlafen, mehr: String(localized: "später"), weniger: String(localized: "früher")) })
+                zeile(String(localized: "Aufwachen"), band: nacht.band.map { Datum.uhrzeit($0.bis) }, health: nacht.health.map { Datum.uhrzeit($0.bis) },
+                      unterschied: abweichung.map { SchlafVergleich.abstand($0.aufwachen, mehr: String(localized: "später"), weniger: String(localized: "früher")) })
+                zeile(String(localized: "Schlafdauer"), band: nacht.band.map { SchlafFormat.dauer($0.minuten) }, health: nacht.health.map { SchlafFormat.dauer($0.minuten) },
+                      unterschied: abweichung.map { SchlafVergleich.abstand($0.dauer, mehr: String(localized: "länger"), weniger: String(localized: "kürzer")) })
                 if let urteil = SchlafVergleich.abgleich(nacht, verlauf: verlauf) {
                     abgleich(urteil)
                 }
@@ -31,8 +31,10 @@ struct SchlafVergleichKarte: View {
     }
 
     private func zeile(_ titel: String, band: String?, health: String?, unterschied: String?) -> some View {
-        let ansage = unterschied.map { ", Unterschied \($0)" } ?? ""
-        let label = "\(titel): Band \(band ?? "keine Daten"), Health \(health ?? "keine Daten")\(ansage)"
+        let keine = String(localized: "keine Daten")
+        let b = band ?? keine, h = health ?? keine
+        let label = unterschied.map { String(localized: "\(titel): Band \(b), Health \(h), Unterschied \($0)") }
+            ?? String(localized: "\(titel): Band \(b), Health \(h)")
         return HStack(alignment: .firstTextBaseline, spacing: Abstand.s) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel).font(.subheadline).foregroundStyle(palette.text)

@@ -16,6 +16,13 @@ struct SchlafVerlaufView: View {
         case sieben = "7 Nächte", dreissig = "30 Nächte", alle = "Alle"
         var id: String { rawValue }
         var anzahl: Int? { switch self { case .sieben: 7; case .dreissig: 30; case .alle: nil } }
+        var titel: String {
+            switch self {
+            case .sieben: String(localized: "7 Nächte")
+            case .dreissig: String(localized: "30 Nächte")
+            case .alle: String(localized: "Alle")
+            }
+        }
     }
 
     private static let tageImDiagramm = 30
@@ -28,8 +35,8 @@ struct SchlafVerlaufView: View {
                 if u.hatDaten {
                     inhalt(u)
                 } else {
-                    LeerZustand(stimmung: u.lumi(jetzt: umgebung.uhr()), satz: "Keine Schlafdaten. Trage dein Handy oder die Uhr nachts.",
-                                handlung: "In Health prüfen", aktion: { SchlafHealthLink.oeffnen(openURL) })
+                    LeerZustand(stimmung: u.lumi(jetzt: umgebung.uhr()), satz: String(localized: "Keine Schlafdaten. Trage dein Handy oder die Uhr nachts."),
+                                handlung: String(localized: "In Health prüfen"), aktion: { SchlafHealthLink.oeffnen(openURL) })
                 }
             }
             .padding(.horizontal, Abstand.l)
@@ -52,7 +59,7 @@ struct SchlafVerlaufView: View {
         SchlafRegelKarte(ergebnis: u.regelmaessigkeit)
         SchlafAbschnittKopf("Nächte")
         Picker("Zeitraum", selection: $umfang.animation(bewegungAus ? nil : Feder.schnell)) {
-            ForEach(Umfang.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(Umfang.allCases) { Text($0.titel).tag($0) }
         }
         .pickerStyle(.segmented)
         naechte(u)
@@ -61,10 +68,11 @@ struct SchlafVerlaufView: View {
     private func diagramm(_ u: SchlafUebersicht) -> some View {
         let tage = u.tage(Self.tageImDiagramm)
         let mit = tage.compactMap(\.minuten)
-        let aussage = mit.isEmpty ? "Keine Nacht in den letzten \(Self.tageImDiagramm) Tagen"
-            : "Im Schnitt \(SchlafFormat.dauer(mit.reduce(0, +) / mit.count)) in \(mit.count) Nächten"
+        let schnitt = mit.isEmpty ? "" : SchlafFormat.dauer(mit.reduce(0, +) / mit.count)
+        let aussage = mit.isEmpty ? String(localized: "Keine Nacht in den letzten \(Self.tageImDiagramm) Tagen")
+            : String(localized: "Im Schnitt \(schnitt) in \(mit.count) Nächten")
         let kurz = mit.filter { $0 < WochenVergleich.kurzeNachtMinuten }.count
-        let kernzeile = kurz == 0 ? "Keine Nacht unter 6 Stunden" : (kurz == 1 ? "1 Nacht unter 6 Stunden" : "\(kurz) Nächte unter 6 Stunden")
+        let kernzeile = kurz == 0 ? String(localized: "Keine Nacht unter 6 Stunden") : (kurz == 1 ? String(localized: "1 Nacht unter 6 Stunden") : String(localized: "\(kurz) Nächte unter 6 Stunden"))
         return DiagrammKarte(aussage: aussage, kernzeile: kernzeile) {
             SchlafSaeulen(tage: tage, zielMinuten: u.zielMinuten, beschriftet: false).padding(.top, Abstand.s)
         }
@@ -79,7 +87,7 @@ struct SchlafVerlaufView: View {
         }
     }
 
-    private func zeitenZeile(_ titel: String, _ zeiten: SchlafZeiten?) -> some View {
+    private func zeitenZeile(_ titel: LocalizedStringKey, _ zeiten: SchlafZeiten?) -> some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(titel).font(.headline).foregroundStyle(palette.text)

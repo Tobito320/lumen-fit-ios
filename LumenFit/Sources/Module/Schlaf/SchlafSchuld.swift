@@ -16,12 +16,12 @@ enum SchlafSchuld {
         let fruehervorschlag: Int?
 
         var satz: String {
-            if minuten == 0 { return "Keine Schlafschuld: Du hast dein Ziel in jeder gemessenen Nacht erreicht." }
-            if fruehervorschlag == nil { return "Kaum Schlafschuld: \(SchlafFormat.dauer(minuten)) in den letzten \(SchlafSchuld.fenster) Tagen." }
-            return "Schlafschuld: \(SchlafFormat.dauer(minuten)) in den letzten \(SchlafSchuld.fenster) Tagen."
+            if minuten == 0 { return String(localized: "Keine Schlafschuld: Du hast dein Ziel in jeder gemessenen Nacht erreicht.") }
+            if fruehervorschlag == nil { return String(localized: "Kaum Schlafschuld: \(SchlafFormat.dauer(minuten)) in den letzten \(SchlafSchuld.fenster) Tagen.") }
+            return String(localized: "Schlafschuld: \(SchlafFormat.dauer(minuten)) in den letzten \(SchlafSchuld.fenster) Tagen.")
         }
 
-        var vorschlagSatz: String? { fruehervorschlag.map { "Heute \($0) Minuten früher ins Bett." } }
+        var vorschlagSatz: String? { fruehervorschlag.map { String(localized: "Heute \($0) Minuten früher ins Bett.") } }
     }
 
     /// Summe der fehlenden Minuten gegen das Ziel, nur Nächte unter dem Ziel zählen.

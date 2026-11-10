@@ -6,7 +6,7 @@ struct SchlafZeiten: Equatable, Sendable {
     let auf: Int
 
     /// "23:00 bis 07:00".
-    var text: String { "\(Datum.uhrzeit(minuten: bett)) bis \(Datum.uhrzeit(minuten: auf))" }
+    var text: String { String(localized: "\(Datum.uhrzeit(minuten: bett)) bis \(Datum.uhrzeit(minuten: auf))") }
 }
 
 /// Lumi schläft nachts (22 bis 5 Uhr) und im Schlaf-Tab, ist müde nach einer kurzen Nacht oder wenn die Erholung "schonen" sagt, sonst bereit.
@@ -49,8 +49,8 @@ struct SchlafUebersicht: Sendable {
 
     /// "Letzte Nacht" oder bei älteren Nächten "Nacht auf Mittwoch, 23. September".
     var titelLetzte: String {
-        guard let letzte else { return "Letzte Nacht" }
-        return letzte.nacht.tag >= heute ? "Letzte Nacht" : "Nacht auf \(Datum.anzeige(letzte.nacht.tag))"
+        guard let letzte else { return String(localized: "Letzte Nacht") }
+        return letzte.nacht.tag >= heute ? String(localized: "Letzte Nacht") : String(localized: "Nacht auf \(Datum.anzeige(letzte.nacht.tag))")
     }
 
     /// Nur mit iPhone: die neueste Nacht kennt keine Phasen.

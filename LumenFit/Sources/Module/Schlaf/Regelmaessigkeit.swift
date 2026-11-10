@@ -13,10 +13,10 @@ enum Regelmaessigkeit {
 
         var name: String {
             switch self {
-            case .sehrGleichmaessig: "Sehr gleichmäßig"
-            case .gleichmaessig: "Ziemlich gleichmäßig"
-            case .schwankend: "Mal früher, mal später"
-            case .wechselhaft: "Jeden Abend anders"
+            case .sehrGleichmaessig: String(localized: "Sehr gleichmäßig")
+            case .gleichmaessig: String(localized: "Ziemlich gleichmäßig")
+            case .schwankend: String(localized: "Mal früher, mal später")
+            case .wechselhaft: String(localized: "Jeden Abend anders")
             }
         }
 
@@ -49,7 +49,7 @@ enum Regelmaessigkeit {
         }
 
         var satz: String {
-            "Du schläfst meist gegen \(SchlafFormat.uhrzeit(skala: typischeBettzeit)) ein, mal etwa \(streuungMinuten) Minuten früher oder später."
+            String(localized: "Du schläfst meist gegen \(SchlafFormat.uhrzeit(skala: typischeBettzeit)) ein, mal etwa \(streuungMinuten) Minuten früher oder später.")
         }
     }
 
