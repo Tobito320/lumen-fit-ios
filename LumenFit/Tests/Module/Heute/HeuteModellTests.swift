@@ -303,6 +303,8 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(g.zielKg, 75)
         XCTAssertEqual(g.punkte.map(\.tag), ["2026-09-10", "2026-09-20"])
         XCTAssertEqual(g.aenderung, "−1,0 kg zur Vorwoche")
+        XCTAssertEqual(g.startZehntel, 790)
+        XCTAssertFalse(g.heuteEingetragen)
         XCTAssertEqual(m.stand?.planWoche.count, 7)
         XCTAssertEqual(m.stand?.planWoche.firstIndex(where: \.istHeute), 3)
     }
@@ -316,8 +318,6 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(u.daten?.ziele.ziele.gewichtKg, 80)
         m.setzeGewichtsziel(nil)
         XCTAssertNil(m.stand?.gewicht.zielKg)
-        XCTAssertEqual(g.startZehntel, 790)
-        XCTAssertFalse(g.heuteEingetragen)
     }
 
     func testHealthGewichtUndHandEintragAmSelbenTagDerHandEintragGewinnt() async throws {
