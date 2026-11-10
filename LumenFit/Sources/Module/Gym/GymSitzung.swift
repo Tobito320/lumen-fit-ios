@@ -1,6 +1,7 @@
 // Quelle: Lovea Health/Workout.swift (WorkoutAktion und WorkoutUhr, ersetzt: ein Objekt für das laufende Training), GymLive.swift
 import Foundation
 import Observation
+import UIKit
 
 /// Das laufende Training: Satzzeilen, Haken, Pause, Rekord, Live-Anzeige und Beenden. Auch der Steuerungsport der App
 /// (`trainingSteuerung`): ein Intent, die Live Activity oder ein Kurzbefehl startet die App im Hintergrund und ruft `satzFertig()`,
@@ -8,7 +9,8 @@ import Observation
 /// (`ladeWennNoetig`) und hält sonst nichts fest, was der Store nicht auch weiß.
 ///
 /// Die Zeilen werden im Speicher geändert (Plus, Minus, Typ) und beim Haken gesendet; ohne Haken gehen sie 1,5 s nach dem letzten Tipp
-/// als Entwurf raus (`entwurfSenden`), damit Absturz, Beenden durch iOS oder ein Update nichts verlieren: ein Op je Haken oder Ruhepause.
+/// als Entwurf raus (`entwurfSenden`; auch beim Sperren oder Verlassen der App, ohne dass eine Ansicht offen sein muss, und spätestens `entwurfHoechstens` nach dem ersten offenen Tipp),
+/// damit Absturz, Beenden durch iOS oder ein Update nichts verlieren: ein Op je Haken oder Ruhepause.
 /// Alle Zeiten kommen von `umgebung.uhr`. Kein Timer im Hintergrund: eine einzige schlafende Aufgabe bis zum Ende der Pause.
 @MainActor @Observable
 final class GymSitzung: TrainingSteuerung {
@@ -25,7 +27,11 @@ final class GymSitzung: TrainingSteuerung {
     @ObservationIgnored private var entwurfOffen: Set<String> = []
     @ObservationIgnored private(set) var entwurfAufgabe: Task<Void, Never>?
     /// Wie lange nach dem letzten Tipp ein Entwurf auf die Platte geht (Sekunden).
-    static let entwurfVerzug: TimeInterval = 1.5
+    nonisolated static let entwurfVerzug: TimeInterval = 1.5
+    /// Spätestens so lange nach dem ersten offenen Tipp geht der Entwurf raus, auch wenn die Person ohne Pause weitertippt (Sekunden).
+    nonisolated static let entwurfHoechstens: TimeInterval = 5
+    /// Wann der erste noch nicht geschriebene Tipp kam (`umgebung.uhr`); nil ohne offenen Entwurf. Nur im Speicher.
+    @ObservationIgnored private var entwurfErster: Date?
     /// Der zuletzt gesetzte Haken (Plan-Id, Satz, Zeit): startet die Pause nach, wenn die Person bei der ersten Frage Ja zum Pausen-Timer sagt.
     @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
     /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
@@ -61,6 +67,13 @@ final class GymSitzung: TrainingSteuerung {
     init(umgebung: AppUmgebung, puls: any GymPulsQuelle = GymKeinePuls()) {
         self.umgebung = umgebung
         self.puls = puls
+        // Sperren und Hintergrund schreiben offene Entwürfe von hier aus, nicht über eine Ansicht. `queue: nil`: der Rückruf läuft beim Senden
+        // auf dem Hauptthread (UIKit sendet dort), so ist vor dem Einfrieren der App alles geschrieben. Ohne Abmelden: nach `deinit` bleibt `self` leer.
+        for name in [UIApplication.willResignActiveNotification, UIApplication.didEnterBackgroundNotification] {
+            _ = NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { [weak self] _ in
+                MainActor.assumeIsolated { self?.entwurfSenden() }
+            }
+        }
     }
 
     /// Die Sitzung der App: im Betrieb die von `GymModul.start` gesetzte, sonst (Vorschau, Test-Host) eine frische ohne Puls.
@@ -122,9 +135,7 @@ final class GymSitzung: TrainingSteuerung {
             return
         }
         guard s.id != sessionId else { return }
-        entwurfAufgabe?.cancel()
-        entwurfAufgabe = nil
-        entwurfOffen = []
+        entwurfSenden()   // Entwürfe der alten Einheit zuerst schreiben, dann erst umschalten
         sessionId = s.id
         liste = WorkoutLogik.uebungen(s, tag: training?.tag(id: s.tag), frueher: fruehere(s))
         gemeldet = []
@@ -135,9 +146,7 @@ final class GymSitzung: TrainingSteuerung {
     }
 
     private func zuruecksetzen() {
-        entwurfAufgabe?.cancel()
-        entwurfAufgabe = nil
-        entwurfOffen = []
+        entwurfSenden()
         sessionId = nil
         liste = []
         pauseAufgabe?.cancel()
@@ -674,20 +683,33 @@ final class GymSitzung: TrainingSteuerung {
     private func entwurfMerken(_ u: Int) {
         guard liste.indices.contains(u) else { return }
         entwurfOffen.insert(liste[u].id)
+        let jetzt = umgebung.uhr()
+        let erster = entwurfErster ?? jetzt
+        entwurfErster = erster
+        let warte = Self.entwurfWartezeit(seitErstem: jetzt.timeIntervalSince(erster))
+        guard warte > 0 else { return entwurfSenden() }
         entwurfAufgabe?.cancel()
         entwurfAufgabe = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.entwurfVerzug))
+            try? await Task.sleep(for: .seconds(warte))
             guard !Task.isCancelled else { return }
             self?.entwurfSenden()
         }
+    }
+
+    /// Wie lange ein Entwurf nach diesem Tipp noch warten darf: der Verzug, aber nie über `entwurfHoechstens` seit dem ersten offenen Tipp. 0 oder weniger = jetzt schreiben.
+    nonisolated static func entwurfWartezeit(seitErstem: TimeInterval) -> TimeInterval {
+        min(entwurfVerzug, entwurfHoechstens - seitErstem)
     }
 
     /// Schreibt alle geänderten, noch nicht gesendeten Zeilen jetzt (Ende des Verzugs, Hintergrund, Beenden). Ohne Entwurf passiert nichts.
     func entwurfSenden() {
         entwurfAufgabe?.cancel()
         entwurfAufgabe = nil
+        entwurfErster = nil
         let offen = entwurfOffen
         entwurfOffen = []
+        // Nur in eine Einheit, die der Store noch kennt: eine verworfene oder die eines anderen Profils bekäme sonst einen Geister-Eintrag.
+        guard !offen.isEmpty, let sid = sessionId, training?.sessions.contains(where: { $0.id == sid }) == true else { return }
         for id in offen { if let u = liste.firstIndex(where: { $0.id == id }) { sende(u) } }
     }
 

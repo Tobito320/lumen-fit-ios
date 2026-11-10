@@ -256,6 +256,38 @@ test("Essen-Export: Ops gehen mit Key und Person an Lovea POST /ops, fremde Arte
   assert.equal((await ruf(env, "GET", "/lovea/freigabe", { headers: app() })).json.essenExportAn, true);
 });
 
+test("Essen-Export: zu großes d, Zukunftszeit, fremder Schlüssel, lange id und zu großer Body -> 400, nichts geht an Lovea", async () => {
+  const env = umgebung();
+  await registrieren(env);
+  await ruf(env, "PATCH", `/admin/konto/${ID}`, { headers: admin, body: { einstellungen: { loveaVerbinden: true }, lovea_person: "ahmed" } });
+  let aufrufe = 0;
+  const holen = async () => { aufrufe++; return Response.json({ seq: 1, uebersprungen: 0 }); };
+  const op = { id: "op-1", art: "essen.setzen", zeit: "2026-11-09T18:00:00.000Z", d: { id: "e1", kcal: 500 } };
+  const senden = (ops) => ruf(env, "POST", "/lovea/ops", { headers: app(), body: { ops }, holen });
+  const zuGross = await senden([{ ...op, d: { id: "e1", text: "x".repeat(4100) } }]);
+  assert.equal(zuGross.status, 400);
+  assert.match(zuGross.json.fehler, /d zu groß/);
+  assert.equal((await senden([{ ...op, d: { text: "x".repeat(3000) } }])).status, 200, "unter 4 KB geht durch");
+  const morgen = new Date(Date.now() + 2 * 24 * 3600 * 1000).toISOString();
+  const zukunft = await senden([{ ...op, zeit: morgen }]);
+  assert.equal(zukunft.status, 400);
+  assert.match(zukunft.json.fehler, /Zukunft/);
+  assert.equal((await senden([{ ...op, zeit: new Date(Date.now() + 3600 * 1000).toISOString() }])).status, 200, "eine Stunde Vorlauf (Uhr-Abweichung) ist erlaubt");
+  assert.equal((await senden([{ ...op, zeit: "gestern" }])).status, 400, "keine lesbare Zeit");
+  const fremd = await senden([{ ...op, art: "einstellung.setzen", d: { schluessel: "loveaVerbinden", wert: 1 } }]);
+  assert.equal(fremd.status, 400);
+  assert.match(fremd.json.fehler, /ziel/);
+  assert.equal((await senden([{ ...op, art: "einstellung.setzen", d: { schluessel: "ziel.ernaehrung.kcal", wert: "viel" } }])).status, 400, "wert muss eine Zahl sein");
+  assert.equal((await senden([{ ...op, art: "einstellung.setzen", d: { schluessel: "ziel.ernaehrung.kcal", wert: 2500 } }])).status, 200);
+  assert.equal((await senden([{ ...op, id: "i".repeat(81) }])).status, 400, "id über 80 Zeichen");
+  assert.equal((await senden([{ ...op, id: "i".repeat(80) }])).status, 200);
+  const gesehen = aufrufe;
+  const gross = await senden(Array.from({ length: 100 }, (_, i) => ({ ...op, id: `g-${i}`, d: { text: "y".repeat(3000) } })));
+  assert.equal(gross.status, 400, "Body über 256 KB");
+  assert.match(gross.json.fehler, /256 KB/);
+  assert.equal(aufrufe, gesehen, "abgelehnte Anfragen erreichen Lovea nicht");
+});
+
 test("Lovea-Proxy: Fehler von Lovea werden zu 502 ohne Inhalt, andere Pfade gibt es nicht", async () => {
   const env = umgebung();
   await registrieren(env);

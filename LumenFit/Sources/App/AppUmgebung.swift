@@ -133,14 +133,31 @@ final class AppUmgebung {
     func beiAbruf(_ aufgabe: @escaping @MainActor () async -> Void) { abrufAufgaben.append(aufgabe) }
 
     /// Läuft gerade ein Abruf? Dann startet kein zweiter (die Health-Hintergrundlieferung meldet oft mehrmals kurz hintereinander).
-    @ObservationIgnored private var abrufLaeuft = false
+    @ObservationIgnored private var laufenderAbruf: Task<Void, Never>?
+    /// Kam eine Lieferung während des Abrufs, hat der laufende neue Werte vielleicht verpasst: danach genau ein Nachlauf für alle Wartenden (Muster `GesundheitsStand`).
+    @ObservationIgnored private var abrufNochmal = false
+
+    /// Führt den Abruf aus. Ruft jemand währenddessen nochmal, kehrt er erst zurück, wenn der Nachlauf fertig ist: Health bekommt `fertig` also nie vor den neuen Werten.
+    func fuehreAbrufAus() async {
+        if let laufenderAbruf {
+            abrufNochmal = true
+            await laufenderAbruf.value
+            return
+        }
+        let abruf = Task { @MainActor in
+            repeat {
+                abrufNochmal = false
+                await abrufEinmal()
+            } while abrufNochmal
+            laufenderAbruf = nil   // ohne `await` nach der Prüfung: kein Aufruf kann sich an einen schon fertigen Abruf hängen
+        }
+        laufenderAbruf = abruf
+        await abruf.value
+    }
 
     /// Führt alle angemeldeten Abruf-Aufgaben nacheinander aus, höchstens 20 Sekunden: danach wird abgebrochen und die Funktion kehrt
     /// zurück, auch wenn eine Aufgabe den Abbruch nicht beachtet (sonst endet der Hintergrundlauf nie und iOS beendet die App hart).
-    func fuehreAbrufAus() async {
-        guard !abrufLaeuft else { return }
-        abrufLaeuft = true
-        defer { abrufLaeuft = false }
+    private func abrufEinmal() async {
         let aufgaben = abrufAufgaben
         let arbeit = Task { @MainActor in
             // Erst Health, dann die Aufgaben: sonst schreiben Lovea-Datei und Server-Stand die Schritte von vorher. Nie die Rechte-Abfrage auslösen.

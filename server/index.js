@@ -508,17 +508,32 @@ async function partnerLesen(request, env) {
 // Nur die Essen-Arten und Einstellungen (Ziele), `von` setzt der Server; doppelte Ids überspringt Lovea selbst (INSERT OR IGNORE).
 const EXPORT_ARTEN = new Set(["essen.setzen", "lebensmittel.setzen", "lebensmittel.favorit", "rezept.setzen", "fasten.setzen", "fasten.eintrag", "fasten.plan",
   "food.anpassung", "koerper.setzen", "einstellung.setzen"]);
+// Grenzen je Anfrage, damit ein kaputtes oder falsches Gerät Loveas Raum nicht füllt: 256 KB gesamt, je Op id 80 Zeichen, d 4 KB, Zeit höchstens einen Tag voraus.
+// Die App sendet deshalb Pakete zu 50 Ops (50 mal 4 KB passen in 256 KB).
+const OPS_BYTES = 256 * 1024;
+const OP_ID_MAX = 80;
+const OP_D_MAX = 4096;
+const OP_ZUKUNFT_MS = 24 * 3600 * 1000;
 async function loveaOpsSenden(request, env, holen) {
   const { konto, antwort } = await kontoPruefen(request, env);
   if (antwort) return antwort;
   if (!freigegeben(konto)) return nein(403, "nicht freigegeben");
   if (!env.LOVEA_KEY) return nein(503, "nicht eingerichtet");
-  const k = await koerper(request);
+  const text = await request.text().catch(() => "");
+  if (new TextEncoder().encode(text).length > OPS_BYTES) return nein(400, "zu groß (höchstens 256 KB)");
+  let k = null;
+  try { k = JSON.parse(text); } catch {}
   if (!istObjekt(k) || !Array.isArray(k.ops) || k.ops.length === 0 || k.ops.length > MAX_LIMIT) return nein(400, "ops");
   const ops = [];
   for (const op of k.ops) {
     if (!istObjekt(op) || typeof op.id !== "string" || !op.id || typeof op.art !== "string" || typeof op.zeit !== "string" || !istObjekt(op.d)) return nein(400, "op");
     if (!EXPORT_ARTEN.has(op.art)) return nein(400, "art");
+    if (op.id.length > OP_ID_MAX) return nein(400, "id zu lang (höchstens 80 Zeichen)");
+    if (new TextEncoder().encode(JSON.stringify(op.d)).length > OP_D_MAX) return nein(400, "d zu groß (höchstens 4 KB)");
+    const zeit = Date.parse(op.zeit);
+    if (!Number.isFinite(zeit) || zeit > Date.now() + OP_ZUKUNFT_MS) return nein(400, "zeit ungültig oder mehr als einen Tag in der Zukunft");
+    // Von Einstellungen darf nur ein Ernährungsziel (Zahl) mit.
+    if (op.art === "einstellung.setzen" && !(typeof op.d.schluessel === "string" && op.d.schluessel.startsWith("ziel.") && typeof op.d.wert === "number" && Number.isFinite(op.d.wert))) return nein(400, "einstellung: nur ziel.* mit Zahl");
     ops.push({ id: op.id, art: op.art, von: konto.lovea_person, zeit: op.zeit, d: op.d });
   }
   let r;
