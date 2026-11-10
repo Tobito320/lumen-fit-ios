@@ -37,7 +37,7 @@ targets:
         NSSupportsLiveActivities: true
         # Mit HealthKit-Entitlement verlangt Apple beide Texte, auch wenn die App nur liest (Lovea, Upload-Fehler "Missing purpose string").
         NSHealthShareUsageDescription: "Lumen Fit liest deine Schritte, Aktivität, Herzfrequenz, Schlaf und Erholung aus Health, damit du deinen Fortschritt siehst."
-        NSHealthUpdateUsageDescription: "Lumen Fit speichert dein Training und dein Gewicht in Health, wenn du das einschaltest."
+        NSHealthUpdateUsageDescription: "Lumen Fit speichert dein Training und dein Gewicht in Health, wenn du es erlaubst."
         NSBluetoothAlwaysUsageDescription: "Lumen Fit verbindet sich auf deinen Wunsch mit deinem Fitness-Band, liest Schritte und Puls und zeigt den Akku."
         NSLocationWhenInUseUsageDescription: "Lumen Fit sucht Studios in deiner Nähe, wenn du dein Studio einträgst. Der Standort wird nicht gespeichert."
         NSCameraUsageDescription: "Lumen Fit nutzt die Kamera, um Barcodes von Lebensmitteln und QR-Codes zum Verbinden mit Personen zu scannen und dein Essen zu fotografieren."
@@ -52,6 +52,7 @@ targets:
         PRODUCT_NAME: LumenFit
         SWIFT_OPTIMIZATION_LEVEL: "-O"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Lumen Fit"
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
