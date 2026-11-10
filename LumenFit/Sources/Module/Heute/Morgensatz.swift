@@ -32,8 +32,8 @@ enum Morgensatz {
         if e.stunde >= 23 || e.stunde < 5 {
             return Ergebnis(satz: "Zeit zum Schlafen. Morgen geht es weiter.", stimmung: .schlaeft, locker: false)
         }
-        if e.trainiert { return Ergebnis(satz: "Training erledigt. Das war stark.", stimmung: .stolz, locker: false) }
-        if e.alleBoegenVoll { return Ergebnis(satz: "Alle drei Bögen sind voll. Ein runder Tag.", stimmung: .stolz, locker: false) }
+        if e.trainiert { return Ergebnis(satz: "Training erledigt. Das war stark.", stimmung: .ziel, locker: false) }
+        if e.alleBoegenVoll { return Ergebnis(satz: "Alle drei Bögen sind voll. Ein runder Tag.", stimmung: .ziel, locker: false) }
         let plan = e.ruhetag ? nil : e.planName
         let schlaf = e.score.teil(.schlaf).map { " (\($0.kurz))" } ?? ""
 

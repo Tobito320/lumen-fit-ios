@@ -1,6 +1,14 @@
 import Foundation
 
-enum LumiStimmung: String, Codable, CaseIterable, Sendable { case bereit, muede, stolz, schlaeft, denkt }
+/// Lumis Zustand (Set vom 10.11.2026, 14 Fälle). Die ersten fünf Rohwerte sind gespeichert (`fit.lumi.stimmung`, Widget-Snapshot) und bleiben;
+/// `stolz` ist der Zustand "Neuer Rekord". Welcher Zustand gilt, sagt `LumiLogik`.
+enum LumiStimmung: String, Codable, CaseIterable, Sendable {
+    case bereit, muede, stolz, schlaeft, denkt
+    case willkommen, anfeuern, pause, ziel, serie, erschoepft, ruhetag, muskelkater, vermisst
+}
+
+/// Name für `LumiLogik` und neue Aufrufer; derselbe Typ wie die gespeicherte Stimmung.
+typealias LumiZustand = LumiStimmung
 
 /// Antwort des Morgen-Checks (Op `fit.lumi.stimmung`): 1 bis 5, 1 = schwer, 5 = top.
 struct StimmungsEintrag: Codable, Hashable, Sendable {

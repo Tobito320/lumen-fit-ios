@@ -231,6 +231,6 @@ private struct FreundeInhalt: View {
     private func uebernehme(_ karte: FreundKarte) {
         daten.verbindung.freunde = FreundeRangliste.aufnehmen(karte, in: daten.verbindung.freunde)
         gelesen = nil
-        toast = ToastInhalt(titel: "\(karte.name) ist dabei", zeile: "Die Karte steht jetzt in der Liste.", stimmung: .stolz)
+        toast = ToastInhalt(titel: "\(karte.name) ist dabei", zeile: "Die Karte steht jetzt in der Liste.", stimmung: .ziel)
     }
 }

@@ -30,7 +30,7 @@ struct RueckblickDaten: Equatable, Sendable {
     }
 
     /// Lumi freut sich mit, wenn etwas gelaufen ist.
-    var stimmung: LumiStimmung { gymTage > 0 ? .stolz : .bereit }
+    var stimmung: LumiStimmung { gymTage > 0 ? .ziel : .bereit }
 
     /// "Volumen 12.400 kg · 42 Sätze" und der Schlaf.
     var zeile: String {

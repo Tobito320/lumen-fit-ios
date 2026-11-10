@@ -417,6 +417,19 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertEqual(alt?.art.messArt.habitId, "mass.bizeps")
         XCTAssertEqual(op(#"{"datum":"2026-10-01","art":"schulter","wert":110,"zukunft":1}"#).daten(KoerperwertD.self)?.art, .schulter)
     }
+
+    func testLumiStimmungAusAltenUndNeuenStaendenIstLesbar() throws {
+        // Lumi hat seit dem Lumi-Set 14 Zustände; die fünf alten Rohwerte stehen in fit.lumi.stimmung und im Widget-Snapshot und bleiben gültig.
+        for (roh, erwartet) in [("bereit", LumiStimmung.bereit), ("muede", .muede), ("stolz", .stolz), ("schlaeft", .schlaeft), ("denkt", .denkt)] {
+            let e = try JSONDecoder().decode(StimmungsEintrag.self, from: Data(#"{"tag":"2026-10-01","wert":3,"stimmung":"\#(roh)"}"#.utf8))
+            XCTAssertEqual(e.stimmung, erwartet, roh)
+        }
+        let neu = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(#"{"tag":"2026-11-10","lumi":"muskelkater","lumiStufe":2}"#.utf8))
+        XCTAssertEqual(neu.lumi, .muskelkater)
+        let fremd = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(#"{"tag":"2026-11-10","lumi":"tanzt","lumiStufe":2}"#.utf8))
+        XCTAssertNil(fremd.lumi, "ein unbekannter Zustand (neuerer Build) kostet nur dieses Feld")
+        XCTAssertEqual(fremd.lumiStufe, 2)
+    }
 }
 
 private extension NamenAenderung {

@@ -46,5 +46,5 @@ struct FortschrittQuelle {
     var essenZielDa: Bool { daten?.essen.ernaehrungsZiele.eingerichtet ?? false }
 
     /// Lumis Stimmung aus den Daten: stolz nach einem Training in dieser Woche, sonst bereit.
-    var stimmung: LumiStimmung { TrainingLogik.dieseWoche(sessions, heute: heute) > 0 ? .stolz : .bereit }
+    var stimmung: LumiStimmung { TrainingLogik.dieseWoche(sessions, heute: heute) > 0 ? .ziel : .bereit }
 }

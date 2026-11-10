@@ -85,7 +85,7 @@ struct NaechsterSatzKarte: View {
                 SatzVorschlagAnzeige(sitzung: sitzung, uebung: dran.uebung, satz: dran.satz, aufPlatte: true)
             }
         } else {
-            LumiView(stimmung: .stolz, groesse: 56)
+            LumiView(stimmung: .ziel, groesse: 56)
             Text("Alles geschafft").font(.title2.weight(.bold)).fontDesign(.rounded)
             Text("Beende das Training, wenn du fertig bist.").font(.subheadline)
         }

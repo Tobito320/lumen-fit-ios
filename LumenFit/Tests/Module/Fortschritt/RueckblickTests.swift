@@ -56,7 +56,7 @@ final class RueckblickTests: XCTestCase {
         XCTAssertEqual(r.schlafNaechte, 2)
         XCTAssertEqual(r.titel, "Deine Woche: 2 Gym-Tage")
         XCTAssertEqual(r.zeile, "Volumen 1.620 kg · 3 Sätze · Schlaf im Schnitt 7 h 30 min")
-        XCTAssertEqual(r.stimmung, .stolz)
+        XCTAssertEqual(r.stimmung, .ziel)
     }
 
     func testMonatZaehltAlleEinheitenDesMonats() {

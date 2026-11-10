@@ -88,10 +88,10 @@ final class MorgensatzTests: XCTestCase {
     func testTrainiertUndAlleBoegenVollSindStolz() {
         var e = eingabe(30)
         e.trainiert = true
-        XCTAssertEqual(Morgensatz.sprich(e).stimmung, .stolz)
+        XCTAssertEqual(Morgensatz.sprich(e).stimmung, .ziel)
         e.trainiert = false
         e.alleBoegenVoll = true
-        XCTAssertEqual(Morgensatz.sprich(e).stimmung, .stolz)
+        XCTAssertEqual(Morgensatz.sprich(e).stimmung, .ziel)
     }
 
     func testNachtsSchlaeftLumi() {

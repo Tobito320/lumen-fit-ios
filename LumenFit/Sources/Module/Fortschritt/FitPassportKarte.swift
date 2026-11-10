@@ -8,7 +8,7 @@ struct FitPassportBild: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Abstand.m) {
             HStack(spacing: Abstand.m) {
-                LumiView(stimmung: daten.gymTage > 0 ? .stolz : .bereit, groesse: 56, stufe: daten.stufe)
+                LumiView(stimmung: daten.gymTage > 0 ? .ziel : .bereit, groesse: 56, stufe: daten.stufe)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(daten.titel).font(.title3.weight(.bold)).fontDesign(.rounded)
                     if let name = daten.name { Text(name).font(.footnote).foregroundStyle(palette.text2) }

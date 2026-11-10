@@ -104,7 +104,7 @@ struct DatensicherungView: View {
         if ergebnis.neu == 0, ergebnis.uebersprungen > 0 {
             toast = ToastInhalt(titel: "Schon eingespielt", zeile: "Alles aus dieser Sicherung war schon da.", stimmung: .bereit)
         } else {
-            toast = ToastInhalt(titel: "Eingespielt", zeile: "\(ergebnis.neu) Einträge sind wieder da.", stimmung: .stolz)
+            toast = ToastInhalt(titel: "Eingespielt", zeile: "\(ergebnis.neu) Einträge sind wieder da.", stimmung: .ziel)
         }
     }
 }

@@ -13,7 +13,7 @@ struct LumiSeiteView: View {
             VStack(spacing: Abstand.l) {
                 hero(stand, stimmung: q.stimmung)
                 if q.medaillen.isEmpty {
-                    LeerZustand(stimmung: .bereit, satz: "Hake deinen ersten Satz ab, dann wächst Lumi.", handlung: "Training starten") {
+                    LeerZustand(stimmung: .willkommen, satz: "Hake deinen ersten Satz ab, dann wächst Lumi.", handlung: "Training starten") {
                         umgebung.router.oeffne(.gym(.training))
                     }
                     .lumenKartenFlaeche()

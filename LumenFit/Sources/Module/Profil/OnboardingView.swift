@@ -100,7 +100,7 @@ struct OnboardingView: View {
 
     private var willkommen: some View {
         VStack(spacing: Abstand.l) {
-            LumiView(stimmung: .bereit, groesse: 160).padding(.top, Abstand.l)
+            LumiView(stimmung: .willkommen, groesse: 160).padding(.top, Abstand.l)
             Text("Hallo, ich bin Lumi.").font(.largeTitle.bold()).foregroundStyle(palette.text).multilineTextAlignment(.center)
             Text("Ich zähle mit, wenn du dich bewegst, trainierst und dich erholst. Das Einrichten dauert eine Minute.")
                 .font(.body).foregroundStyle(palette.text2).multilineTextAlignment(.center)

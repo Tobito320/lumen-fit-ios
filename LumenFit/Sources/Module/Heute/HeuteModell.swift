@@ -284,8 +284,18 @@ final class HeuteModell {
         let hatStimmung: Bool = stimmungsWert != nil
         let hatNacht: Bool = nacht != nil
         let hatTagesdaten: Bool = istHeute || hatNacht || trainiert || hatStimmung || hatGewicht || habitGesetzt || gesundheitTag
-        let stimmungAnzeige: LumiStimmung = istHeute ? satz.stimmung : (voll ? .stolz : .denkt)
-        let satzAnzeige = istHeute ? satz.satz : (voll ? "An diesem Tag waren alle Bögen voll." : "So sah dieser Tag aus.")
+        // Lumis Zustand aus der Lage des Tages (LumiLogik); der Morgensatz bleibt, wenn er zum Zustand passt, sonst spricht Lumi den Satz des Zustands.
+        // Ein ausgeschalteter Bereich (Gym, Schlaf) fließt nicht ein.
+        let lumiTage: Set<String> = bereiche.gymAn ? gymTage : []
+        let lumiSchlaf: Int? = bereiche.schlafAn ? nacht?.minuten : nil
+        let wochenziel: Bool = bereiche.gymAn && gymWoche >= gymZiel
+        let lage = lumiLage(heute: heute, stunde: stunde, sessions: sessions, gymTage: lumiTage, trainiert: trainiert && bereiche.gymAn,
+                            gymWocheErreicht: wochenziel, voll: voll, schlafMinuten: lumiSchlaf, morgenCheck: stimmungsWert,
+                            gefuehl: k.gefuehl.eintrag(heute)?.gefuehl, ruhetag: plan.art == .ruhetag, basis: satz.stimmung)
+        let zustand: LumiStimmung = istHeute ? LumiLogik.zustand(lage) : satz.stimmung
+        let stimmungAnzeige: LumiStimmung = istHeute ? zustand : (voll ? .ziel : .denkt)
+        let satzAnzeige = istHeute ? (zustand == satz.stimmung ? satz.satz : zustand.satz)
+                                   : (voll ? "An diesem Tag waren alle Bögen voll." : "So sah dieser Tag aus.")
 
         stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
                            healthGeprueft: gesundheit.letzteAktualisierung != nil || gesundheit.zugriff == .nichtVerfuegbar, boegen: boegen, boegenSatz: boegenSatz,
@@ -297,6 +307,29 @@ final class HeuteModell {
                            woche: WochenStreifenLogik.woche(heute: heute, schritte: tage.mapValues { $0.schritte }, schlafMinuten: schlafWoche,
                                                             gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten),
                            einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten, bereiche: bereiche)
+    }
+
+    /// Die Lage für `LumiLogik`: Rekord, Dauer und Anstrengung (RPE) nur aus den Einheiten von heute; der Rekord wird nur gesucht, wenn heute trainiert wurde.
+    private func lumiLage(heute: String, stunde: Int, sessions: [GymSession], gymTage: Set<String>, trainiert: Bool, gymWocheErreicht: Bool, voll: Bool,
+                          schlafMinuten: Int?, morgenCheck: Int?, gefuehl: Int?, ruhetag: Bool, basis: LumiStimmung) -> LumiLage {
+        var lage = LumiLage(heute: heute, stunde: stunde, trainingsTage: gymTage)
+        let heutige = sessions.filter { ($0.tag ?? Datum.text($0.start)) == heute }
+        if trainiert, !heutige.isEmpty {
+            let frueher = sessions.filter { ($0.tag ?? Datum.text($0.start)) != heute }
+            lage.rekordHeute = MeilensteinPruefung.rekorde(sessions) > MeilensteinPruefung.rekorde(frueher)
+            lage.minutenHeute = Int(heutige.compactMap { $0.ende?.timeIntervalSince($0.start) }.reduce(0, +) / 60)
+            let rpe = heutige.flatMap(\.laeufe).flatMap { $0.saetze ?? [] }.compactMap(\.rpe)
+            lage.rpeSchnittHeute = rpe.isEmpty ? nil : rpe.reduce(0, +) / Double(rpe.count)
+        }
+        lage.gefuehlHeute = gefuehl
+        lage.serieWochen = MeilensteinPruefung.serieWochen(tage: gymTage, heute: heute)
+        lage.wochenzielErreicht = gymWocheErreicht
+        lage.boegenVoll = voll
+        lage.schlafMinuten = schlafMinuten
+        lage.morgenCheck = morgenCheck
+        lage.ruhetag = ruhetag
+        lage.basis = basis
+        return lage
     }
 
     private func anteil(_ ist: Int, _ ziel: Int) -> Double { ziel > 0 ? min(1, max(0, Double(ist) / Double(ziel))) : 0 }
