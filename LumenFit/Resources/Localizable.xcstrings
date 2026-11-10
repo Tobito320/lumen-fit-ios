@@ -3231,6 +3231,26 @@
         }
       }
     },
+    "%lld von %lld Hauptübung ist gestiegen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld main exercise went up."
+          }
+        }
+      }
+    },
+    "%lld von %lld Hauptübungen sind gestiegen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld main exercises went up."
+          }
+        }
+      }
+    },
     "%lld von %lld Medaillen" : {
       "localizations" : {
         "en" : {
@@ -10447,6 +10467,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The week is still running, %lld %@ planned."
+          }
+        }
+      }
+    },
+    "Die Woche läuft noch, %lld Training ist geplant." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The week isn't over yet, %lld more workout planned."
+          }
+        }
+      }
+    },
+    "Die Woche läuft noch, %lld Trainings sind geplant." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The week isn't over yet, %lld more workouts planned."
           }
         }
       }

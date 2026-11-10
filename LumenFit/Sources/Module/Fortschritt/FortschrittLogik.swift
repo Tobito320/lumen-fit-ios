@@ -138,9 +138,11 @@ enum FortschrittLogik {
     static func satz(_ v: TrainingsWochenVergleich, geplantRest: Int) -> String? {
         guard v.hauptuebungen > 0 else { return nil }
         let eine = v.hauptuebungen == 1
-        var text = String(localized: "\(v.gestiegen) von \(v.hauptuebungen) \(eine ? String(localized: "Hauptübung ist") : String(localized: "Hauptübungen sind")) gestiegen.")
+        var text = eine ? String(localized: "\(v.gestiegen) von \(v.hauptuebungen) Hauptübung ist gestiegen.")
+            : String(localized: "\(v.gestiegen) von \(v.hauptuebungen) Hauptübungen sind gestiegen.")
         if geplantRest > 0 {
-            text += " " + String(localized: "Die Woche läuft noch, \(geplantRest) \(geplantRest == 1 ? String(localized: "Training ist") : String(localized: "Trainings sind")) geplant.")
+            text += " " + (geplantRest == 1 ? String(localized: "Die Woche läuft noch, \(geplantRest) Training ist geplant.")
+                : String(localized: "Die Woche läuft noch, \(geplantRest) Trainings sind geplant."))
         }
         return text
     }
