@@ -8,6 +8,8 @@ import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { freunde, freundeSeite, freundeAdmin } from "./freunde.js";
 import { NAMEN } from "./nutzung-namen.js";
+import { kontoLoeschen } from "./konto-loeschen.js";
+import { kontakt } from "./kontakt.js";
 import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswertungBauen, IOS_FORM, GERAET_FORM } from "./nutzung.js";
 
 const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false, schlafSichtbar: false, kiFotoErlaubt: true, kiFotoLimit: 5 };
@@ -690,6 +692,10 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   const url = new URL(request.url);
   const m = request.method;
   if (url.pathname === "/gesundheit" && m === "GET") return json({ ok: true });
+  // --- App Store (Stufe 7/8): Konto löschen und Kontaktformular der Webseite ---
+  if (url.pathname === "/konto" && m === "DELETE") return kontoLoeschen(request, env, { kontoPruefen, appOk, json });
+  if (url.pathname === "/kontakt" || url.pathname === "/admin/kontakt") return kontakt(request, url, env, { json, nein, adminOk, sha256 });
+  // --- Ende App Store ---
   if (url.pathname === "/konto" && m === "POST") return registrieren(request, env);
   if (url.pathname === "/config" && m === "GET") return config(request, env);
   if (url.pathname === "/lovea/freigabe" && m === "GET") return loveaFreigabe(request, env);
@@ -706,7 +712,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
     return verbindungen(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256, freigegeben, PERSONEN, andere, filtern, BEREICHE });
   }
   if (url.pathname === "/freunde" || url.pathname.startsWith("/freunde/")) return freunde(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256 });
-  if (url.pathname.startsWith("/f/") && m === "GET") return freundeSeite(url, env);
+  if (url.pathname.startsWith("/f/") && m === "GET") return freundeSeite(url, env, request);
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support – Lumen Fit</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/icon.png">
+<link rel="alternate" hreflang="en" href="/en/support.html">
+<script src="/kontakt.js" defer></script>
+</head>
+<body>
+<header>
+  <a class="marke" href="/"><img src="/icon.png" alt="">Lumen Fit</a>
+  <nav><a href="/datenschutz.html">Datenschutz</a><a href="/en/support.html" hreflang="en" lang="en">English</a></nav>
+</header>
+<main>
+<h1>Support</h1>
+
+<h2>Häufige Fragen</h2>
+<details><summary>Was kostet Lumen Fit?</summary><p>Nichts. Keine Werbung, kein Abo, keine Käufe in der App.</p></details>
+<details><summary>Wo liegen meine Daten?</summary><p>Trainings, Essen, Gewicht und Gesundheitsdaten bleiben auf deinem iPhone. Unser Server kennt nur eine zufällige Kennung, deinen Profilnamen und was du selbst freigibst. Mehr in der <a href="/datenschutz.html">Datenschutzerklärung</a>.</p></details>
+<details><summary>Braucht die App Apple Health?</summary><p>Nein, aber mit Health sieht sie Schritte, Schlaf und Gewicht. Du kannst den Zugriff jederzeit in den iOS-Einstellungen unter Health ändern.</p></details>
+<details><summary>Ein Einladungs-Link öffnet nur die Webseite.</summary><p>Lade zuerst Lumen Fit aus dem App Store und öffne den Link danach noch einmal. Links gelten nur kurz; frag sonst nach einem neuen.</p></details>
+<details><summary>Wie schalte ich die Foto-Schätzung beim Essen aus?</summary><p>Öffne in Essen das Foto-Blatt und tippe oben auf das Hand-Symbol. Dort nimmst du deine Zustimmung zurück; danach wird kein Foto mehr gesendet.</p></details>
+<details><summary>Ich habe mein Passwort vergessen.</summary><p>Das Passwort schützt nur Handlungen auf deinem iPhone, eine Rücksetzung per Mail gibt es nicht. Beim Wechseln oder Löschen steht „Passwort vergessen?“: Damit setzt du das Profil zurück. Mit einer Datensicherung bekommst du deine Daten wieder.</p></details>
+<details><summary>Wie lösche ich mein Konto?</summary><p>In der App unter Profil, Konto, ganz unten „Konto löschen“. Das löscht alles auf unserem Server und danach alles von Lumen Fit auf diesem iPhone. Daten in Apple Health bleiben.</p></details>
+
+<h2 id="kontakt">Kontakt</h2>
+<p>Schreib uns hier. Wenn du eine Antwort willst, gib eine Adresse an; sonst können wir nicht antworten.</p>
+<form id="kontakt-form" data-ziel="https://lumen-fit-live.ahmedhdplay12345.workers.dev/kontakt">
+  <label for="text">Deine Nachricht</label>
+  <textarea id="text" name="text" required minlength="10" maxlength="2000"></textarea>
+  <label for="antwort">Antwort an (freiwillig)</label>
+  <input id="antwort" name="antwort" type="email" autocomplete="email" maxlength="200">
+  <p class="leise">Wir speichern Nachricht, Adresse und Zeit 180 Tage, siehe <a href="/datenschutz.html">Datenschutz</a>.</p>
+  <button class="knopf" type="submit">Senden</button>
+  <p id="kontakt-status" role="status" aria-live="polite"></p>
+</form>
+</main>
+<footer>
+  <a href="/">Start</a><a href="/datenschutz.html">Datenschutz</a>
+  <p>Verantwortlich: {{VERANTWORTLICH}}</p>
+</footer>
+</body>
+</html>

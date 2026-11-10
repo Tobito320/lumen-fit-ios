@@ -27,4 +27,21 @@ final class AlteDateienLadenEssenKiTests: XCTestCase {
         XCTAssertNil(EssenKiAuftragLogik.lesen(Data(#"[{"id":"nein"}]"#.utf8)))
         XCTAssertNil(EssenKiAuftragLogik.lesen(Data()))
     }
+    // MARK: - Zustimmung zur Foto-Schätzung (zustimmung.json, neu am 10.11.2026)
+
+    func testZustimmungFehltOderKaputtHeisstNichtErlaubt() {
+        XCTAssertEqual(EssenKiZustimmung.lesen(nil), EssenKiZustimmung())
+        XCTAssertFalse(EssenKiZustimmung.lesen(nil).erlaubt, "alte Installation ohne Datei: erst fragen")
+        XCTAssertFalse(EssenKiZustimmung.lesen(Data("kaputt".utf8)).erlaubt)
+        XCTAssertFalse(EssenKiZustimmung.lesen(Data("{}".utf8)).erlaubt)
+        XCTAssertFalse(EssenKiZustimmung.lesen(Data(#"{"erlaubt":"ja"}"#.utf8)).erlaubt, "falscher Typ zählt nicht als Ja")
+    }
+
+    func testZustimmungOhneDatumUndMitUnbekanntenFeldern() throws {
+        let z = EssenKiZustimmung.lesen(Data(#"{"erlaubt":true,"zukunft":{"x":1}}"#.utf8))
+        XCTAssertTrue(z.erlaubt)
+        XCTAssertNil(z.seit)
+        let mitDatum = EssenKiZustimmung(erlaubt: true, seit: Date(timeIntervalSince1970: 1_800_000_000))
+        XCTAssertEqual(EssenKiZustimmung.lesen(try JSONEncoder().encode(mitDatum)), mitDatum)
+    }
 }

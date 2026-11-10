@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Die Unterseite "Konto" (Profil, oben): Name ändern (nach der Namensregel, höchstens alle `nameAendernTage` Tage), Passwort ändern,
 /// Profil wechseln und, nur wenn der Server es erlaubt, ein weiteres Profil anlegen. Passwort gefragt wird nur bei Handlungen, nie beim Start.
+/// Ganz unten "Konto löschen" (App Store 5.1.1(v)): Server, dann alles auf diesem iPhone.
 struct KontoView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -10,16 +11,18 @@ struct KontoView: View {
     @State private var blatt: Blatt?
     @State private var profilWahl = false
     @State private var toast: ToastInhalt?
+    @State private var loeschMeldung: String?
     @FocusState private var fokus: Bool
 
     private enum Blatt: Identifiable {
-        case passwortAendern, anlegen
+        case passwortAendern, anlegen, kontoLoeschen
         case wechseln(Profil)
 
         var id: String {
             switch self {
             case .passwortAendern: "passwort"
             case .anlegen: "anlegen"
+            case .kontoLoeschen: "konto-loeschen"
             case .wechseln(let p): "wechseln-\(p.id.rawValue)"
             }
         }
@@ -49,6 +52,7 @@ struct KontoView: View {
         List {
             namensGruppe
             kontoGruppe
+            loeschGruppe
         }
         .profilListe()
         .scrollDismissesKeyboard(.interactively)
@@ -79,9 +83,16 @@ struct KontoView: View {
                 }
             case .anlegen:
                 ProfilAnlegenBlatt()
+            case .kontoLoeschen:
+                KontoLoeschenBlatt { loeschMeldung = $0 }
             }
         }
         .lumenToast($toast)
+        .alert("Konto löschen", isPresented: Binding(get: { loeschMeldung != nil }, set: { if !$0 { loeschMeldung = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(loeschMeldung ?? "")
+        }
     }
 
     // MARK: - Teile
@@ -131,6 +142,19 @@ struct KontoView: View {
         }
     }
 
+    private var loeschGruppe: some View {
+        Section {
+            Button(role: .destructive) { blatt = .kontoLoeschen } label: {
+                Label("Konto löschen", systemImage: "trash.fill").foregroundStyle(.red)
+            }
+            .frame(minHeight: Abstand.tippflaeche)
+        } footer: {
+            Text("Löscht alles auf dem Lumen-Server und danach alles von Lumen Fit auf diesem iPhone. Daten in Health bleiben.")
+                .foregroundStyle(palette.text2)
+        }
+        .listRowBackground(palette.flaeche)
+    }
+
     private func speichern() {
         guard kannSpeichern else { return }
         switch umgebung.profil.aendereName(name, sperreTage: tage) {
@@ -143,5 +167,73 @@ struct KontoView: View {
         case .unveraendert: break
         case .nichtGespeichert: meldung = "Der Name konnte nicht gespeichert werden. Versuch es nochmal."
         }
+    }
+}
+
+/// "Konto löschen": erst die Liste, was verschwindet, dann das Passwort (wie "Alles löschen"). Nach dem Passwort fragt `KontoLoeschen` den Server
+/// und löscht erst danach alle Profile auf diesem iPhone. Ohne Netz bleibt alles; die Meldung zeigt die Konto-Seite.
+private struct KontoLoeschenBlatt: View {
+    let meldung: @MainActor (String) -> Void
+
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.palette) private var palette
+    @State private var weiter = false
+
+    private var mehrereProfile: Bool { umgebung.profil.profile.count > 1 }
+
+    var body: some View {
+        if weiter {
+            let ohne = umgebung.profil.aktiv?.ohnePasswort ?? false
+            ProfilPasswortBlatt(titel: String(localized: "Konto löschen"),
+                                erklaerung: ohne ? String(localized: "Zur Bestätigung tippe auf Konto löschen. Das lässt sich nicht rückgängig machen.")
+                                                 : String(localized: "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen."),
+                                knopf: String(localized: "Konto löschen"), zerstoererisch: true, ohneAlt: ohne) { passwort, _ in
+                await loeschen(passwort: passwort)
+            }
+        } else {
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Abstand.l) {
+                        Text("Das wird gelöscht").font(.title3.bold()).foregroundStyle(palette.text)
+                        ListenKarte {
+                            VStack(alignment: .leading, spacing: Abstand.m) {
+                                Text("Auf dem Lumen-Server: dein Konto, Einstellungen, Verbindungen und Freigaben, Freunde, Herausforderungen, Reaktionen, Stats, Nutzungszähler und Foto-Zähler.")
+                                Text(mehrereProfile ? "Auf diesem iPhone: alle Profile mit Trainings, Essen, Gewicht, Zielen, Meilensteinen und Einstellungen."
+                                                    : "Auf diesem iPhone: dein Profil mit Trainings, Essen, Gewicht, Zielen, Meilensteinen und Einstellungen.")
+                            }
+                            .font(.body).foregroundStyle(palette.text).padding(Abstand.l)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        Text("Daten in Health bleiben. Eine Datensicherung, die du schon gemacht hast, bleibt dort, wo du sie abgelegt hast. Ohne Netz wird nichts gelöscht.")
+                            .font(.footnote).foregroundStyle(palette.text2)
+                        Button(role: .destructive) { weiter = true } label: { Text("Weiter").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
+                            .buttonStyle(.borderedProminent)
+                    }
+                    .padding(Abstand.l)
+                }
+                .lumenHintergrund()
+                .navigationTitle("Konto löschen")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { dismiss() } } }
+            }
+            .presentationDetents([.large])
+        }
+    }
+
+    /// false nur bei falschem Passwort (das Blatt wackelt dann). Jedes andere Ergebnis schließt das Blatt; Fehler zeigt die Konto-Seite.
+    private func loeschen(passwort: String) async -> Bool {
+        guard let aktiv = umgebung.profil.aktiv else { return false }
+        let ergebnis = await KontoLoeschen.fuehreAus(
+            passwortStimmt: { await umgebung.profil.pruefeImHintergrund(passwort: passwort, fuer: aktiv.id) },
+            server: { await umgebung.konto.kontoLoeschen() },
+            lokal: {
+                // Das aktive zuletzt: so sendet erst das letzte Profil `profilGeloescht`, kein Zwischenwechsel.
+                let ids = umgebung.profil.profile.map(\.id).filter { $0 != aktiv.id } + [aktiv.id]
+                return ids.allSatisfy { ProfilLoeschen.setzeZurueck(umgebung, profil: $0) }
+            })
+        if ergebnis == .falschesPasswort { return false }
+        if let text = KontoLoeschen.meldung(ergebnis) { meldung(text) }
+        return true
     }
 }

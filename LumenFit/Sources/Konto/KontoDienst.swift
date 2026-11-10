@@ -483,6 +483,34 @@ final class KontoDienst {
         await nutzungUebertragen(kennung, zwischendurch: true)
     }
 
+    // MARK: - Konto löschen
+
+    /// `DELETE /konto` (App Store 5.1.1(v)): der Server löscht alles zu diesem Konto. Gelöscht (200) oder schon unbekannt (404; 401 heißt falscher Schlüssel, dann bleibt alles): Kennung, gemerkter Stand,
+    /// Verbindungen, Partner-Datei und offene Nutzungszähler gehen auch hier weg; der nächste Abgleich legt ein neues Konto an wie ein neues Gerät.
+    /// Ohne Netz oder bei anderer Antwort bleibt alles, wie es ist.
+    func kontoLoeschen() async -> KontoLoeschErgebnis {
+        if zugang != nil {
+            switch liesKennung() {
+            case .nichtLesbar: return .abgelehnt
+            case .fehlt: break
+            case .da(let k):
+                guard let r = await sendeMitKonto("/konto", methode: "DELETE", kennung: k) else { return .keinNetz }
+                guard r.status == 200 || r.status == 404 else { return .abgelehnt }
+            }
+        }
+        nutzung.an = false
+        schluesselbund.entferne(Self.schluessel)
+        verbindungen.vergiss()
+        try? FileManager.default.removeItem(at: ordner.appendingPathComponent(Self.partnerDatei))
+        try? FileManager.default.removeItem(at: ablage)
+        stand = KontoStand()
+        freigabeAktuell = false
+        aufgegeben = false
+        letzterVersuch = nil
+        partnerAusstehend = nil
+        return .geloescht
+    }
+
     /// Der Server verlangt 1 bis 40 Zeichen.
     nonisolated static func serverName(_ roh: String) -> String? {
         let name = String(roh.trimmingCharacters(in: .whitespacesAndNewlines).prefix(40))

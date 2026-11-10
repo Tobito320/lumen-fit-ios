@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support – Lumen Fit</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/icon.png">
+<link rel="alternate" hreflang="de" href="/support.html">
+<script src="/kontakt.js" defer></script>
+</head>
+<body>
+<header>
+  <a class="marke" href="/en/"><img src="/icon.png" alt="">Lumen Fit</a>
+  <nav><a href="/en/privacy.html">Privacy</a><a href="/support.html" hreflang="de" lang="de">Deutsch</a></nav>
+</header>
+<main>
+<h1>Support</h1>
+
+<h2>Frequently asked questions</h2>
+<details><summary>How much does Lumen Fit cost?</summary><p>Nothing. No ads, no subscription, no in-app purchases.</p></details>
+<details><summary>Where is my data?</summary><p>Workouts, food, weight and health data stay on your iPhone. Our server only knows a random ID, your profile name and what you choose to share. More in the <a href="/en/privacy.html">privacy policy</a>.</p></details>
+<details><summary>Does the app need Apple Health?</summary><p>No, but with Health it can show steps, sleep and weight. You can change access any time in the iOS Settings under Health.</p></details>
+<details><summary>An invite link only opens the website.</summary><p>Install Lumen Fit from the App Store first, then open the link again. Links are only valid for a short time; ask for a new one if needed.</p></details>
+<details><summary>How do I turn off the photo estimate for meals?</summary><p>Open the photo sheet in Food and tap the hand icon at the top. There you withdraw your consent; after that no photo is sent.</p></details>
+<details><summary>I forgot my password.</summary><p>The password only protects actions on your iPhone; there is no reset by email. When switching or deleting you'll see "Forgot password?": it resets the profile. With a backup you get your data back.</p></details>
+<details><summary>How do I delete my account?</summary><p>In the app under Profile, Account, at the very bottom "Delete account". This deletes everything on our server and then everything of Lumen Fit on this iPhone. Data in Apple Health stays.</p></details>
+
+<h2 id="kontakt">Contact</h2>
+<p>Write to us here. If you want a reply, add an address; otherwise we cannot reply.</p>
+<form id="kontakt-form" data-ziel="https://lumen-fit-live.ahmedhdplay12345.workers.dev/kontakt">
+  <label for="text">Your message</label>
+  <textarea id="text" name="text" required minlength="10" maxlength="2000"></textarea>
+  <label for="antwort">Reply to (optional)</label>
+  <input id="antwort" name="antwort" type="email" autocomplete="email" maxlength="200">
+  <p class="leise">We keep the message, address and time for 180 days, see <a href="/en/privacy.html">privacy</a>.</p>
+  <button class="knopf" type="submit">Send</button>
+  <p id="kontakt-status" role="status" aria-live="polite"></p>
+</form>
+</main>
+<footer>
+  <a href="/en/">Home</a><a href="/en/privacy.html">Privacy</a>
+  <p>Responsible: {{VERANTWORTLICH}}</p>
+</footer>
+</body>
+</html>

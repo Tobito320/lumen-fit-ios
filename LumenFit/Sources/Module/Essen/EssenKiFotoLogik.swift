@@ -27,6 +27,12 @@ enum EssenKiFotoLogik {
         titel: "Foto nicht lesbar", text: "Mach bitte ein neues Foto.",
         symbol: "photo.badge.exclamationmark", nochmal: false, neuesFoto: true)
 
+    /// Ohne Zustimmung im Blatt geht kein Foto raus (auch nicht beim Nochmal).
+    nonisolated static let ohneZustimmung = EssenKiAnzeige(
+        titel: String(localized: "Foto-Schätzung nicht erlaubt"),
+        text: String(localized: "Erlaube sie zuerst: oben im Foto-Blatt auf das Hand-Symbol tippen. Ohne deine Zustimmung geht kein Foto raus."),
+        symbol: "hand.raised", nochmal: false, neuesFoto: false)
+
     /// Freundlich und mit der Zahl des Servers; ohne Zahl (oder bei 0) ohne Zahl.
     static func tageslimitText(max: Int?) -> String {
         let weiter = "Morgen geht es weiter, suchen geht immer."

@@ -127,6 +127,7 @@ final class EssenKiAuftragTests: XCTestCase {
         let hg = Hintergrund()
         let url = ordner()
         let store = EssenKiAuftragStore(ordner: url, sender: Sender { a }, hintergrund: hg)
+        store.zustimmen(true)
         let id = store.neu(foto: try jpeg(), mahlzeit: .abend, datum: "2026-10-10")
         XCTAssertEqual(store.auftraege.count, 1)
         try await warte { store.auftrag(id)?.status == .fertig }
@@ -145,11 +146,13 @@ final class EssenKiAuftragTests: XCTestCase {
     func testFehlerUndNochmal() async throws {
         let a = try schaetzung()
         let store = EssenKiAuftragStore(ordner: ordner(), sender: Sender { throw EssenKiFehler.tageslimit(max: 5) }, hintergrund: Hintergrund())
+        store.zustimmen(true)
         let id = store.neu(foto: try jpeg(), mahlzeit: .mittag, datum: "2026-10-10")
         try await warte { store.auftrag(id)?.status == .fehler }
         XCTAssertEqual(store.auftrag(id)?.status, .fehler)
         XCTAssertEqual(store.auftrag(id)?.fehler, EssenKiFotoLogik.anzeige(.tageslimit(max: 5)))
         let ok = EssenKiAuftragStore(ordner: ordner(), sender: Sender { a }, hintergrund: Hintergrund())
+        ok.zustimmen(true)
         let id2 = ok.neu(foto: try jpeg(), mahlzeit: .mittag, datum: "2026-10-10")
         try await warte { ok.auftrag(id2)?.status == .fertig }
         ok.nochmal(id2, hinweis: "mit Öl")
@@ -161,6 +164,7 @@ final class EssenKiAuftragTests: XCTestCase {
     func testVerwerfenUndRueckgaengigUndEntfernen() async throws {
         let a = try schaetzung()
         let store = EssenKiAuftragStore(ordner: ordner(), sender: Sender { a }, hintergrund: Hintergrund())
+        store.zustimmen(true)
         let id = store.neu(foto: try jpeg(), mahlzeit: .snack, datum: "2026-10-10")
         try await warte { store.auftrag(id)?.status == .fertig }
         store.verwerfen(id)
@@ -204,5 +208,52 @@ final class EssenKiAuftragTests: XCTestCase {
         let id = store.neu(foto: Data("kein bild".utf8), mahlzeit: .mittag, datum: "2026-10-10")
         try await warte { store.auftrag(id)?.status == .fehler }
         XCTAssertEqual(store.auftrag(id)?.fehler, EssenKiFotoLogik.fotoUnlesbar)
+    }
+    // MARK: - Zustimmung (App Store, DSGVO Art. 9)
+
+    /// Zählt, wie oft der Client gerufen wurde.
+    private final class ZaehlSender: EssenKiSender, @unchecked Sendable { // der Zähler liegt hinter dem NSLock
+        private let schloss = NSLock()
+        private var _aufrufe = 0
+        let analyse: EssenKiAnalyse
+        init(_ analyse: EssenKiAnalyse) { self.analyse = analyse }
+        var aufrufe: Int { schloss.withLock { _aufrufe } }
+        func analysieren(bild: Data, hinweis: String, mahlzeit: Mahlzeit) async throws -> EssenKiAnalyse {
+            schloss.withLock { _aufrufe += 1 }
+            return analyse
+        }
+    }
+
+    @MainActor
+    func testOhneZustimmungRuftDerStoreDenClientNie() async throws {
+        let sender = ZaehlSender(try schaetzung())
+        let store = EssenKiAuftragStore(ordner: ordner(), sender: sender, hintergrund: Hintergrund())
+        XCTAssertFalse(store.zustimmung.erlaubt, "Standard: nicht erlaubt")
+        let id = store.neu(foto: try jpeg(), mahlzeit: .mittag, datum: "2026-10-10")
+        try await warte { store.auftrag(id)?.status == .fehler }
+        XCTAssertEqual(store.auftrag(id)?.fehler, EssenKiFotoLogik.ohneZustimmung)
+        store.nochmal(id)
+        try await warte { store.auftrag(id)?.status == .fehler }
+        store.fortsetzen()
+        XCTAssertEqual(sender.aufrufe, 0, "ohne Erlauben geht kein Foto raus, auch nicht bei Nochmal")
+    }
+
+    @MainActor
+    func testZustimmungWirdGemerktUndLaesstSichZuruecknehmen() async throws {
+        let url = ordner()
+        let sender = ZaehlSender(try schaetzung())
+        let store = EssenKiAuftragStore(ordner: url, sender: sender, hintergrund: Hintergrund())
+        let jetzt = Date(timeIntervalSince1970: 1_800_000_000)
+        store.zustimmen(true, jetzt: jetzt)
+        let id = store.neu(foto: try jpeg(), mahlzeit: .abend, datum: "2026-10-10")
+        try await warte { store.auftrag(id)?.status == .fertig }
+        XCTAssertEqual(sender.aufrufe, 1)
+        let neu = EssenKiAuftragStore(ordner: url, sender: sender, hintergrund: Hintergrund())
+        XCTAssertEqual(neu.zustimmung, EssenKiZustimmung(erlaubt: true, seit: jetzt), "übersteht den Neustart")
+        neu.zustimmen(false)
+        neu.nochmal(id)
+        try await warte { neu.auftrag(id)?.status == .fehler }
+        XCTAssertEqual(sender.aufrufe, 1, "nach dem Zurücknehmen geht nichts mehr raus")
+        XCTAssertFalse(EssenKiAuftragStore(ordner: url, sender: sender, hintergrund: Hintergrund()).zustimmung.erlaubt)
     }
 }

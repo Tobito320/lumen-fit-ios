@@ -1,0 +1,41 @@
+/* Lumen Fit Webseite: schlicht, hell/dunkel nach System, keine externen Schriften. Lime nur als Fläche mit schwarzer Schrift;
+   als Textfarbe hell #457A00 (5,2:1), dunkel #A6FF00. */
+:root {
+  color-scheme: light dark;
+  --grund: #ffffff; --flaeche: #f2f2f4; --text: #111111; --text2: #555555; --linie: #dddddd;
+  --akzent: #457A00; --akzent-flaeche: #9BE800; --auf-akzent: #000000;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --grund: #000000; --flaeche: #141414; --text: #ffffff; --text2: #a8a8a8; --linie: #2a2a2a; --akzent: #A6FF00; --akzent-flaeche: #A6FF00; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--grund); color: var(--text); font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+main, header, footer { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+header { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; padding-bottom: 8px; }
+header a.marke { display: flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 700; }
+header img { width: 32px; height: 32px; border-radius: 8px; }
+nav { display: flex; gap: 16px; font-size: 15px; flex-wrap: wrap; }
+a { color: var(--akzent); }
+h1 { font-size: 34px; line-height: 1.15; margin: 32px 0 12px; }
+h2 { font-size: 22px; margin: 32px 0 8px; }
+h3 { font-size: 18px; margin: 20px 0 4px; }
+p, li { color: var(--text); }
+.leise { color: var(--text2); font-size: 15px; }
+.held { text-align: center; padding: 24px 0 8px; }
+.held img { width: 112px; height: 112px; border-radius: 26px; }
+.knopf { display: inline-block; padding: 14px 26px; border-radius: 14px; background: var(--akzent-flaeche); color: var(--auf-akzent);
+  border: 1px solid var(--akzent); font-weight: 600; text-decoration: none; min-height: 44px; }
+.karten { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 24px 0; }
+.karte { background: var(--flaeche); border-radius: 16px; padding: 16px; }
+.karte h3 { margin-top: 0; }
+details { background: var(--flaeche); border-radius: 14px; padding: 12px 16px; margin: 8px 0; }
+summary { cursor: pointer; font-weight: 600; }
+form { display: grid; gap: 12px; margin: 16px 0 32px; }
+label { font-weight: 600; font-size: 15px; }
+textarea, input { width: 100%; font: inherit; color: var(--text); background: var(--flaeche); border: 1px solid var(--linie); border-radius: 12px; padding: 12px; }
+textarea { min-height: 160px; resize: vertical; }
+button.knopf { font: inherit; font-weight: 600; cursor: pointer; }
+button.knopf:disabled { opacity: .5; cursor: default; }
+:focus-visible { outline: 3px solid var(--akzent); outline-offset: 2px; }
+footer { padding-top: 24px; padding-bottom: 40px; font-size: 14px; color: var(--text2); border-top: 1px solid var(--linie); margin-top: 48px; }
+footer a { margin-right: 16px; }

@@ -56,4 +56,14 @@ final class ProfilTexteTests: XCTestCase {
         XCTAssertEqual(ProfilTexte.loeschliste(einheiten: 5, essenstage: 1, meilensteine: 1).map(\.text).prefix(3),
                        ["5 Trainings", "1 Tag im Essenstagebuch", "1 Meilenstein"])
     }
+    func testDatenschutzNenntFotoSchaetzungUndKontoLoeschen() throws {
+        let foto = try XCTUnwrap(ProfilTexte.datenschutz().first { $0.titel == "Essen per Foto schätzen" })
+        for wort in ["Erlauben", "OpenAI", "USA", "ohne Ort", "speichert weder Foto noch Antwort", "Ohne Zustimmung geht kein Foto raus", "Zurücknehmen"] {
+            XCTAssertTrue(foto.text.contains(wort), wort)
+        }
+        let konto = try XCTUnwrap(ProfilTexte.datenschutz().first { $0.titel == "Konto löschen" })
+        for wort in ["Lumen-Server", "Ohne Netz wird nichts gelöscht", "Health"] {
+            XCTAssertTrue(konto.text.contains(wort), wort)
+        }
+    }
 }
