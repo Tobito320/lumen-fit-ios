@@ -1,8 +1,9 @@
 import PhotosUI
 import SwiftUI
 
-/// Die Freunde-Seite (Idee 89, 90): die eigene Wochenkarte als Bild, Link oder QR teilen, Karten von Freunden lesen (Link, Zwischenablage, QR im Foto),
-/// vor dem Übernehmen ansehen und die Wochen-Rangliste mit "Respekt" statt Like. Alles ohne Server; `daten` ist die Nutzlast eines geöffneten Links.
+/// Wochenkarten (Idee 89, 90): die eigene Wochenkarte als Bild, Link oder QR teilen, Karten von Freunden lesen (Link, Zwischenablage, QR im Foto),
+/// vor dem Übernehmen ansehen, die Karten der Woche mit "Respekt" statt Like. Alles ohne Server; `daten` ist die Nutzlast eines geöffneten Links.
+/// Die eine Rangliste steht im Tab Freunde (10.11.2026), hier nur die Karten ohne Plätze.
 struct FreundeView: View {
     var daten: String?
     @Environment(AppUmgebung.self) private var umgebung
@@ -15,7 +16,7 @@ struct FreundeView: View {
                 LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an.")
             }
         }
-        .navigationTitle("Freunde")
+        .navigationTitle("Wochenkarten")
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
     }
@@ -55,7 +56,7 @@ private struct FreundeInhalt: View {
                 if let gelesen { gelesenKarte(gelesen) }
                 PartnerAnsichtenKarte()
                 eigeneKarte(karte)
-                ranglisteKarte(karte)
+                kartenListe(karte)
                 importKarte
             }
             .padding(.horizontal, Abstand.l)
@@ -107,44 +108,40 @@ private struct FreundeInhalt: View {
         bild = renderer.uiImage
     }
 
-    // MARK: Rangliste
+    // MARK: Karten der Freunde
 
-    private func ranglisteKarte(_ karte: FreundKarte) -> some View {
+    private func kartenListe(_ karte: FreundKarte) -> some View {
         let woche = FreundeRangliste.woche(freunde, eigene: karte) ?? karte.woche
-        let zeilen = FreundeRangliste.rangliste(freunde, eigene: karte, woche: woche)
+        let zeilen = FreundeRangliste.rangliste(freunde, eigene: karte, woche: woche).filter { !$0.eigene }
         return VStack(alignment: .leading, spacing: Abstand.m) {
-            Text("Rangliste, Woche ab \(FreundeText.woche(woche))").font(.headline).foregroundStyle(palette.text)
-            if zeilen.count <= 1 {
-                LeerZustand(stimmung: .bereit, satz: "Noch keine Karte von Freunden für diese Woche. Lies eine Karte ein, dann erscheint hier die Rangliste.")
+            Text("Karten von Freunden, Woche ab \(FreundeText.woche(woche))").font(.headline).foregroundStyle(palette.text)
+            if zeilen.isEmpty {
+                LeerZustand(stimmung: .bereit, satz: "Noch keine Karte von Freunden für diese Woche. Lies eine Karte ein, dann steht sie hier.")
             } else {
                 ListenKarte {
                     ForEach(zeilen) { zeile in
                         if zeile.id != zeilen.first?.id { Haarlinie() }
-                        ranglistenZeile(zeile)
+                        kartenZeile(zeile)
                     }
                 }
             }
         }
     }
 
-    private func ranglistenZeile(_ zeile: FreundeRangliste.Zeile) -> some View {
+    private func kartenZeile(_ zeile: FreundeRangliste.Zeile) -> some View {
         HStack(spacing: Abstand.m) {
-            Text("\(zeile.platz)")
-                .font(.headline)
-                .monospacedDigit()
-                .frame(width: 32)
             VStack(alignment: .leading, spacing: 2) {
-                Text(zeile.eigene ? "\(zeile.karte.name) (du)" : zeile.karte.name).font(.body.weight(.semibold))
+                Text(zeile.karte.name).font(.body.weight(.semibold))
                 Text(FreundeText.zusammenfassung(zeile.karte)).font(.footnote).foregroundStyle(palette.text2)
             }
             Spacer(minLength: Abstand.s)
-            if !zeile.eigene { respektKnopf(zeile.karte) }
+            respektKnopf(zeile.karte)
         }
         .foregroundStyle(palette.text)
         .padding(.horizontal, Abstand.l)
         .frame(minHeight: Abstand.tippflaeche)
         .contextMenu {
-            if !zeile.eigene { Button("Karte entfernen", systemImage: "trash", role: .destructive) { entferne(zeile.karte) } }
+            Button("Karte entfernen", systemImage: "trash", role: .destructive) { entferne(zeile.karte) }
         }
     }
 
@@ -251,6 +248,6 @@ private struct FreundeInhalt: View {
     private func uebernehme(_ karte: FreundKarte) {
         daten.verbindung.freunde = FreundeRangliste.aufnehmen(karte, in: daten.verbindung.freunde)
         gelesen = nil
-        toast = ToastInhalt(titel: "\(karte.name) ist dabei", zeile: "Die Rangliste ist aktuell.", stimmung: .stolz)
+        toast = ToastInhalt(titel: "\(karte.name) ist dabei", zeile: "Die Karte steht jetzt in der Liste.", stimmung: .stolz)
     }
 }

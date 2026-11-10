@@ -92,10 +92,9 @@ private struct VerbindungenInhalt: View {
     }
 
     private var hinzufuegenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten, der Link einmal für 24 Stunden. Beide enthalten keine Gesundheitsdaten.") {
+        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten und enthält keine Gesundheitsdaten. Einen Link für eine Person teilst du im Tab Freunde.") {
             Button { codeOffen = true } label: { Label("Mein Code zeigen", systemImage: "qrcode") }.frame(minHeight: Abstand.tippflaeche)
             Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }.frame(minHeight: Abstand.tippflaeche)
-            CrewLinkTeilen()
         }
     }
 
@@ -133,7 +132,7 @@ private struct VerbindungenInhalt: View {
 
     private var freundeAbschnitt: some View {
         VerbindenAbschnitt(titel: "Freunde", fuss: "Wochenkarten per Bild, Link oder QR-Code tauschen, ganz ohne Server.") {
-            NavigationLink { FreundeView() } label: { Label("Freunde und Rangliste", systemImage: "person.2") }
+            NavigationLink { FreundeView() } label: { Label("Wochenkarten tauschen", systemImage: "person.2") }
         }
     }
 }

@@ -27,6 +27,8 @@ struct FreundeTabView: View {
                 if eintraege.isEmpty { freunde }
                 fuerDich
                 CrewPartnerAbschnitt()
+                // Bis Build 20: Heute des Lovea-Partners (Schritte-Vergleich, Energie, Ansichten), seit die Startseite ohne Freunde ist.
+                if umgebung.daten?.einstellungen.werte.loveaVerbunden == true { PartnerKarte(bereich: .heute) }
                 rangliste
                 herausforderungen
                 GymRekordPinnwandView()
@@ -202,7 +204,7 @@ struct FreundeTabView: View {
                 CrewLinkTeilen(imHub: true)
                 Haarlinie()
                 NavigationLink { VerbindungenView() } label: {
-                    GymZeile(titel: "Freunde hinzufügen und verwalten", untertitel: "Code, Link und was jede Person sieht") {
+                    GymZeile(titel: "Freunde hinzufügen und verwalten", untertitel: "Code zeigen oder scannen, was jede Person sieht") {
                         Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                     }
                 }

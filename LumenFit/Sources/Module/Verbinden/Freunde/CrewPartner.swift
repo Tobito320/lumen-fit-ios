@@ -179,7 +179,7 @@ struct CrewPartnerAbschnitt: View {
                     Button { wahlOffen = true } label: { GymZeile(titel: "Anderen Trainingspartner wählen") }
                         .buttonStyle(.plain)
                 } else {
-                    GymZeile(titel: "Noch keiner gewählt", untertitel: "Wähle einen Freund: ihr seht eure Woche nebeneinander und seine Karte auf Heute und im Training.")
+                    GymZeile(titel: "Noch keiner gewählt", untertitel: "Wähle einen Freund: ihr seht eure Woche nebeneinander.")
                     if !personen.isEmpty {
                         Haarlinie()
                         Button { wahlOffen = true } label: { GymZeile(titel: "Trainingspartner wählen") }
