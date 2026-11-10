@@ -139,3 +139,11 @@ CREATE INDEX IF NOT EXISTS reaktionen_an ON reaktionen (an, zeit);
 CREATE INDEX IF NOT EXISTS reaktionen_zeit ON reaktionen (zeit);
 -- Crew: neue Herausforderungen je Ersteller in 24 Stunden zählen.
 CREATE INDEX IF NOT EXISTS herausforderungen_ersteller ON herausforderungen (ersteller, erstellt);
+-- Kontaktformular der Webseite (kontakt.js): nur Text, freiwillige Antwort-Adresse und Zeit, keine IP. Wird nach 180 Tagen gelöscht.
+CREATE TABLE IF NOT EXISTS kontakt (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  zeit TEXT NOT NULL,
+  text TEXT NOT NULL,
+  antwort TEXT
+);
+CREATE INDEX IF NOT EXISTS kontakt_zeit ON kontakt (zeit);

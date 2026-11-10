@@ -430,7 +430,8 @@ test("Landeseite /f/<token>: ohne Konto, mit Kopfzeilen, Knopf und Weiterleitung
   const env = await welt();
   const token = "A1_-".repeat(10) + "xyz"; // 43 Zeichen
   assert.equal(token.length, 43);
-  const r = await ruf(env, null, "GET", `/f/${token}`);
+  const roh = await handleFetch(new Request(`https://x.test/f/${token}`, { headers: { "Accept-Language": "de-DE,de;q=0.9,en;q=0.8" } }), env);
+  const r = { status: roh.status, headers: roh.headers, text: await roh.text() };
   assert.equal(r.status, 200);
   assert.match(r.headers.get("content-type"), /^text\/html/);
   assert.equal(r.headers.get("cache-control"), "no-store");
@@ -447,13 +448,50 @@ test("Landeseite /f/<token>: ohne Konto, mit Kopfzeilen, Knopf und Weiterleitung
 
 test("Landeseite: TestFlight-Link nur in Apples fester Form, sonst kein Knopf", async () => {
   const token = "B".repeat(43);
-  const seite = async (env) => (await handleFetch(new Request(`https://x.test/f/${token}`), env)).text();
+  const seite = async (env) => (await handleFetch(new Request(`https://x.test/f/${token}`, { headers: { "Accept-Language": "de" } }), env)).text();
   const env = await welt("ich");
   assert.ok(!(await seite(env)).includes("TestFlight"), "ohne Variable kein Knopf");
   assert.ok((await seite({ ...env, TESTFLIGHT_LINK: "https://testflight.apple.com/join/AbC123xy" })).includes('href="https://testflight.apple.com/join/AbC123xy"'));
   for (const falsch of ["https://evil.test/join/AbC123xy", "https://testflight.apple.com/join/<b>x</b>", "javascript:alert(1)"]) {
     assert.ok(!(await seite({ ...env, TESTFLIGHT_LINK: falsch })).includes("TestFlight holen"), falsch);
   }
+});
+
+test("Landeseite: App-Store-Link gewinnt vor TestFlight, nur in Apples fester Form, mit Hinweis zum zweiten Öffnen", async () => {
+  const token = "C".repeat(43);
+  const seite = async (env, sprache = "de") => (await handleFetch(new Request(`https://x.test/f/${token}`, { headers: { "Accept-Language": sprache } }), env)).text();
+  const env = await welt("ich");
+  const link = "https://apps.apple.com/de/app/lumen-fit/id1234567890";
+  const beide = await seite({ ...env, APPSTORE_LINK: link, TESTFLIGHT_LINK: "https://testflight.apple.com/join/AbC123xy" });
+  assert.ok(beide.includes(`href="${link}">Im App Store laden</a>`));
+  assert.ok(beide.includes("Danach diesen Link noch einmal öffnen."));
+  assert.ok(!beide.includes("testflight.apple.com"), "TestFlight nicht mehr zeigen, sobald es den Store gibt");
+  assert.ok((await seite({ ...env, APPSTORE_LINK: "https://apps.apple.com/app/id1234567890" })).includes("Im App Store laden"));
+  for (const falsch of ["https://apps.apple.com.evil.test/app/id1234567890", "http://apps.apple.com/de/app/x/id1234567890",
+    "https://apps.apple.com/de/app/<b>/id1234567890", "javascript:alert(1)", "https://apps.apple.com/de/app/x/id12"]) {
+    assert.ok(!(await seite({ ...env, APPSTORE_LINK: falsch })).includes("App Store"), falsch);
+  }
+  assert.ok((await seite({ ...env, APPSTORE_LINK: "kaputt", TESTFLIGHT_LINK: "https://testflight.apple.com/join/AbC123xy" })).includes("TestFlight"), "kaputter Store-Link: TestFlight bleibt");
+});
+
+test("Landeseite: Sprache nach Accept-Language, de* Deutsch, sonst Englisch", async () => {
+  const token = "D".repeat(43);
+  const env = { APPSTORE_LINK: "https://apps.apple.com/de/app/lumen-fit/id1234567890" };
+  const seite = async (headers) => (await handleFetch(new Request(`https://x.test/f/${token}`, { headers }), env)).text();
+  for (const de of ["de", "de-DE", "de-AT,en;q=0.5", "DE-ch"]) {
+    const t = await seite({ "Accept-Language": de });
+    assert.ok(t.includes('lang="de"') && t.includes("In Lumen Fit öffnen") && t.includes("Im App Store laden"), de);
+  }
+  for (const en of [{}, { "Accept-Language": "en-US" }, { "Accept-Language": "fr-FR,de;q=0.9" }, { "Accept-Language": "dex" }]) {
+    const t = await seite(en);
+    assert.ok(t.includes('lang="en"') && t.includes("Open in Lumen Fit") && t.includes("Get it on the App Store") && t.includes("Then open this link again."), JSON.stringify(en));
+  }
+  const kaputt = await handleFetch(new Request("https://x.test/f/kurz", { headers: { "Accept-Language": "en" } }), env);
+  assert.equal(kaputt.status, 404);
+  assert.ok((await kaputt.text()).includes("Invalid link"));
+  // Stil: hell/dunkel nach System, Lime als Fläche.
+  const t = await seite({});
+  assert.ok(t.includes("prefers-color-scheme:dark") && t.includes("#A6FF00") && t.includes("#457A00"));
 });
 
 test("Landeseite nimmt nur die Token-Form: nichts Gefährliches kommt je in die Seite", async () => {

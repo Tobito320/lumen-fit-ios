@@ -342,21 +342,42 @@ const SEITEN_KOPF = {
   "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex", "referrer-policy": "no-referrer",
   "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'", "x-content-type-options": "nosniff",
 };
-const htmlSeite = (status, kopf, koerper, extra = "") => new Response(
-  `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">${extra}<title>Lumen Fit</title>`
-  + `<style>body{font:17px/1.4 -apple-system,system-ui,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px}`
-  + `a{display:inline-block;margin-top:16px;padding:14px 24px;border-radius:14px;background:#000;color:#fff;text-decoration:none;font-weight:600}</style></head>`
+// Schlicht im Lime-Stil der Webseite: hell/dunkel nach System, Lime nur als Fläche mit schwarzer Schrift (dunkel #A6FF00, hell #9BE800 mit Rand #457A00).
+const STIL = "body{font:17px/1.45 -apple-system,system-ui,sans-serif;margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;padding:24px;"
+  + "background:#fff;color:#111}main{max-width:420px}h1{font-size:28px;margin:0 0 8px}p{color:#555;margin:12px 0}"
+  + "a{display:block;margin:16px auto 0;padding:15px 24px;border-radius:14px;background:#9BE800;color:#000;border:1px solid #457A00;text-decoration:none;font-weight:600}"
+  + "a.zwei{background:transparent;color:#457A00}"
+  + "@media (prefers-color-scheme:dark){body{background:#000;color:#fff}p{color:#aaa}a{background:#A6FF00;border-color:#A6FF00}a.zwei{background:transparent;color:#A6FF00}}";
+const htmlSeite = (status, kopf, koerper, extra = "", lang = "de") => new Response(
+  `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">`
+  + `<meta name="color-scheme" content="light dark">${extra}<title>Lumen Fit</title><style>${STIL}</style></head>`
   + `<body><main><h1>${kopf}</h1>${koerper}</main></body></html>`, { status, headers: SEITEN_KOPF });
 
 // Öffentlicher TestFlight-Link (Variable TESTFLIGHT_LINK der Umgebung, z. B. per `wrangler secret put`): wer die App noch nicht hat, holt sie hier.
-// Nur die feste Form von Apple kommt in die Seite.
+// Ist APPSTORE_LINK gesetzt, gewinnt der App Store. Nur die festen Formen von Apple kommen in die Seite.
 const TESTFLIGHT_FORM = /^https:\/\/testflight\.apple\.com\/join\/[A-Za-z0-9]{6,12}$/;
+const APPSTORE_FORM = /^https:\/\/apps\.apple\.com\/(?:[a-z]{2}\/)?app\/(?:[a-z0-9-]{1,80}\/)?id\d{6,12}$/;
 
-export function freundeSeite(url, env = {}) {
+// Sprache nach Accept-Language: beginnt die erste Angabe mit de, Deutsch, sonst Englisch.
+const TEXTE = {
+  de: { ungueltig: "Link ungültig", ungueltigText: "Dieser Einladungs-Link passt nicht. Bitte um einen neuen.", titel: "Einladung zu Lumen Fit",
+    text: "Du wurdest eingeladen, dich zu verbinden.", oeffnen: "In Lumen Fit öffnen", keineApp: "Noch keine App?",
+    store: "Im App Store laden", testflight: "Lumen Fit über TestFlight holen", danach: "Danach diesen Link noch einmal öffnen." },
+  en: { ungueltig: "Invalid link", ungueltigText: "This invite link doesn't work. Please ask for a new one.", titel: "Invite to Lumen Fit",
+    text: "You've been invited to connect.", oeffnen: "Open in Lumen Fit", keineApp: "Don't have the app yet?",
+    store: "Get it on the App Store", testflight: "Get Lumen Fit on TestFlight", danach: "Then open this link again." },
+};
+const spracheAus = (request) => (/^\s*de\b/i.test(request?.headers?.get("Accept-Language") ?? "") ? "de" : "en");
+
+export function freundeSeite(url, env = {}, request = null) {
+  const lang = spracheAus(request);
+  const t = TEXTE[lang];
   const teile = url.pathname.split("/");
-  if (teile.length !== 3 || teile[1] !== "f" || !TOKEN_FORM.test(teile[2])) return htmlSeite(404, "Link ungültig", "<p>Dieser Einladungs-Link passt nicht. Bitte um einen neuen.</p>");
+  if (teile.length !== 3 || teile[1] !== "f" || !TOKEN_FORM.test(teile[2])) return htmlSeite(404, t.ungueltig, `<p>${t.ungueltigText}</p>`, "", lang);
   const ziel = `lumenfit://freund?d=${teile[2]}`;
+  const store = typeof env.APPSTORE_LINK === "string" && APPSTORE_FORM.test(env.APPSTORE_LINK) ? env.APPSTORE_LINK : null;
   const tf = typeof env.TESTFLIGHT_LINK === "string" && TESTFLIGHT_FORM.test(env.TESTFLIGHT_LINK) ? env.TESTFLIGHT_LINK : null;
-  const holen = tf ? `<p>Noch keine App?</p><a href="${tf}">Lumen Fit über TestFlight holen</a><p>Danach diesen Link noch einmal öffnen.</p>` : "";
-  return htmlSeite(200, "Einladung zu Lumen Fit", `<p>Du wurdest eingeladen, dich zu verbinden.</p><a href="${ziel}">In Lumen Fit öffnen</a>${holen}`, `<meta http-equiv="refresh" content="0;url=${ziel}">`);
+  const holen = store ? `<p>${t.keineApp}</p><a class="zwei" href="${store}">${t.store}</a><p>${t.danach}</p>`
+    : tf ? `<p>${t.keineApp}</p><a class="zwei" href="${tf}">${t.testflight}</a><p>${t.danach}</p>` : "";
+  return htmlSeite(200, t.titel, `<p>${t.text}</p><a href="${ziel}">${t.oeffnen}</a>${holen}`, `<meta http-equiv="refresh" content="0;url=${ziel}">`, lang);
 }
