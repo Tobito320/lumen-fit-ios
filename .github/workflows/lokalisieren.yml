@@ -26,35 +26,18 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
-      # Frischer Checkout setzt alle Dateizeiten auf jetzt: der DerivedData-Cache der CI wäre nutzlos.
-      - name: Dateizeiten auf letzten Commit setzen
-        run: |
-          git -c core.quotepath=false log -m --first-parent --format='#%ct' --name-only |
-            awk '/^#/{t=substr($0,2);next} NF&&!s[$0]++{print t"\t"$0}' |
-            while IFS=$'\t' read -r t f; do
-              if [ -f "$f" ]; then touch -t "$(date -r "$t" +%Y%m%d%H%M.%S)" "$f"; fi
-            done
-          true
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Generate project
         timeout-minutes: 6
         run: xcodegen generate
-      - name: Xcode-Version
-        run: echo "XCV=$(xcodebuild -version | tr -d '\n ')" >> "$GITHUB_ENV"
-      # Derselbe Cache wie ios-ci.yml (Schlüssel-Präfix), damit Xcode nur die geänderten Dateien baut.
-      - uses: actions/cache/restore@v4
-        id: cache
-        with:
-          path: derived
-          key: dd-mtime-iphone-${{ env.XCV }}-${{ hashFiles('project.yml') }}-${{ github.sha }}
-          restore-keys: |
-            dd-mtime-iphone-${{ env.XCV }}-
+      # Ohne DerivedData-Cache: der Export liest die Texte aus den .stringsdata des Compilers, die nur für neu gebaute Dateien entstehen
+      # (mit Cache kamen 470 statt aller Texte).
       - name: Texte exportieren
         run: |
           set -o pipefail
           xcodebuild -exportLocalizations -project LumenFit.xcodeproj -scheme LumenFit -localizationPath loc -exportLanguage en \
-            -derivedDataPath derived -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO 2>&1 | tail -40
+            -derivedDataPath derived -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO SWIFT_EMIT_LOC_STRINGS=YES 2>&1 | tail -40
           find loc -maxdepth 3 | head -40
       - name: Ergebnis hochladen
         if: always()
