@@ -14,7 +14,7 @@ enum Ereignis: Sendable {
     case partnerAktualisiert
     case speichernFehlgeschlagen      // eine Eingabe (Satz, Mahlzeit, Gewicht) konnte nicht geschrieben werden: die Oberfläche sagt es (Idee 10)
     case healthAktualisiert
-    case vordergrund                  // scenePhase wird .active (auch Rückkehr aus dem Hintergrund)
+    case vordergrund                  // scenePhase wird .active nach dem Hintergrund (nicht nach Kontrollzentrum oder Mitteilungen)
 }
 
 /// Ein Kanal für alle Ereignisse der App; jeder `strom()` bekommt alle späteren Ereignisse.

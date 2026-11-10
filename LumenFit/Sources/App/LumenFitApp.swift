@@ -5,6 +5,9 @@ import SwiftUI
 struct LumenFitApp: App {
     private let umgebung: AppUmgebung
     @Environment(\.scenePhase) private var phase
+    /// `.vordergrund` nur nach echtem Hintergrund (oder beim ersten Aktivwerden), nicht nach Kontrollzentrum, Mitteilungen oder Face ID
+    /// (inaktiv zu aktiv): jede Meldung startet Health-Abruf, Konto-Abgleich und Brücke (Akku, Tempo-Prüfung 10.11.2026).
+    @State private var warImHintergrund = true
 
     /// `ModulStart.starteAlle` läuft synchron hier (BGTask-Kennungen müssen vor Ende des Starts registriert sein); im Test-Host startet nichts.
     init() {
@@ -27,8 +30,12 @@ struct LumenFitApp: App {
                 }
         }
         .onChange(of: phase) { _, neu in
-            if neu == .active { umgebung.ereignisse.senden(.vordergrund) }
+            if neu == .active, warImHintergrund {
+                warImHintergrund = false
+                umgebung.ereignisse.senden(.vordergrund)
+            }
             if neu == .background {
+                warImHintergrund = true
                 umgebung.konto.nutzung.hintergrund()
                 Task { await umgebung.konto.nutzungHochladen() }
             }
