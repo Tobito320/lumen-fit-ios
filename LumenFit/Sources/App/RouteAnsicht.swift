@@ -10,6 +10,7 @@ struct RouteAnsicht: View {
         case .gym(.training): TrainingTabView().kartenTint(HabitFarbe.mint.farbe)
         case .gym(.plaene): PlanSeiteView().kartenTint(HabitFarbe.mint.farbe)
         case .gym(.fortschritt): FortschrittTabView().kartenTint(HabitFarbe.mint.farbe)
+        case .gym(.geschafft): GeschafftView() // Training laufend
         case .essen(let bereich): EssenTabView(bereich: bereich).kartenTint(LumenFarben.loveaEssen)
         case .schlaf(let bereich): SchlafTabView(bereich: bereich).kartenTint(HabitFarbe.indigo.farbe)
         case .profil(let bereich): profil(bereich)

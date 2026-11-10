@@ -5,7 +5,7 @@ final class RouteURLTests: XCTestCase {
     private let alleRouten: [Route] = {
         var liste: [Route] = [.heute, .verlauf, .einsichten, .gewichtEintragen,
                               .uebung(id: "EIeI8Vf"), .uebung(id: "eigen/ä ö"), .freund(daten: nil), .freund(daten: "abc-_123xyz")]
-        liste += [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
+        liste += [GymBereich.training, .plaene, .fortschritt, .geschafft].map { Route.gym($0) }
         liste += [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
         liste += [SchlafBereich.letzteNacht, .verlauf, .werte].map { Route.schlaf($0) }
         liste += [ProfilBereich.uebersicht, .einstellungen, .aussehen, .ziele, .verbindungen, .datensicherung, .quellen, .meilensteine, .lumi].map { Route.profil($0) }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum GymBereich: String, Codable, Sendable { case training, plaene, fortschritt }
+enum GymBereich: String, Codable, Sendable { case training, plaene, fortschritt, geschafft } // Training laufend: geschafft = Seite nach dem Beenden
 enum EssenBereich: String, Codable, Sendable { case heute, scan, favoriten }
 enum SchlafBereich: String, Codable, Sendable { case letzteNacht, verlauf, werte }
 enum ProfilBereich: String, Codable, Sendable {

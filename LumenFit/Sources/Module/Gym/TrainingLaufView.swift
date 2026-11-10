@@ -1,8 +1,9 @@
 // Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
-/// Das laufende Training (Idee 21 bis 25, 28): die Karte "Als Nächstes" oder die Pause, jede Übung mit ihren Satzzeilen, der große Knopf
-/// "Satz fertig". Ein Training geht von Einchecken bis Beenden ohne Zahlen zu tippen.
+/// Das laufende Training im Look des Entwurfs `live` (Idee 21 bis 25, 28): Kopf mit Einklappen, Name, Tag wechseln, Zahnrad und "Beenden",
+/// Kacheln Dauer (Lime, Tipp ändert den Start) / Volumen / Sets, Puls und kcal, Lumi-Zeile, die Pause-Karte, "5 Übungen · 15 Sets" mit
+/// "Reihenfolge", jede Übung als Tabelle, "Übung hinzufügen" am Ende und unten "Set fertig". Ein Training geht ohne Zahlen zu tippen.
 struct TrainingLaufView: View {
     @Bindable var sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
@@ -16,34 +17,35 @@ struct TrainingLaufView: View {
     @State private var startzeit: GymSession?
     @Environment(\.bewegungAus) private var ruhig
     @Environment(\.scenePhase) private var phase
-    /// Reihenfolge-Modus (Knopf oben): die Karten klappen zu und lassen sich ziehen, nach dem Ablegen wieder normal.
+    /// Reihenfolge-Modus (Knopf über den Übungen): die Karten klappen zu und lassen sich ziehen, nach dem Ablegen wieder normal.
     @State private var umordnen = false
     @State private var pausenFrage = false
+    /// Erste zwei Wochen (`LaufHilfe.ersteWochen`): Formtipp und "Wie war das Set?". Einmal je Training gerechnet, nicht im Körper.
+    @State private var ersteWochen = false
     @AppStorage(GymAnzeige.pausenTimerSchluessel) private var pausenTimer = false
     @AppStorage(GymAnzeige.pausenTimerGefragtSchluessel) private var pausenTimerGefragt = false
 
     var body: some View {
         let _ = sitzung.pauseEndeZaehler // die Karte baut sich neu, wenn die Pause endet
         ScrollView {
-            VStack(alignment: .leading, spacing: Abstand.l) {
+            VStack(alignment: .leading, spacing: Abstand.m) {
                 kopf
+                kacheln
+                liveWerte
+                lumiZeile
                 GymMitlaufZeile()
-                NaechsterSatzKarte(sitzung: sitzung)
-                if sitzung.liste.count > 1 { reihenfolgeKnopf }
+                if sitzung.pause != nil { NaechsterSatzKarte(sitzung: sitzung) }
+                listenKopf
                 ForEach(Array(sitzung.liste.enumerated()), id: \.element.id) { i, _ in
-                    UebungsKarte(sitzung: sitzung, index: i, kompakt: umordnen) { withAnimation(ruhig ? nil : Feder.schnell) { umordnen = false } }
+                    LaufUebungsKarte(sitzung: sitzung, index: i, kompakt: umordnen, formtipp: formtipp(i), gefuehl: ersteWochen) {
+                        withAnimation(ruhig ? nil : Feder.schnell) { umordnen = false }
+                    }
                 }
                 Button { suche = true } label: {
-                    Label("Übung hinzufügen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    Label("Übung hinzufügen", systemImage: "plus").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.bordered)
-                // Sind alle Sätze durch, ist "Training beenden" schon der große Knopf unten: dann nicht noch einmal.
-                if sitzung.dran != nil {
-                    Button(role: .destructive) { beenden = true } label: {
-                        Label("Training beenden", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                    }
-                    .buttonStyle(.bordered)
-                }
+                .tint(palette.akzent)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.bottom, Abstand.l)
@@ -68,7 +70,10 @@ struct TrainingLaufView: View {
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
         .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
-        .task { sitzung.ladeWennNoetig() }
+        .task(id: sitzung.sessionId) {
+            sitzung.ladeWennNoetig()
+            ersteWochen = LaufHilfe.ersteWochen(sitzung.training?.sessions ?? [], jetzt: umgebung.uhr())
+        }
         // In den Hintergrund: geänderte Zeilen ohne Haken sofort schreiben, nicht erst nach dem Verzug (iOS kann die App gleich einfrieren).
         .onChange(of: phase) { _, neu in if neu == .background { sitzung.entwurfSenden() } }
         // Pausen-Timer ist Standard aus: beim ersten Haken einmal fragen, danach steht es unter Einstellungen, Präferenzen.
@@ -77,54 +82,61 @@ struct TrainingLaufView: View {
             Button("Ja") { pausenTimer = true; pausenTimerGefragt = true; sitzung.pauseNachholen() }
             Button("Nein") { pausenTimerGefragt = true }
         } message: {
-            Text("Nach jedem Satz läuft dann eine Pause mit Haptik am Ende. Du änderst das jederzeit unter Einstellungen, Präferenzen.")
+            Text("Nach jedem Set läuft dann eine Pause mit Haptik am Ende. Du änderst das jederzeit unter Einstellungen, Präferenzen.")
         }
     }
 
-    /// Ein Knopf über allen Übungen: Reihenfolge ändern. Im Modus bekommt jede Übung einen Rahmen, die Sätze klappen zu, Ziehen und Ablegen
-    /// tauscht die Plätze; nach dem Ablegen ist alles wieder normal.
-    private var reihenfolgeKnopf: some View {
-        Button { withAnimation(ruhig ? nil : Feder.schnell) { umordnen.toggle() } } label: {
-            Label(umordnen ? "Fertig" : "Reihenfolge", systemImage: umordnen ? "checkmark" : "arrow.up.arrow.down")
-                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-        }
-        .buttonStyle(.bordered)
-        .accessibilityHint(umordnen ? "Beendet das Umordnen" : "Übungen ziehen und ablegen, die Sätze klappen dabei zu")
+    /// Formtipp nur unter der Übung, die dran ist, und nur in den ersten Wochen.
+    private func formtipp(_ i: Int) -> String? {
+        guard ersteWochen, sitzung.dran?.uebung == i, sitzung.liste.indices.contains(i) else { return nil }
+        return LaufHilfe.formtipp(sitzung.liste[i].planUebung.uebung)
     }
 
     // MARK: Kopf
 
+    /// Einklappen (zu Heute, dort steht die Leiste "Training läuft"), Name, Tag wechseln, Einstellungen, "Beenden" in Lime.
     private var kopf: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(sitzung.tag.map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training")
-                    .font(.title3.weight(.bold)).foregroundStyle(palette.text)
-                if let s = sitzung.laufende {
-                    HStack(spacing: Abstand.xs) {
-                        Button { startzeit = s } label: {
-                            HStack(spacing: Abstand.xs) {
-                                Text(s.start, style: .timer).monospacedDigit()
-                                Image(systemName: "pencil").font(.caption).accessibilityHidden(true)
-                            }
-                            .frame(minHeight: Abstand.tippflaeche)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Dauer des Trainings")
-                        .accessibilityHint("Ändert die Startzeit")
-                        Text("· \(sitzung.saetzeZahl) Sätze")
-                        if sitzung.volumen > 0 { Text("· \(TrainingLogik.kgText(sitzung.volumen.rounded())) kg").monospacedDigit() }
-                    }
-                    .font(.subheadline).foregroundStyle(palette.text2)
-                    liveWerte
-                }
+        HStack(spacing: Abstand.xs) {
+            Button { umgebung.router.oeffne(.heute) } label: {
+                Image(systemName: "chevron.down").font(.body.weight(.semibold)).foregroundStyle(palette.text)
+                    .frame(width: 36, height: 36).background(palette.flaeche, in: .circle)
+                    .frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
             }
-            Spacer()
+            .accessibilityLabel("Training einklappen")
+            .accessibilityHint("Das Training läuft weiter, die Leiste unten führt zurück")
+            Text(sitzung.tag.map { $0.name.isEmpty ? String(localized: "Training") : $0.name } ?? String(localized: "Freies Training"))
+                .font(.title3.weight(.bold)).foregroundStyle(palette.text).lineLimit(2)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
             if WorkoutLogik.tagWechselbar(sitzung.liste) {
                 Button { tagWahl = true } label: { Image(systemName: "arrow.left.arrow.right").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                     .accessibilityLabel("Anderen Trainingstag wählen")
             }
             Button { einstellungen = true } label: { Image(systemName: "gearshape").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche) }
                 .accessibilityLabel("Einstellungen fürs Training")
+            Button("Beenden") { beenden = true }
+                .buttonStyle(.lumenHauptknopf)
+                .accessibilityHint("Fragt, ob du fertig bist")
+        }
+        .foregroundStyle(palette.text)
+    }
+
+    /// Dauer (Lime, Tipp ändert die Startzeit) / Volumen / Sets.
+    @ViewBuilder
+    private var kacheln: some View {
+        if let s = sitzung.laufende {
+            LaufKachelReihe {
+                Button { startzeit = s } label: {
+                    LaufKachel("Dauer") { Text(s.start, style: .timer).foregroundStyle(palette.akzent) }
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Ändert die Startzeit")
+                Divider()
+                LaufKachel("Volumen") { Text("\(TrainingLogik.kgText(sitzung.volumen.rounded())) kg") }
+                Divider()
+                LaufKachel("Sets") { Text(sitzung.saetzeZahl, format: .number) }
+            }
         }
     }
 
@@ -135,12 +147,47 @@ struct TrainingLaufView: View {
             if !teile.isEmpty {
                 Label(teile.joined(separator: " · "), systemImage: "heart.fill")
                     .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).monospacedDigit()
+                    .padding(.horizontal, Abstand.xs)
                     .accessibilityLabel(teile.joined(separator: ", "))
             }
         }
     }
 
-    /// "Satz 2 gelöscht" mit "Rückgängig": 5 Sekunden, dann gleitet die Leiste weg.
+    /// Lumi feuert an, atmet in der Pause mit und freut sich, wenn alles abgehakt ist (Lumi-Zustände anfeuern, pause, ziel).
+    @ViewBuilder
+    private var lumiZeile: some View {
+        if sitzung.pause != nil {
+            LaufLumiZeile(stimmung: .pause, text: "Atmen, trinken, gleich geht's weiter.")
+        } else if sitzung.dran == nil, !sitzung.liste.isEmpty {
+            LaufLumiZeile(stimmung: .ziel, text: "Alles geschafft. Beende das Training, wenn du fertig bist.")
+        } else if !sitzung.liste.isEmpty {
+            LaufLumiZeile(stimmung: .anfeuern, text: "Noch eine Wiederholung. Du schaffst das.")
+        }
+    }
+
+    /// "5 Übungen · 15 Sets" und der Knopf "Reihenfolge": im Modus klappen die Sätze zu, Ziehen und Ablegen tauscht die Plätze.
+    @ViewBuilder
+    private var listenKopf: some View {
+        let sets = sitzung.liste.reduce(0) { $0 + $1.saetze.count }
+        HStack {
+            Text(sitzung.liste.count == 1 ? "1 Übung · \(sets) Sets" : "\(sitzung.liste.count) Übungen · \(sets) Sets")
+                .font(.footnote).foregroundStyle(palette.text2)
+            Spacer(minLength: Abstand.s)
+            if sitzung.liste.count > 1 {
+                Button { withAnimation(ruhig ? nil : Feder.schnell) { umordnen.toggle() } } label: {
+                    Label(umordnen ? "Fertig" : "Reihenfolge", systemImage: umordnen ? "checkmark" : "arrow.up.arrow.down")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .buttonStyle(.bordered)
+                .tint(umordnen ? palette.akzent : palette.text)
+                .accessibilityHint(umordnen ? "Beendet das Umordnen" : "Übungen ziehen und ablegen, die Sets klappen dabei zu")
+            }
+        }
+        .padding(.horizontal, Abstand.xs)
+        .padding(.top, Abstand.s)
+    }
+
+    /// "Set 2 gelöscht" mit "Rückgängig": 5 Sekunden, dann gleitet die Leiste weg.
     @ViewBuilder
     private var rueckgaengigLeiste: some View {
         if let r = sitzung.rueckgaengig {
@@ -166,6 +213,7 @@ struct TrainingLaufView: View {
 
     // MARK: Hauptknopf
 
+    /// Unterleiste (Entwurf `liveBar`): "Set fertig", bei Cardio "Cardio eintragen", sind alle durch "Training beenden".
     private var satzFertigLeiste: some View {
         Group {
             if let dran = sitzung.dran {
@@ -180,13 +228,13 @@ struct TrainingLaufView: View {
                     .buttonStyle(.lumenHauptknopf)
                 } else {
                     Button { sitzung.satzFertig() } label: {
-                        Text("Satz fertig").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                        Text("Set fertig").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                     }
                     .buttonStyle(.lumenHauptknopf)
                 }
             } else {
                 Button { beenden = true } label: {
-                    Text("Training beenden").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    Label("Training beenden", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
                 .buttonStyle(.lumenHauptknopf)
             }
