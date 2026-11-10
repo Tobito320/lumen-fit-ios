@@ -85,12 +85,13 @@ test("DELETE /konto: keine Zeile irgendeiner Tabelle nennt das Konto mehr, ander
   assert.deepEqual(nachher.herausforderung_teilnehmer.map((t) => `${t.herausforderung}:${t.konto}`).sort(), [`h1:${DU}`, `h2:${DU}`]);
 });
 
-test("DELETE /konto: danach unbekannt (401), dieselbe Kennung lässt sich wie ein neues Gerät anlegen", async () => {
+test("DELETE /konto: danach unbekannt (404), dieselbe Kennung lässt sich wie ein neues Gerät anlegen", async () => {
   const e = env();
   await anlegen(e, ICH);
   assert.equal((await ruf(e, "DELETE", "/konto", kopf(ICH))).status, 200);
   assert.equal((await ruf(e, "GET", "/config", kopf(ICH))).status, 401);
-  assert.equal((await ruf(e, "DELETE", "/konto", kopf(ICH))).status, 401, "zweites Löschen: schon weg");
+  assert.equal((await ruf(e, "DELETE", "/konto", kopf(ICH))).status, 404, "zweites Löschen: schon weg");
+  assert.equal((await ruf(e, "DELETE", "/konto", { ...kopf(ICH), "X-App-Key": "falsch" })).status, 401, "falscher App-Schlüssel ist nie 'schon weg'");
   assert.equal((await anlegen(e, ICH)).status, 201);
   assert.equal((await ruf(e, "GET", "/config", kopf(ICH))).status, 200);
 });

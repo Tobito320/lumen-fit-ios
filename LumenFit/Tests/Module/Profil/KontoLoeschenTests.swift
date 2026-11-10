@@ -67,8 +67,8 @@ final class KontoLoeschenTests: XCTestCase {
     }
 
     func testServerAntworten() async throws {
-        // 401: dort schon unbekannt (zweiter Versuch nach Abbruch) zählt als gelöscht; 403 (gesperrt) und 5xx lassen alles stehen.
-        for (status, erwartet) in [(401, KontoLoeschErgebnis.geloescht), (403, .abgelehnt), (500, .abgelehnt)] {
+        // 404: dort schon unbekannt (zweiter Versuch nach Abbruch) zählt als gelöscht; 401 (falscher Schlüssel), 403 (gesperrt) und 5xx lassen alles stehen.
+        for (status, erwartet) in [(404, KontoLoeschErgebnis.geloescht), (401, .abgelehnt), (403, .abgelehnt), (500, .abgelehnt)] {
             let bund = SpeicherSchluesselbund()
             let d = try angemeldet(SkriptLader([antwort(status)]), bund: bund, ordner: try tempOrdner())
             let e = await d.kontoLoeschen()

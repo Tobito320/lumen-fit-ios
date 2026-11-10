@@ -693,7 +693,7 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   const m = request.method;
   if (url.pathname === "/gesundheit" && m === "GET") return json({ ok: true });
   // --- App Store (Stufe 7/8): Konto löschen und Kontaktformular der Webseite ---
-  if (url.pathname === "/konto" && m === "DELETE") return kontoLoeschen(request, env, { kontoPruefen, json });
+  if (url.pathname === "/konto" && m === "DELETE") return kontoLoeschen(request, env, { kontoPruefen, appOk, json });
   if (url.pathname === "/kontakt" || url.pathname === "/admin/kontakt") return kontakt(request, url, env, { json, nein, adminOk, sha256 });
   // --- Ende App Store ---
   if (url.pathname === "/konto" && m === "POST") return registrieren(request, env);

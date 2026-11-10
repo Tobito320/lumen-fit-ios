@@ -28,6 +28,11 @@ const SCHRITTE = [
 // hilfen: { kontoPruefen, json } aus index.js. Gesperrte Konten bekommen 403 wie überall (sonst ginge die Sperre per Löschen und Neuanlage verloren).
 export async function kontoLoeschen(request, env, hilfen) {
   const { konto, antwort } = await hilfen.kontoPruefen(request, env);
+  if (antwort?.status === 401 && hilfen.appOk(request, env)) {
+    // Gültiger App-Schlüssel, Konto-Zeile fehlt: schon gelöscht (404). Nur dann darf die App das Gerät leeren, nie bei falschem Schlüssel (401).
+    const id = request.headers.get("X-Konto") ?? "";
+    if (/^[A-Za-z0-9_-]{16,64}$/.test(id) && !(await env.DB.prepare("SELECT 1 FROM konten WHERE id = ?1").bind(id).first())) return hilfen.json({ fehler: "unbekannt" }, 404);
+  }
   if (antwort) return antwort;
   for (const loescher of KONTO_LOESCHER) await loescher(env, konto.id);
   for (const sql of SCHRITTE) {

@@ -485,7 +485,7 @@ final class KontoDienst {
 
     // MARK: - Konto löschen
 
-    /// `DELETE /konto` (App Store 5.1.1(v)): der Server löscht alles zu diesem Konto. Gelöscht (200) oder schon unbekannt (401): Kennung, gemerkter Stand,
+    /// `DELETE /konto` (App Store 5.1.1(v)): der Server löscht alles zu diesem Konto. Gelöscht (200) oder schon unbekannt (404; 401 heißt falscher Schlüssel, dann bleibt alles): Kennung, gemerkter Stand,
     /// Verbindungen, Partner-Datei und offene Nutzungszähler gehen auch hier weg; der nächste Abgleich legt ein neues Konto an wie ein neues Gerät.
     /// Ohne Netz oder bei anderer Antwort bleibt alles, wie es ist.
     func kontoLoeschen() async -> KontoLoeschErgebnis {
@@ -495,7 +495,7 @@ final class KontoDienst {
             case .fehlt: break
             case .da(let k):
                 guard let r = await sendeMitKonto("/konto", methode: "DELETE", kennung: k) else { return .keinNetz }
-                guard r.status == 200 || r.status == 401 else { return .abgelehnt }
+                guard r.status == 200 || r.status == 404 else { return .abgelehnt }
             }
         }
         nutzung.an = false
