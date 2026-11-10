@@ -55,3 +55,55 @@ https://lumen-fit.pages.dev/datenschutz.html
 
 ## Prüfhinweise für Apple (Englisch)
 Lumen Fit works without sign-in: the app creates a local profile on first launch (a few onboarding questions, then the plan). No demo account is needed. HealthKit is used to read steps, sleep and body weight and to write workouts and body weight, only after the user allows it. Friends and Stats: inviting works via QR code or link; the public "All" list is opt-in with a nickname, entries can be reported or blocked by long-pressing a name. Account deletion: Profile > Account > Delete account. The AI photo feature for meals asks for explicit consent before any photo is sent.
+
+---
+
+# App Store page Lumen Fit (English, all other countries)
+
+## Name (30)
+Lumen Fit
+
+## Subtitle (30)
+Gym plan, sets and progress
+
+## Promotional text (170)
+Your gym plan, ready after eight questions. Check off sets, add weight and watch yourself get stronger. No ads, no subscription.
+
+## Description (4000)
+Lumen Fit is for everyone starting out in the gym or with calisthenics, or training for a year or two.
+
+Answer eight short questions and your plan is ready: how often you train, for how long, and what matters to you. After that you know every day what's next.
+
+TRAINING
+- Today's plan with exercises and an honest duration
+- Check off sets and reps, see "last time" and a suggestion for next time
+- Quick 30-minute workout or train without a plan
+- Browse ready-made splits and use them
+- Exercises with instructions, sorted by muscle
+- Machine taken? Swap it with one tap
+
+PROGRESS
+- Overview by month or week
+- Weight per exercise as a chart
+- History of every session, sets per muscle
+- Achievements and levels from Wood to Diamond
+- Body weight with a goal, optionally in Apple Health
+
+STATS AND FRIENDS
+- Compare yourself with friends or anonymously with everyone
+- Private by default: your numbers stay on your iPhone until you choose to join
+- Invite friends by QR code or link
+
+YOUR DATA
+Workouts, weight and health values stay on your iPhone. Apple Health is only read with your permission and never used for advertising. You can delete your account right in the app.
+
+Lumen Fit is free and has no ads.
+
+## Keywords (100)
+gym,fitness,workout,planner,strength,tracker,sets,reps,calisthenics,beginner,split,log
+
+## Support URL
+https://lumen-fit.pages.dev/en/support.html
+
+## Privacy URL
+https://lumen-fit.pages.dev/en/privacy.html
