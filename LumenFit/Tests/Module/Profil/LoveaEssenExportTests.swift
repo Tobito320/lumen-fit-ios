@@ -114,6 +114,22 @@ final class LoveaEssenExportTests: XCTestCase {
         XCTAssertEqual(konto.essenExportAnzahl, 3)
     }
 
+    func testGeloeschtesProfilGibtDasKontoFreiUndDerZaehlerBeginntNeu() async throws {
+        let (konto, _) = try await angemeldet(exportAn: true, danach: antwort(200, #"{"seq":9,"uebersprungen":0}"#))
+        await LoveaEssenExport.starteWennOffen(konto: konto, daten: try datenMitEssen(profil: .testA), jetzt: Date())
+        XCTAssertEqual(konto.essenExportAnzahl, 2)
+
+        konto.profilZuordnen(aktiv: .testB, vorhanden: [.testA, .testB])
+        XCTAssertEqual(konto.essenExportAnzahl, 2, "das Profil des Kontos gibt es noch: nichts ändert sich")
+        XCTAssertFalse(konto.gehoertZuProfil(.testB))
+
+        konto.profilZuordnen(aktiv: .testB, vorhanden: [.testB])   // das erste Profil ist gelöscht
+        XCTAssertTrue(konto.gehoertZuProfil(.testB))
+        XCTAssertEqual(konto.essenExportAnzahl, 0, "sonst übersprünge das neue Profil seine ersten Ops")
+        let n = await LoveaEssenExport.starteWennOffen(konto: konto, daten: try datenMitEssen(profil: .testB), jetzt: Date())
+        XCTAssertEqual(n, 2)
+    }
+
     func testAlterKontoStandOhneExportFelderLaedt() throws {
         let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{},"loveaErlaubt":true,"loveaImportErledigt":true}"#.utf8))
         XCTAssertTrue(alt.loveaErlaubt)

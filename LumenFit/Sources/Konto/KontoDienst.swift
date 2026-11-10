@@ -314,7 +314,6 @@ final class KontoDienst {
     }
 
     /// Gehört das Konto diesem Profil? Das erste Profil, das fragt (der Abgleich beim Start fragt mit dem aktiven), wird gemerkt; jedes andere bekommt false.
-    /// shortcut: wird das gemerkte Profil gelöscht, ruht der Export, bis jemand das Konto neu zuordnet; bei Bedarf beim Löschen zurücksetzen.
     @discardableResult
     func gehoertZuProfil(_ id: ProfilID) -> Bool {
         if stand.kontoProfil == nil {
@@ -322,6 +321,17 @@ final class KontoDienst {
             sichere()
         }
         return stand.kontoProfil == id.rawValue
+    }
+
+    /// Der Abgleich beim Start: ist das Profil des Kontos gelöscht, übernimmt das aktive das Konto und der Export-Zähler beginnt von vorn
+    /// (er zählte Ops des alten Profils, sonst übersprünge das neue seine ersten). Sonst merkt sich das Konto das aktive Profil nur, wenn es noch keins hat.
+    func profilZuordnen(aktiv: ProfilID, vorhanden: [ProfilID]) {
+        if let alt = stand.kontoProfil, !vorhanden.contains(where: { $0.rawValue == alt }) {
+            stand.kontoProfil = nil
+            stand.essenExportAnzahl = 0
+            stand.essenExportZiele = nil
+        }
+        gehoertZuProfil(aktiv)
     }
 
     /// Merkt, was gesendet ist: so viele Essen-Ops von vorn, und der Stand der Ziele.
