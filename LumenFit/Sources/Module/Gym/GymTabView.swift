@@ -40,7 +40,7 @@ struct PlanSeiteView: View {
             if let sitzung { PlanView(sitzung: sitzung) } else { Spacer() }
         }
         .lumenHintergrund()
-        .navigationTitle("Plan")
+        .navigationTitle("Eigener Plan")
         .navigationBarTitleDisplayMode(.inline)
         .task { sitzung = GymSitzung.von(umgebung) }
     }

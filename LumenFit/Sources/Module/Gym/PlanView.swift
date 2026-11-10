@@ -1,10 +1,11 @@
 // Quelle: Lovea Health/GymNeu/PlanView (neu im Lumen-Design)
 import SwiftUI
 
-/// Der Plan (Idee 27): die Woche mit Trainings- und Ruhetagen samt Hinweisen, die Tage mit ihren Übungen, die Split-Bibliothek,
-/// ein eigener freier Split und der Übungskatalog. Jede Änderung geht als `gym.plan` raus (`TrainingStore.planSichern`).
+/// Eigener Plan (Entwurf `eigen`, Idee 27): die Woche mit Trainings- und Ruhetagen samt Hinweisen und "Zurück auf Plan", die Tage mit ihren Übungen,
+/// dann Split-Bibliothek, ein eigener freier Split, Kalender und Übungskatalog. Jede Änderung geht als `gym.plan` raus (`TrainingStore.planSichern`).
 struct PlanView: View {
     let sitzung: GymSitzung
+    @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var tagId: IdentifiableText?
     @State private var bibliothek = false
@@ -30,7 +31,7 @@ struct PlanView: View {
             }
         }
         .sheet(item: $tagId) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
-        .sheet(isPresented: $bibliothek) { SplitBibliothekView(sitzung: sitzung) }
+        .navigationDestination(isPresented: $bibliothek) { SplitBibliothekView(sitzung: sitzung) }
         .sheet(isPresented: $frei) { SplitFreiBlatt(sitzung: sitzung) }
         .alert("Neuer Tag", isPresented: $neuerTag) {
             TextField("Name, zum Beispiel Beine", text: $neuerName)
@@ -45,6 +46,8 @@ struct PlanView: View {
     private func inhalt(_ training: TrainingStore) -> some View {
         let plan = training.plan
         return VStack(alignment: .leading, spacing: Abstand.l) {
+            Text("Tage, Übungen und Sets selbst festlegen. Ein Split aus der Bibliothek ist die Vorlage.")
+                .font(.subheadline).foregroundStyle(palette.text2)
             if plan.tage.isEmpty {
                 LeerZustand(stimmung: .bereit, satz: "Du hast noch keinen Plan. Wähl einen Split aus der Bibliothek oder bau deinen eigenen.",
                             handlung: "Split wählen") { bibliothek = true }
@@ -66,6 +69,13 @@ struct PlanView: View {
                 ForEach(1...7, id: \.self) { w in
                     wochenZeile(plan, w, training: training)
                     if w < 7 { Haarlinie() }
+                }
+                // Früher "Diese Woche" im Training-Tab; das Verlegen selbst steht auf der Seite des Tages.
+                if WochenLogik.verlegt(plan, heute: Datum.text(umgebung.uhr())) {
+                    Haarlinie()
+                    GymZeile(titel: String(localized: "Zurück auf Plan"), untertitel: String(localized: "Verlegte Tage gelten wieder wie im Plan.")) {
+                        Button("Zurücksetzen") { training.verlegungenLoeschen() }.buttonStyle(.bordered).controlSize(.large)
+                    }
                 }
             }
         }
@@ -140,22 +150,31 @@ struct PlanView: View {
 
     private func quellen(_ plan: TrainingsPlan) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Pläne und Übungen")
+            GymAbschnitt(titel: String(localized: "Mehr"))
             ListenKarte {
                 Button { bibliothek = true } label: {
-                    GymZeile(titel: "Split-Bibliothek", untertitel: "Fertige Pläne für 2 bis 6 Tage, auch nur für eine Woche testen") {
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                    }
+                    GymSymbolZeile(symbol: "square.grid.2x2.fill", farbe: Bereichsfarbe.splits, titel: String(localized: "Split-Bibliothek"),
+                                   untertitel: String(localized: "Fertige Pläne für 2 bis 6 Tage, auch nur für eine Woche testen"))
                 }
                 .buttonStyle(.plain)
                 Haarlinie()
                 Button { frei = true } label: {
-                    GymZeile(titel: "Eigenen Split anlegen", untertitel: "1 bis 6 Tage, du benennst sie und füllst sie selbst") {
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                    }
+                    GymSymbolZeile(symbol: "square.and.pencil", farbe: Bereichsfarbe.splits, titel: String(localized: "Eigenen Split anlegen"),
+                                   untertitel: String(localized: "1 bis 6 Tage, du benennst sie und füllst sie selbst"))
                 }
                 .buttonStyle(.plain)
-                // Der Übungskatalog steht als Zeile "Übungen" im Training-Tab (einmal, nicht doppelt).
+                Haarlinie()
+                NavigationLink { KalenderView() } label: {
+                    GymSymbolZeile(symbol: "calendar", farbe: Bereichsfarbe.verlauf, titel: String(localized: "Kalender"),
+                                   untertitel: String(localized: "Trainings, geplante Tage und Partner"))
+                }
+                .buttonStyle(.plain)
+                Haarlinie()
+                NavigationLink { UebungsSucheView(titel: String(localized: "Übungen")) } label: {
+                    GymSymbolZeile(symbol: "dumbbell.fill", farbe: Bereichsfarbe.energie, titel: String(localized: "Übungskatalog"),
+                                   untertitel: String(localized: "Alle Übungen mit Anleitung"))
+                }
+                .buttonStyle(.plain)
             }
         }
     }

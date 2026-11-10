@@ -1,25 +1,24 @@
-// Quelle: Lovea Health/GymNeu/GymStartView.swift (neu im Lumen-Design)
+// Quelle: Lovea Health/GymNeu/GymStartView.swift (neu im Lumen-Design, Aufbau nach dem Entwurf vom 10.11.2026)
 import SwiftUI
 
-/// Die Startseite des Trainings (Idee 27 und 29, Bild `training-*.png`): großer Start, "Ohne Plan starten", die Woche mit Partner-Punkten, der Plantag mit
-/// Zeitschätzung, "Heute Beine statt Push" und seinen Übungen, dann die Zeilen Plan, Kalender und Übungen, die letzten Einheiten und "Mehr" (Verlegen, Cardio, Nachtragen).
+/// Der Training-Tab (Entwurf `training`): Woche Mo bis So (Tipp wählt den Tag), Lumi-Zeile, großer Start in Lime, Pillen "Kurz · 30 min" und "Ohne Plan",
+/// der gewählte Tag als Zeile (öffnet die Seite des Tages), die Zeilen Anderen Plan wählen, Splits, Übungen und Cardio, "Hilfe?" und "Eigenen Plan bauen".
+/// Darunter bleibt, was der Entwurf nicht zeigt: Letzte Einheiten, Alle Trainingstage, Kalender, Nachtragen (bis Fortschritt sie trägt).
+/// Auschecken vergessen steht nur, wenn nötig, ganz oben; die Testwoche unter dem Tag; das Zahnrad oben rechts.
 struct GymStartView: View {
     let sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @Environment(\.colorScheme) private var schema
-    @Environment(\.colorSchemeContrast) private var kontrast
     @State private var gewaehlt: String?
-    /// Ein anderer Plantag statt des geplanten, nur für heute ("Heute Beine statt Push").
-    @State private var andererTag: String?
+    /// "Kurz · 30 min" an: der Start nimmt nur die ersten Übungen, der Rest wird ausgelassen (nicht gelöscht).
+    @State private var kurz = false
     @State private var cardioGeraet: CardioWahl?
     @State private var einstellungen = false
-    @State private var fehler: String?
     /// Die vergessene Einheit, deren Endzeit gerade eingetragen wird.
     @State private var endzeitFuer: GymSession?
     @State private var nachtragen = false
-    /// "Mehr" unten ist zu, bis man es öffnet.
-    @State private var mehrOffen = false
+    @State private var planWahl = false
+    @State private var hilfe = false
 
     var body: some View {
         ScrollView {
@@ -28,18 +27,20 @@ struct GymStartView: View {
                     .padding(.horizontal, Abstand.l)
                     .padding(.bottom, Abstand.xl)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Das Training lädt noch.")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Das Training lädt noch."))
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { einstellungen = true } label: { Label("Einstellungen fürs Training", systemImage: "gearshape") }
             }
         }
         .sheet(item: $cardioGeraet) { CardioEingabeView(sitzung: sitzung, geraet: $0.rawValue) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
-        .alert("Das geht gerade nicht", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-            Button("Verstanden") { fehler = nil }
-        } message: {
-            Text(fehler ?? "")
-        }
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
+        .sheet(isPresented: $planWahl) { GymPlanWahlBlatt(sitzung: sitzung) }
+        .sheet(isPresented: $hilfe) { GymHilfeBlatt() }
         .task { sitzung.ladeWennNoetig() }
     }
 
@@ -47,228 +48,259 @@ struct GymStartView: View {
         let jetzt = umgebung.uhr()
         let heute = Datum.text(jetzt)
         let datum = gewaehlt ?? heute
-        // Ohne Studio kein Zeitfenster: ein aus Lovea übernommenes ließe sich nicht mehr ändern.
-        let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt)
-        let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
+        // Der Stand gilt für heute (Knopf, Lumi, Testwoche); der gewählte Tag zeigt nur seine Zeile.
+        let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: heute, jetzt: jetzt)
+        let heuteGemacht = stand.woche.first { $0.heute }?.gemacht ?? false
+        let lumi = GymTabLogik.lumi(laeuft: stand.knopf == .weiter, heuteGemacht: heuteGemacht, tagName: stand.tag.map(Self.name))
+        let kurzMoeglich = stand.knopf == .starten && !heuteGemacht && stand.tag.map { GymTabLogik.kurzLohnt($0) } == true
         return VStack(alignment: .leading, spacing: Abstand.l) {
-            // Der große Start ganz oben, dann Woche und Tag mit Übungen, die Zeilen, Letzte Einheiten; alles Seltene unter "Mehr".
-            if let knopf = stand.knopf { startKnopf(knopf, training: training).frame(maxWidth: .infinity) }
-            if stand.knopf == .starten { ohnePlanKnopf }
-            wochenleiste(stand)
-            tagesKarte(stand, training: training, anderer: anderer)
-            if let tag = anderer ?? stand.tag, !tag.uebungen.isEmpty { uebungsListe(tag) }
             if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
-            unterseiten
-            letzte(training, jetzt: jetzt)
-            mehrBereich(stand, training: training)
+            wochenleiste(stand, datum: datum)
+            lumiZeile(lumi)
+            if let knopf = stand.knopf {
+                startKnopf(knopf, heuteGemacht: heuteGemacht, tag: kurzMoeglich && kurz ? stand.tag : nil, training: training)
+            }
+            if stand.knopf == .starten { pillen(stand, kurzMoeglich: kurzMoeglich, training: training) }
+            tagZeile(datum: datum, heute: heute, stand: stand, training: training, kurz: kurzMoeglich && kurz)
+            if let hinweis = stand.testHinweis { testwoche(hinweis, training: training) }
+            unterseiten(training, heute: heute)
+            hilfeUndEigen
+            verlauf(training, jetzt: jetzt)
         }
     }
 
-    // MARK: Übungen des Tages und Unterseiten
+    private static func name(_ t: TrainingsTag) -> String { t.name.isEmpty ? String(localized: "Training") : t.name }
 
-    /// Die Übungen des gewählten Plantags in Planreihenfolge; Katalog-Übungen öffnen ihre Seite mit Bild, Rekorden und Verlauf.
-    private func uebungsListe(_ tag: TrainingsTag) -> some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Übungen")
-            ListenKarte {
-                ForEach(Array(tag.uebungen.enumerated()), id: \.element.id) { i, u in
-                    if i > 0 { Haarlinie() }
-                    if u.katalog != nil {
-                        NavigationLink { UebungDetailView(id: u.uebung) } label: { GymZeile(titel: u.anzeigeName, untertitel: TrainingLogik.saetzeText(u)) { pfeil } }
-                            .buttonStyle(.plain)
-                    } else {
-                        GymZeile(titel: u.anzeigeName, untertitel: TrainingLogik.saetzeText(u))
+    // MARK: Woche
+
+    private func wochenleiste(_ stand: GymStartStand, datum: String) -> some View {
+        HStack(spacing: Abstand.xs) {
+            ForEach(stand.woche) { t in
+                let gewaehlt = t.datum == datum
+                Button {
+                    self.gewaehlt = t.datum == stand.heute ? nil : t.datum
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(t.heute ? String(localized: "Heute") : t.kuerzel)
+                            .font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7)
+                        Image(systemName: t.gemacht ? "checkmark.circle.fill" : t.geplant != nil ? "circle" : "minus")
+                            .font(.title3)
+                            .foregroundStyle(t.gemacht ? palette.akzent : palette.text2)
+                            .accessibilityHidden(true)
+                        // Punkt, wenn der Partner an diesem Tag trainiert hat (nur mit Verbindung).
+                        WochenPersonenPunkte(tag: t.datum, ichGym: false)
                     }
+                    .foregroundStyle(palette.text)
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + 12)
+                    .background(gewaehlt ? palette.akzent.opacity(0.12) : Color.clear, in: .rect(cornerRadius: Rundung.klein, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Rundung.klein, style: .continuous).stroke(gewaehlt ? palette.akzent : Color.clear, lineWidth: 1.5))
                 }
+                .buttonStyle(.federnd)
+                .accessibilityLabel(t.sprechtext)
+                .accessibilityAddTraits(gewaehlt ? .isSelected : [])
             }
         }
+        .padding(.top, Abstand.s)
     }
 
-    private var pfeil: some View {
-        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-    }
-
-    /// Plan, Kalender und Übungen sind Unterseiten des Trainings.
-    private var unterseiten: some View {
-        ListenKarte {
-            NavigationLink(value: Route.gym(.plaene)) {
-                GymZeile(titel: "Plan", untertitel: "Tage, Übungen und Split-Bibliothek") { pfeil }
-            }
-            .buttonStyle(.plain)
-            Haarlinie()
-            NavigationLink { KalenderView() } label: {
-                GymZeile(titel: "Kalender", untertitel: "Trainings, geplante Tage und Partner") { pfeil }
-            }
-            .buttonStyle(.plain)
-            Haarlinie()
-            NavigationLink { UebungsSucheView(titel: "Übungen") } label: {
-                GymZeile(titel: "Übungen", untertitel: "\(UebungsKatalog.alle.count) Übungen mit Bild, Rekorden und Verlauf") { pfeil }
-            }
-            .buttonStyle(.plain)
+    private func lumiZeile(_ z: GymTabLogik.LumiZeile) -> some View {
+        HStack(spacing: Abstand.m) {
+            LumiView(stimmung: z.stimmung, groesse: 40).accessibilityHidden(true)
+            Text(z.satz).font(.subheadline).foregroundStyle(palette.text).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: Mehr
+    // MARK: Start
 
-    private var cardioKnoepfe: some View {
-        HStack(spacing: Abstand.s) {
-            Button { cardioGeraet = .laufband } label: {
-                Label("Laufband", systemImage: "figure.walk.treadmill").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            Button { cardioGeraet = .stairmaster } label: {
-                Label("Stairmaster", systemImage: "figure.stair.stepper").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-        }
-        .buttonStyle(.bordered)
-        .accessibilityHint("Cardio eintragen")
-    }
-
-    private var einstellungenKnopf: some View {
-        Button { einstellungen = true } label: {
-            Label("Einstellungen fürs Training", systemImage: "gearshape").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-        }
-        .buttonStyle(.bordered)
-    }
-
-    /// Eine Zeile "Mehr", darunter (aufgeklappt) Diese Woche mit Verlegen und Testwoche, Cardio, Einstellungen und Nachtragen.
-    @ViewBuilder
-    private func mehrBereich(_ stand: GymStartStand, training: TrainingStore) -> some View {
-        ListenKarte {
-            Button { mehrOffen.toggle() } label: {
-                GymZeile(titel: "Cardio, Nachtragen, Einstellungen", untertitel: "Auch: diesen Tag verlegen") {
-                    Image(systemName: mehrOffen ? "chevron.up" : "chevron.down")
-                        .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint(mehrOffen ? "Klappt zu" : "Klappt auf")
-        }
-        if mehrOffen {
-            verlegenKarte(stand, training: training)
-            cardioKnoepfe
-            einstellungenKnopf
-            Button { nachtragen = true } label: {
-                Label("Training nachtragen", systemImage: "plus").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-            }
-            .buttonStyle(.bordered)
-        }
-    }
-
-    // MARK: Wochenleiste
-
-    private func wochenleiste(_ stand: GymStartStand) -> some View {
-        let gruen = GymFarbe.gruen(schema: schema, kontrast: kontrast)
-        return VStack(alignment: .leading, spacing: Abstand.s) {
-            // W-003: der Tag steht schon als Titel der Karte darunter.
-            HStack(spacing: Abstand.xs) {
-                ForEach(stand.woche) { t in
-                    Button {
-                        gewaehlt = t.datum == stand.heute ? nil : t.datum
-                        andererTag = nil
-                    } label: {
-                        VStack(spacing: 2) {
-                            Text(t.kuerzel).font(.caption.weight(.semibold))
-                            Image(systemName: t.gemacht ? "checkmark.circle.fill" : t.geplant != nil ? "circle" : "minus")
-                                .foregroundStyle(t.gemacht ? gruen : palette.text2)
-                                .accessibilityHidden(true)
-                            // Punkt, wenn der Partner an diesem Tag trainiert hat (nur mit Verbindung).
-                            WochenPersonenPunkte(tag: t.datum, ichGym: false)
-                        }
-                        .foregroundStyle(palette.text)
-                        .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + 8)
-                        .background(t.gewaehlt ? gruen.opacity(0.16) : Color.clear, in: .rect(cornerRadius: Rundung.klein, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Rundung.klein, style: .continuous).stroke(t.heute ? gruen : Color.clear, lineWidth: 1.5))
-                    }
-                    .buttonStyle(.federnd)
-                    .accessibilityLabel(t.sprechtext)
-                    .accessibilityAddTraits(t.gewaehlt ? .isSelected : [])
-                }
-            }
-        }
-    }
-
-    // MARK: Plantag
-
-    private func tagesKarte(_ stand: GymStartStand, training: TrainingStore, anderer: TrainingsTag?) -> some View {
-        let tag = anderer ?? stand.tag
-        let abweichung = anderer.flatMap { GymStartStand.abweichung(geplant: stand.tag, gewaehlt: $0) }
-        return HeroKarte(platte: true) {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                // W-003: "noch nicht" sagt nichts Neues, nur Abweichung oder Erledigtes steht oben.
-                if abweichung != nil || stand.status != "noch nicht" {
-                    Text(abweichung ?? stand.status).font(.footnote.weight(.semibold)).textCase(.uppercase)
-                }
-                if let tag {
-                    Text(tag.name.isEmpty ? "Training" : tag.name).font(.title2.weight(.bold)).fontDesign(.rounded)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(ZeitSchaetzung.umfang(tag)).font(.subheadline)
-                    // Ohne Zeitfenster wiederholt das Urteil nur die Dauer ("ca. 24 min" unter "etwa 25 min").
-                    if stand.slotMinuten != nil {
-                        let urteil = ZeitSchaetzung.urteil(tag, slotMinuten: stand.slotMinuten)
-                        Label(urteil.titel, systemImage: urteil.warnt ? "exclamationmark.triangle.fill" : "timer").font(.subheadline)
-                        if let tipp = urteil.tipp { Text(tipp.text).font(.footnote) }
-                    }
-                } else {
-                    Text("Ruhetag").font(.title2.weight(.bold)).fontDesign(.rounded)
-                    Text("Erholung gehört zum Plan. Du kannst trotzdem trainieren.").font(.subheadline)
-                }
-                if stand.knopf != nil {
-                    HStack(spacing: Abstand.s) {
-                        andereTageMenue(training: training, aktuell: tag)
-                    }
-                    .frame(minHeight: Abstand.tippflaeche)
-                }
-            }
-        }
-        .accessibilityElement(children: .contain)
-    }
-
-    /// Der Start von heute: nach kurzem Beenden fortsetzen, sonst der gewählte (oder geplante) Tag. Hero-Knopf und Studio-Karte teilen das.
-    private func heuteStarten(_ training: TrainingStore) {
-        if training.fortsetzbare() != nil { sitzung.fortsetzen() } else { sitzung.starte(planTag: andererTag ?? training.heutigerTag()?.id) }
-    }
-
-    private func startKnopf(_ knopf: GymStartKnopf, training: TrainingStore) -> some View {
+    private func startKnopf(_ knopf: GymStartKnopf, heuteGemacht: Bool, tag kurzTag: TrainingsTag?, training: TrainingStore) -> some View {
         Button {
-            if knopf == .weiter { sitzung.ladeWennNoetig() } else { heuteStarten(training) }
-        } label: {
-            Label(knopf == .starten ? "Training starten" : knopf.titel, systemImage: knopf.symbolName)
-                .font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-        }
-        .buttonStyle(.borderedProminent)
-        // Hell schwarzer Knopf mit weißer Schrift, dunkel umgekehrt (vorher immer weiß: im hellen Modus kaum zu sehen).
-        .tint(palette.text)
-        .foregroundStyle(palette.grund)
-    }
-
-    /// Ein freies Training ohne Plantag (derselbe Weg wie "Freies Training" im Menü von "Anderer Tag").
-    private var ohnePlanKnopf: some View {
-        Button("Ohne Plan starten") { sitzung.starteFrei() }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-    }
-
-    /// "Heute Beine statt Push": einen anderen Tag des Plans oder ein freies Training wählen.
-    private func andereTageMenue(training: TrainingStore, aktuell: TrainingsTag?) -> some View {
-        Menu {
-            ForEach(training.plan.tage.filter { $0.id != aktuell?.id }) { t in
-                Button(t.name.isEmpty ? "Training" : t.name) { andererTag = t.id }
+            switch knopf {
+            case .weiter: sitzung.ladeWennNoetig()
+            case .fortsetzen: sitzung.fortsetzen()
+            case .starten: starten(kurzTag, training: training)
             }
-            if andererTag != nil { Button("Zurück zum Plan") { andererTag = nil } }
-            Button("Freies Training") { sitzung.starteFrei() }
         } label: {
-            Label("Anderer Tag", systemImage: "arrow.left.arrow.right").font(.subheadline.weight(.semibold)).frame(minHeight: Abstand.tippflaeche)
+            Label(knopfTitel(knopf, heuteGemacht: heuteGemacht), systemImage: knopf.symbolName)
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 56)
         }
-        .tint(.white)
+        .buttonStyle(.lumenHauptknopf)
+    }
+
+    private func knopfTitel(_ knopf: GymStartKnopf, heuteGemacht: Bool) -> String {
+        switch knopf {
+        case .weiter: String(localized: "Weiter")
+        case .fortsetzen: String(localized: "Fortsetzen")
+        case .starten: heuteGemacht ? String(localized: "Noch ein Training") : String(localized: "Training starten")
+        }
+    }
+
+    /// Start von heute. Mit Kurzversion werden die Übungen nach der Grenze gleich ausgelassen: sie bleiben im Plan und lassen sich im Training wieder aufnehmen.
+    private func starten(_ kurzTag: TrainingsTag?, training: TrainingStore) {
+        guard let kurzTag else {
+            sitzung.starte(planTag: training.heutigerTag()?.id)
+            return
+        }
+        sitzung.starteKurz(kurzTag, weg: GymTabLogik.kurzWeg(kurzTag))
+        kurz = false
+    }
+
+    private func pillen(_ stand: GymStartStand, kurzMoeglich: Bool, training: TrainingStore) -> some View {
+        // Drei Pillen passen bei großer Schrift nicht in eine Zeile: dann "Anderer Tag" darunter.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Abstand.s) {
+                startPillen(stand, kurzMoeglich: kurzMoeglich)
+                andererTag(training, heute: stand.tag)
+            }
+            .fixedSize()
+            VStack(spacing: Abstand.s) {
+                HStack(spacing: Abstand.s) { startPillen(stand, kurzMoeglich: kurzMoeglich) }
+                andererTag(training, heute: stand.tag)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func startPillen(_ stand: GymStartStand, kurzMoeglich: Bool) -> some View {
+        if kurzMoeglich, let tag = stand.tag {
+            let minuten = GymTabLogik.rund(ZeitSchaetzung.minuten(GymTabLogik.kurzversion(tag)))
+            GymPillenKnopf(text: String(localized: "Kurz · \(minuten) min"), symbol: "clock", an: kurz) { kurz.toggle() }
+                .accessibilityHint("Startet nur die ersten Übungen des Tages")
+        }
+        GymPillenKnopf(text: String(localized: "Ohne Plan"), symbol: "play.fill") { sitzung.starteFrei() }
+            .accessibilityHint("Freies Training, die Übungen wählst du unterwegs")
+    }
+
+    /// Früher "Anderer Tag": jeden anderen Tag des Plans heute starten, auch Tage ohne festen Wochentag (die zeigt die Woche nicht).
+    @ViewBuilder
+    private func andererTag(_ training: TrainingStore, heute: TrainingsTag?) -> some View {
+        let andere = training.plan.tage.filter { $0.id != heute?.id }
+        if !andere.isEmpty {
+            Menu {
+                ForEach(andere) { t in
+                    Button(Self.name(t)) { sitzung.starte(planTag: t.id) }
+                }
+            } label: {
+                Label("Anderer Tag", systemImage: "arrow.left.arrow.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.text)
+                    .padding(.horizontal, Abstand.m)
+                    .padding(.vertical, Abstand.s)
+                    .background(palette.flaeche, in: .capsule)
+                    .overlay(Capsule().stroke(palette.haar, lineWidth: 1))
+                    .frame(minHeight: Abstand.tippflaeche)
+            }
+            .accessibilityHint("Einen anderen Tag des Plans heute starten")
+        }
+    }
+
+    // MARK: Tag
+
+    @ViewBuilder
+    private func tagZeile(datum: String, heute: String, stand: GymStartStand, training: TrainingStore, kurz: Bool) -> some View {
+        let tag = TrainingLogik.tag(training.plan, datum: datum)
+        let wochentag = TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
+        if let tag {
+            let wann = datum == heute ? String(localized: "Heute") : wochentag
+            let umfang = kurz ? String(localized: "Kurzversion · \(ZeitSchaetzung.umfang(GymTabLogik.kurzversion(tag)))") : ZeitSchaetzung.umfang(tag)
+            let erledigt = datum == heute && stand.status != "noch nicht" ? stand.status : nil
+            NavigationLink {
+                GymTagSeite(sitzung: sitzung, datum: datum)
+            } label: {
+                HStack(spacing: Abstand.m) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(Self.name(tag)).font(.title.weight(.bold)).fontDesign(.rounded).foregroundStyle(palette.text)
+                        Text("\(wann) · \(erledigt ?? umfang)").font(.body).foregroundStyle(palette.text)
+                    }
+                    Spacer(minLength: Abstand.s)
+                    Image(systemName: "chevron.right").font(.body.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                }
+                .frame(minHeight: Abstand.tippflaeche)
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Zeigt die Übungen des Tages")
+        } else {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Ruhetag").font(.title.weight(.bold)).fontDesign(.rounded).foregroundStyle(palette.text)
+                Text("\(datum == heute ? String(localized: "Heute") : wochentag) · \(String(localized: "Muskeln wachsen in der Pause"))")
+                    .font(.body).foregroundStyle(palette.text2)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private func testwoche(_ hinweis: String, training: TrainingStore) -> some View {
+        ListenKarte {
+            GymZeile(titel: hinweis) {
+                Button("Beenden") { training.testwocheAbbrechen() }.buttonStyle(.bordered).controlSize(.large)
+            }
+        }
+    }
+
+    // MARK: Zeilen
+
+    private func unterseiten(_ training: TrainingStore, heute: String) -> some View {
+        let woche = GymTabLogik.planWoche(training.plan, sessions: training.sessions, heute: heute)
+        let plan = training.plan.splitName ?? (training.plan.tage.isEmpty ? String(localized: "Noch kein Plan") : String(localized: "Eigener Plan"))
+        return ListenKarte {
+            Button { planWahl = true } label: {
+                GymSymbolZeile(symbol: "arrow.triangle.2.circlepath", farbe: Bereichsfarbe.freunde, titel: String(localized: "Anderen Plan wählen"),
+                               untertitel: woche.map { String(localized: "\(plan) · Woche \($0)") } ?? plan)
+            }
+            .buttonStyle(.plain)
+            Haarlinie()
+            NavigationLink { SplitBibliothekView(sitzung: sitzung) } label: {
+                GymSymbolZeile(symbol: "square.grid.2x2.fill", farbe: Bereichsfarbe.splits, titel: String(localized: "Splits"),
+                               untertitel: String(localized: "Fertige Pläne zum Ausprobieren"))
+            }
+            .buttonStyle(.plain)
+            Haarlinie()
+            NavigationLink { UebungsSucheView(titel: String(localized: "Übungen")) } label: {
+                GymSymbolZeile(symbol: "dumbbell.fill", farbe: Bereichsfarbe.energie, titel: String(localized: "Übungen"),
+                               untertitel: String(localized: "Alle Übungen mit Anleitung"))
+            }
+            .buttonStyle(.plain)
+            Haarlinie()
+            // Cardio ohne Training (Laufband, Stairmaster): der Entwurf hat keinen Platz dafür, darum eine Zeile hier.
+            Menu {
+                Button("Laufband", systemImage: "figure.walk.treadmill") { cardioGeraet = .laufband }
+                Button("Stairmaster", systemImage: "figure.stair.stepper") { cardioGeraet = .stairmaster }
+            } label: {
+                GymSymbolZeile(symbol: "heart.fill", farbe: Bereichsfarbe.verlauf, titel: String(localized: "Cardio eintragen"),
+                               untertitel: String(localized: "Laufband oder Stairmaster ohne Training"))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var hilfeUndEigen: some View {
+        VStack(spacing: Abstand.s) {
+            GymPillenKnopf(text: String(localized: "Hilfe?"), symbol: "info.circle") { hilfe = true }
+                .accessibilityHint("Was mache ich für welchen Muskel?")
+            NavigationLink(value: Route.gym(.plaene)) {
+                Text("Eigenen Plan bauen · für Fortgeschrittene")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.akzent)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Auschecken vergessen
 
     private func vergessenKarte(_ s: GymSession, training: TrainingStore) -> some View {
         ListenKarte {
-            GymZeile(titel: "Auschecken vergessen?", untertitel: "Die Einheit von \(GymFormat.tag(s.start)) läuft noch. Trag ein, wann du fertig warst, oder setz das Ende auf 1,5 Stunden nach dem Start.") {
-                EmptyView()
-            }
+            GymZeile(titel: String(localized: "Auschecken vergessen?"),
+                     untertitel: String(localized: "Die Einheit von \(GymFormat.tag(s.start)) läuft noch. Trag ein, wann du fertig warst, oder setz das Ende auf 1,5 Stunden nach dem Start."))
             HStack(spacing: Abstand.s) {
                 Button("Endzeit eintragen") { endzeitFuer = s }
                     .buttonStyle(.bordered).controlSize(.large)
@@ -280,55 +312,20 @@ struct GymStartView: View {
         }
     }
 
-    // MARK: Verlegen und Testwoche
+    // MARK: Verlauf (bis Fortschritt ihn trägt)
 
     @ViewBuilder
-    private func verlegenKarte(_ stand: GymStartStand, training: TrainingStore) -> some View {
-        if !stand.ziele.isEmpty || stand.verlegt || stand.testHinweis != nil {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                GymAbschnitt(titel: "Diese Woche")
-                ListenKarte {
-                    if let hinweis = stand.testHinweis {
-                        GymZeile(titel: hinweis) {
-                            Button("Beenden") { training.testwocheAbbrechen() }.buttonStyle(.bordered).controlSize(.large)
-                        }
-                    }
-                    if !stand.ziele.isEmpty {
-                        if stand.testHinweis != nil { Haarlinie() }
-                        GymZeile(titel: "Tag verlegen", untertitel: "Nur diese Woche, der Plan bleibt.") {
-                            Menu("Verlegen") {
-                                ForEach(stand.ziele, id: \.datum) { z in
-                                    Button(z.text) { if !training.verlegen(von: stand.gewaehlt, auf: z.datum) { fehler = "Dieser Tag lässt sich nicht verlegen." } }
-                                }
-                            }
-                            .buttonStyle(.bordered).controlSize(.large)
-                        }
-                    }
-                    if stand.verlegt {
-                        Haarlinie()
-                        GymZeile(titel: "Zurück auf Plan", untertitel: "Verlegte Tage gelten wieder wie im Plan.") {
-                            Button("Zurücksetzen") { training.verlegungenLoeschen() }.buttonStyle(.bordered).controlSize(.large)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Letzte Einheiten
-
-    @ViewBuilder
-    private func letzte(_ training: TrainingStore, jetzt: Date) -> some View {
+    private func verlauf(_ training: TrainingStore, jetzt: Date) -> some View {
         let liste = training.sessions.sorted { $0.start > $1.start }.prefix(5)
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Letzte Einheiten")
+            GymAbschnitt(titel: String(localized: "Letzte Einheiten"))
             ListenKarte {
                 ForEach(Array(liste)) { s in
                     let tag = Datum.text(s.start)
                     NavigationLink {
                         EinheitNachlesenView(sessionId: s.id)
                     } label: {
-                        GymZeile(titel: training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training",
+                        GymZeile(titel: training.tag(id: s.tag).map(Self.name) ?? String(localized: "Freies Training"),
                                  untertitel: GymFormat.tag(s.start) + (s.notiz.map { " · \($0.prefix(60))" } ?? "")) {
                             HStack(spacing: Abstand.xs) {
                                 Text(GymStartLogik.status([s], datum: tag, heute: Datum.text(jetzt), geplant: nil, jetzt: jetzt))
@@ -342,12 +339,20 @@ struct GymStartView: View {
                     .accessibilityElement(children: .combine)
                     Haarlinie()
                 }
-                NavigationLink {
-                    TrainingVerlaufView()
-                } label: {
-                    GymZeile(titel: "Alle Trainingstage", untertitel: "Monatsraster, Serie und alle Einheiten") {
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                    }
+                NavigationLink { TrainingVerlaufView() } label: {
+                    GymSymbolZeile(symbol: "list.bullet", farbe: Bereichsfarbe.verlauf, titel: String(localized: "Alle Trainingstage"),
+                                   untertitel: String(localized: "Monatsraster, Serie und alle Einheiten"))
+                }
+                .buttonStyle(.plain)
+                Haarlinie()
+                NavigationLink { KalenderView() } label: {
+                    GymSymbolZeile(symbol: "calendar", farbe: Bereichsfarbe.verlauf, titel: String(localized: "Kalender"),
+                                   untertitel: String(localized: "Trainings, geplante Tage und Partner"))
+                }
+                .buttonStyle(.plain)
+                Haarlinie()
+                Button { nachtragen = true } label: {
+                    GymSymbolZeile(symbol: "plus", farbe: Bereichsfarbe.einstellungen, titel: String(localized: "Training nachtragen"), pfeil: false)
                 }
                 .buttonStyle(.plain)
             }
