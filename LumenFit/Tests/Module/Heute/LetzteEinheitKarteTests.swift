@@ -54,7 +54,7 @@ final class LetzteEinheitKarteTests: XCTestCase {
         XCTAssertEqual(k?.zeilen.map(\.bester), ["62,5 kg × 8", "12 Wdh"])
         XCTAssertEqual(k?.zeilen.map(\.rekord), [true, false], "Latzug übertrifft die 60 kg von früher, Klimmzug war nie dran")
         XCTAssertEqual(k?.rekorde, 1)
-        XCTAssertEqual(k?.saetze, 6)
+        XCTAssertEqual(k?.saetze, 7, "Sätze wie im Abschluss und beim Nachlesen: jeder abgehakte, auch der Aufwärmsatz")
         XCTAssertEqual(k?.volumenText, "1.530 kg")
         XCTAssertEqual(k?.dauer, "1:15 h")
         XCTAssertEqual(k?.kopfzeile, "Mittwoch, 23. September, 18:00–19:15")

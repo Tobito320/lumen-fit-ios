@@ -11,7 +11,8 @@ final class LoveaEssenExportTests: XCTestCase {
     /// Ein angemeldetes Konto mit Lovea-Freigabe; `exportAn` ist der Server-Schalter. Die letzte Antwort gilt für alle weiteren Aufrufe.
     private func angemeldet(exportAn: Bool, danach: SkriptLader.Antwort...) async throws -> (KontoDienst, SkriptLader) {
         let freigabe = #"{"erlaubt":true,"person":"person-a","importErledigt":true,"essenExportErledigt":false,"essenExportAn":\#(exportAn)}"#
-        let lader = SkriptLader([antwort(201), antwort(200, #"{"config":{}}"#), antwort(200, freigabe), antwort(404), antwort(200, #"{"partner":null}"#), antwort(200)] + danach)
+        // Anmelden, Config, Freigabe, Verbindungen (404: alter Weg), Partner. Nutzung geht ohne gezählte Tage nicht raus.
+        let lader = SkriptLader([antwort(201), antwort(200, #"{"config":{}}"#), antwort(200, freigabe), antwort(404), antwort(200, #"{"partner":null}"#)] + danach)
         let d = KontoDienst(zugang: zugang, schluesselbund: SpeicherSchluesselbund(), http: lader, ordner: try tempOrdner(), uhr: { Date() }, version: "0.0.1")
         await d.aktualisiere(profilName: "Beispiel", erzwingen: true)
         return (d, lader)
