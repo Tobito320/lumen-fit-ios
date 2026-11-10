@@ -41,6 +41,7 @@ final class EssenKiSystemHintergrund: EssenKiHintergrund {
 @Observable
 final class EssenKiAuftragStore {
     nonisolated static let indexName = "index.json"
+    nonisolated static let zustimmungName = "zustimmung.json"
 
     /// Neueste zuerst.
     private(set) var auftraege: [EssenKiAuftrag] = []
@@ -48,6 +49,8 @@ final class EssenKiAuftragStore {
     private(set) var verworfen: EssenKiAuftrag?
     /// Zählt hoch, wenn ein Foto auf der Platte neu da ist: Karten laden ihre Vorschau dann nach, ohne Abfragen.
     private(set) var bildStand = 0
+    /// Ohne ausdrückliche Zustimmung geht kein Foto an den Server (auch kein "Nochmal" und keine automatische Wiederholung).
+    private(set) var zustimmung: EssenKiZustimmung
 
     @ObservationIgnored private let ordner: URL
     @ObservationIgnored private let sender: any EssenKiSender
@@ -59,6 +62,7 @@ final class EssenKiAuftragStore {
         self.ordner = ordner
         self.sender = sender
         self.hintergrund = hintergrund
+        zustimmung = EssenKiZustimmung.lesen(try? Data(contentsOf: ordner.appendingPathComponent(Self.zustimmungName)))
         laden()
         NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in self?.fortsetzen() }
@@ -170,10 +174,23 @@ final class EssenKiAuftragStore {
         bildLoeschen(a.id)
     }
 
+    // MARK: - Zustimmung
+
+    /// "Erlauben" oder "Zustimmung zurücknehmen" im Blatt. Zurücknehmen wirkt ab dem nächsten Senden; ein Foto, das schon unterwegs ist, kommt noch an.
+    func zustimmen(_ erlaubt: Bool, jetzt: Date = Date()) {
+        zustimmung = EssenKiZustimmung(erlaubt: erlaubt, seit: erlaubt ? jetzt : nil)
+        guard let daten = try? JSONEncoder().encode(zustimmung) else { return }
+        schreiben(daten, nach: ordner.appendingPathComponent(Self.zustimmungName))
+    }
+
     // MARK: - Netz
 
     private func senden(_ id: UUID, bild: Data) async {
         guard let a = auftrag(id) else { return }
+        guard zustimmung.erlaubt else {
+            fehlerErhalten(id, anzeige: EssenKiFotoLogik.ohneZustimmung, netz: false)
+            return
+        }
         do {
             let analyse = try await sender.analysieren(bild: bild, hinweis: a.hinweis, mahlzeit: a.mahlzeit)
             // Ein Abbruch kommt von URLSession als Fehler zurück; wer abbricht, will keine Fehlermeldung.

@@ -155,3 +155,29 @@ struct EssenKiAnalyse: Codable, Equatable, Sendable {
         versteckt.map { EssenKiVersteckt(name: $0.name, gramm: $0.gramm, kcal: $0.kcal) }
     }
 }
+
+/// Ausdrückliche Zustimmung zur Foto-Schätzung (App Store, DSGVO Art. 9): ohne `erlaubt` geht kein Foto raus. Je Profil in `essen-ki/zustimmung.json`;
+/// alle Felder mit Standard, damit eine alte oder fremde Datei nie mehr erlaubt als "nein".
+struct EssenKiZustimmung: Codable, Equatable, Sendable {
+    var erlaubt = false
+    /// Wann zugestimmt wurde (nil ohne Zustimmung).
+    var seit: Date?
+
+    enum CodingKeys: String, CodingKey { case erlaubt, seit }
+
+    init(erlaubt: Bool = false, seit: Date? = nil) {
+        self.erlaubt = erlaubt
+        self.seit = seit
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        erlaubt = (try? c.decodeIfPresent(Bool.self, forKey: .erlaubt)) ?? false
+        seit = (try? c.decodeIfPresent(Date.self, forKey: .seit)) ?? nil
+    }
+
+    /// Fehlt oder kaputt: keine Zustimmung.
+    static func lesen(_ daten: Data?) -> EssenKiZustimmung {
+        daten.flatMap { try? JSONDecoder().decode(EssenKiZustimmung.self, from: $0) } ?? EssenKiZustimmung()
+    }
+}

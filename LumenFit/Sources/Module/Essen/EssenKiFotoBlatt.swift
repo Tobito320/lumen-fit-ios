@@ -27,6 +27,8 @@ struct EssenKiFotoBlatt: View {
     }
 
     @State private var kameraOffen = false
+    /// Zustimmung ansehen oder zurücknehmen (Hand-Symbol oben rechts).
+    @State private var zustimmungOffen = false
     /// Die erste Kamera geht von selbst auf; bricht man sie ab, ist man schon fertig.
     @State private var autoKamera: Bool
     @State private var gesperrt = EssenKiFotoBlatt.kameraGesperrt
@@ -139,6 +141,11 @@ struct EssenKiFotoBlatt: View {
                             Button("Schließen") { dismiss() }
                         }
                     }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button { zustimmungOffen = true } label: { Image(systemName: "hand.raised") }
+                            .accessibilityLabel("Zustimmung zur Foto-Schätzung")
+                            .disabled(store == nil)
+                    }
                 }
         }
         .confirmationDialog("Schätzung verwerfen?", isPresented: $verwerfenFrage, titleVisibility: .visible) {
@@ -147,6 +154,9 @@ struct EssenKiFotoBlatt: View {
         } message: {
             Text("Das Foto zählt schon für heute.")
         }
+        .sheet(isPresented: $zustimmungOffen) {
+            if let store { EssenKiZustimmungBlatt(store: store) }
+        }
         .fullScreenCover(isPresented: $kameraOffen) {
             EssenKamera { daten in kameraFertig(daten) }.ignoresSafeArea()
         }
@@ -154,7 +164,7 @@ struct EssenKiFotoBlatt: View {
         .haptik(.erfolg, bei: geschaetzt)
         .task {
             // Erst nach dem Aufklappen des Blatts: ein Cover im selben Frame wird von SwiftUI manchmal verschluckt.
-            guard autoKamera else { return }
+            guard autoKamera, store?.zustimmung.erlaubt == true else { return }
             try? await Task.sleep(for: .milliseconds(350))
             if autoKamera, !Task.isCancelled { kameraOffen = true }
         }

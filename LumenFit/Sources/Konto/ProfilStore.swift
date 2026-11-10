@@ -170,6 +170,12 @@ final class ProfilStore {
         profile.first { $0.id == id }.map { stimmt(passwort, $0) } ?? false
     }
 
+    /// Wie `pruefe`, die Rechnung läuft abseits des Hauptthreads (vor "Konto löschen", bevor der Server gefragt wird).
+    func pruefeImHintergrund(passwort: String, fuer id: ProfilID) async -> Bool {
+        guard let profil = profile.first(where: { $0.id == id }) else { return false }
+        return await stimmtImHintergrund(passwort, profil)
+    }
+
     /// Benennt das aktive Profil um: nach der Namensregel und frühestens `sperreTage` Tage nach der letzten Änderung. Derselbe Name ändert nichts
     /// und startet die Sperre nicht.
     @discardableResult
