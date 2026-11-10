@@ -14,8 +14,8 @@ final class PrivacyManifestTests: XCTestCase {
         XCTAssertEqual(m["NSPrivacyTracking"] as? Bool, false)
         XCTAssertEqual((m["NSPrivacyTrackingDomains"] as? [Any])?.count, 0)
         let erhoben = (m["NSPrivacyCollectedDataTypes"] as? [[String: Any]]) ?? []
-        XCTAssertEqual(Set(erhoben.compactMap { $0["NSPrivacyCollectedDataType"] as? String }), ["NSPrivacyCollectedDataTypeName", "NSPrivacyCollectedDataTypeDeviceID", "NSPrivacyCollectedDataTypeProductInteraction", "NSPrivacyCollectedDataTypeFitness", "NSPrivacyCollectedDataTypeCrashData", "NSPrivacyCollectedDataTypePerformanceData"],
-                       "Konto beim Server: Name, Gerätekennung, die freigegebene Partner-Zusammenfassung (Fitness); nach \"Ja\" Nutzungszähler, Abstürze und Ladezeiten (Analytics, am Konto)")
+        XCTAssertEqual(Set(erhoben.compactMap { $0["NSPrivacyCollectedDataType"] as? String }), ["NSPrivacyCollectedDataTypeName", "NSPrivacyCollectedDataTypeDeviceID", "NSPrivacyCollectedDataTypeProductInteraction", "NSPrivacyCollectedDataTypeFitness", "NSPrivacyCollectedDataTypeCrashData", "NSPrivacyCollectedDataTypePerformanceData", "NSPrivacyCollectedDataTypeHealth", "NSPrivacyCollectedDataTypePhotosorVideos"],
+                       "Konto beim Server: Name, Gerätekennung, die freigegebene Partner-Zusammenfassung (Fitness, Gesundheit), Essen-Foto für die KI nach Zustimmung; nach \"Ja\" Nutzungszähler, Abstürze und Ladezeiten (Analytics, am Konto)")
         for e in erhoben { XCTAssertEqual(e["NSPrivacyCollectedDataTypeTracking"] as? Bool, false) }
     }
 

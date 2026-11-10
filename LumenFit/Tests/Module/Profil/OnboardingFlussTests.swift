@@ -87,9 +87,9 @@ final class OnboardingFlussTests: XCTestCase {
         XCTAssertNil(f.einladungZumEinloesen)
         f.einladung = "abc"
         XCTAssertFalse(f.kannWeiter)
-        f.einladung = "k7q2-9fx"
+        f.einladung = "k7q2-9fxa"
         XCTAssertTrue(f.kannWeiter)
-        XCTAssertEqual(f.einladungZumEinloesen, "K7Q29FX", "Groß/Klein und Bindestrich sind egal")
+        XCTAssertEqual(f.einladungZumEinloesen, "K7Q29FXA", "Groß/Klein und Bindestrich sind egal")
     }
 
     func testAntwortAufDieNutzungsFrageLandetImProfilUndHealthHaengtNichtDaran() async throws {
