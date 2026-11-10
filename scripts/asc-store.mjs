@@ -176,7 +176,7 @@ async function pruefung(t, { app, version }) {
   else await api("POST", "/v1/appStoreReviewDetails", { data: { type: "appStoreReviewDetails", attributes: a, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: version.id } } } } });
   console.log("Prüf-Kontakt (aus TestFlight übernommen) und Hinweise gesetzt");
   const name = fs.readFileSync(path.join(os.homedir(), ".config/lumen-fit/web-verantwortlich.txt"), "utf8").trim().split("\n")[0];
-  await api("PATCH", `/v1/appStoreVersions/${version.id}`, { data: { type: "appStoreVersions", id: version.id, attributes: { copyright: `2026 ${name}`, releaseType: "MANUAL" } } });
+  await api("PATCH", `/v1/appStoreVersions/${version.id}`, { data: { type: "appStoreVersions", id: version.id, attributes: { copyright: `2026 ${name}`, releaseType: "AFTER_APPROVAL" } } });
   await api("PATCH", `/v1/apps/${app.id}`, { data: { type: "apps", id: app.id, attributes: { contentRightsDeclaration: "DOES_NOT_USE_THIRD_PARTY_CONTENT" } } });
   console.log("Copyright, Freigabe manuell, Inhaltsrechte gesetzt");
 }
@@ -233,6 +233,8 @@ async function buildSetzen(nummer, { app, version }) {
 }
 
 async function einreichen({ app, version }) {
+  // Besitzer 10.11.2026: "We want the app public in app store": nach Apples Freigabe sofort öffentlich.
+  await api("PATCH", `/v1/appStoreVersions/${version.id}`, { data: { type: "appStoreVersions", id: version.id, attributes: { releaseType: "AFTER_APPROVAL" } } });
   const offen = (await holen(`/v1/reviewSubmissions?filter[app]=${app.id}&filter[state]=READY_FOR_REVIEW,UNRESOLVED_ISSUES&filter[platform]=IOS`)).data[0];
   const sub = offen || (await api("POST", "/v1/reviewSubmissions", { data: { type: "reviewSubmissions", attributes: { platform: "IOS" }, relationships: { app: { data: { type: "apps", id: app.id } } } } })).data;
   const items = await alle(`/v1/reviewSubmissions/${sub.id}/items`);
