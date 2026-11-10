@@ -39,14 +39,18 @@ final class HeuteModell {
     /// Rechnet jetzt und danach bei jedem passenden Ereignis neu. Läuft, solange der Tab sichtbar ist (`.task`).
     func beobachte() async {
         berechne()
-        for await ereignis in umgebung.ereignisse.strom() {
-            switch ereignis {
-            case .vordergrund, .healthAktualisiert: await lade()
-            case .habitGeaendert, .gewichtGespeichert, .trainingBeendet, .trainingGestartet, .mahlzeitGespeichert, .einstellungenGeaendert,
-                 .profilGewechselt, .profilGeloescht, .partnerAktualisiert, .meilensteinErreicht:
-                berechne()
-            case .satzFertig, .speichernFehlgeschlagen: break
-            }
+        for await ereignis in umgebung.ereignisse.strom() { await verarbeite(ereignis) }
+    }
+
+    /// `.healthAktualisiert` kommt erst nach dem Health-Abruf (`AppUmgebung.abrufEinmal`) oder nach einem Eintrag von Hand: dann nur neu rechnen,
+    /// nicht nochmal 13 Health-Abfragen starten (Akku, Tempo-Prüfung 10.11.2026).
+    func verarbeite(_ ereignis: Ereignis) async {
+        switch ereignis {
+        case .vordergrund: await lade()
+        case .healthAktualisiert, .habitGeaendert, .gewichtGespeichert, .trainingBeendet, .trainingGestartet, .mahlzeitGespeichert, .einstellungenGeaendert,
+             .profilGewechselt, .profilGeloescht, .partnerAktualisiert, .meilensteinErreicht:
+            berechne()
+        case .satzFertig, .speichernFehlgeschlagen: break
         }
     }
 

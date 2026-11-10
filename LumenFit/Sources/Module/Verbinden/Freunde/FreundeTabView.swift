@@ -46,7 +46,8 @@ struct FreundeTabView: View {
             await umgebung.konto.verbindungenNeuLaden()
             await dienst.laden(erzwingen: true)
         }
-        .task { await dienst.laden(erzwingen: true) }
+        // Beim Erscheinen höchstens einmal je Minute (`CrewDienst.pause`); Ziehen zum Aktualisieren holt immer. Spart Funk bei jedem Tab-Wechsel.
+        .task { await dienst.laden() }
         .onAppear { if gesehenBeimOeffnen == nil { gesehenBeimOeffnen = gesehen } }
         .onDisappear { gesehen = umgebung.uhr().timeIntervalSince1970 }
         .sheet(isPresented: $herausfordern) { CrewHerausforderungBlatt() }

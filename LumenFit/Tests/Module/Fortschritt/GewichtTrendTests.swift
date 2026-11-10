@@ -37,6 +37,18 @@ final class GewichtTrendTests: XCTestCase {
         XCTAssertNil(GewichtVerlauf.prognose(aktuell: 120, ziel: 70, steigung: -0.1), "mehr als zwei Jahre")
     }
 
+    func testErsterPunktImFensterMitteltUeberDieSechsTageDavorAlteMessungenZaehlenNicht() throws {
+        // Fenster ab 1.9. (heute 28.9.): davor sechs Tage 80,0 kg, im Fenster 70,0 kg; zwei Jahre zurück 100,0 kg darf nichts ändern.
+        var werte: [String: Int] = ["2024-09-01": 1_000]
+        for i in 1...6 { werte[Datum.addTage("2026-09-01", -i)] = 800 }
+        for i in 0..<28 { werte[Datum.addTage("2026-09-01", i)] = 700 }
+        let t = GewichtVerlauf.trend(werte: werte, zielKg: nil, heute: "2026-09-28")
+        XCTAssertEqual(t.reihe.count, 28)
+        XCTAssertEqual(t.reihe.first?.tag, "2026-09-01")
+        XCTAssertEqual(t.reihe.first?.kg ?? 0, (6 * 80.0 + 70) / 7, accuracy: 0.001)
+        XCTAssertEqual(t.aktuell ?? 0, 70, accuracy: 0.001)
+    }
+
     func testTrendRechnetAusDenTageswerten() throws {
         // 28 Tage, jeden Tag 100 g weniger: 80,0 kg am 1.9., 77,3 kg am 28.9.
         var werte: [String: Int] = [:]

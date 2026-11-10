@@ -231,6 +231,11 @@ struct EssenBarcodeKamera: UIViewControllerRepresentable {
         try? uiViewController.startScanning()
     }
 
+    /// Kamera und Erkennung aus, sobald die Ansicht weg ist.
+    static func dismantleUIViewController(_ uiViewController: DataScannerViewController, coordinator: Koordinator) {
+        uiViewController.stopScanning()
+    }
+
     func makeCoordinator() -> Koordinator { Koordinator(gefunden: gefunden) }
 
     @MainActor
@@ -246,6 +251,9 @@ struct EssenBarcodeKamera: UIViewControllerRepresentable {
             for item in addedItems {
                 guard case .barcode(let barcode) = item, let wert = barcode.payloadStringValue else { continue }
                 gemeldet = true
+                // Nach dem ersten Treffer meldet der Koordinator nichts mehr: Kamera und Vision aus, statt hinter der Detailseite weiterzulaufen (Akku).
+                // "Noch einmal scannen" baut eine neue Kamera (`.id(kameraNummer)`).
+                dataScanner.stopScanning()
                 gefunden(wert)
                 break
             }

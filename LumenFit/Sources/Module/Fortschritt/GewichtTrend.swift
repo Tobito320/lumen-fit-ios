@@ -34,7 +34,9 @@ enum GewichtVerlauf {
     static func trend(werte: [String: Int], zielKg: Double?, heute: String) -> GewichtTrend {
         let ab = Datum.addTage(heute, -(fensterTage - 1))
         let sichtbar = werte.filter { $0.key >= ab && $0.key <= heute }
-        let reihe = GewichtLogik.mittelReihe(werte).filter { $0.tag >= ab && $0.tag <= heute }
+        // Der Mittelwert schaut 6 Tage zurück: mehr Vorlauf braucht das Fenster nicht (`mittelReihe` ist quadratisch, sonst über die ganze Historie je Render).
+        let vorlauf = Datum.addTage(ab, -6)
+        let reihe = GewichtLogik.mittelReihe(werte.filter { $0.key >= vorlauf && $0.key <= heute }).filter { $0.tag >= ab }
         let punkte = MessLogik.punkte(sichtbar).map { GewichtMittel(tag: $0.tag, kg: Double($0.zehntel) / 10) }
         let steigung = steigungProWoche(reihe)
         return GewichtTrend(reihe: reihe, punkte: punkte, zielKg: zielKg, kgProWoche: steigung,
