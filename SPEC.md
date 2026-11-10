@@ -1164,3 +1164,43 @@ Stand 29.10.2026. `PrivateDaten.json` trägt den Block `konto` (`server`, `appKe
 - Datenschutz: Manifest nennt zusätzlich `ProductInteraction`, `CrashData`, `PerformanceData` (alle Analytics, am Konto, nur nach Ja) und `Fitness` (freigegebene Partner-Zusammenfassung); Texte in `ProfilTexte`.
 - Theme "Lovea": nur für die zwei vom Server freigegebenen Konten, Design 1:1 wie Lovea (System-Flächen, Rosé-Akzent, kein Muster), Standard bleibt Monochrom; Vergleich in `docs/theme-lovea-vergleich.md`.
 - Import-Beleg (30.10.): Nach jedem Lauf meldet die App Zahlen je Op-Art an den Server (`POST /lovea/import-beleg`, Merker `lovea_import_beleg` und `lovea_import_fehler`, Admin `GET /admin/import-beleg`, MCP `lumenfit_import_beleg`). Erledigt ist der Import erst, wenn der Beleg vollständig ist (nichts unbekannt, nichts unlesbar, jede geplante Op per Kennung im Speicher wiedergefunden) und beim Server ankam. Ab 30.10. gilt: `kuehl.setzen`, `kuehl.weg`, `einkauf.liste` bleiben roh im Log (Essens-Vorräte, nichts geht verloren; ersetzt die Zeile oben für `kuehl.*`), `konsistenz.*` aus `einstellung.setzen` wird übernommen, "letzte gewinnt" gilt bei `einstellung.setzen` je Schlüssel. Vergleich mit Lovea: `scripts/import-vergleich.mjs`.
+
+## 19. Neues Design und App Store (Finalizer, ab 10.11.2026)
+
+Auftrag des Besitzers (10.11.2026, wörtlich): "die leute die zu testflight eingeladen wurden wieder raus nehmen und denen stattdessen ein link zu der apple store app schicken. und bitte die app schön machen. viel visuelles. wunderschön hilfreich machen. fortschritt wie es in der lumen app jetzt ist, ist eigentlich schon so krass und gut aber kann visuell noch schöner sein und kompakter." und "direkt dann zu apple store. testflight nur noch für mich. somit bleibt apple store stabil und bekommt nur releases."
+
+Vorlage: Entwurf "Lumen Fit", Modus "Neu" (Vault `19 Bastelprojekte/Lumen Fit/hevy-entwurf-v3.html`). Entscheidungen mit Zitaten stehen außerhalb des Repos (Büro-Stand `lumenfit-09-11.md` ab "10.11. nachmittags", `stats-10-11.md`, `lumenfit-anfaenger-design-10-11.md`); hier nur das Ergebnis. Es gilt weiter: nichts entfernen, was der Besitzer nicht selbst gestrichen hat; vereinfachen heißt umordnen (Soll-Liste im Vault).
+
+### 19.1 Design-Regeln (für jede Seite)
+- Farbe: kein Blau. Akzent Lime aus dem App-Symbol: dunkel `#A6FF00` (Text und Fläche, Schrift darauf schwarz), hell `akzent` `#457A00` für Text, Symbole, Linien (5,2:1) und `akzentFlaeche` `#9BE800` mit schwarzer Schrift für große Flächen (Hauptknopf, gewählte Pille); der Hauptknopf hat hell einen feinen Rand in `akzent`. Tokens in `LumenFarben.tokens`, Spiegel in `docs/research/kontrast.py`, Test `FarbenKontrastTests`.
+- Bereiche haben eigene Farben (`Bereichsfarbe`): Plan/Training Lime, Gewicht Lila, Creatin Türkis, Splits Orange, Verlauf Pink, Erfolge Gelb, Energie Grün, Freunde Indigo, Einstellungen Grau. Listen-Zeilen tragen links ein `SymbolQuadrat` wie die iOS-Einstellungen.
+- Hell/Dunkel nach System (Standard "System"), dunkel echtes Schwarz. Keine Dauer-Animationen, Bewegung nur bei Ereignissen, Listen lazy, Rechnungen nicht im `body`.
+- Lumi überall verteilt (Heute, Training, Fortschritt, Stats, Geschafft, Erfolge, Leer-Zustände) als kleine Zeile "Lumi + ein Satz"; keine Lumi-Zeile im Profil.
+- Gym-Begriffe englisch: Sets, Reps, Skip; sonst Deutsch.
+- Dauer überall gleich geschätzt: 10 min Aufwärmen + 3,5 min je Satz, auf 5 min gerundet (5 Übungen x 3 Sets = 65 min); Kurzversion ehrlich 30 min. Eine Stelle im Code (`ZeitSchaetzung`).
+
+### 19.2 Leiste
+Heute, Fortschritt, Training (Mitte), Stats, Profil; Symbole wie bisher (house.fill, chart.xyaxis.line, dumbbell.fill, person.2.fill, person.crop.circle.fill). Rohwerte bleiben (`heute`, `freunde`), damit Links, Nutzungsnamen und der gemerkte Tab gelten.
+
+### 19.3 Seiten (Kurzfassung des Entwurfs)
+- Heute: großer Gruß ("Guten Morgen"), Ringplatte mit Lumi links (Schritte, Gym-Tage der Woche, Schlaf rechts) und darunter "Lumi" + ein Fortschritts-Satz; Karte "Plan für heute" (Name, klein Übungen · Minuten · Ziel, Serie "N Wochen in Folge", Woche Mo-So mit heute in der Mitte hervorgehoben, Hauptknopf "Training starten"); Karte Gewicht (Zahl, Änderung zur Vorwoche, Kurve mit gestrichelter Ziel-Linie, Knöpfe "Ziel" (Blatt) und "Alle Einträge" (Messungen), "Eintragen" oben rechts als Blatt, speichert immer auch in Health). Keine Muskel-Karte auf Heute.
+- Training: Woche (Tag antippen hebt hervor und zeigt den Plan des Tages), Lumi-Zeile, Hauptknopf "Training starten", Pillen "Kurz · 30 min" und "Ohne Plan", Tagesname mit Übungen und Dauer, Zeilen "Anderen Plan wählen", "Splits", "Übungen", Knopf "Hilfe?" (Blatt "Was mache ich für …?"), Textknopf "Eigenen Plan bauen".
+- Splits: Bibliothek mit Stufe, Tagen, Dauer, Ziel, Filter, "Ansehen" öffnet eine Seite mit Tagen und Übungen, unten "Diesen Plan nehmen".
+- Übungen: Titel, Knopf "Nach Muskel", Suche, Ansicht klein/groß, Chips (Alle, Brust, Rücken, Beine, Schultern, Arme, Bauch, Cardio, Ganzkörper), Filter Ausrüstung, Textknopf "Eigene Übung erstellen". Übung: Anleitung, Verlauf, Rekorde mit "Im Vergleich" (Stats); "Ersetzen" nur im laufenden Training, sonst "Andere Varianten".
+- Fortschritt: Karte "Übersicht" mit Monat | Woche (Kacheln Workouts insgesamt, diesen Monat/diese Woche, Gewicht in 30 Tagen; Balken der letzten 4 Monate bzw. 8 Wochen; Lumi-Satz), "Gewichte" (Top 3 mit Kurve, "Alle"), "Letztes Training" (Name, Datum, Dauer, Sets, Rekorde, ohne kg), Zeile "Kalender und Verlauf", Liste "Sets je Muskel", "12-Wochen-Ausblick", "Körper und Gewicht", "Erfolge", "Energie und Tagesform", "Einsichten und Hinweise". Verlauf: alle Wochen außer der laufenden eingeklappt.
+- Erfolge: Level Holz, Stein, Eisen, Stahl, Titan, Diamant aus Punkten (Training +10, Satz +1, Rekord +5; aus vorhandenen Trainings berechnet, nichts gespeichert), "+N Punkte diese Woche", Medaillen bunt (Bronze/Silber/Gold) mit Fortschrittsring.
+- Stats: Freunde | Alle, Chips Punkte, Trainings, Sets, Serie, Platz-Karte mit Lumi, Liste (eigene Zeile Lime hinterlegt), Standard Privat; Server und Inhalt baut Sitzung fitfreunde (Auftrag `stats-auftrag-fitfreunde-10-11.md`, Datenschutz dort).
+- Profil: Konto-Karte klein (Bild, Name, "Konto, Freunde und mehr"), "Freunde einladen" (QR und Teilen-Link), Kacheln Übungen | Splits, Zeilen Training, Stats (Privat/Freunde/Öffentlich), "Mehr Einstellungen" (Aussehen, Mitteilungen, Health-Zugriff, Daten, Über Lumen Fit). Essen und Schlaf bleiben als Zeilen, bis sie umgezogen sind.
+- Einführung: 8 Fragen mit du, Tipp auf eine Einfachauswahl geht weiter, am Ende "Dein Plan steht"; Frage "Hat dich jemand eingeladen?" mit Code.
+
+### 19.4 App-Store-Pflichten
+- Konto löschen in der App (Profil > Konto): löscht alle Server-Daten des Kontos (`DELETE /konto`, auch Freunde, Stats, Nutzung) und danach das Profil auf dem Gerät wie "Alles löschen".
+- KI-Foto beim Essen nur nach ausdrücklicher Zustimmung im Blatt (welcher Dienst, was gesendet wird); ohne Zustimmung kein Versand.
+- Melden und Blockieren in Stats "Alle" (fitfreunde).
+- Lovea, Partner, Band, Coach-MCP nur, wenn der Server das Konto freigibt (bestehende Schalter); öffentliche Konten sehen nichts davon.
+- Webseite (Cloudflare Pages, kostenlos): Datenschutz, Support mit Kontaktformular, Einladungsseite `/e/CODE` (öffnet `lumenfit://einladen?code=CODE`, sonst Store-Link + Code groß). Name des Verantwortlichen kommt beim Deploy aus einer privaten Datei, nie aus dem Git.
+- Einladen: Knopf "Freunde einladen" teilt den Link über das iOS-Teilen-Menü, QR bleibt.
+- App Store nur Deutschland, Deutsch, kostenlos, keine Werbung, DSA "kein Händler". TestFlight danach nur interne Gruppe (Besitzer).
+
+### 19.5 Stufen
+1 Farben und Leiste · 2 Heute · 3 Training, Splits, Übungen, Übung · 4 Fortschritt und Erfolge · 5 Stats (fitfreunde) · 6 Profil, Mehr Einstellungen, Einführung · 7 Store-Pflichten · 8 Webseite und Einladen · 9 Store-Seite, Bilder, Einreichen. Stufen 2-4 und 6-7 bauen parallel in eigenen Worktrees (je ein Modulordner), Zusammenführen, Compile und CI im Zweig `final`.

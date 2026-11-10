@@ -24,7 +24,7 @@ struct HeuteTabView: View {
                 inhalt(stand, modell)
             }
         }
-        .navigationTitle("Startseite")
+        .navigationTitle("Heute")
         .navigationBarTitleDisplayMode(.automatic)
         .lumenHintergrund()
         .sheet(item: $blatt) { blatt in

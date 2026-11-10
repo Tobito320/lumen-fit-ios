@@ -23,8 +23,8 @@ def mix(a, b, t):  # a mit Deckkraft t ueber b
 # Themes: (grund, flaeche, text, text2, rand, akzent, aufAkzent, muster-Farbe, muster-Deckkraft auf Hero)
 # Ein Theme (Ahmed 09.11.: "Ein theme. Dark/white."), Spiegel von LumenFarben.tokens
 T = {
- ('Lumen', 'hell'):   dict(grund='#FFFFFF', flaeche='#F2F2F7', text='#000000', text2='#5E5E62', rand='#8A8A8E', akzent='#0B5ED7', auf='#FFFFFF'),
- ('Lumen', 'dunkel'): dict(grund='#000000', flaeche='#1C1C1E', text='#FFFFFF', text2='#98989F', rand='#8E8E93', akzent='#5B9DFF', auf='#0B0C0E'),
+ ('Lumen', 'hell'):   dict(grund='#FFFFFF', flaeche='#F2F2F7', text='#000000', text2='#5E5E62', rand='#8A8A8E', akzent='#457A00', auf='#FFFFFF', akzentF='#9BE800', aufF='#000000'),
+ ('Lumen', 'dunkel'): dict(grund='#000000', flaeche='#1C1C1E', text='#FFFFFF', text2='#98989F', rand='#8E8E93', akzent='#A6FF00', auf='#000000', akzentF='#A6FF00', aufF='#000000'),
 }
 
 # Gemeinsame Farben: Ringfarben (Ahmeds Vorgabe, nur auf schwarzer Ringplatte) und Text-Varianten (Tief) fuer helle/dunkle Flaechen
@@ -49,6 +49,7 @@ def zeilen():
             out += [(g, f'text auf {bg}', p['text'], p[bg], 4.5), (g, f'text2 auf {bg}', p['text2'], p[bg], 4.5),
                     (g, f'akzent auf {bg} (Text/Symbol)', p['akzent'], p[bg], 4.5), (g, f'rand auf {bg} (Bedienelement)', p['rand'], p[bg], 3.0)]
         out.append((g, 'aufAkzent auf akzent (Knopf)', p['auf'], p['akzent'], 4.5))
+        out.append((g, 'aufAkzentFlaeche auf akzentFlaeche (Hauptknopf)', p['aufF'], p['akzentF'], 4.5))
         t = TIEF[md]
         for k in ('bewegen', 'trainieren', 'erholen'):
             out.append((g, f'{k}-Tief auf flaeche', t[k], p['flaeche'], 4.5))

@@ -25,6 +25,9 @@ enum Datenbereich: String, CaseIterable, Sendable {
 /// Farb-Tokens eines Themes in einem Modus (design.md 3.2).
 struct Palette: Sendable {
     let grund: Color, flaeche: Color, text: Color, text2: Color, rand: Color, haar: Color, akzent: Color, aufAkzent: Color
+    /// Große Akzent-Fläche mit Schrift darauf (Hauptknopf, gewählte Pille): hell das leuchtende Lime aus dem App-Symbol mit schwarzer Schrift.
+    /// `akzent` bleibt die Farbe für Text, Symbole, Linien und kleine Flächen (hell dunkles Lime, 5,2:1 auf Weiß).
+    let akzentFlaeche: Color, aufAkzentFlaeche: Color
 }
 
 enum LumenFarben {
@@ -33,14 +36,16 @@ enum LumenFarben {
         Color(red: Double((hex >> 16) & 0xFF) / 255, green: Double((hex >> 8) & 0xFF) / 255, blue: Double(hex & 0xFF) / 255)
     }
 
-    /// Token-Zeile: grund, flaeche, text, text2, rand, haar, akzent, aufAkzent.
-    typealias Tokens = (grund: UInt32, flaeche: UInt32, text: UInt32, text2: UInt32, rand: UInt32, haar: UInt32, akzent: UInt32, aufAkzent: UInt32)
+    /// Token-Zeile: grund, flaeche, text, text2, rand, haar, akzent, aufAkzent, akzentFlaeche, aufAkzentFlaeche.
+    typealias Tokens = (grund: UInt32, flaeche: UInt32, text: UInt32, text2: UInt32, rand: UInt32, haar: UInt32, akzent: UInt32, aufAkzent: UInt32,
+                        akzentFlaeche: UInt32, aufAkzentFlaeche: UInt32)
 
     /// Ein Theme, hell und dunkel nach System (Auftrag 09.11.: "Ein theme. Dark/white. Kein wählbarer Theme."). `thema` bleibt als Parameter,
     /// weil gespeicherte Einstellungen und Widget-Snapshots noch alle `ThemaID`-Werte tragen; jeder Wert liefert dieselbe Zeile.
+    /// Akzent Lime aus dem App-Symbol statt Blau (Besitzer 10.11.2026: "die app braucht mehr farbe. und nicht blau.").
     static func tokens(thema: ThemaID, dunkel: Bool) -> Tokens {
-        dunkel ? (0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0x5B9DFF, 0x0B0C0E)
-               : (0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x0B5ED7, 0xFFFFFF)
+        dunkel ? (0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0xA6FF00, 0x000000, 0xA6FF00, 0x000000)
+               : (0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x457A00, 0xFFFFFF, 0x9BE800, 0x000000)
     }
 
     /// Erhöhter Kontrast: `text2` wird `text`, `rand` wird `text2`, `haar` wird `rand` (design.md 3.7).
@@ -51,7 +56,8 @@ enum LumenFarben {
             text2: farbe(kontrastHoch ? t.text : t.text2),
             rand: farbe(kontrastHoch ? t.text2 : t.rand),
             haar: farbe(kontrastHoch ? t.rand : t.haar),
-            akzent: farbe(t.akzent), aufAkzent: farbe(t.aufAkzent))
+            akzent: farbe(t.akzent), aufAkzent: farbe(t.aufAkzent),
+            akzentFlaeche: farbe(t.akzentFlaeche), aufAkzentFlaeche: farbe(t.aufAkzentFlaeche))
     }
 
     /// Ring-Originale: nur auf der schwarzen Platte und als große gefüllte Flächen, nie als Text.

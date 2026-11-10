@@ -26,10 +26,10 @@ final class FarbenKontrastTests: XCTestCase {
     }
 
     /// Ein Theme (Auftrag 09.11.): hell und dunkel, für jede gespeicherte `ThemaID` dieselben Zeilen.
-    private static let hell: [UInt32] = [0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x0B5ED7, 0xFFFFFF]
-    private static let dunkel: [UInt32] = [0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0x5B9DFF, 0x0B0C0E]
+    private static let hell: [UInt32] = [0xFFFFFF, 0xF2F2F7, 0x000000, 0x5E5E62, 0x8A8A8E, 0xE5E5EA, 0x457A00, 0xFFFFFF, 0x9BE800, 0x000000]
+    private static let dunkel: [UInt32] = [0x000000, 0x1C1C1E, 0xFFFFFF, 0x98989F, 0x8E8E93, 0x2C2C2E, 0xA6FF00, 0x000000, 0xA6FF00, 0x000000]
 
-    private func zeile(_ t: LumenFarben.Tokens) -> [UInt32] { [t.grund, t.flaeche, t.text, t.text2, t.rand, t.haar, t.akzent, t.aufAkzent] }
+    private func zeile(_ t: LumenFarben.Tokens) -> [UInt32] { [t.grund, t.flaeche, t.text, t.text2, t.rand, t.haar, t.akzent, t.aufAkzent, t.akzentFlaeche, t.aufAkzentFlaeche] }
 
     func testAlleThemenHabenDieselbePalette() {
         for thema in ThemaID.allCases {
@@ -50,6 +50,9 @@ final class FarbenKontrastTests: XCTestCase {
                     XCTAssertGreaterThanOrEqual(kontrast(t.rand, flaeche), 3.0, "\(name): rand auf \(bezeichnung)")
                 }
                 XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzent, t.akzent), 4.5, "\(name): aufAkzent auf akzent")
+                XCTAssertGreaterThanOrEqual(kontrast(t.aufAkzentFlaeche, t.akzentFlaeche), 4.5, "\(name): aufAkzentFlaeche auf akzentFlaeche")
+                // Hell ist die Lime-Fläche auf Weiß zu blass für eine Kante (1,5:1); der Hauptknopf bekommt dort einen Rand in `akzent`.
+                XCTAssertGreaterThanOrEqual(max(kontrast(t.akzentFlaeche, t.grund), kontrast(t.akzent, t.grund)), 3.0, "\(name): Knopf-Kante auf grund")
             }
         }
     }

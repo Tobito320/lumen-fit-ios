@@ -208,3 +208,32 @@ extension View {
         modifier(ToastModifier(inhalt: inhalt))
     }
 }
+
+/// Listen-Symbol im farbigen Quadrat wie in den iOS-Einstellungen (neues Design 10.11.2026: "die app braucht mehr farbe").
+/// Die Farbe ist Schmuck, die Zeile trägt die Aussage im Text; das Symbol ist für VoiceOver verborgen.
+struct SymbolQuadrat: View {
+    let symbol: String
+    let farbe: Color
+    var groesse: CGFloat = 30
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(.system(size: groesse * 0.5, weight: .semibold))
+            .foregroundStyle(.white)
+            .frame(width: groesse, height: groesse)
+            .background(farbe, in: .rect(cornerRadius: groesse * 0.24, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
+/// Feste Bereichsfarben des neuen Designs (Systemfarben, hell und dunkel passend). Plan/Training ist Lime (`palette.akzent`).
+enum Bereichsfarbe {
+    static let gewicht = Color.purple
+    static let creatin = Color.teal
+    static let splits = Color.orange
+    static let verlauf = Color.pink
+    static let erfolge = Color.yellow
+    static let energie = Color.green
+    static let freunde = Color.indigo
+    static let einstellungen = Color.gray
+}

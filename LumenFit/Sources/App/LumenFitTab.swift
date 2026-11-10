@@ -1,17 +1,18 @@
 import Foundation
 
 enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
-    /// Aufteilung B (Wunsch vom 09.11.2026): Startseite, Training, Fortschritt, Freunde, Profil ganz rechts. Der Rohwert `heute` bleibt (Nutzungsname, gemerkter Tab).
-    case heute, training, fortschritt, freunde, profil
+    /// Neues Design (10.11.2026): Heute, Fortschritt, Training in der Mitte, Stats, Profil ganz rechts.
+    /// Die Rohwerte `heute` und `freunde` bleiben (Nutzungsname, gemerkter Tab, Links).
+    case heute, fortschritt, training, freunde, profil
 
     var id: String { rawValue }
 
     var titel: String {
         switch self {
-        case .heute: "Startseite"
+        case .heute: "Heute"
         case .training: "Training"
         case .fortschritt: "Fortschritt"
-        case .freunde: "Freunde"
+        case .freunde: "Stats"
         case .profil: "Profil"
         }
     }

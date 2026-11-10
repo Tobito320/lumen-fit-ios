@@ -122,9 +122,11 @@ final class BereicheTests: XCTestCase {
     // MARK: Fünf Tabs (Aufteilung B)
 
     func testFuenfTabsImmerSichtbar() {
-        XCTAssertEqual(LumenFitTab.allCases, [.heute, .training, .fortschritt, .freunde, .profil])
-        XCTAssertEqual(LumenFitTab.allCases.map(\.titel), ["Startseite", "Training", "Fortschritt", "Freunde", "Profil"])
-        XCTAssertEqual(LumenFitTab.allCases.map(\.symbolName), ["house.fill", "dumbbell.fill", "chart.xyaxis.line", "person.2.fill", "person.crop.circle.fill"])
+        // Neues Design (Besitzer 10.11.2026: "training in die mitte", Stats statt Rangliste, Symbole wie bisher).
+        XCTAssertEqual(LumenFitTab.allCases, [.heute, .fortschritt, .training, .freunde, .profil])
+        XCTAssertEqual(LumenFitTab.allCases.map(\.titel), ["Heute", "Fortschritt", "Training", "Stats", "Profil"])
+        XCTAssertEqual(LumenFitTab.allCases.map(\.symbolName), ["house.fill", "chart.xyaxis.line", "dumbbell.fill", "person.2.fill", "person.crop.circle.fill"])
+        XCTAssertEqual(LumenFitTab.freunde.rawValue, "freunde", "der Rohwert bleibt (Nutzungsname, Links)")
         XCTAssertEqual(LumenFitTab.heute.rawValue, "heute", "der Rohwert bleibt (Nutzungsname, gemerkter Tab)")
         for einstellungen in [Einstellungen(), aus(.gym), aus(.essen, .schlaf), aus(.gym, .essen)] {
             let router = Router()
