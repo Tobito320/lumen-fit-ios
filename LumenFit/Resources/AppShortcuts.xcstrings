@@ -1,0 +1,76 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    "Essen scannen in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan food in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Gewicht eintragen in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log weight in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Scanne mein Essen mit ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan my food with ${applicationName}"
+          }
+        }
+      }
+    },
+    "Starte mein Training mit ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start my workout with ${applicationName}"
+          }
+        }
+      }
+    },
+    "Trag mein Gewicht in ${applicationName} ein" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log my weight in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Training mit ${applicationName} beginnen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Begin a workout in ${applicationName}"
+          }
+        }
+      }
+    },
+    "Training starten in ${applicationName}" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start workout in ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

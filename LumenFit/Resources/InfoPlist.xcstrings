@@ -1,0 +1,76 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LumenFit"
+          }
+        }
+      }
+    },
+    "NSBluetoothAlwaysUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit connects to your fitness band when you ask it to, reads steps and heart rate, and shows the battery."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit uses the camera to scan food barcodes and QR codes for connecting with people, and to photograph your food."
+          }
+        }
+      }
+    },
+    "NSHealthShareUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit reads your steps, activity, heart rate, sleep and recovery from Health so you can see your progress."
+          }
+        }
+      }
+    },
+    "NSHealthUpdateUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit saves your workouts and weight to Health if you allow it."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit looks for gyms near you when you enter your gym. Your location is not saved."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

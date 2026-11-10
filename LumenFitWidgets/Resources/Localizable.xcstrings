@@ -1,0 +1,3846 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    "%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@"
+          }
+        }
+      }
+    },
+    "%@ Schritte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ steps"
+          }
+        }
+      }
+    },
+    "%@ Vorschlag: %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ suggestion: %@."
+          }
+        }
+      }
+    },
+    "%@ auf %@, %@ auf %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ at %@, %@ at %@"
+          }
+        }
+      }
+    },
+    "%@ hat das Schrittziel erreicht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ hit the step goal"
+          }
+        }
+      }
+    },
+    "%@ hat gut geschlafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ slept well"
+          }
+        }
+      }
+    },
+    "%@ kcal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kcal"
+          }
+        }
+      }
+    },
+    "%@ kcal drüber" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kcal over"
+          }
+        }
+      }
+    },
+    "%@ kcal übrig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ kcal left"
+          }
+        }
+      }
+    },
+    "%@ kommt am %@ und gleich wieder am %@ dran, dazwischen braucht der Muskel Erholung." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ is on %@ and again on %@, the muscle needs rest in between."
+          }
+        }
+      }
+    },
+    "%@ von %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@"
+          }
+        }
+      }
+    },
+    "%@ von %@ kcal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of %@ kcal"
+          }
+        }
+      }
+    },
+    "%@ war im Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ was at the gym"
+          }
+        }
+      }
+    },
+    "%@ · %lld Sätze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld sets"
+          }
+        }
+      }
+    },
+    "%@ · 1 Satz" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 1 set"
+          }
+        }
+      }
+    },
+    "%@ · Ruhetag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Rest day"
+          }
+        }
+      }
+    },
+    "%@ · Training" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · Workout"
+          }
+        }
+      }
+    },
+    "%@ · frei" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · free"
+          }
+        }
+      }
+    },
+    "%@ · tauscht mit %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · swaps with %@"
+          }
+        }
+      }
+    },
+    "%@%@ kg seit %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@%@ kg since %@"
+          }
+        }
+      }
+    },
+    "%@, %lld Kilokalorien" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld kilocalories"
+          }
+        }
+      }
+    },
+    "%@, %lld Prozent des Ziels" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld percent of goal"
+          }
+        }
+      }
+    },
+    "%@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@. %@"
+          }
+        }
+      }
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %@"
+          }
+        }
+      }
+    },
+    "%@: %lld von %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %lld of %lld days"
+          }
+        }
+      }
+    },
+    "%@: %lld von %lld Tagen, heute erledigt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@: %lld of %lld days, done today"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld"
+          }
+        }
+      }
+    },
+    "%lld Ruhetage sind viel. Mit 3 bis 4 Trainingstagen kommt jede Muskelgruppe 2-mal pro Woche dran, das bringt am meisten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld rest days is a lot. With 3 to 4 training days, each muscle group is hit twice a week, which works best."
+          }
+        }
+      }
+    },
+    "%lld Sätze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld sets"
+          }
+        }
+      }
+    },
+    "%lld Tage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days"
+          }
+        }
+      }
+    },
+    "%lld Tage · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days · %@"
+          }
+        }
+      }
+    },
+    "%lld Tage/Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld days/week"
+          }
+        }
+      }
+    },
+    "%lld Trainingstage am Stück ohne Pause." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld training days in a row without a break."
+          }
+        }
+      }
+    },
+    "%lld Wdh." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld reps"
+          }
+        }
+      }
+    },
+    "%lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld weeks"
+          }
+        }
+      }
+    },
+    "%lld Wochen in Folge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld weeks in a row"
+          }
+        }
+      }
+    },
+    "%lld g Protein offen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld g protein to go"
+          }
+        }
+      }
+    },
+    "%lld kcal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld kcal"
+          }
+        }
+      }
+    },
+    "%lld von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld"
+          }
+        }
+      }
+    },
+    "%lld von %lld Übungen fertig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld of %lld exercises done"
+          }
+        }
+      }
+    },
+    ", Serie %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", streak %lld"
+          }
+        }
+      }
+    },
+    ", als Nächstes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : ", up next"
+          }
+        }
+      }
+    },
+    "1 Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day"
+          }
+        }
+      }
+    },
+    "1 Tag/Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 day/week"
+          }
+        }
+      }
+    },
+    "1 Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 week"
+          }
+        }
+      }
+    },
+    "1 Woche in Folge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 week in a row"
+          }
+        }
+      }
+    },
+    "1 bis 3 mal Sport pro Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exercise 1 to 3 times per week"
+          }
+        }
+      }
+    },
+    "12 Stunden fasten, 12 Stunden essen. Leichter Einstieg." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 12 hours, eat for 12 hours. An easy start."
+          }
+        }
+      }
+    },
+    "14 Stunden fasten, 10 Stunden essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 14 hours, eat for 10 hours."
+          }
+        }
+      }
+    },
+    "16 Stunden fasten, 8 Stunden essen. Der bekannteste Plan." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 16 hours, eat for 8 hours. The best-known plan."
+          }
+        }
+      }
+    },
+    "18 Stunden fasten, 6 Stunden essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 18 hours, eat for 6 hours."
+          }
+        }
+      }
+    },
+    "20 Stunden fasten, 4 Stunden essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 20 hours, eat for 4 hours."
+          }
+        }
+      }
+    },
+    "23 Stunden fasten, eine Mahlzeit am Tag." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 23 hours, one meal a day."
+          }
+        }
+      }
+    },
+    "23:1 (OMAD)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "23:1 (OMAD)"
+          }
+        }
+      }
+    },
+    "3 bis 5 mal Sport pro Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exercise 3 to 5 times per week"
+          }
+        }
+      }
+    },
+    "36 Stunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "36 hours"
+          }
+        }
+      }
+    },
+    "36 Stunden am Stück fasten, z. B. vom Abendessen bis zum übernächsten Frühstück." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast 36 hours straight, e.g. from dinner to breakfast the day after next."
+          }
+        }
+      }
+    },
+    "45 Minuten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "45 minutes"
+          }
+        }
+      }
+    },
+    "6 bis 7 mal Sport pro Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exercise 6 to 7 times per week"
+          }
+        }
+      }
+    },
+    "Abendessen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dinner"
+          }
+        }
+      }
+    },
+    "Adduktoren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adductors"
+          }
+        }
+      }
+    },
+    "Aktion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action"
+          }
+        }
+      }
+    },
+    "Aktiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active"
+          }
+        }
+      }
+    },
+    "Alkohol" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alcohol"
+          }
+        }
+      }
+    },
+    "Alle Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All habits with streak, rate over the last 30 days and whether they're done today."
+          }
+        }
+      }
+    },
+    "Als Nächstes: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next up: %@"
+          }
+        }
+      }
+    },
+    "An 1 Tag pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 6 Tagen normal essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On 1 day per week at most 500 kcal (women) or 600 kcal (men), eat normally on the other 6 days."
+          }
+        }
+      }
+    },
+    "An 2 Tagen pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 5 Tagen normal essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On 2 days per week at most 500 kcal (women) or 600 kcal (men), eat normally on the other 5 days."
+          }
+        }
+      }
+    },
+    "An wie vielen Tagen du diese Woche trainiert hast, ob du im Gym bist und wenn du einen Rekord schaffst." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On how many days you trained this week, whether you're at the gym, and when you set a record."
+          }
+        }
+      }
+    },
+    "Atmen, trinken, gleich geht's weiter." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breathe, drink, back in a moment."
+          }
+        }
+      }
+    },
+    "Aufbauen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build muscle"
+          }
+        }
+      }
+    },
+    "Ausgewogen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Balanced"
+          }
+        }
+      }
+    },
+    "Autsch. Leichte Bewegung hilft." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouch. Light movement helps."
+          }
+        }
+      }
+    },
+    "Beinbeuger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hamstrings"
+          }
+        }
+      }
+    },
+    "Beispiel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Example"
+          }
+        }
+      }
+    },
+    "Bereit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready"
+          }
+        }
+      }
+    },
+    "Bernstein" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amber"
+          }
+        }
+      }
+    },
+    "Beuger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Flexors"
+          }
+        }
+      }
+    },
+    "Bewegen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move"
+          }
+        }
+      }
+    },
+    "Brust" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chest"
+          }
+        }
+      }
+    },
+    "Bögen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arcs"
+          }
+        }
+      }
+    },
+    "Bürojob, kaum Bewegung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desk job, hardly any movement"
+          }
+        }
+      }
+    },
+    "Calcium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calcium"
+          }
+        }
+      }
+    },
+    "Cholesterin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cholesterol"
+          }
+        }
+      }
+    },
+    "Definieren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definition"
+          }
+        }
+      }
+    },
+    "Dehnen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stretching"
+          }
+        }
+      }
+    },
+    "Dein nächstes Training, deine Serie und die Bögen von heute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your next workout, your streak and today's arcs."
+          }
+        }
+      }
+    },
+    "Deine Antwort auf den Morgen-Check von heute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your answer to today's morning check."
+          }
+        }
+      }
+    },
+    "Deine Gym-Tage der Woche, heute direkt abhakbar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your gym days this week, tick off today right here."
+          }
+        }
+      }
+    },
+    "Deine Gym-Woche neben der deines Partners, heute direkt abhakbar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your gym week next to your partner's, tick off today right here."
+          }
+        }
+      }
+    },
+    "Denkt nach" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        }
+      }
+    },
+    "Di" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tue"
+          }
+        }
+      }
+    },
+    "Die letzte Nacht als Ring oder Zeile auf dem Sperrbildschirm." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last night as a ring or a line on the Lock Screen."
+          }
+        }
+      }
+    },
+    "Dienstag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuesday"
+          }
+        }
+      }
+    },
+    "Do" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thu"
+          }
+        }
+      }
+    },
+    "Donnerstag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thursday"
+          }
+        }
+      }
+    },
+    "Du" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        }
+      }
+    },
+    "Dunkel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dark"
+          }
+        }
+      }
+    },
+    "Eine Gewohnheit deiner Wahl, direkt abhakbar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A habit of your choice, ready to check off."
+          }
+        }
+      }
+    },
+    "Einfach ungesättigte Fettsäuren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monounsaturated fat"
+          }
+        }
+      }
+    },
+    "Einsteiger" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beginner"
+          }
+        }
+      }
+    },
+    "Einsteigerin" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beginner"
+          }
+        }
+      }
+    },
+    "Eisen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iron"
+          }
+        }
+      }
+    },
+    "Erholen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recover"
+          }
+        }
+      }
+    },
+    "Erholung %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recovery %@"
+          }
+        }
+      }
+    },
+    "Erholung: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recovery: %@"
+          }
+        }
+      }
+    },
+    "Erledigt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Erschöpft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exhausted"
+          }
+        }
+      }
+    },
+    "Essen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food"
+          }
+        }
+      }
+    },
+    "Essen heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food today"
+          }
+        }
+      }
+    },
+    "Essen heute: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food today: %@"
+          }
+        }
+      }
+    },
+    "Essen heute: %@ Kilokalorien %@, %lld Gramm Protein offen. Tippen öffnet den Scan." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food today: %@ kilocalories %@, %lld grams of protein left. Tap to open the scan."
+          }
+        }
+      }
+    },
+    "Essen heute: %@, %@. %@. Kohlenhydrate %@ von %@ Gramm, Fett %@ von %@ Gramm. %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Food today: %@, %@. %@. Carbs %@ of %@ grams, fat %@ of %@ grams. %@."
+          }
+        }
+      }
+    },
+    "Essen scannen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scan food"
+          }
+        }
+      }
+    },
+    "Extrem aktiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extremely active"
+          }
+        }
+      }
+    },
+    "Fit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fit"
+          }
+        }
+      }
+    },
+    "Fit bleiben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay fit"
+          }
+        }
+      }
+    },
+    "Folat (B9)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folate (B9)"
+          }
+        }
+      }
+    },
+    "Fortgeschritten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Advanced"
+          }
+        }
+      }
+    },
+    "Fr" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fri"
+          }
+        }
+      }
+    },
+    "Freitag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friday"
+          }
+        }
+      }
+    },
+    "Frühstück" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breakfast"
+          }
+        }
+      }
+    },
+    "Für dich" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For you"
+          }
+        }
+      }
+    },
+    "Ganzes Studio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whole gym"
+          }
+        }
+      }
+    },
+    "Gerade eben aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated just now"
+          }
+        }
+      }
+    },
+    "Gestern aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated yesterday"
+          }
+        }
+      }
+    },
+    "Gewicht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight"
+          }
+        }
+      }
+    },
+    "Gewicht eintragen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Log weight"
+          }
+        }
+      }
+    },
+    "Gewicht und Körpermaße mit dem Verlauf der letzten Monate." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weight and body measurements with the trend of the last months."
+          }
+        }
+      }
+    },
+    "Gewohnheit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habit"
+          }
+        }
+      }
+    },
+    "Gewohnheit abhaken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check off habit"
+          }
+        }
+      }
+    },
+    "Gewohnheit wählen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose habit"
+          }
+        }
+      }
+    },
+    "Gewohnheiten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habits"
+          }
+        }
+      }
+    },
+    "Glut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ember"
+          }
+        }
+      }
+    },
+    "Graphit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Graphite"
+          }
+        }
+      }
+    },
+    "Grau" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gray"
+          }
+        }
+      }
+    },
+    "Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym"
+          }
+        }
+      }
+    },
+    "Gym %lld Tage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym %lld days"
+          }
+        }
+      }
+    },
+    "Gym %lld von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym %lld of %lld"
+          }
+        }
+      }
+    },
+    "Gym 1 Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym 1 day"
+          }
+        }
+      }
+    },
+    "Gym diese Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym this week"
+          }
+        }
+      }
+    },
+    "Gym heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym today"
+          }
+        }
+      }
+    },
+    "Gym heute abhaken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check off gym today"
+          }
+        }
+      }
+    },
+    "Gym-Duell" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym duel"
+          }
+        }
+      }
+    },
+    "Gym-Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gym week"
+          }
+        }
+      }
+    },
+    "Hake deine Gewohnheiten direkt auf dem Home-Bildschirm ab." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check off your habits right on the Home Screen."
+          }
+        }
+      }
+    },
+    "Hakt das Gym von heute ab oder nimmt den Haken wieder weg." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checks off today's gym or removes the check again."
+          }
+        }
+      }
+    },
+    "Hanteln & Maschinen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dumbbells & machines"
+          }
+        }
+      }
+    },
+    "Hell" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "Heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        }
+      }
+    },
+    "Heute alles eingetragen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything logged today"
+          }
+        }
+      }
+    },
+    "Heute holen wir uns das." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today we're getting this."
+          }
+        }
+      }
+    },
+    "Hi, ich bin Lumi. Wir fangen klein an." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hi, I'm Lumi. We'll start small."
+          }
+        }
+      }
+    },
+    "Himmelblau" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sky blue"
+          }
+        }
+      }
+    },
+    "Hüfte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hip"
+          }
+        }
+      }
+    },
+    "Ich hab dich vermisst. Nur 20 Minuten?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I missed you. Just 20 minutes?"
+          }
+        }
+      }
+    },
+    "Indigo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indigo"
+          }
+        }
+      }
+    },
+    "Jeden zweiten Tag fasten oder stark reduziert essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast every other day or eat very little."
+          }
+        }
+      }
+    },
+    "Jod" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iodine"
+          }
+        }
+      }
+    },
+    "Kalium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potassium"
+          }
+        }
+      }
+    },
+    "Kalorien und Protein, die heute noch übrig sind. Ein Tipp öffnet den Scan." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calories and protein left for today. Tap to open the scan."
+          }
+        }
+      }
+    },
+    "Kaum aktiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Barely active"
+          }
+        }
+      }
+    },
+    "Kein Ruhetag in der Woche. 1 bis 3 Ruhetage geben deinen Muskeln Zeit, stärker zu werden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No rest day this week. 1 to 3 rest days give your muscles time to get stronger."
+          }
+        }
+      }
+    },
+    "Kein Training geplant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No workout planned"
+          }
+        }
+      }
+    },
+    "Keine Daten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data"
+          }
+        }
+      }
+    },
+    "Keine Sätze gespeichert." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sets saved."
+          }
+        }
+      }
+    },
+    "Keine Sätze gespeichert. Die Einheit ist nicht ausgecheckt. Trag unter Zeiten das Ende ein, dann lassen sich Sätze nachtragen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sets saved. The session isn't checked out. Enter the end under Times, then you can add sets afterwards."
+          }
+        }
+      }
+    },
+    "Keine Sätze gespeichert. Mit Übung hinzufügen oder Sätze bearbeiten trägst du sie nach." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sets saved. Add them with Add exercise or Edit sets."
+          }
+        }
+      }
+    },
+    "Kern" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Core"
+          }
+        }
+      }
+    },
+    "Koffein" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caffeine"
+          }
+        }
+      }
+    },
+    "Koralle" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coral"
+          }
+        }
+      }
+    },
+    "Kraft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strength"
+          }
+        }
+      }
+    },
+    "Kupfer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copper"
+          }
+        }
+      }
+    },
+    "Kurze Nacht. Heute lieber leichter." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short night. Go easier today."
+          }
+        }
+      }
+    },
+    "Körperfett" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body fat"
+          }
+        }
+      }
+    },
+    "Körperlicher Job und täglich Sport" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Physical job and daily sport"
+          }
+        }
+      }
+    },
+    "Körperwerte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Body measurements"
+          }
+        }
+      }
+    },
+    "Lange nicht da" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not here for a while"
+          }
+        }
+      }
+    },
+    "Latissimus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latissimus"
+          }
+        }
+      }
+    },
+    "Laufband" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treadmill"
+          }
+        }
+      }
+    },
+    "Leicht aktiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lightly active"
+          }
+        }
+      }
+    },
+    "Limette" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lime"
+          }
+        }
+      }
+    },
+    "Lovea" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lovea"
+          }
+        }
+      }
+    },
+    "Low Carb" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low carb"
+          }
+        }
+      }
+    },
+    "Lumen Fit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit"
+          }
+        }
+      }
+    },
+    "Lumen Fit: noch keine Werte von heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit: no values from today yet"
+          }
+        }
+      }
+    },
+    "Lumi denkt nach" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is thinking"
+          }
+        }
+      }
+    },
+    "Lumi feuert dich an" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is cheering you on"
+          }
+        }
+      }
+    },
+    "Lumi freut sich über den Rekord" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is happy about the record"
+          }
+        }
+      }
+    },
+    "Lumi hat Muskelkater" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is sore"
+          }
+        }
+      }
+    },
+    "Lumi hat Ruhetag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi has a rest day"
+          }
+        }
+      }
+    },
+    "Lumi hält die Serie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi keeps the streak"
+          }
+        }
+      }
+    },
+    "Lumi ist bereit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is ready"
+          }
+        }
+      }
+    },
+    "Lumi ist erschöpft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is exhausted"
+          }
+        }
+      }
+    },
+    "Lumi ist müde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is tired"
+          }
+        }
+      }
+    },
+    "Lumi jubelt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi cheers"
+          }
+        }
+      }
+    },
+    "Lumi macht Pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is taking a break"
+          }
+        }
+      }
+    },
+    "Lumi schläft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi is asleep"
+          }
+        }
+      }
+    },
+    "Lumi vermisst dich" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi misses you"
+          }
+        }
+      }
+    },
+    "Lumi winkt dir zu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumi waves at you"
+          }
+        }
+      }
+    },
+    "Magnesium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Magnesium"
+          }
+        }
+      }
+    },
+    "Mangan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manganese"
+          }
+        }
+      }
+    },
+    "Mehrfach ungesättigte Fettsäuren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Polyunsaturated fatty acids"
+          }
+        }
+      }
+    },
+    "Mi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wed"
+          }
+        }
+      }
+    },
+    "Mint" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mint"
+          }
+        }
+      }
+    },
+    "Mittagessen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lunch"
+          }
+        }
+      }
+    },
+    "Mitte und unten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Middle and lower"
+          }
+        }
+      }
+    },
+    "Mittel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medium"
+          }
+        }
+      }
+    },
+    "Mittwoch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wednesday"
+          }
+        }
+      }
+    },
+    "Mo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mon"
+          }
+        }
+      }
+    },
+    "Moment, ich schau mir deine Woche an." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One moment, I'm looking at your week."
+          }
+        }
+      }
+    },
+    "Monochrom" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monochrome"
+          }
+        }
+      }
+    },
+    "Montag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monday"
+          }
+        }
+      }
+    },
+    "Muskelkater" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muscle soreness"
+          }
+        }
+      }
+    },
+    "Muskeln aufbauen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Build muscle"
+          }
+        }
+      }
+    },
+    "Name deines Plans, Trainingstage und Namen der Übungen. Keine Gewichte." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name of your plan, training days and names of the exercises. No weights."
+          }
+        }
+      }
+    },
+    "Natrium" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sodium"
+          }
+        }
+      }
+    },
+    "Neuer Rekord" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New record"
+          }
+        }
+      }
+    },
+    "Neuer Rekord! Das bist du." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New record! That's you."
+          }
+        }
+      }
+    },
+    "Neuer Tag: öffne Lumen Fit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New day: open Lumen Fit"
+          }
+        }
+      }
+    },
+    "Noch eine Wiederholung. Du schaffst das." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One more rep. You can do this."
+          }
+        }
+      }
+    },
+    "Noch kein Essen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No food yet"
+          }
+        }
+      }
+    },
+    "Noch keine Daten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data yet"
+          }
+        }
+      }
+    },
+    "Noch keine Gewohnheiten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No habits yet"
+          }
+        }
+      }
+    },
+    "Noch keine Serie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No streak yet"
+          }
+        }
+      }
+    },
+    "Noch keine Werte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No values yet"
+          }
+        }
+      }
+    },
+    "Noch nicht geplant: %@. Tipp auf den Tag und leg Training oder Ruhetag fest." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not planned yet: %@. Tap the day and set a workout or rest day."
+          }
+        }
+      }
+    },
+    "Noch nicht verbunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not connected yet"
+          }
+        }
+      }
+    },
+    "Noch nichts eingetragen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing logged yet"
+          }
+        }
+      }
+    },
+    "Nur Kurzhanteln" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dumbbells only"
+          }
+        }
+      }
+    },
+    "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only your calories from today and whether you reached your water goal."
+          }
+        }
+      }
+    },
+    "Nächstes Training" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next workout"
+          }
+        }
+      }
+    },
+    "Ob du im Gym bist und deine letzten zehn Trainings. Zusammen mit Gym auch Sätze und Gewichte." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Whether you are at the gym and your last ten workouts. Together with Gym, also sets and weights."
+          }
+        }
+      }
+    },
+    "Oberarm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upper arm"
+          }
+        }
+      }
+    },
+    "Oberer Rücken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upper back"
+          }
+        }
+      }
+    },
+    "Oberschenkel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thigh"
+          }
+        }
+      }
+    },
+    "Oberseite" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top"
+          }
+        }
+      }
+    },
+    "Offen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+    "Packung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Package"
+          }
+        }
+      }
+    },
+    "Packungen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Packages"
+          }
+        }
+      }
+    },
+    "Partner" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partner"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest"
+          }
+        }
+      }
+    },
+    "Pause zwischen Sätzen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest between sets"
+          }
+        }
+      }
+    },
+    "Phosphor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phosphorus"
+          }
+        }
+      }
+    },
+    "Plan und Serie" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plan and streak"
+          }
+        }
+      }
+    },
+    "Po" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Glutes"
+          }
+        }
+      }
+    },
+    "Portion" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Serving"
+          }
+        }
+      }
+    },
+    "Portionen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Servings"
+          }
+        }
+      }
+    },
+    "Profil" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile"
+          }
+        }
+      }
+    },
+    "Protein %@ von %@ g" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protein %@ of %@ g"
+          }
+        }
+      }
+    },
+    "Proteinreich" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High in protein"
+          }
+        }
+      }
+    },
+    "Puh. Das war viel. Ruh dich gut aus." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phew. That was a lot. Get some good rest."
+          }
+        }
+      }
+    },
+    "Quadrizeps" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quads"
+          }
+        }
+      }
+    },
+    "REM" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "REM"
+          }
+        }
+      }
+    },
+    "Rosa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pink"
+          }
+        }
+      }
+    },
+    "Ruhetag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest day"
+          }
+        }
+      }
+    },
+    "Ruhetag. Muskeln wachsen jetzt." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest day. Muscles grow now."
+          }
+        }
+      }
+    },
+    "Sa" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sat"
+          }
+        }
+      }
+    },
+    "Samstag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saturday"
+          }
+        }
+      }
+    },
+    "Satz %lld von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set %lld of %lld"
+          }
+        }
+      }
+    },
+    "Satz fertig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set done"
+          }
+        }
+      }
+    },
+    "Satz läuft seit" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set running for"
+          }
+        }
+      }
+    },
+    "Satz starten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start set"
+          }
+        }
+      }
+    },
+    "Schlaf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep"
+          }
+        }
+      }
+    },
+    "Schlaf %@ h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep %@ h"
+          }
+        }
+      }
+    },
+    "Schlaf %lld Stunden %lld Minuten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep %lld hours %lld minutes"
+          }
+        }
+      }
+    },
+    "Schlaf %lld Stunden %lld Minuten von %lld Stunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep %lld hours %lld minutes of %lld hours"
+          }
+        }
+      }
+    },
+    "Schlaf in der Nacht auf %@: eingeschlafen %@, aufgewacht %@, %@ geschlafen. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep on the night of %@: fell asleep %@, woke up %@, slept %@. %@"
+          }
+        }
+      }
+    },
+    "Schlaf ist auch Training." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep is training too."
+          }
+        }
+      }
+    },
+    "Schlaf –" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep –"
+          }
+        }
+      }
+    },
+    "Schlecht geschlafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slept badly"
+          }
+        }
+      }
+    },
+    "Schlicht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plain"
+          }
+        }
+      }
+    },
+    "Schläft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleeping"
+          }
+        }
+      }
+    },
+    "Schnellzugriff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shortcut"
+          }
+        }
+      }
+    },
+    "Schnellzugriff wählen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose shortcut"
+          }
+        }
+      }
+    },
+    "Schritte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps"
+          }
+        }
+      }
+    },
+    "Schritte %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps %@"
+          }
+        }
+      }
+    },
+    "Schritte %@ von %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps %@ of %@"
+          }
+        }
+      }
+    },
+    "Schritte heute und an jedem Tag dieser Woche." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps today and on each day this week."
+          }
+        }
+      }
+    },
+    "Schritte, Schlaf und Gym-Serie auf dem Sperrbildschirm." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps, sleep and gym streak on the lock screen."
+          }
+        }
+      }
+    },
+    "Schritte, Training und Schlaf von heute als drei Bögen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's steps, training and sleep as three arcs."
+          }
+        }
+      }
+    },
+    "Schritte-Duell" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps duel"
+          }
+        }
+      }
+    },
+    "Schritte: du %@, %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steps: you %@, %@ %@"
+          }
+        }
+      }
+    },
+    "Schulter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shoulder"
+          }
+        }
+      }
+    },
+    "Sehr aktiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very active"
+          }
+        }
+      }
+    },
+    "Selen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selenium"
+          }
+        }
+      }
+    },
+    "Serie gehalten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streak kept"
+          }
+        }
+      }
+    },
+    "Snacks" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snacks"
+          }
+        }
+      }
+    },
+    "So" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sun"
+          }
+        }
+      }
+    },
+    "Sonntag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunday"
+          }
+        }
+      }
+    },
+    "Sperrbildschirm" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lock screen"
+          }
+        }
+      }
+    },
+    "Stahl" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Steel"
+          }
+        }
+      }
+    },
+    "Stairmaster" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stairmaster"
+          }
+        }
+      }
+    },
+    "Startet das Training von heute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts today's workout."
+          }
+        }
+      }
+    },
+    "Startet dein Training oder öffnet den Scan für dein Essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Starts your workout or opens the scan for your food."
+          }
+        }
+      }
+    },
+    "Stimmung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mood"
+          }
+        }
+      }
+    },
+    "Strecker" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensors"
+          }
+        }
+      }
+    },
+    "Stärker werden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get stronger"
+          }
+        }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System"
+          }
+        }
+      }
+    },
+    "Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
+    "Tagebuch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diary"
+          }
+        }
+      }
+    },
+    "Taille" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waist"
+          }
+        }
+      }
+    },
+    "Teilt kein Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doesn't share a gym"
+          }
+        }
+      }
+    },
+    "Testwoche: %@, ab Montag wieder %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trial week: %@, back to %@ from Monday"
+          }
+        }
+      }
+    },
+    "Tief" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
+          }
+        }
+      }
+    },
+    "Tippe, um dein erstes Essen zu scannen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to scan your first meal."
+          }
+        }
+      }
+    },
+    "Tippen hakt ab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to check off"
+          }
+        }
+      }
+    },
+    "Tippen nimmt den Haken weg" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to remove the check mark"
+          }
+        }
+      }
+    },
+    "Tippen zählt eins dazu" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to add one"
+          }
+        }
+      }
+    },
+    "Trainieren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Train"
+          }
+        }
+      }
+    },
+    "Training" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout"
+          }
+        }
+      }
+    },
+    "Training %lld von %lld Tagen in dieser Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout %lld of %lld days this week"
+          }
+        }
+      }
+    },
+    "Training läuft" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout running"
+          }
+        }
+      }
+    },
+    "Training starten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start workout"
+          }
+        }
+      }
+    },
+    "Training und Verlauf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout and history"
+          }
+        }
+      }
+    },
+    "Trainingsplan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training plan"
+          }
+        }
+      }
+    },
+    "Trapez Mitte und unten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mid and lower traps"
+          }
+        }
+      }
+    },
+    "Trapez oben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upper traps"
+          }
+        }
+      }
+    },
+    "Unterer Rücken" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower back"
+          }
+        }
+      }
+    },
+    "Vitamin A" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin A"
+          }
+        }
+      }
+    },
+    "Vitamin B1 (Thiamin)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B1 (thiamine)"
+          }
+        }
+      }
+    },
+    "Vitamin B12" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B12"
+          }
+        }
+      }
+    },
+    "Vitamin B2 (Riboflavin)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B2 (riboflavin)"
+          }
+        }
+      }
+    },
+    "Vitamin B3 (Niacin)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B3 (niacin)"
+          }
+        }
+      }
+    },
+    "Vitamin B5 (Pantothensäure)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B5 (pantothenic acid)"
+          }
+        }
+      }
+    },
+    "Vitamin B6" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin B6"
+          }
+        }
+      }
+    },
+    "Vitamin C" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin C"
+          }
+        }
+      }
+    },
+    "Vitamin D" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin D"
+          }
+        }
+      }
+    },
+    "Vitamin E" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin E"
+          }
+        }
+      }
+    },
+    "Vitamin K" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vitamin K"
+          }
+        }
+      }
+    },
+    "Vor %lld Minuten aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %lld minutes ago"
+          }
+        }
+      }
+    },
+    "Vor %lld Stunden aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %lld hours ago"
+          }
+        }
+      }
+    },
+    "Vor %lld Tagen aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated %lld days ago"
+          }
+        }
+      }
+    },
+    "Vor 1 Minute aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated 1 minute ago"
+          }
+        }
+      }
+    },
+    "Vor 1 Stunde aktualisiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Updated 1 hour ago"
+          }
+        }
+      }
+    },
+    "Wach" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awake"
+          }
+        }
+      }
+    },
+    "Waden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calves"
+          }
+        }
+      }
+    },
+    "Wald" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forest"
+          }
+        }
+      }
+    },
+    "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien, Makros. Keine Fotos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What you ate in the last seven days: names, calories, macros. No photos."
+          }
+        }
+      }
+    },
+    "Wasser" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Water"
+          }
+        }
+      }
+    },
+    "Wert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
+    "Wie lange du diese Woche geschlafen hast, deine Energie heute und wenn du gut geschlafen hast." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How long you slept this week, your energy today and when you slept well."
+          }
+        }
+      }
+    },
+    "Willkommen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Welcome"
+          }
+        }
+      }
+    },
+    "Woche für Woche. Die Serie hält." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week after week. The streak holds."
+          }
+        }
+      }
+    },
+    "Wähle die Gewohnheit, die das Widget zeigt." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose the habit the widget shows."
+          }
+        }
+      }
+    },
+    "Ziel erreicht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal reached"
+          }
+        }
+      }
+    },
+    "Ziel geschafft. Genau so." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goal reached. Just like that."
+          }
+        }
+      }
+    },
+    "Zink" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zinc"
+          }
+        }
+      }
+    },
+    "Zuhause ohne Geräte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home without equipment"
+          }
+        }
+      }
+    },
+    "dein Plan" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "your plan"
+          }
+        }
+      }
+    },
+    "drüber" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "over"
+          }
+        }
+      }
+    },
+    "erledigt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "done"
+          }
+        }
+      }
+    },
+    "geplant: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "planned: %@"
+          }
+        }
+      }
+    },
+    "gerade" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "just now"
+          }
+        }
+      }
+    },
+    "gerade im Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "at the gym now"
+          }
+        }
+      }
+    },
+    "heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        }
+      }
+    },
+    "hinten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "back"
+          }
+        }
+      }
+    },
+    "in %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in %lld days"
+          }
+        }
+      }
+    },
+    "jeden Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "every day"
+          }
+        }
+      }
+    },
+    "kcal drüber" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kcal over"
+          }
+        }
+      }
+    },
+    "kcal übrig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "kcal left"
+          }
+        }
+      }
+    },
+    "kein Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no day"
+          }
+        }
+      }
+    },
+    "keine Daten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no data"
+          }
+        }
+      }
+    },
+    "keine Sätze" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no sets"
+          }
+        }
+      }
+    },
+    "keine Werte von heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "no values from today"
+          }
+        }
+      }
+    },
+    "kurzer Kopf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "short head"
+          }
+        }
+      }
+    },
+    "langer Kopf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "long head"
+          }
+        }
+      }
+    },
+    "mittlerer Kopf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "middle head"
+          }
+        }
+      }
+    },
+    "morgen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tomorrow"
+          }
+        }
+      }
+    },
+    "nicht im Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not at the gym"
+          }
+        }
+      }
+    },
+    "noch nicht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not yet"
+          }
+        }
+      }
+    },
+    "oben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "top"
+          }
+        }
+      }
+    },
+    "offen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "open"
+          }
+        }
+      }
+    },
+    "schräg" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "incline"
+          }
+        }
+      }
+    },
+    "seitlich" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lateral"
+          }
+        }
+      }
+    },
+    "seitlicher Kopf" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lateral head"
+          }
+        }
+      }
+    },
+    "von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "of %lld"
+          }
+        }
+      }
+    },
+    "vorne" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "front"
+          }
+        }
+      }
+    },
+    "war im Gym" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "was at the gym"
+          }
+        }
+      }
+    },
+    "Öffne Lumen Fit einmal, dann erscheinen sie hier." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Lumen Fit once and they appear here."
+          }
+        }
+      }
+    },
+    "Öffne Lumen Fit einmal, dann kannst du eine wählen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Lumen Fit once, then you can choose one."
+          }
+        }
+      }
+    },
+    "Öffnet den Barcode-Scan für dein Essen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the barcode scan for your food."
+          }
+        }
+      }
+    },
+    "Öffnet die Seite, auf der du dein Gewicht einträgst." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the page where you log your weight."
+          }
+        }
+      }
+    },
+    "übrig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "left"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

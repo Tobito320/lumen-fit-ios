@@ -1,0 +1,26 @@
+{
+  "sourceLanguage" : "de",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lumen Fit"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LumenFit"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
