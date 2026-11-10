@@ -1200,7 +1200,13 @@ Heute, Fortschritt, Training (Mitte), Stats, Profil; Symbole wie bisher (house.f
 - Lovea, Partner, Band, Coach-MCP nur, wenn der Server das Konto freigibt (bestehende Schalter); öffentliche Konten sehen nichts davon.
 - Webseite (Cloudflare Pages, kostenlos): Datenschutz, Support mit Kontaktformular, Einladungsseite `/e/CODE` (öffnet `lumenfit://einladen?code=CODE`, sonst Store-Link + Code groß). Name des Verantwortlichen kommt beim Deploy aus einer privaten Datei, nie aus dem Git.
 - Einladen: Knopf "Freunde einladen" teilt den Link über das iOS-Teilen-Menü, QR bleibt.
-- App Store nur Deutschland, Deutsch, kostenlos, keine Werbung, DSA "kein Händler". TestFlight danach nur interne Gruppe (Besitzer).
+- App Store kostenlos, keine Werbung, DSA "kein Händler"; Länder: alle außer China (Festland, braucht eine ICP-Anmeldung); Store-Seite Deutsch und Englisch. TestFlight danach nur interne Gruppe (Besitzer).
+
+### 19.4a Zweisprachig (Besitzer 10.11.2026: "Englisch gleich mit")
+- Die App gibt es auf Deutsch und Englisch; Entwicklungssprache bleibt Deutsch, Übersetzungen in einem String Catalog (`Localizable.xcstrings`, `InfoPlist.xcstrings` für die Health-Texte, auch im Widget-Ziel). Standard ist die Systemsprache.
+- Zeile "Sprache" in Mehr Einstellungen öffnet die iOS-Einstellungen der App (dort wählt iOS die Sprache je App, Apples Weg); der Wert rechts zeigt die aktive Sprache.
+- Code: Texte in SwiftUI als Literal (`LocalizedStringKey`), Texte aus Logik mit `String(localized:)`; Zahlen, Daten und Einheiten mit `FormatStyle` (folgen der Sprache). Gym-Begriffe Sets, Reps, Skip in beiden Sprachen gleich.
+- Webseite (Datenschutz, Support, Einladung) und Store-Seite gibt es auf Deutsch und Englisch.
 
 ### 19.5 Stufen
-1 Farben und Leiste · 2 Heute · 3 Training, Splits, Übungen, Übung · 4 Fortschritt und Erfolge · 5 Stats (fitfreunde) · 6 Profil, Mehr Einstellungen, Einführung · 7 Store-Pflichten · 8 Webseite und Einladen · 9 Store-Seite, Bilder, Einreichen. Stufen 2-4 und 6-7 bauen parallel in eigenen Worktrees (je ein Modulordner), Zusammenführen, Compile und CI im Zweig `final`.
+1 Farben und Leiste · 2 Heute · 3 Training, Splits, Übungen, Übung · 4 Fortschritt und Erfolge · 5 Stats (fitfreunde) · 6 Profil, Mehr Einstellungen, Einführung · 7 Store-Pflichten · 8 Webseite und Einladen · 8b Englisch (String Catalog aus `xcodebuild -exportLocalizations` in CI, Übersetzung, Logik-Texte auf `String(localized:)`) · 9 Store-Seite, Bilder, Einreichen. Stufen 2-4 und 6-7 bauen parallel in eigenen Worktrees (je ein Modulordner), Zusammenführen, Compile und CI im Zweig `final`.
