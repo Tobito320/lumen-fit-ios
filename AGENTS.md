@@ -34,3 +34,12 @@ iOS-App (SwiftUI, Swift 6, iOS 26, iPhone) für Gesundheit und Fitness, für Ahm
 - Spec zuerst, Plan, Bau (Test zuerst), Review, vor TestFlight `agent-skills:ship`. Matt-Pocock-Skills: `to-spec`, `domain-modeling`, `to-tickets`, `tdd`, `code-review`. Design: `ui-pro-swiftui`, `docs/research/design.md` und `~/Documents/Obsidian/Personal/19 Bastelprojekte/Lumen Fit/design.html`. Ponytail: kleinster korrekter Diff.
 - Commit-Nachrichten kurz auf Deutsch, am Ende die vom System vorgegebenen `Co-Authored-By`- und `Claude-Session`-Zeilen für dein Modell. Kleine Commits.
 - Ehrlich berichten: alles, was nur der Compiler oder ein Gerät beweist, ist "ungeprüft", bis CI grün ist oder Ahmed es am Handy sieht.
+## Bewegung: iOS-Gefühl (Ahmed 10.11.2026)
+
+Ahmed nutzt nur UIs, die flüssig sind. Für jede UI-Bewegung gilt:
+- Feder statt fester Dauer: `.spring`, `.smooth`, `.snappy`, `.interactiveSpring`. Kein `.linear` und kein `.easeInOut` für UI-Bewegung (Ausnahme: reines Ein-/Ausblenden und endlose Pulse).
+- Jede Animation ist unterbrechbar und lenkt von der aktuellen Stelle und Geschwindigkeit um, kein Neustart, kein Sprung.
+- Gesten treiben die Animation: Element folgt dem Finger 1:1 (`DragGesture`, `interactiveSpring`), beim Loslassen geht die Geschwindigkeit (`predictedEndTranslation`) in die Feder (Wischen, Schließen).
+- Gummiband über den Rand statt harter Anschlag.
+- Details: `RoundedRectangle(cornerRadius:, style: .continuous)`, dezenter Blur, Haptik (`sensoryFeedback`) wo sie passt.
+- Eigener Code, keine Fremdbibliothek für Animation. Volltext: Vault `80 System/Memory/Apps bauen – Compiler ohne Mac, Modelle, kein Caveman (08.11.).md`.
