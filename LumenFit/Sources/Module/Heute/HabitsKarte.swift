@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Gewohnheiten (Idee 16): ein Haken per Tipp, Zähl-Gewohnheiten wie Wasser mit Plus und Minus, dazu die sieben Quadrate der Woche und die Serie mit Flamme.
 /// Ein Tipp auf den Namen öffnet die Seite der Gewohnheit (Zoom). Die Verwaltung (ausblenden, anlegen, löschen) steht in einer Zeile unten.
+/// `kompakt` (Heute im neuen Design, 10.11.2026): nur Name, Zähler, Serie und Knopf je Zeile, ohne Wochenquadrate und ohne Partner ("Bei home nicht die freunde");
+/// "Bearbeiten" im Kopf öffnet die Verwaltung. Die volle Karte steht im Tag-Blatt (Nachtragen).
 struct HabitsKarte: View {
     let habits: [HeuteHabitZeile]
     let tag: String
@@ -10,10 +12,32 @@ struct HabitsKarte: View {
     let oeffne: (HeuteHabitZeile) -> Void
     let verwalte: () -> Void
     var zoom: Namespace.ID?
+    var kompakt = false
     @Environment(\.palette) private var palette
 
     var body: some View {
-        standard
+        if kompakt { kurz } else { standard }
+    }
+
+    private var kurz: some View {
+        ListenKarte {
+            HStack(spacing: Abstand.s) {
+                Image(systemName: "checkmark.circle").foregroundStyle(palette.text2).accessibilityHidden(true)
+                Text("Gewohnheiten").font(.headline).foregroundStyle(palette.text)
+                Spacer(minLength: Abstand.s)
+                Button("Bearbeiten", action: verwalte)
+                    .font(.subheadline)
+                    .tint(palette.akzent)
+                    .frame(minHeight: Abstand.tippflaeche)
+                    .accessibilityLabel("Gewohnheiten verwalten")
+            }
+            .padding(.horizontal, Abstand.l)
+            .padding(.vertical, Abstand.xs)
+            ForEach(habits) { zeile in
+                Haarlinie()
+                HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom, kompakt: true)
+            }
+        }
     }
 
     private var verwalten: some View {
@@ -50,6 +74,7 @@ private struct HeuteHabitReihe: View {
     let weniger: () -> Void
     let oeffne: () -> Void
     var zoom: Namespace.ID?
+    var kompakt = false
     @State private var mehr = 0
     @State private var minus = 0
     @State private var umgeschaltet = 0
@@ -65,12 +90,14 @@ private struct HeuteHabitReihe: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(zeile.habit.name).font(.body).foregroundStyle(palette.text)
                         if let unter = unterzeile { Text(unter).font(.footnote.weight(.medium)).foregroundStyle(palette.text2) }
-                        HStack(spacing: 3) {
-                            woche
-                            Spacer(minLength: 2)
-                            flamme
+                        if !kompakt {
+                            HStack(spacing: 3) {
+                                woche
+                                Spacer(minLength: 2)
+                                flamme
+                            }
+                            PartnerHabitVergleich(habitID: zeile.habit.id, name: zeile.habit.name)
                         }
-                        PartnerHabitVergleich(habitID: zeile.habit.id, name: zeile.habit.name)
                     }
                     Spacer(minLength: 0)
                 }
@@ -80,12 +107,12 @@ private struct HeuteHabitReihe: View {
             .accessibilityLabel("\(zeile.habit.name), \(unterzeile ?? ""), heute \(zeile.erledigt ? "erledigt" : "offen")")
             .accessibilityHint("Öffnet die Details")
             .modifier(HabitZoomQuelle(id: zeile.habit.id, zoom: zoom))
-            PartnerHabitKopf(habitID: zeile.habit.id)
+            if !kompakt { PartnerHabitKopf(habitID: zeile.habit.id) }
             steuerung
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.xs)
-        .frame(minHeight: 64)
+        .frame(minHeight: kompakt ? 56 : 64)
         .haptik(.mehr, bei: mehr)
         .haptik(.weniger, bei: minus)
         .haptik(.auswahl, bei: umgeschaltet)

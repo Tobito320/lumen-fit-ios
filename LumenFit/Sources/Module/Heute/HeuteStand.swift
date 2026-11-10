@@ -32,6 +32,14 @@ struct HeuteStand {
     var hatTagesdaten = true
     /// Welche Bereiche die Person gewählt hat; die Karten fragen hier (`bereiche.zeigt(.gym)`), statt selbst die Einstellungen zu lesen.
     var bereiche = Einstellungen()
+    /// Lumis Satz unter der Ringplatte: bei Bereit und Ruhetag der Fortschritt (größtes Plus einer Übung in 4 Wochen), sonst `morgensatz`.
+    var lumiSatz = ""
+    /// Die Woche der Plan-Karte: heute in der Mitte, drei Tage davor und danach.
+    var planWoche: [HeutePlanTag] = []
+    /// Wochen in Folge mit mindestens einem Training (Serie der Plan-Karte).
+    var serieWochen = 0
+    /// Die heutige Einheit (für "Einheit ansehen" nach dem Training); nil ohne.
+    var einheitHeute: String?
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {

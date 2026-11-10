@@ -1,22 +1,22 @@
 import SwiftUI
 import UIKit
 
-/// Die Startseite (Aufteilung B, Bild `home-*.png`): oben Plan für heute mit Start, dann die Woche (ohne Freunde und Partner), Gewohnheiten, Gewicht,
-/// das letzte Training zum Nachlesen und unten die Ringplatte mit Lumi, die Zeile "Energie und Tagesform" und die Schritte-Karte (Besitzer 10.11.2026:
-/// Schritte als große Karte aus Apple Health, Energie als Zeile). Einsichten und Hinweise stehen als Zeile im Tab Fortschritt.
-/// Ohne Health zeigt sie statt der Ringplatte einen Leerzustand mit "Health erlauben".
+/// Der Tab Heute (neues Design 10.11.2026, Bild `dark-home.png`/`light-home.png`): großer Gruß nach Tageszeit, die Ringplatte mit Lumi (Tipp auf Schritte öffnet
+/// die Schritte-Seite) und Lumis Fortschritts-Satz, die Karte "Plan für heute" mit der Woche (heute in der Mitte, Tipp öffnet das Tag-Blatt), eine kompakte
+/// Karte der mitgezählten Gewohnheiten und die Gewicht-Karte (Eintragen, Ziel, Alle Einträge). Ohne Health steht statt der Ringplatte "Health erlauben".
+/// Umgeordnet (Lückenliste 2.1, nichts gestrichen): Tagwahl, vergangene Tage und Nachtragen im Tag-Blatt (`HeuteTagView`); Energie und Tagesform
+/// (`HeuteEnergieSeite`) und das letzte Training (`LetzteEinheitKarte`) gehören nach Fortschritt; Schritte über die Ringplatte. Ist Gym aus, trägt der
+/// alte Wochenstreifen die Woche (Tag-Blatt bleibt erreichbar).
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var modell: HeuteModell?
     @State private var blatt: HeuteBlatt?
     @State private var start = 0
     @State private var habitSeite: String?
-    @State private var tagGewechselt = 0
-    /// Verschiebung und Deckkraft des Inhalts beim Tagwechsel: er gleitet in Wischrichtung hinaus und von der Gegenseite herein.
-    @State private var versatz: CGFloat = 0
-    @State private var deckkraft = 1.0
+    @State private var einheit: String?
+    @State private var alleEintraege = false
+    @State private var sitzung: GymSitzung?
     @Namespace private var zoom
-    @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
         ScrollView {
@@ -24,10 +24,10 @@ struct HeuteTabView: View {
                 inhalt(stand, modell)
             }
         }
-        .navigationTitle("Heute")
-        .navigationBarTitleDisplayMode(.automatic)
+        .navigationTitle(modell?.stand.map { HeuteKartenLogik.gruss(stunde: $0.stunde) } ?? String(localized: "Heute"))
+        .navigationBarTitleDisplayMode(.large)
         .lumenHintergrund()
-        .sheet(item: $blatt) { blatt in
+        .sheet(item: $blatt, onDismiss: { modell?.berechne() }) { blatt in
             if let stand = modell?.stand {
                 blattInhalt(blatt, stand)
             }
@@ -35,11 +35,13 @@ struct HeuteTabView: View {
         .navigationDestination(item: $habitSeite) { id in
             HabitDetailView(habitId: id).navigationTransition(.zoom(sourceID: id, in: zoom))
         }
+        .navigationDestination(item: $einheit) { EinheitNachlesenView(sessionId: $0) }
+        .navigationDestination(isPresented: $alleEintraege) { PartnerKoerperWeiche { MessungenView() } }
         .haptik(.start, bei: start)
-        .haptik(.auswahl, bei: tagGewechselt)
         .task(id: umgebung.profil.aktiv?.id) {
             let m = modell ?? HeuteModell(umgebung: umgebung)
             modell = m
+            if sitzung == nil { sitzung = GymSitzung.von(umgebung) }
             m.berechne()
             await m.lade()
             await m.beobachte()
@@ -47,122 +49,39 @@ struct HeuteTabView: View {
     }
 
     private func inhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        // Die Hinweise-Karte (die einzige, die waagerecht wischte) steht nicht mehr auf der Startseite: die Tagwahl-Geste gilt auf der ganzen Seite.
         VStack(spacing: Abstand.l) {
-            HeuteTagLeiste(tag: s.tag, heute: Datum.text(umgebung.uhr()), blaettere: { blaettere($0) }, kalender: { blatt = .kalender },
-                           zuHeute: { springe(zu: Datum.text(umgebung.uhr())) })
-                .simultaneousGesture(tagWischen, including: .subviews)
-            VStack(spacing: Abstand.l) {
-                if s.istHeute { heuteInhalt(s, m) } else { vergangenerTag(s, m) }
+            if s.hatGesundheit {
+                Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1) { blatt = .schritte }
+            } else if s.healthGeprueft {
+                HeuteLeerKarte(modell: m)
             }
-            .id(s.tag)
-            .offset(x: versatz)
-            .opacity(deckkraft)
-            .transition(.opacity)
+            if s.bereiche.gymAn {
+                PlanKarte(plan: s.plan, woche: s.planWoche, serieWochen: s.serieWochen, laeuft: sitzung?.sessionId != nil, einheitHeute: s.einheitHeute,
+                          starte: { starte(s.plan) }, weiter: { umgebung.router.oeffne(.gym(.training)) },
+                          oeffneTag: { blatt = .tag($0) }, oeffneEinheit: { einheit = $0 })
+            } else {
+                WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
+            }
+            if !s.habits.isEmpty {
+                HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
+                            verwalte: { blatt = .habits }, zoom: zoom, kompakt: true)
+            }
+            GewichtKarte(gewicht: s.gewicht, eintragen: { blatt = .gewicht }, ziel: { blatt = .gewichtZiel }, alleEintraege: { alleEintraege = true })
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
-        .simultaneousGesture(tagWischen, including: .all)
-    }
-
-    /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).
-    private var tagWischen: some Gesture {
-        DragGesture(minimumDistance: 30).onEnded { geste in
-            guard let schritt = HeuteTagWahl.wischSchritt(breite: geste.translation.width, hoehe: geste.translation.height) else { return }
-            blaettere(schritt)
-        }
-    }
-
-    @ViewBuilder
-    private func heuteInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
-        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
-        habitsKarte(s, m)
-        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
-        if s.bereiche.gymAn, let letzte = letzteEinheit { LetzteEinheitKarte(einheit: letzte) }
-        if s.hatGesundheit {
-            Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-            // Energie und Tagesform bleiben erreichbar (nichts verschwindet ohne Wort des Besitzers), als eine Zeile statt der großen Karte.
-            ListenKarte {
-                Button { blatt = .energie } label: { ProfilListenZeile("Energie und Tagesform", symbol: "bolt.heart.fill") }
-                    .buttonStyle(.plain)
-            }
-            SchritteKarte(schritte: s.schritte) { blatt = .schritte }
-        } else if s.healthGeprueft {
-            HeuteLeerKarte(modell: m)
-        }
-    }
-
-    /// Das letzte beendete Training mit Daten; nil ohne.
-    private var letzteEinheit: LetzteEinheit? {
-        guard let training = umgebung.daten?.training else { return nil }
-        return LetzteEinheitLogik.bauen(sessions: training.sessions) { training.tag(id: $0) }
-    }
-
-    /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen
-    /// mit Absicht (sie gelten für heute). Gewohnheiten lassen sich nachtragen, weil der Speicher einen Tag entgegennimmt.
-    @ViewBuilder
-    private func vergangenerTag(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        if s.hatTagesdaten {
-            if s.hatGesundheit {
-                Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
-            }
-            if let daten = umgebung.daten { HeuteTagZeilen(tag: s.tag, daten: daten) }
-        } else {
-            LeerZustand(stimmung: .schlaeft, satz: "Keine Daten für diesen Tag.")
-        }
-        habitsKarte(s, m)
-        if s.hatTagesdaten { GewichtKarte(gewicht: s.gewicht, wiege: {}, eintragbar: false) }
-    }
-
-    private func habitsKarte(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
-                    verwalte: { blatt = .habits }, zoom: zoom)
-    }
-
-    // MARK: - Tag wählen
-
-    private func blaettere(_ tage: Int) {
-        guard let s = modell?.stand else { return }
-        springe(zu: HeuteTagWahl.schritt(s.tag, tage: tage, heute: Datum.text(umgebung.uhr())))
-    }
-
-    /// Wechselt den Tag mit Übergang: der Inhalt gleitet in Wischrichtung hinaus und von der Gegenseite herein (Feder). Reduce Motion und Stromsparmodus: Überblendung.
-    private func springe(zu tag: String) {
-        guard let m = modell, let s = m.stand else { return }
-        let richtung = HeuteTagWahl.richtung(von: s.tag, nach: HeuteTagWahl.begrenze(tag, heute: Datum.text(umgebung.uhr())))
-        guard richtung != 0 else { return }
-        tagGewechselt += 1
-        if bewegungAus {
-            withAnimation(.easeInOut(duration: 0.2)) { m.waehleTag(tag) }
-            return
-        }
-        withAnimation(.easeIn(duration: 0.12)) {
-            versatz = CGFloat(-richtung) * 40
-            deckkraft = 0
-        }
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(130))
-            versatz = CGFloat(richtung) * 40
-            m.waehleTag(tag)
-            try? await Task.sleep(for: .milliseconds(30))
-            withAnimation(Feder.weich) {
-                versatz = 0
-                deckkraft = 1
-            }
-        }
     }
 
     @ViewBuilder
     private func blattInhalt(_ blatt: HeuteBlatt, _ s: HeuteStand) -> some View {
         switch blatt {
-        case .energie: EnergieDetail(energie: s.energie) { modell?.speichereGefuehl($0) }
         case .schritte: SchritteDetailView()
-        case .gewicht: NavigationStack { GewichtEintragenView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Schließen") { self.blatt = nil } } } }
+        case .gewicht:
+            NavigationStack { GewichtEintragenView().toolbar { ToolbarItem(placement: .cancellationAction) { Button("Schließen") { self.blatt = nil } } } }
+                .presentationDetents([.medium, .large])
+        case .gewichtZiel: HeuteGewichtZielBlatt(gewicht: s.gewicht) { modell?.setzeGewichtsziel($0) }
         case .habits: HabitVerwaltungView()
         case .tag(let tag): HeuteTagView(tag: tag)
-        case .kalender:
-            HeuteKalenderBlatt(tag: s.tag, heute: Datum.text(umgebung.uhr())) { springe(zu: $0) }
         }
     }
 
@@ -179,17 +98,39 @@ struct HeuteTabView: View {
 
 /// Welches Blatt über dem Heute-Tab liegt.
 enum HeuteBlatt: Identifiable {
-    case energie, schritte, gewicht, habits, kalender
+    case schritte, gewicht, gewichtZiel, habits
     case tag(String)
 
     var id: String {
         switch self {
-        case .energie: "energie"
         case .schritte: "schritte"
         case .gewicht: "gewicht"
+        case .gewichtZiel: "gewichtZiel"
         case .habits: "habits"
-        case .kalender: "kalender"
         case .tag(let tag): "tag-\(tag)"
+        }
+    }
+}
+
+/// Energie und Tagesform als eigene Seite für den Tab Fortschritt (die Zeile auf Heute ist umgezogen, Lückenliste 2.1): rechnet mit einem eigenen
+/// `HeuteModell` für heute und speichert das Gefühl dort. Aufruf: `.sheet { HeuteEnergieSeite() }` (`EnergieDetail` bringt seinen eigenen NavigationStack mit).
+struct HeuteEnergieSeite: View {
+    @Environment(AppUmgebung.self) private var umgebung
+    @State private var modell: HeuteModell?
+
+    var body: some View {
+        Group {
+            if let modell, let s = modell.stand {
+                EnergieDetail(energie: s.energie) { modell.speichereGefuehl($0) }
+            } else {
+                ProgressView()
+            }
+        }
+        .task {
+            let m = modell ?? HeuteModell(umgebung: umgebung)
+            modell = m
+            m.berechne()
+            await m.beobachte()
         }
     }
 }

@@ -71,6 +71,11 @@ enum HeuteFormat {
         .number.precision(.fractionLength(1)).locale(Locale(identifier: "de_DE"))
     }
 
+    /// Ziele: 80 oder 80,5.
+    static func zielKilo() -> FloatingPointFormatStyle<Double> {
+        .number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE"))
+    }
+
     static func ganz() -> FloatingPointFormatStyle<Double> {
         .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))
     }
