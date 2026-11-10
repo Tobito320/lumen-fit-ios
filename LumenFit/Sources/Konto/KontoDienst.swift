@@ -64,8 +64,11 @@ struct KontoStand: Codable, Equatable, Sendable {
     var essenExportAnzahl = 0
     var essenExportZiele: String?
     var essenExportErledigt = false
+    /// Das Profil, dem dieses Gerätekonto gehört (`ProfilID.rawValue`): das aktive beim ersten Abgleich. Konto, Lovea-Person, Export-Zähler und Crew sind je Gerät,
+    /// die Daten je Profil; mit einem zweiten Profil würden sonst dessen Essen-Ops als die Lovea-Person des Kontos gesendet und die Crew bekäme seine Werte.
+    var kontoProfil: String?
 
-    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen, loveaPerson, essenExportAn, essenExportAnzahl, essenExportZiele, essenExportErledigt }
+    enum CodingKeys: String, CodingKey { case config, loveaErlaubt, loveaImportErledigt, importMeldungOffen, loveaPerson, essenExportAn, essenExportAnzahl, essenExportZiele, essenExportErledigt, kontoProfil }
 
     init() {}
 
@@ -80,6 +83,7 @@ struct KontoStand: Codable, Equatable, Sendable {
         essenExportAnzahl = max(0, (try? c.decodeIfPresent(Int.self, forKey: .essenExportAnzahl)) ?? 0)
         essenExportZiele = (try? c.decodeIfPresent(String.self, forKey: .essenExportZiele)) ?? nil
         essenExportErledigt = (try? c.decodeIfPresent(Bool.self, forKey: .essenExportErledigt)) ?? false
+        kontoProfil = (try? c.decodeIfPresent(String.self, forKey: .kontoProfil)) ?? nil
     }
 }
 
@@ -307,6 +311,27 @@ final class KontoDienst {
         struct Paket: Encodable { var ops: [Op] }
         guard let k = registrierteKennung(), let koerper = try? JSONEncoder().encode(Paket(ops: ops)) else { return nil }
         return await sendeMitKonto("/lovea/ops", methode: "POST", body: koerper, kennung: k)?.status
+    }
+
+    /// Gehört das Konto diesem Profil? Das erste Profil, das fragt (der Abgleich beim Start fragt mit dem aktiven), wird gemerkt; jedes andere bekommt false.
+    @discardableResult
+    func gehoertZuProfil(_ id: ProfilID) -> Bool {
+        if stand.kontoProfil == nil {
+            stand.kontoProfil = id.rawValue
+            sichere()
+        }
+        return stand.kontoProfil == id.rawValue
+    }
+
+    /// Der Abgleich beim Start: ist das Profil des Kontos gelöscht, übernimmt das aktive das Konto und der Export-Zähler beginnt von vorn
+    /// (er zählte Ops des alten Profils, sonst übersprünge das neue seine ersten). Sonst merkt sich das Konto das aktive Profil nur, wenn es noch keins hat.
+    func profilZuordnen(aktiv: ProfilID, vorhanden: [ProfilID]) {
+        if let alt = stand.kontoProfil, !vorhanden.contains(where: { $0.rawValue == alt }) {
+            stand.kontoProfil = nil
+            stand.essenExportAnzahl = 0
+            stand.essenExportZiele = nil
+        }
+        gehoertZuProfil(aktiv)
     }
 
     /// Merkt, was gesendet ist: so viele Essen-Ops von vorn, und der Stand der Ziele.

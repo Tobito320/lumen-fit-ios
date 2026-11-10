@@ -76,8 +76,11 @@ enum FortschrittLogik {
     // MARK: Zählregeln
 
     /// Beendet, oder ohne Ende von einem früheren Tag (Auschecken vergessen): eine Einheit von heute ohne Ende läuft noch und zählt nicht.
-    static func beendet(_ s: GymSession, heute: String) -> Bool {
-        s.ende != nil || Datum.text(s.start) < heute
+    /// Mit `jetzt` gilt auch eine Einheit von gestern als laufend, solange sie jünger als `TrainingLogik.langNach` ist (Start 23:40, jetzt 00:30).
+    static func beendet(_ s: GymSession, heute: String, jetzt: Date? = nil) -> Bool {
+        if s.ende != nil { return true }
+        if let jetzt, TrainingLogik.laufend(s, jetzt: jetzt) { return false }
+        return Datum.text(s.start) < heute
     }
 
     /// Die Arbeitssätze eines Laufs: abgehakt, ohne Aufwärmen.
@@ -100,12 +103,12 @@ enum FortschrittLogik {
 
     // MARK: Woche gegen Schnitt
 
-    static func vergleich(_ sessions: [GymSession], plan: TrainingsPlan, heute: String,
+    static func vergleich(_ sessions: [GymSession], plan: TrainingsPlan, heute: String, jetzt: Date? = nil,
                           katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> TrainingsWochenVergleich {
         let montag = Datum.montagDerWoche(heute)
         let davor = Datum.addTage(montag, -28)
         var jetzt = Summe(), schnitt = Summe(), einheiten = 0, einheitenDavor = 0
-        for s in sessions where beendet(s, heute: heute) {
+        for s in sessions where beendet(s, heute: heute, jetzt: jetzt) {
             let tag = Datum.text(s.start)
             if tag >= montag, tag <= heute {
                 jetzt.add(s)
@@ -172,11 +175,11 @@ enum FortschrittLogik {
     // MARK: Wochen fürs Diagramm
 
     /// Die letzten `anzahl` Wochen bis zur Woche von `heute`, älteste zuerst; Wochen ohne Training mit 0.
-    static func wochen(_ sessions: [GymSession], heute: String, art: StatistikArt, anzahl: Int = FortschrittLogik.wochenAnzahl) -> [WochenWert] {
+    static func wochen(_ sessions: [GymSession], heute: String, jetzt: Date? = nil, art: StatistikArt, anzahl: Int = FortschrittLogik.wochenAnzahl) -> [WochenWert] {
         let montag = Datum.montagDerWoche(heute)
         let n = max(anzahl, 1)
         var summen: [String: Summe] = [:]
-        for s in sessions where beendet(s, heute: heute) { summen[Datum.montagDerWoche(Datum.text(s.start)), default: Summe()].add(s) }
+        for s in sessions where beendet(s, heute: heute, jetzt: jetzt) { summen[Datum.montagDerWoche(Datum.text(s.start)), default: Summe()].add(s) }
         return (0..<n).map { i in
             let m = Datum.addTage(montag, -7 * (n - 1 - i))
             let s = summen[m] ?? Summe()
@@ -188,10 +191,10 @@ enum FortschrittLogik {
 
     /// Beendete Einheiten je Woche, neueste Woche zuerst, in der Woche neueste zuerst. Titel: "Diese Woche", "Letzte Woche", sonst "KW 44".
     /// shortcut: ohne Jahr im Titel, bei mehr als einem Jahr Verlauf kann "KW 44" zweimal vorkommen; dann Jahr ergänzen.
-    static func nachWochen(_ sessions: [GymSession], heute: String) -> [(titel: String, sessions: [GymSession])] {
+    static func nachWochen(_ sessions: [GymSession], heute: String, jetzt: Date? = nil) -> [(titel: String, sessions: [GymSession])] {
         let montag = Datum.montagDerWoche(heute)
         let letzte = Datum.addTage(montag, -7)
-        let gruppen = Dictionary(grouping: sessions.filter { beendet($0, heute: heute) }.sorted { $0.start > $1.start }) {
+        let gruppen = Dictionary(grouping: sessions.filter { beendet($0, heute: heute, jetzt: jetzt) }.sorted { $0.start > $1.start }) {
             Datum.montagDerWoche(Datum.text($0.start))
         }
         return gruppen.keys.sorted(by: >).map { m in
@@ -256,9 +259,9 @@ enum FortschrittLogik {
         return "±0 kg"
     }
 
-    /// "12,9 t" ab 10 000 kg, sonst "9.690 kg".
+    /// "12,9 t" ab 10 000 kg, sonst "9.690 kg". Die Grenze gilt nach dem Runden (9999,6 kg wird "10,0 t", nicht "10.000 kg").
     static func volumenText(_ kg: Double) -> String {
-        if kg >= 10_000 { return "\((kg / 1000).formatted(.number.precision(.fractionLength(1)).locale(deutsch))) t" }
+        if kg.rounded() >= 10_000 { return "\((kg / 1000).formatted(.number.precision(.fractionLength(1)).locale(deutsch))) t" }
         return "\(kg.formatted(.number.precision(.fractionLength(0)).locale(deutsch))) kg"
     }
 }

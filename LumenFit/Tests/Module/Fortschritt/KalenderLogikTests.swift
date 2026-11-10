@@ -91,4 +91,41 @@ final class KalenderLogikTests: XCTestCase {
         XCTAssertEqual(KalenderLogik.sprechtext(try tag("2026-11-10", partner: true)), "10. November, kein Training, Partner geplant")
         XCTAssertEqual(KalenderLogik.sprechtext(try tag("2026-11-12")), "12. November, geplant: Push")
     }
+
+    // MARK: Raster in Sonderfällen
+
+    private func raster(_ monat: String) -> [String] {
+        KalenderLogik.tage(monat: monat, sessions: [], plan: plan, partnerTage: [], partnerPlan: nil, heute: "2026-11-09").map(\.datum)
+    }
+
+    /// Ganze Wochen von Montag bis Sonntag, Tag für Tag um genau einen Kalendertag weiter, kein Tag doppelt, alle Tage des Monats drin.
+    private func pruefeRaster(_ monat: String, tageImMonat: Int, erster: String, letzter: String, file: StaticString = #filePath, line: UInt = #line) {
+        let alle = raster(monat)
+        XCTAssertEqual(alle.count % 7, 0, "\(monat): ganze Wochen", file: file, line: line)
+        XCTAssertEqual(alle.first, erster, monat, file: file, line: line)
+        XCTAssertEqual(alle.last, letzter, monat, file: file, line: line)
+        XCTAssertEqual(Datum.wochentag(alle.first ?? ""), 1, "\(monat): beginnt am Montag", file: file, line: line)
+        XCTAssertEqual(Datum.wochentag(alle.last ?? ""), 7, "\(monat): endet am Sonntag", file: file, line: line)
+        XCTAssertEqual(Set(alle).count, alle.count, "\(monat): kein Tag doppelt", file: file, line: line)
+        for (a, b) in zip(alle, alle.dropFirst()) {
+            XCTAssertEqual(Datum.addTage(a, 1), b, "\(monat): Lücke nach \(a)", file: file, line: line)
+        }
+        XCTAssertEqual(alle.filter { $0.hasPrefix(monat) }.count, tageImMonat, monat, file: file, line: line)
+    }
+
+    func testRasterOktober2026MitZeitumstellung() {
+        // Die Uhr wird am 25.10. zurückgestellt (Tag mit 25 Stunden): das Raster darf keinen Tag verdoppeln oder auslassen.
+        pruefeRaster("2026-10", tageImMonat: 31, erster: "2026-09-28", letzter: "2026-11-01")
+        XCTAssertEqual(raster("2026-10").filter { $0 == "2026-10-25" }.count, 1)
+    }
+
+    func testRasterMonatMitMontagAlsErstemUndSonntagAlsLetztem() {
+        pruefeRaster("2026-06", tageImMonat: 30, erster: "2026-06-01", letzter: "2026-07-05")   // der 1. Juni ist ein Montag
+        pruefeRaster("2026-05", tageImMonat: 31, erster: "2026-04-27", letzter: "2026-05-31")   // der 31. Mai ist ein Sonntag
+    }
+
+    func testRasterFebruar2028Schaltjahr() {
+        pruefeRaster("2028-02", tageImMonat: 29, erster: "2028-01-31", letzter: "2028-03-05")
+        pruefeRaster("2026-03", tageImMonat: 31, erster: "2026-02-23", letzter: "2026-04-05")   // Zeitumstellung am 29.03.
+    }
 }

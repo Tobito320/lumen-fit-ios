@@ -123,7 +123,8 @@ final class CrewDienst {
     }
 
     private func werteMelden(_ k: KontoKennung) async {
-        guard let a = antwort else { return }
+        // Die Crew gehört dem Konto: nur die Einheiten seines Profils zählen, nicht die eines zweiten Profils auf demselben Gerät.
+        guard let a = antwort, let profil = umgebung.daten?.profil, umgebung.konto.gehoertZuProfil(profil) else { return }
         let werte = CrewLogik.zuMelden(a, sessions: sessions, jetzt: umgebung.uhr())
         guard !werte.isEmpty, let body = try? JSONEncoder().encode(["werte": werte]),
               let r = await umgebung.konto.sendeMitKonto("/freunde/werte", methode: "PUT", body: body, kennung: k), r.status == 200 else { return }
@@ -136,10 +137,11 @@ final class CrewDienst {
         }
     }
 
-    /// Die Warteschlange der Reihe nach senden; ohne Netz bleibt der Rest liegen. Jede Antwort des Servers (auch eine Ablehnung) erledigt den Auftrag.
+    /// Die Warteschlange der Reihe nach senden; ohne Netz bleibt der Rest liegen. Eine Ablehnung (4xx) erledigt den Auftrag; bei 429 und 5xx bleibt er liegen
+    /// (sonst ginge ein Annehmen oder eine Reaktion bei einem Serverfehler verloren), und nichts dahinter überholt ihn.
     private func ausstehendSenden(_ k: KontoKennung) async {
         while let a = ausstehend.first {
-            guard await umgebung.konto.sendeMitKonto(a.pfad, methode: a.methode, body: a.koerper, kennung: k) != nil else { return }
+            guard let r = await umgebung.konto.sendeMitKonto(a.pfad, methode: a.methode, body: a.koerper, kennung: k), r.status != 429, r.status < 500 else { return }
             ausstehend.removeFirst()
             speichereAusstehend()
         }

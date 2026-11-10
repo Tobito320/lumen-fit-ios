@@ -30,7 +30,7 @@ enum LoveaEssenExport {
     /// oder der Weg fehlte (Netz, Server ohne Export). Bricht ein Paket ab, bleibt der Rest für den nächsten Abgleich.
     @MainActor @discardableResult
     static func starteWennOffen(konto: KontoDienst, daten: DatenSatz?, jetzt: Date) async -> Int? {
-        guard konto.essenExportAn, let daten else { return nil }
+        guard konto.essenExportAn, let daten, konto.gehoertZuProfil(daten.profil) else { return nil }   // der Zähler gehört dem Konto, nicht dem aktiven Profil
         let alle = daten.raum.ops(arten: arten)
         var gesendet = konto.essenExportAnzahl
         var zaehler = 0

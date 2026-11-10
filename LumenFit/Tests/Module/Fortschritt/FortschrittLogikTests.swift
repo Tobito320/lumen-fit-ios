@@ -108,6 +108,56 @@ final class FortschrittLogikTests: XCTestCase {
         XCTAssertEqual(FortschrittLogik.nachWochen(s, heute: heute).flatMap(\.sessions).map(\.id), ["gestern"])
     }
 
+    func testEinheitUeberMitternachtOhneEndeLaeuftNochAberVergesseneZaehlt() {
+        // Start gestern 23:40, jetzt 00:30: läuft noch (weniger als 3 h her). Eine von gestern Abend, die jetzt 4 h alt ist, wurde vergessen und zählt.
+        let nachts = GymSession(id: "nacht", tag: nil, start: Datum.datum("2026-11-10").addingTimeInterval(23 * 3600 + 40 * 60), ende: nil,
+                                laeufe: [lauf("bank", [satz(50, 10)])])
+        let jetzt = Datum.datum("2026-11-11").addingTimeInterval(30 * 60)
+        XCTAssertFalse(FortschrittLogik.beendet(nachts, heute: "2026-11-11", jetzt: jetzt))
+        XCTAssertEqual(FortschrittLogik.vergleich([nachts], plan: .leer, heute: "2026-11-11", jetzt: jetzt, katalog: katalog).einheiten, 0)
+        XCTAssertTrue(FortschrittLogik.nachWochen([nachts], heute: "2026-11-11", jetzt: jetzt).isEmpty)
+        XCTAssertEqual(FortschrittLogik.wochen([nachts], heute: "2026-11-11", jetzt: jetzt, art: .volumen).map(\.wert).reduce(0, +), 0)
+        XCTAssertTrue(FortschrittLogik.beendet(nachts, heute: "2026-11-11", jetzt: jetzt.addingTimeInterval(4 * 3600)), "vergessen: über 3 h her")
+        var fertig = nachts
+        fertig.ende = nachts.start.addingTimeInterval(40 * 60)
+        XCTAssertTrue(FortschrittLogik.beendet(fertig, heute: "2026-11-11", jetzt: jetzt), "mit Ende immer beendet")
+    }
+
+    func testWochengrenzeSonntag2330UndMontag0030() {
+        // Sonntag 08.11. 23:30 gehört zur Woche vom 02.11., Montag 09.11. 00:30 zur neuen Woche vom 09.11.
+        func nacht(_ id: String, _ tag: String, stunde: Double, _ s: PlanSatz) -> GymSession {
+            let start = Datum.datum(tag).addingTimeInterval(stunde * 3600)
+            return GymSession(id: id, tag: nil, start: start, ende: start.addingTimeInterval(1800), laeufe: [lauf("bank", [s])])
+        }
+        let s = [nacht("so", "2026-11-08", stunde: 23.5, satz(100, 10)), nacht("mo", "2026-11-09", stunde: 0.5, satz(50, 10))]   // 1000 kg, 500 kg
+
+        let amSonntag = FortschrittLogik.vergleich(s, plan: .leer, heute: "2026-11-08", katalog: katalog)
+        XCTAssertEqual(amSonntag.einheiten, 1, "der Montag liegt noch in der Zukunft")
+        XCTAssertEqual(amSonntag.volumen, 1000, accuracy: 0.001)
+        let amMontag = FortschrittLogik.vergleich(s, plan: .leer, heute: "2026-11-09", katalog: katalog)
+        XCTAssertEqual(amMontag.einheiten, 1, "neue Woche: nur die Einheit von Montag 00:30")
+        XCTAssertEqual(amMontag.volumen, 500, accuracy: 0.001)
+        XCTAssertEqual(amMontag.einheitenSchnitt, 0.25, accuracy: 0.001, "die Einheit vom Sonntag steht im Schnitt der Wochen davor")
+
+        XCTAssertEqual(FortschrittLogik.wochen(s, heute: "2026-11-08", art: .volumen).suffix(2).map(\.wert), [0, 1000], "am Sonntag zählt die Woche vom 02.11. noch")
+        let wochen = FortschrittLogik.wochen(s, heute: "2026-11-09", art: .volumen)
+        XCTAssertEqual(wochen.suffix(2).map(\.montag), ["2026-11-02", "2026-11-09"])
+        XCTAssertEqual(wochen.suffix(2).map(\.wert), [1000, 500])
+        XCTAssertEqual(FortschrittLogik.nachWochen(s, heute: "2026-11-09").map { $0.sessions.map(\.id) }, [["mo"], ["so"]])
+    }
+
+    func testAchtWochenMontageUeberDieZeitumstellungImAbstandVonSiebenTagen() {
+        // Die Uhr wird am 25.10.2026 zurückgestellt: eine Woche hat dort 7 Tage und eine Stunde. Gezählt wird nach Kalendertagen.
+        let wochen = FortschrittLogik.wochen([], heute: "2026-11-09", art: .dauer)
+        XCTAssertEqual(wochen.count, 8)
+        XCTAssertEqual(wochen.first?.montag, "2026-09-21")
+        XCTAssertTrue(wochen.allSatisfy { Datum.wochentag($0.montag) == 1 })
+        for (a, b) in zip(wochen, wochen.dropFirst()) {
+            XCTAssertEqual(Datum.tageZwischen(a.montag, b.montag), 7, "\(a.montag) bis \(b.montag)")
+        }
+        XCTAssertTrue(wochen.map(\.montag).contains("2026-10-19") && wochen.map(\.montag).contains("2026-10-26"))
+    }
+
     // MARK: Wochen fürs Diagramm
 
     func testWochenLiefernAchtWochenAeltesteZuerstMitNullen() {
@@ -175,6 +225,20 @@ final class FortschrittLogikTests: XCTestCase {
         let heuteGemacht = [einheit("a", "2026-11-11", [lauf("bank", [satz(50, 5)])])]
         XCTAssertEqual(FortschrittLogik.geplantRest(plan(tage), sessions: heuteGemacht, heute: heute), 1)
         XCTAssertEqual(FortschrittLogik.geplantRest(.leer, sessions: [], heute: heute), 0)
+    }
+
+    func testGeplantRestAmSonntagZaehltNurHeuteUndKeinenMontag() {
+        let tage = [TrainingsTag(id: "t1", name: "A", wochentage: [1, 7], uebungen: [])]
+        XCTAssertEqual(FortschrittLogik.geplantRest(plan(tage), sessions: [], heute: "2026-11-08"), 1, "Sonntag selbst, der nächste Montag gehört zur neuen Woche")
+        let gemacht = [einheit("a", "2026-11-08", [lauf("bank", [satz(50, 5)])])]
+        XCTAssertEqual(FortschrittLogik.geplantRest(plan(tage), sessions: gemacht, heute: "2026-11-08"), 0)
+        XCTAssertEqual(FortschrittLogik.geplantRest(plan(tage), sessions: gemacht, heute: "2026-11-09"), 2, "am Montag: Montag und Sonntag stehen noch an")
+    }
+
+    func testVolumenTextGrenzeNachDemRunden() {
+        XCTAssertEqual(FortschrittLogik.volumenText(9999.4), "9.999 kg")
+        XCTAssertEqual(FortschrittLogik.volumenText(9999.6), "10,0 t", "nicht \"10.000 kg\" neben \"10,0 t\"")
+        XCTAssertEqual(FortschrittLogik.volumenText(10_000), "10,0 t")
     }
 
     func testVolumenText() {

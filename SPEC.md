@@ -62,7 +62,7 @@ Nutzer: Ahmed, seine Partnerin, Kollegen (mehrere Profile, auch mehrere auf eine
 Stand 10.11.2026 (Aufteilung B, `docs/superpowers/specs/2026-11-09-lumen-fit-hevy-design.md`): fünf Tabs Startseite, Training (mit Plan, Kalender, Übungen), Fortschritt, Freunde, Profil ganz rechts. Essen und Schlaf stehen bis zum Umzug (Essen zu Lovea, Schlaf zu Lumen Alarm) als Zeilen oben im Profil. Die frühere Zuordnung (`docs/research/design.md` Abschnitt 11) gilt nicht mehr für Tabs und Profil.
 
 - **Heute:** Ringplatte mit Lumen-Bögen, Bereit-Score, Lumis Morgensatz, Plan-Karte, Energie-Bank, Gewohnheiten mit Serie, Gewicht, Schritte, Hinweise, Wochenstreifen, Partner-Karte (nur verbunden).
-- **Gym:** Training starten, Satz-Logging mit "Letztes Mal", Satztypen, RPE, Pausen-Timer, Live-Rekord, Scheiben- und Aufwärmrechner, Übungskatalog (1.333), Splits und Wochenplan, Supersets, Cardio, Studio-Besuche, Segment "Fortschritt".
+- **Gym:** Training starten, Satz-Logging mit "Letztes Mal", Satztypen, RPE, Pausen-Timer, Live-Rekord, Aufwärmsätze im Satz-Vorschlag (kein Scheibenrechner und kein Aufwärm-Eintrag im Übungsmenü mehr, Wunsch vom 09.11.2026), Übungskatalog (1.333), Splits und Wochenplan, Supersets, Cardio, Studio-Besuche, Segment "Fortschritt".
 - **Fortschritt** (Segment in Gym, Seiten über Heute): Kraftkurve, Sätze je Muskel, Erholungs-Silhouette, Vorschlag fürs nächste Training, Konstanz-Raster, Gewichtsverlauf, Meilensteine, Lumi-Stufen, Rückblicke, FitPassport.
 - **Essen:** Tagebuch, Barcode-Scan, BLS offline, Open Food Facts, Makro-Donut, Halal- und Zucker-Ampel, Favoriten, Fasten, Etikett-Foto, Ziele, Wochenanalyse.
 - **Schlaf:** letzte Nacht, Phasen, Schlafschuld, HRV im eigenen Bereich, Werte-Chips, Woche, Regelmäßigkeit, Quellenwahl, Partner-Zeile (nur verbunden).
@@ -1037,7 +1037,7 @@ Bauordnung: Grundgerüst, danach alle neun Module gleichzeitig in eigenen Worktr
 2. Profil anlegen (Name, Passwort), App neu starten und per TestFlight aktualisieren: kein Anmeldebildschirm. Nach Löschen und Neuinstallation erkennt die App das Profil und bietet die Datensicherung an (am Gerät zu prüfen).
 3. Alle 100 Ideen sind eingebaut oder in `tasks/todo.md` mit Grund als "nicht umsetzbar" markiert; keine fehlt stumm.
 4. Fünf Themes, hell und dunkel, wechseln sofort; `FarbenKontrastTests` grün; Standard ist Monochrom.
-5. Gym: Training starten, Satz mit "Letztes Mal", Satztyp, RPE, Pause startet von selbst, Rekord-Toast, Scheibenrechner; Live Activity mit "Satz fertig".
+5. Gym: Training starten, Satz mit "Letztes Mal", Satztyp, RPE, Pause startet von selbst, Rekord-Toast; Live Activity mit "Satz fertig".
 6. Essen: Scan oder Texteingabe findet ein Lebensmittel aus BLS oder Open Food Facts, Ampel mit Symbol und Text, Quellen-Seite nennt BLS (CC BY 4.0) und Open Food Facts (ODbL).
 7. Schlaf und Heute zeigen Werte aus Health, im Leerzustand eine Handlung; Diagramme haben `accessibilityChartDescriptor` und eine Kernzeile.
 8. Coach antwortet mit beiden Motoren; die Ton-Tests (Länge, "du", keine Diagnose, kein "Als KI") sind grün.

@@ -114,6 +114,7 @@ struct AppRootView: View {
     /// ohne Schalter an und der einmalige Import startet von selbst; sagt er (nicht nur der gemerkte Stand) "nicht freigegeben", geht ein alter Schalter einmal aus.
     private func kontoAbgleichen() async {
         let konto = umgebung.konto
+        if let aktiv = umgebung.profil.aktiv { konto.profilZuordnen(aktiv: aktiv.id, vorhanden: umgebung.profil.profile.map(\.id)) }   // das Konto merkt sich sein Profil
         await konto.aktualisiere(profilName: umgebung.profil.aktiv?.name)
         if let einstellungen = umgebung.daten?.einstellungen {
             let verbunden = einstellungen.werte.loveaVerbunden

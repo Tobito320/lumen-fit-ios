@@ -68,4 +68,21 @@ final class LetzteEinheitKarteTests: XCTestCase {
         XCTAssertEqual(k?.saetze, 0)
         XCTAssertEqual(k?.dauer, "30 min")
     }
+
+    func testEinheitUeberMitternachtZeigtBeideUhrzeitenUndPositiveDauer() {
+        let start = Datum.datum("2026-09-23").addingTimeInterval(23 * 3600 + 40 * 60)
+        let s = GymSession(id: "nacht", tag: "t", start: start, ende: start.addingTimeInterval(40 * 60), laeufe: [lauf("a", [satz(8, 60)])])
+        let k = bauen([s])
+        XCTAssertEqual(k?.kopfzeile, "Mittwoch, 23. September, 23:40–00:20", "der Tag ist der des Starts")
+        XCTAssertEqual(k?.dauer, "40 min")
+    }
+
+    func testDauerWirdNieNegativBeiKaputtemEnde() {
+        // Ein Ende vor dem Start (schlechte Daten, falsch eingetragene Uhrzeit) darf nicht "-20 min" ergeben.
+        let s = GymSession(id: "kaputt", tag: "t", start: t0, ende: t0.addingTimeInterval(-20 * 60), laeufe: [lauf("a", [satz(8, 60)])])
+        let k = bauen([s])
+        XCTAssertEqual(k?.dauer, "0 min")
+        XCTAssertFalse(k?.dauer.contains("-") ?? true)
+        XCTAssertFalse(k?.dauer.contains("−") ?? true)
+    }
 }
