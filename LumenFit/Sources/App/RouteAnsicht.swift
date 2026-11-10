@@ -18,7 +18,8 @@ struct RouteAnsicht: View {
         case .gewichtEintragen: GewichtEintragenView()
         case .uebung(let id): UebungDetailView(id: id)
         case .freund(let daten):
-            if let t = VerbindungenLogik.token(aus: daten) { VerbindungScanBlatt(token: t) } else { FreundeView(daten: daten) }
+            // Profil und Einführung: auch ein 8-stelliger Code (aus der Einführung) öffnet "Verbinden", nicht nur ein Token.
+            if let t = VerbindungenLogik.einladung(aus: daten) { VerbindungScanBlatt(token: t) } else { FreundeView(daten: daten) }
         }
     }
 

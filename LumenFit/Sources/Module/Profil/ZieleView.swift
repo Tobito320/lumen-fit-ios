@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Ziele und Körperdaten an einem Ort (Idee 76 und 77): Schritte, Kalorien, Protein, Schlaf, Gym-Tage, Wasser und Gewichtsziel, dazu Größe,
+/// Ziele und Körperdaten an einem Ort (Idee 76 und 77, eine Ebene unter Präferenzen): Schritte, Kalorien, Protein, Schlaf, Wasser und Gewichtsziel
+/// (die Gym-Tage stehen seit 10.11.2026 unter Präferenzen > Tage pro Woche), dazu Größe,
 /// Geburtsjahr, Geschlecht (optional, nur für die Formeln) und die Einheit kg oder lb. Vorschläge rechnen aus den Körperdaten (Mifflin-St Jeor).
 struct ZieleView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -63,7 +64,6 @@ struct ZieleView: View {
             zeile("Kalorien", "\(ziele.kalorien) kcal", $ziele.kalorien, 1_000...6_000, schritt: 50)
             zeile("Protein", "\(ziele.proteinGramm) g", $ziele.proteinGramm, 20...350, schritt: 5)
             zeile("Schlaf", schlafText(ziele.schlafMinuten), $ziele.schlafMinuten, 240...720, schritt: 15)
-            zeile("Gym-Tage pro Woche", "\(ziele.gymTageProWoche)", $ziele.gymTageProWoche, 1...7, schritt: 1)
             zeile("Wasser", "\(ziele.wasserMl) ml", $ziele.wasserMl, 500...6_000, schritt: 100)
             Toggle(isOn: Binding(get: { ziele.gewichtKg != nil }, set: { an in ziele.gewichtKg = an ? (gewichtKg ?? 75).rounded() : nil })) {
                 ProfilListenZeile("Gewichtsziel")
