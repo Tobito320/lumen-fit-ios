@@ -84,7 +84,7 @@ struct HeuteKalenderBlatt: View {
             DatePicker("Tag", selection: $auswahl, in: Datum.datum(HeuteTagWahl.aeltester(heute: heute))...Datum.datum(heute), displayedComponents: .date)
                 .datePickerStyle(.graphical)
                 .environment(\.calendar, Datum.kalender)
-                .environment(\.locale, Locale(identifier: "de_DE"))
+                .environment(\.locale, Datum.anzeigeLocale)
                 .padding()
                 .navigationTitle("Tag wählen")
                 .navigationBarTitleDisplayMode(.inline)

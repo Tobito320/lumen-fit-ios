@@ -79,7 +79,7 @@ struct GewichtEintragenView: View {
     private func tagWahl(_ werte: [String: Int]) -> some View {
         DatePicker("Tag", selection: Binding(get: { Datum.datum(tag.isEmpty ? Datum.text(umgebung.uhr()) : tag) }, set: { tag = Datum.text($0) }),
                    in: ...umgebung.uhr(), displayedComponents: .date)
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Datum.anzeigeLocale)
             .environment(\.timeZone, Datum.zone)
             .labelsHidden()
             .font(.subheadline)

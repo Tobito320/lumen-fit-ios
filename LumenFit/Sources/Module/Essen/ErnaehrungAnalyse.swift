@@ -120,7 +120,7 @@ enum AnalyseLogik {
             let teile = bucket.start.split(separator: "-")
             return teile.count == 3 ? "\(teile[2]).\(teile[1])." : bucket.start
         case .monat:
-            let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+            let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
             return Datum.datum(bucket.start + "-01").formatted(stil.month(.abbreviated).year(.twoDigits))
         }
     }

@@ -31,7 +31,7 @@ struct AppRootView: View {
             .toggleStyle(.lumenSchalter)
             .environment(\.haptikAn, einstellungen.haptik)
             // Auf Deutsch feste deutsche Zahlen und Daten (im Simulator sonst "1,224" statt "1.224"); sonst folgt alles dem Gerät, auch die Texte.
-            .environment(\.locale, Bundle.main.preferredLocalizations.first == "de" ? Locale(identifier: "de_DE") : .current)
+            .environment(\.locale, Datum.anzeigeLocale)
             .task(id: umgebung.profil.aktiv?.id) {
                 nutzungAbgleichen()
                 if umgebung.profil.hatProfil {

@@ -623,7 +623,7 @@ enum TagesformRechnung {
     /// Ganzzahl mit deutschem Tausenderpunkt.
     private static func zahl(_ x: Double) -> String {
         guard x.isFinite, abs(x) < 1e12 else { return "0" }
-        return Int(x.rounded()).formatted(.number.locale(Locale(identifier: "de_DE")))
+        return Int(x.rounded()).formatted(.number.locale(Datum.anzeigeLocale))
     }
 
     /// "6:10 h".

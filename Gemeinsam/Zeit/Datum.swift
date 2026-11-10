@@ -5,6 +5,11 @@ import Foundation
 enum Datum {
     nonisolated static let zone: TimeZone = TimeZone(identifier: "Europe/Berlin") ?? .current
 
+    /// Locale für Zahlen und Daten in Texten: auf Deutsch fest de_DE (Simulator sonst "1,224"), sonst das Gerät.
+    nonisolated static var anzeigeLocale: Locale {
+        Bundle.main.preferredLocalizations.first == "de" ? Locale(identifier: "de_DE") : .current
+    }
+
     nonisolated static let kalender: Calendar = {
         var kalender = Calendar(identifier: .gregorian)
         kalender.timeZone = zone
@@ -31,7 +36,7 @@ enum Datum {
     /// „Mittwoch, 23. September" für Oberfläche und VoiceOver. FormatStyle ist ein Sendable-Wert,
     /// anders als DateFormatter, und wird vom System gecacht.
     static func anzeige(_ tag: String) -> String {
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: kalender, timeZone: kalender.timeZone)
+        let stil = Date.FormatStyle(locale: anzeigeLocale, calendar: kalender, timeZone: kalender.timeZone)
         return datum(tag).formatted(stil.weekday(.wide).day().month(.wide))
     }
 

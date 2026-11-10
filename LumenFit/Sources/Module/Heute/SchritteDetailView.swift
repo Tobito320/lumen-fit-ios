@@ -187,7 +187,7 @@ struct SchritteDetailView: View {
             .chartYScale(domain: 0...Double(max(s.hoechster, 1)) * 1.3)
             .chartXSelection(value: $roh)
             .onChange(of: roh) { _, neu in if let neu { waehlen(Datum.text(neu), heute: heute) } }
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Datum.anzeigeLocale)
             .frame(height: 190)
             .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
                 titel: String(localized: "Schritte \(s.titel)"), zusammenfassung: s.schnitt.map { String(localized: "Im Schnitt \(HeuteQuellen.zahl($0)) Schritte am Tag, Ziel \(HeuteQuellen.zahl(s.ziel))") } ?? String(localized: "Keine Werte"),

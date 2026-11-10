@@ -63,6 +63,6 @@ enum SchlafFormat {
 
     /// Zahl mit deutschem Komma und fester Zahl von Nachkommastellen ("36,5").
     static func zahl(_ wert: Double, stellen: Int = 0) -> String {
-        wert.formatted(.number.precision(.fractionLength(stellen)).locale(Locale(identifier: "de_DE")))
+        wert.formatted(.number.precision(.fractionLength(stellen)).locale(Datum.anzeigeLocale))
     }
 }

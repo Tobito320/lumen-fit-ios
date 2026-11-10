@@ -13,7 +13,7 @@ struct GymPartnerEinheitView: View {
                 LabeledContent("Zeit", value: einheit.minuten.map { TrainingLogik.dauerText(TimeInterval($0 * 60)) } ?? String(localized: "läuft oder ohne Ende"))
                 LabeledContent("Volumen") {
                     HStack(spacing: 2) {
-                        RollZahl(wert: GymPartnerLogik.volumen(einheit).rounded(), format: .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
+                        RollZahl(wert: GymPartnerLogik.volumen(einheit).rounded(), format: .number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale))
                         Text("kg")
                     }
                     .foregroundStyle(.secondary)

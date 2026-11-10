@@ -21,7 +21,7 @@ enum EinheitZeitenLogik {
 
     /// "Warst du wirklich so lange im Gym?" mit der Dauer im Text.
     static func langeFrage(stunden: Double) -> String {
-        let zahl = stunden.formatted(.number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE")))
+        let zahl = stunden.formatted(.number.precision(.fractionLength(0...1)).locale(Datum.anzeigeLocale))
         return String(localized: "Das sind \(zahl) Stunden. Warst du wirklich so lange im Gym?")
     }
 
@@ -60,7 +60,7 @@ enum EinheitZeitenLogik {
     /// Titel des Monats über dem Raster: "September 2026" (aus `HealthLogik.monatsGitter`).
     static func monatTitel(_ gitter: [String?]) -> String {
         guard let erster = gitter.compactMap({ $0 }).first else { return "" }
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+        let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
         return Datum.datum(erster).formatted(stil.month(.wide).year())
     }
 

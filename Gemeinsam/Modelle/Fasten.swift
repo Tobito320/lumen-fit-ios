@@ -144,7 +144,7 @@ enum FastenLogik {
 
     /// "27.09., 20:00" in Europe/Berlin.
     static func zeitpunktText(_ datum: Date) -> String {
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+        let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
             .day(.twoDigits).month(.twoDigits).hour().minute()
         return datum.formatted(stil)
     }

@@ -27,13 +27,13 @@ enum HabitRaster {
 
     /// "Oktober 2026".
     static func monatsTitel(heute: String, monateZurueck: Int) -> String {
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+        let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
         return Datum.datum(monatsErster(heute: heute, monateZurueck: monateZurueck)).formatted(stil.month(.wide).year())
     }
 
     /// "Okt" für das Jahr-Raster.
     static func monatsKurz(heute: String, monateZurueck: Int) -> String {
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+        let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
         return Datum.datum(monatsErster(heute: heute, monateZurueck: monateZurueck)).formatted(stil.month(.abbreviated))
     }
 
@@ -60,7 +60,7 @@ enum HabitRaster {
 
     /// 0,4 -> "40 %".
     static func prozent(_ anteil: Double) -> String {
-        anteil.formatted(.percent.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
+        anteil.formatted(.percent.precision(.fractionLength(0)).locale(Datum.anzeigeLocale))
     }
 
     /// Ein Wochentag-Knopf der festen Tage: 1 = Mo ... 7 = So. Zählt nur gültige Tage und gibt sie sortiert zurück.

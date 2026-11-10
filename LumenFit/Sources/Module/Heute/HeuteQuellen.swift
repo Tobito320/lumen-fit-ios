@@ -44,5 +44,5 @@ enum HeuteQuellen {
     static let gewichtBereich = Koerpermasse.gewichtZehntel
 
     /// "1.234" mit deutschem Tausenderpunkt.
-    static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Locale(identifier: "de_DE"))) }
+    static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Datum.anzeigeLocale)) }
 }

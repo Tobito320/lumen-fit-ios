@@ -387,7 +387,7 @@ enum TrainingLogik {
 
     /// "62,5", "60".
     static func kgText(_ kg: Double) -> String {
-        kg.formatted(.number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE")))
+        kg.formatted(.number.precision(.fractionLength(0...1)).locale(Datum.anzeigeLocale))
     }
 
     /// "3 × 10 · 60 kg", "3 Sätze · 40–50 kg · F", "20 min".

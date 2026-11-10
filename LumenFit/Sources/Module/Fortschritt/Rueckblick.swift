@@ -126,6 +126,6 @@ enum Rueckblick {
 
     /// 12400 -> "12.400".
     static func zahl(_ wert: Double) -> String {
-        wert.formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
+        wert.formatted(.number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale))
     }
 }

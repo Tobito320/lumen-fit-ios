@@ -92,7 +92,7 @@ enum ZielKarteLogik {
     }
 
     private static func erklaerung(art: Zielart, grundumsatz: Double, faktor: Double, bedarf: Double, aenderung: Int, kg: Double, ergebnis: ErnaehrungsZiele) -> String {
-        let faktorText = faktor.formatted(.number.precision(.fractionLength(0...3)).locale(Locale(identifier: "de_DE")))
+        let faktorText = faktor.formatted(.number.precision(.fractionLength(0...3)).locale(Datum.anzeigeLocale))
         var text = String(localized: "Dein Grundumsatz ist rund \(tausend(Int(grundumsatz.rounded()))) kcal (Mifflin-St Jeor). Mal Aktivität \(faktorText) ergibt einen Bedarf von \(tausend(Int(bedarf.rounded()))) kcal.")
         switch art {
         case .halten: text += " " + String(localized: "Du willst dein Gewicht halten, also isst du so viel.")
@@ -104,5 +104,5 @@ enum ZielKarteLogik {
         return text
     }
 
-    private static func tausend(_ n: Int) -> String { n.formatted(.number.grouping(.automatic).locale(Locale(identifier: "de_DE"))) }
+    private static func tausend(_ n: Int) -> String { n.formatted(.number.grouping(.automatic).locale(Datum.anzeigeLocale)) }
 }

@@ -335,7 +335,7 @@ enum PartnerAnsichtLogik {
     // MARK: Gemeinsames
 
     /// 1450 -> "1.450", immer deutsch (unabhängig von der Spracheinstellung des Geräts, damit Text und Test gleich bleiben).
-    static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Locale(identifier: "de_DE"))) }
+    static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Datum.anzeigeLocale)) }
 
     /// "29.10." aus "2026-10-29".
     static func kurzDatum(_ tag: String) -> String {

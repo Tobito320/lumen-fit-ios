@@ -96,6 +96,6 @@ enum BandAnzeige {
 
     /// Strecke in Kilometern mit zwei Stellen, deutsches Komma.
     static func kilometer(meter: Int) -> String {
-        (Double(meter) / 1000).formatted(.number.precision(.fractionLength(2)).locale(Locale(identifier: "de_DE"))) + " km"
+        (Double(meter) / 1000).formatted(.number.precision(.fractionLength(2)).locale(Datum.anzeigeLocale)) + " km"
     }
 }

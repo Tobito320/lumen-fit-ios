@@ -57,7 +57,7 @@ struct SchlafLeistungKarte: View {
             .chartXAxisLabel("Stunden Schlaf", alignment: .center)
             .chartYAxisLabel("Leistung in Prozent", position: .leading)
             .frame(height: 190)
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Datum.anzeigeLocale)
             .accessibilityChartDescriptor(SchlafLeistungBeschreibung(punkte: punkte, zusammenfassung: SchlafLeistung.kernzeile(punkte)))
         }
     }

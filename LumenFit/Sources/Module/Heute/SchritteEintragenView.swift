@@ -17,7 +17,7 @@ struct SchritteEintragenView: View {
         NavigationStack {
             Form {
                 DatePicker("Tag", selection: $datum, in: ...umgebung.uhr(), displayedComponents: .date)
-                    .environment(\.locale, Locale(identifier: "de_DE"))
+                    .environment(\.locale, Datum.anzeigeLocale)
                     .environment(\.timeZone, Datum.zone)
                     .frame(minHeight: Abstand.tippflaeche)
                 TextField("Schritte", text: $text)

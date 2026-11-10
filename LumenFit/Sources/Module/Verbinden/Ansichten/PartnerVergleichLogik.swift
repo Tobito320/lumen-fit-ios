@@ -48,7 +48,7 @@ enum PartnerVergleich {
 
     /// 12345 -> "12.345" (deutsche Tausenderpunkte).
     static func zahl(_ wert: Int) -> String {
-        wert.formatted(.number.grouping(.automatic).locale(Locale(identifier: "de_DE")))
+        wert.formatted(.number.grouping(.automatic).locale(Datum.anzeigeLocale))
     }
 
     /// "+1.234", "−567", "±0" (deutsche Tausenderpunkte, echtes Minuszeichen).

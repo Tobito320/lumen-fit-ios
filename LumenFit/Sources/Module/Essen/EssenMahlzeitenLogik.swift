@@ -22,7 +22,7 @@ enum EssenMahlzeitenLogik {
     }
 
     /// Ganze Zahl mit deutschem Tausenderpunkt.
-    nonisolated static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Locale(identifier: "de_DE"))) }
+    nonisolated static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Datum.anzeigeLocale)) }
 
     /// Namen der Lebensmittel einer Mahlzeit für die Untertitelzeile.
     nonisolated static func namenZeile(_ eintraege: [EssenEintrag]) -> String {

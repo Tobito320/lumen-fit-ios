@@ -42,7 +42,7 @@ struct SchlafEintragenView: View {
             Form {
                 Section {
                     DatePicker("Aufgewacht am", selection: tagDatum, in: ...umgebung.uhr(), displayedComponents: .date)
-                        .environment(\.locale, Locale(identifier: "de_DE"))
+                        .environment(\.locale, Datum.anzeigeLocale)
                         .environment(\.timeZone, Datum.zone)
                         .frame(minHeight: Abstand.tippflaeche)
                 } footer: {

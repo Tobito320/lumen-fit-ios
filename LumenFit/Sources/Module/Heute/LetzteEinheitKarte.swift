@@ -33,7 +33,7 @@ enum LetzteEinheitLogik {
         return LetzteEinheit(
             sessionId: s.id, titel: titel, kopfzeile: EinheitZeitenLogik.kopfZeit(s),
             dauer: TrainingLogik.dauerText(ende.timeIntervalSince(s.start)),
-            volumenText: WorkoutLogik.volumen(liste).formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))) + " kg",
+            volumenText: WorkoutLogik.volumen(liste).formatted(.number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale)) + " kg",
             saetze: WorkoutLogik.saetzeZahl(liste), rekorde: zeilen.filter(\.rekord).count, zeilen: zeilen)
     }
 

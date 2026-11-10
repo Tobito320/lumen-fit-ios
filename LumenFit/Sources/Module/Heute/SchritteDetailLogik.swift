@@ -55,7 +55,7 @@ enum SchritteDetailLogik {
             let tage = SchritteLogik.tage(.woche, anker: anker)
             return String(localized: "\(kurz(tage.first ?? anker)) bis \(kurz(tage.last ?? anker))")
         case .monat:
-            let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+            let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
             return Datum.datum(anker).formatted(stil.month(.wide).year())
         }
     }

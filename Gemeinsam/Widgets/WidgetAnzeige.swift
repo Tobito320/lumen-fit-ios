@@ -48,7 +48,7 @@ enum WidgetAnzeige {
 
     /// 8412 -> "8.412" (deutsche Tausenderpunkte, ohne statischen Formatierer).
     static func zahlText(_ wert: Int) -> String {
-        wert.formatted(.number.grouping(.automatic).locale(Locale(identifier: "de_DE")))
+        wert.formatted(.number.grouping(.automatic).locale(Datum.anzeigeLocale))
     }
 
     /// Ein Satz für VoiceOver über alle drei Bögen.

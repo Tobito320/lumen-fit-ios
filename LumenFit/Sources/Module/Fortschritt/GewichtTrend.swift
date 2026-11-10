@@ -91,6 +91,6 @@ enum GewichtVerlauf {
 
     /// 78,4 -> "78,4"; zwei Stellen nur, wenn nötig ("0,25").
     static func kg(_ wert: Double) -> String {
-        wert.formatted(.number.precision(.fractionLength(0...2)).locale(Locale(identifier: "de_DE")))
+        wert.formatted(.number.precision(.fractionLength(0...2)).locale(Datum.anzeigeLocale))
     }
 }

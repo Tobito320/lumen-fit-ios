@@ -151,7 +151,7 @@ struct VerlaufUebungSeite: View {
                         HeroKarte {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
-                                    RollZahl(wert: e, format: .number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE")))
+                                    RollZahl(wert: e, format: .number.precision(.fractionLength(0...1)).locale(Datum.anzeigeLocale))
                                         .font(.largeTitle.weight(.bold)).fontDesign(.rounded)
                                     Text("kg").font(.title3.weight(.semibold))
                                 }

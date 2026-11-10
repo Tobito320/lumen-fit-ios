@@ -58,7 +58,7 @@ struct EssenDatumBlatt: View {
         NavigationStack {
             DatePicker("Datum", selection: datum, displayedComponents: .date)
                 .datePickerStyle(.graphical)
-                .environment(\.locale, Locale(identifier: "de_DE"))
+                .environment(\.locale, Datum.anzeigeLocale)
                 .padding()
                 .navigationTitle("Tag wählen")
                 .navigationBarTitleDisplayMode(.inline)

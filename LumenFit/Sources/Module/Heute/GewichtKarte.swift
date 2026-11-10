@@ -114,7 +114,7 @@ struct HeuteGewichtDiagramm: View {
         }
         .foregroundStyle(palette.text)
         .chartYScale(domain: unten...oben)
-        .environment(\.locale, Locale(identifier: "de_DE"))
+        .environment(\.locale, Datum.anzeigeLocale)
         .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
             titel: String(localized: "Gewichtsverlauf"), zusammenfassung: zusammenfassung, xTitel: String(localized: "Tag"), yTitel: String(localized: "Gewicht"), einheit: "kg",
             punkte: punkte.map { HeuteDiagrammPunkt(name: SchritteDetailLogik.kurz($0.tag), wert: $0.kg) }))

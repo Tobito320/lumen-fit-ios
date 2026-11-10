@@ -100,7 +100,7 @@ struct SchritteVergleichSeite: View {
             .chartXSelection(value: $auswahl)
             .chartYScale(domain: 0...Int(Double(woche.hoechster) * 1.2))
             .chartYAxis(.hidden)
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            .environment(\.locale, Datum.anzeigeLocale)
             .frame(height: 180)
             .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
                 titel: String(localized: "Schritte der Woche, du gegen \(partner.profilName)"),

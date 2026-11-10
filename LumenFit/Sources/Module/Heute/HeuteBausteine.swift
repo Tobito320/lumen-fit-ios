@@ -68,16 +68,16 @@ struct HeuteDiagrammPunkt: Equatable, Sendable {
 /// Deutsche Zahlen für Kommazahlen: 78,4.
 enum HeuteFormat {
     static func kilo() -> FloatingPointFormatStyle<Double> {
-        .number.precision(.fractionLength(1)).locale(Locale(identifier: "de_DE"))
+        .number.precision(.fractionLength(1)).locale(Datum.anzeigeLocale)
     }
 
     /// Ziele: 80 oder 80,5.
     static func zielKilo() -> FloatingPointFormatStyle<Double> {
-        .number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE"))
+        .number.precision(.fractionLength(0...1)).locale(Datum.anzeigeLocale)
     }
 
     static func ganz() -> FloatingPointFormatStyle<Double> {
-        .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))
+        .number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale)
     }
 }
 

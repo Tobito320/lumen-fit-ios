@@ -236,7 +236,7 @@ enum FortschrittLogik {
 
     // MARK: Text
 
-    private static let deutsch = Locale(identifier: "de_DE")
+    private static let deutsch = Datum.anzeigeLocale
 
     /// "Mi., 11. Nov." für die Karte einer Einheit (FormatStyle, kein DateFormatter).
     static func kurzDatum(_ datum: Date) -> String {

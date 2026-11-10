@@ -315,7 +315,7 @@ enum VerbindungenLogik {
         guard eintrag.aktiv, !eintrag.ich.pause, case .verbunden(let d) = eintrag.stand(jetzt: jetzt), d.heute.tag == Datum.text(jetzt) else { return nil }
         var teile: [String] = []
         if d.freigaben.contains(.schritte), let s = d.heute.schritte {
-            teile.append(String(localized: "\(s.formatted(.number.locale(Locale(identifier: "de_DE")))) Schritte"))
+            teile.append(String(localized: "\(s.formatted(.number.locale(Datum.anzeigeLocale))) Schritte"))
         }
         if d.freigaben.contains(.gym), let g = d.heute.gymTageWoche {
             if let z = d.heute.gymZiel, z > 0 { teile.append(String(localized: "Gym \(g) von \(z)")) } else { teile.append(g == 1 ? String(localized: "Gym 1 Tag") : String(localized: "Gym \(g) Tage")) }

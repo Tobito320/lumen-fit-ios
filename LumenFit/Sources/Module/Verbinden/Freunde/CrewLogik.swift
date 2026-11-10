@@ -208,7 +208,7 @@ enum CrewLogik {
 
     /// "8.400 kg", "1 Tag", "12 Sätze", "35 ‰".
     static func wertText(_ wert: Int, _ mass: CrewMass) -> String {
-        let zahl = wert.formatted(.number.locale(Locale(identifier: "de_DE")))
+        let zahl = wert.formatted(.number.locale(Datum.anzeigeLocale))
         guard wert == 1 else { return "\(zahl) \(mass.einheit)" }
         switch mass {
         case .tage: return String(localized: "1 Tag")

@@ -68,7 +68,7 @@ enum VerlaufLogik {
         var id: String { tag }
     }
 
-    private static let deutsch = Locale(identifier: "de_DE")
+    private static let deutsch = Datum.anzeigeLocale
 
     /// Finished runs with sets, oldest first. Cardio, own exercises (not in the catalog) and runs
     /// ticked without sets give nothing.

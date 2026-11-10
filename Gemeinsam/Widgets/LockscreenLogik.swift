@@ -34,6 +34,6 @@ enum LockscreenLogik {
 
     /// 4210 -> "4,2k", 950 -> "950".
     static func kurzZahl(_ wert: Int) -> String {
-        wert >= 1000 ? (Double(wert) / 1000).formatted(.number.precision(.fractionLength(1)).locale(Locale(identifier: "de_DE"))) + "k" : "\(wert)"
+        wert >= 1000 ? (Double(wert) / 1000).formatted(.number.precision(.fractionLength(1)).locale(Datum.anzeigeLocale)) + "k" : "\(wert)"
     }
 }

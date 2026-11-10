@@ -77,7 +77,7 @@ enum KraftKurve {
     /// Die Kernzeile unter dem Titel: bestes Gewicht, 1RM und Volumen der letzten Woche mit Training.
     static func kernzeile(_ punkte: [KraftPunkt]) -> String {
         guard let neu = punkte.last else { return String(localized: "Sobald du Sätze mit Gewicht abhakst, wächst hier die Kurve.") }
-        let volumen = neu.volumen.formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
+        let volumen = neu.volumen.formatted(.number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale))
         return String(localized: "Letzte Woche mit Training: bestes Gewicht \(VerlaufLogik.zahl(neu.gewicht)) kg, 1RM \(VerlaufLogik.zahl(neu.e1rm.rounded())) kg, Volumen \(volumen) kg")
     }
 }

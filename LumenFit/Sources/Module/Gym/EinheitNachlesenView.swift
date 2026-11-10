@@ -92,7 +92,7 @@ struct EinheitNachlesenView: View {
                     kennzahl(String(localized: "Sätze"), RollZahl(wert: Double(saetze), format: .number.precision(.fractionLength(0))))
                     Spacer()
                     kennzahl(String(localized: "Volumen"), HStack(spacing: 2) {
-                        RollZahl(wert: volumen, format: .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
+                        RollZahl(wert: volumen, format: .number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale))
                         Text("kg")
                     })
                 }

@@ -4,7 +4,7 @@ import SwiftUI
 enum FreundeText {
     /// "26. Oktober" für den Montag einer Woche.
     static func woche(_ tag: String) -> String {
-        let stil = Date.FormatStyle(locale: Locale(identifier: "de_DE"), calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
+        let stil = Date.FormatStyle(locale: Datum.anzeigeLocale, calendar: Datum.kalender, timeZone: Datum.kalender.timeZone)
         return Datum.datum(tag).formatted(stil.day().month(.wide))
     }
 

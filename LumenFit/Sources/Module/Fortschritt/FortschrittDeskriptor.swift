@@ -24,7 +24,7 @@ struct FortschrittDeskriptor: AXChartDescriptorRepresentable {
         let hoch = max(punkte.map(\.y).max() ?? 1, niedrig + 1)
         let einheit = self.einheit
         let y = AXNumericDataAxisDescriptor(title: yTitel, range: niedrig...hoch, gridlinePositions: []) { wert in
-            "\(wert.formatted(.number.precision(.fractionLength(0...1)).locale(Locale(identifier: "de_DE")))) \(einheit)"
+            "\(wert.formatted(.number.precision(.fractionLength(0...1)).locale(Datum.anzeigeLocale))) \(einheit)"
         }
         let serie = AXDataSeriesDescriptor(name: yTitel, isContinuous: stetig, dataPoints: punkte.map { AXDataPoint(x: $0.x, y: $0.y) })
         return AXChartDescriptor(title: titel, summary: zusammenfassung, xAxis: x, yAxis: y, additionalAxes: [], series: [serie])

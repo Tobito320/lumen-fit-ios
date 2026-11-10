@@ -45,7 +45,7 @@ struct MeilensteinZiel: Equatable, Sendable {
 
     /// "80 von 100 Tagen".
     var text: String {
-        let zahl: (Double) -> String = { $0.formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))) }
+        let zahl: (Double) -> String = { $0.formatted(.number.precision(.fractionLength(0)).locale(Datum.anzeigeLocale)) }
         return String(localized: "\(zahl(aktuell.rounded(.down))) von \(zahl(ziel)) \(einheit)")
     }
 }
