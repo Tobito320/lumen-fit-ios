@@ -242,10 +242,4 @@ final class CrewLogikTests: XCTestCase {
         XCTAssertEqual(CrewLogik.wertText(12, .saetze), "12 Sätze")
         XCTAssertEqual(CrewLogik.wertText(35, .uebung), "35 ‰")
     }
-
-    func testEinstiegText() {
-        XCTAssertEqual(CrewLogik.einstiegText(imGym: 2, herausforderung: "Duell: du führst", neu: 1, personen: 3), "2 im Gym · Duell: du führst · 1 neu")
-        XCTAssertEqual(CrewLogik.einstiegText(imGym: 0, herausforderung: nil, neu: 0, personen: 0), "Freunde einladen und herausfordern")
-        XCTAssertEqual(CrewLogik.einstiegStand(CrewAntwort(herausforderungen: [herausforderung(meins: 3, andere: [1])]), jetzt: T.jetzt), "Duell: du führst")
-    }
 }

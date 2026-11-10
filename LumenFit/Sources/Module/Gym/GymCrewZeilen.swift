@@ -54,20 +54,6 @@ struct GymCrewZeilen: View {
     }
 }
 
-/// Die Freunde als Abschnitt im Gym-Tab: oben immer der Einstieg zum Tab-Inhalt Freunde, darunter die Personen (ohne Personen nur der Einstieg).
-struct GymCrewAbschnitt: View {
-    @Environment(AppUmgebung.self) private var umgebung
-
-    var body: some View {
-        let zeilen = GymCrewQuelle.zeilen(umgebung)
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            CrewEinstieg()
-            if !zeilen.isEmpty { GymCrewZeilen(zeilen: zeilen) }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
 /// Eine Zeile oben im laufenden Training für jede Person, die gerade selbst trainiert (höchstens zwei).
 struct GymMitlaufZeile: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -112,6 +98,6 @@ private struct GymCrewAbruf: ViewModifier {
 }
 
 extension View {
-    /// Nur an Ansichten, die Crew oder Mitlauf zeigen (Gym-Start, laufendes Training).
+    /// Nur an Ansichten, die Freunde oder Mitlauf zeigen (Tab Freunde, laufendes Training).
     func gymCrewAbruf() -> some View { modifier(GymCrewAbruf()) }
 }
