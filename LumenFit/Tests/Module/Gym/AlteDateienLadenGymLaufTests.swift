@@ -76,6 +76,39 @@ final class AlteDateienLadenGymLaufTests: XCTestCase {
         XCTAssertEqual(neu.liste[0].saetze.map(\.ok), [true, true, nil])
     }
 
+    /// `gym-lauf-erste-uebung-abgerissen.jsonl`: derselbe Stand, nur reißt schon die erste Op der Übung ab (Absturz beim ersten Haken), dazu Unsinn
+    /// in `gym-pause.json` und `gym-satz.json`. Die Einheit bleibt laufend, ohne Pause; die kaputte Zeile liegt einmal in `ops.jsonl.defekt`.
+    func testRissInErsterUebungUndKaputtePauseDateiLassenEinheitStehen() throws {
+        let (u, _) = try umgebungMitAltemStand(jetzt: start + 650, datei: "gym-lauf-erste-uebung-abgerissen.jsonl")
+        let ordner = u.profilOrdner(try XCTUnwrap(u.profil.aktiv?.id))
+        try Data(#"{"plan":"a","satz":0,"sei"#.utf8).write(to: ordner.appendingPathComponent("gym-pause.json"))
+        try Data([0xFF, 0x00, 0x7B, 0x0A]).write(to: ordner.appendingPathComponent("gym-satz.json"))
+        let sitzung = GymSitzung(umgebung: u)
+        sitzung.ladeWennNoetig()
+        XCTAssertEqual(sitzung.sessionId, "lauf-1", "die laufende Einheit ist da")
+        XCTAssertEqual(sitzung.liste.map(\.id), ["a", "b"])
+        XCTAssertFalse(sitzung.liste[0].saetze.isEmpty, "die Zeilen kommen aus dem Plan")
+        XCTAssertTrue(sitzung.liste[0].saetze.allSatisfy { $0.ok == nil }, "der abgerissene erste Haken fehlt")
+        XCTAssertNil(sitzung.pause, "eine kaputte Pausen-Datei heißt: keine Pause")
+        XCTAssertNil(sitzung.satzLauf)
+        for datei in ["gym-pause.json.defekt", "gym-satz.json.defekt"] {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: ordner.appendingPathComponent(datei).path), "\(datei): der Unsinn liegt gesichert daneben")
+        }
+        let defekt = ordner.appendingPathComponent("ops.jsonl.defekt")
+        let gesichert = try Data(contentsOf: defekt)
+        XCTAssertTrue(String(decoding: gesichert, as: UTF8.self).contains("op-lauf-2"), "die kaputte Zeile liegt gesichert daneben")
+
+        // Zweiter Start über demselben Ordner: die Datei ist repariert, nichts kommt doppelt in die Sicherung.
+        let neuU = AppUmgebung(ordner: u.ordner, schluesselbund: u.schluesselbund, http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
+                               leser: LeererHealthLeser(), healthSchreiber: KeinHealthSchreiber(), bruecke: KeinePartnerBruecke(), uhr: u.uhr, passwortRunden: 1_000)
+        let neu = GymSitzung(umgebung: neuU)
+        neu.ladeWennNoetig()
+        XCTAssertFalse(neuU.daten === u.daten, "Voraussetzung: ein frisch von der Platte gelesener Datensatz")
+        XCTAssertEqual(neu.sessionId, "lauf-1")
+        XCTAssertNil(neu.pause)
+        XCTAssertEqual(try Data(contentsOf: defekt).count, gesichert.count, "die Sicherung wächst beim zweiten Start nicht")
+    }
+
     func testNachDemLadenGehtDasTrainingOhneBruchWeiter() throws {
         let (u, uhr) = try umgebungMitAltemStand(jetzt: start + 650)
         let sitzung = GymSitzung(umgebung: u)
