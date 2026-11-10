@@ -53,7 +53,7 @@ jobs:
       - name: Texte exportieren
         run: |
           set -o pipefail
-          xcodebuild -exportLocalizations -project LumenFit.xcodeproj -localizationPath loc -exportLanguage en \
+          xcodebuild -exportLocalizations -project LumenFit.xcodeproj -scheme LumenFit -localizationPath loc -exportLanguage en \
             -derivedDataPath derived -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO 2>&1 | tail -40
           find loc -maxdepth 3 | head -40
       - name: Ergebnis hochladen
