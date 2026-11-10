@@ -46,12 +46,11 @@ struct HeuteTabView: View {
     }
 
     private func inhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        // Karten zum Wegwischen (Hinweise) wischen selbst waagerecht: dann gilt die Tagwahl-Geste nur auf der Leiste, sonst auf der ganzen Seite.
-        let ueberall = !s.istHeute || s.hinweise.isEmpty
-        return VStack(spacing: Abstand.l) {
+        // Die Hinweise-Karte (die einzige, die waagerecht wischte) steht nicht mehr auf der Startseite: die Tagwahl-Geste gilt auf der ganzen Seite.
+        VStack(spacing: Abstand.l) {
             HeuteTagLeiste(tag: s.tag, heute: Datum.text(umgebung.uhr()), blaettere: { blaettere($0) }, kalender: { blatt = .kalender },
                            zuHeute: { springe(zu: Datum.text(umgebung.uhr())) })
-                .simultaneousGesture(tagWischen, including: ueberall ? .subviews : .all)
+                .simultaneousGesture(tagWischen, including: .subviews)
             VStack(spacing: Abstand.l) {
                 if s.istHeute { heuteInhalt(s, m) } else { vergangenerTag(s, m) }
             }
@@ -62,7 +61,7 @@ struct HeuteTabView: View {
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
-        .simultaneousGesture(tagWischen, including: ueberall ? .all : .subviews)
+        .simultaneousGesture(tagWischen, including: .all)
     }
 
     /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).
