@@ -113,3 +113,110 @@ enum GymFormat {
     /// "12. Oktober" aus einem Datum (Berlin).
     static func tag(_ datum: Date) -> String { Datum.anzeige(Datum.text(datum)) }
 }
+
+/// Listen-Zeile des neuen Designs: farbiges Symbol links (`SymbolQuadrat`), Titel, Untertitel, Pfeil. Texte kommen fertig übersetzt (`String(localized:)`).
+struct GymSymbolZeile: View {
+    let symbol: String
+    let farbe: Color
+    let titel: String
+    var untertitel: String? = nil
+    var pfeil = true
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        HStack(spacing: Abstand.m) {
+            SymbolQuadrat(symbol: symbol, farbe: farbe)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titel).font(.body.weight(.medium)).foregroundStyle(palette.text)
+                if let untertitel { Text(untertitel).font(.footnote).foregroundStyle(palette.text2) }
+            }
+            Spacer(minLength: Abstand.s)
+            if pfeil {
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, Abstand.l)
+        .padding(.vertical, Abstand.m)
+        .frame(minHeight: Abstand.tippflaeche)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Eine Übung als Zeile: Bild, Name, Untertitel ("Brust · 3 Sets"), Pfeil.
+struct GymUebungZeile: View {
+    let id: String
+    let koerper: String?
+    let titel: String
+    let untertitel: String
+    var pfeil = true
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        HStack(spacing: Abstand.m) {
+            UebungsBild(id: id, koerper: koerper, tippbar: false).frame(width: 44, height: 44)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titel).font(.body.weight(.medium)).foregroundStyle(palette.text).lineLimit(2)
+                Text(untertitel).font(.footnote).foregroundStyle(palette.text2)
+            }
+            Spacer(minLength: Abstand.s)
+            if pfeil {
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, Abstand.l)
+        .padding(.vertical, Abstand.s)
+        .frame(minHeight: Abstand.tippflaeche)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// Filter-Chip: gewählt Lime-Fläche mit dunkler Schrift, sonst Fläche mit Rand. Tippfläche 44 pt.
+struct GymChip: View {
+    let text: String
+    let aktiv: Bool
+    let aktion: () -> Void
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        Button(action: aktion) {
+            Text(text)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(aktiv ? palette.aufAkzentFlaeche : palette.text)
+                .padding(.horizontal, Abstand.m)
+                .padding(.vertical, Abstand.s)
+                .background(aktiv ? palette.akzentFlaeche : palette.flaeche, in: .capsule)
+                .overlay(Capsule().stroke(aktiv ? Color.clear : palette.haar, lineWidth: 1))
+                .frame(minHeight: Abstand.tippflaeche)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(aktiv ? .isSelected : [])
+    }
+}
+
+/// Kleine Pille als Knopf ("Kurz · 30 min", "Ohne Plan", "Hilfe?"): Fläche mit Rand, an = Lime-Rand.
+struct GymPillenKnopf: View {
+    let text: String
+    let symbol: String
+    var an = false
+    let aktion: () -> Void
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        Button(action: aktion) {
+            Label(text, systemImage: symbol)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(palette.text)
+                .padding(.horizontal, Abstand.m)
+                .padding(.vertical, Abstand.s)
+                .background(palette.flaeche, in: .capsule)
+                .overlay(Capsule().stroke(an ? palette.akzent : palette.haar, lineWidth: an ? 1.5 : 1))
+                .frame(minHeight: Abstand.tippflaeche)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(an ? .isSelected : [])
+    }
+}

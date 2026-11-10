@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Der Übungskatalog (Idee 26): 1.333 Übungen auf Deutsch, Suche mit Synonymen (`UebungsKatalog.suchen`), Filter nach Körperteil und Gerät,
 /// ganz oben "Zuletzt" und gängige Übungen. Mit `auswahl` wählt ein Tipp die Übung (Sheet), ohne öffnet er die Details (Rekorde, Verlauf).
+/// Neues Design (Entwurf `entdecken`): Zahl der Übungen, Chips Brust bis Ganzkörper, ohne Auswahl dazu "Nach Muskel" (mit bereit/erholt sich)
+/// und die große Ansicht als Raster; "Eigene Übung erstellen" als Lime-Textknopf.
 struct UebungsSucheView: View {
     var titel = "Übungen"
     var auswahl: ((Uebung) -> Void)?
@@ -22,6 +24,11 @@ struct UebungsSucheView: View {
     @State private var bleibtImTraining = false
     @State private var eigenesOffen = false
     @State private var eigenerName = ""
+    @State private var chip: GymKatalogChip?
+    @State private var nachMuskel = false
+    @State private var gross = false
+    /// Erholung je Gruppe für "Nach Muskel", einmal geladen.
+    @State private var koerperDaten: KoerperDaten?
     @Environment(\.bewegungAus) private var ruhig
 
     private static let anzeigeLimit = 120
@@ -36,34 +43,43 @@ struct UebungsSucheView: View {
 
     private var inhalt: some View {
         List {
+            if auswahl == nil {
+                Text("\(UebungsKatalog.alle.count) Übungen mit Animationen").font(.subheadline).foregroundStyle(palette.text2)
+                    .listRowBackground(Color.clear)
+            }
             Section { filter }
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets())
             if eigene != nil { eigenAnlegen }
-            if text.isEmpty, koerper == nil {
-                abschnitt("Zuletzt", zuletzt)
-                abschnitt("Eigene", gefiltert(eigene?.uebungen ?? []))
-                abschnitt("Gängig", UebungsKatalog.vorschlaege(in: gefiltert(UebungsKatalog.alle)))
-            }
-            let treffer = ergebnis
-            Section(treffer.isEmpty ? "Nichts gefunden" : "\(treffer.count) \(treffer.count == 1 ? "Übung" : "Übungen")") {
-                if treffer.isEmpty {
-                    Text("Versuch ein anderes Wort, zum Beispiel Muskel oder Gerät. Oder stell oben den Filter auf Alle Geräte.")
-                        .font(.subheadline).foregroundStyle(palette.text2)
-                }
-                ForEach(treffer.prefix(Self.anzeigeLimit)) { zeile($0) }
-                if treffer.count > Self.anzeigeLimit {
-                    Text("Es gibt mehr Treffer. Tipp genauer, um sie einzugrenzen.").font(.footnote).foregroundStyle(palette.text2)
-                }
+            if auswahl == nil, nachMuskel {
+                muskelAbschnitte
+            } else if auswahl == nil, gross {
+                rasterAbschnitt
+            } else {
+                standardAbschnitte
             }
         }
         .scrollContentBackground(.hidden)
         .lumenHintergrund()
         .navigationTitle(titel)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(auswahl == nil ? .large : .inline)
         .searchable(text: $text, prompt: "Name, Muskel oder Gerät")
         .toolbar {
             if auswahl != nil { ToolbarItem(placement: .cancellationAction) { Button(mehrfach ? "Fertig" : "Abbrechen") { schliessen() } } }
+            if auswahl == nil {
+                ToolbarItem(placement: .primaryAction) {
+                    Button { nachMuskel.toggle() } label: {
+                        Label("Nach Muskel", systemImage: nachMuskel ? "square.stack.3d.up.fill" : "square.stack.3d.up")
+                    }
+                    .accessibilityValue(nachMuskel ? "an" : "aus")
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { gross.toggle() } label: {
+                        Label(gross ? "Kleine Ansicht" : "Große Ansicht", systemImage: gross ? "list.bullet" : "square.grid.2x2")
+                    }
+                    .disabled(nachMuskel)
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button { filterBlatt = true } label: {
                     let n = UebungsFilterLogik.anzahl(koerper: koerper, muskel: muskel, geraet: geraet)
@@ -83,7 +99,93 @@ struct UebungsSucheView: View {
         } message: {
             Text("Bei dieser Übung ist schon ein Satz abgehakt. Zum Entfernen: Menü der Übung, Mehr, Entfernen.")
         }
+        .task(id: nachMuskel) {
+            if nachMuskel, koerperDaten == nil { koerperDaten = FortschrittQuelle(umgebung: umgebung).koerper }
+        }
     }
+
+    // MARK: Abschnitte
+
+    @ViewBuilder
+    private var standardAbschnitte: some View {
+            if text.isEmpty, koerper == nil, chip == nil {
+                abschnitt("Zuletzt", zuletzt)
+                abschnitt("Eigene", gefiltert(eigene?.uebungen ?? []))
+                abschnitt("Gängig", UebungsKatalog.vorschlaege(in: gefiltert(UebungsKatalog.alle)))
+            }
+            let treffer = ergebnis
+            Section(treffer.isEmpty ? "Nichts gefunden" : "\(treffer.count) \(treffer.count == 1 ? "Übung" : "Übungen")") {
+                if treffer.isEmpty {
+                    Text("Versuch ein anderes Wort, zum Beispiel Muskel oder Gerät. Oder stell oben den Filter auf Alle Geräte.")
+                        .font(.subheadline).foregroundStyle(palette.text2)
+                }
+                ForEach(treffer.prefix(Self.anzeigeLimit)) { zeile($0) }
+                if treffer.count > Self.anzeigeLimit {
+                    Text("Es gibt mehr Treffer. Tipp genauer, um sie einzugrenzen.").font(.footnote).foregroundStyle(palette.text2)
+                }
+            }
+    }
+
+    /// Nach Muskel: je Gruppe ein Abschnitt mit "bereit" oder "erholt sich"; ohne Gruppe (Cardio, Eigene ohne Muskel) unter "Weitere".
+    @ViewBuilder
+    private var muskelAbschnitte: some View {
+        let treffer = ergebnis
+        let gruppen = Dictionary(grouping: treffer) { GymMuskelHilfe.gruppe(von: $0) }
+        ForEach(MuskelGruppe.allCases.filter { gruppen[$0] != nil }, id: \.self) { g in
+            let liste = gruppen[g] ?? []
+            Section {
+                ForEach(liste.prefix(Self.gruppenLimit)) { zeile($0) }
+                if liste.count > Self.gruppenLimit {
+                    Text("Noch \(liste.count - Self.gruppenLimit) weitere. Such genauer, um sie zu sehen.").font(.footnote).foregroundStyle(palette.text2)
+                }
+            } header: {
+                HStack {
+                    Text(g.name)
+                    Spacer()
+                    if let k = koerperDaten {
+                        (k.stufe(g) == .erholt ? Text("bereit") : Text("erholt sich")).foregroundStyle(k.stufe(g) == .erholt ? palette.akzent : palette.text2)
+                    }
+                }
+            }
+        }
+        if let rest = gruppen[MuskelGruppe?.none] {
+            Section("Weitere") { ForEach(rest.prefix(Self.gruppenLimit)) { zeile($0) } }
+        }
+        if treffer.isEmpty {
+            Text("Keine Übung gefunden. Anders suchen oder einen Filter weglassen.").font(.subheadline).foregroundStyle(palette.text2)
+        }
+    }
+
+    /// Große Ansicht: Kacheln mit Bild (keine Animation in der Liste, die läuft erst auf der Seite der Übung).
+    private var rasterAbschnitt: some View {
+        let treffer = ergebnis
+        return Section(treffer.isEmpty ? String(localized: "Nichts gefunden") : String(localized: "\(treffer.count) Treffer")) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: Abstand.m), GridItem(.flexible(), spacing: Abstand.m)], spacing: Abstand.m) {
+                ForEach(treffer.prefix(Self.anzeigeLimit)) { u in
+                    NavigationLink { UebungDetailView(id: u.id, anleitungZuerst: true) } label: { kachel(u) }
+                        .buttonStyle(.plain)
+                }
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        }
+    }
+
+    private func kachel(_ u: Uebung) -> some View {
+        VStack(alignment: .leading, spacing: Abstand.xs) {
+            UebungsBild(id: u.id, koerper: u.koerper, tippbar: false)
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+            Text(u.name).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text).lineLimit(2)
+            Text("\(u.muskel) · \(u.geraet)").font(.caption).foregroundStyle(palette.text2).lineLimit(1)
+        }
+        .padding(Abstand.s)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .lumenKartenFlaeche()
+        .accessibilityElement(children: .combine)
+    }
+
+    private static let gruppenLimit = 40
 
     // MARK: Daten
 
@@ -94,7 +196,8 @@ struct UebungsSucheView: View {
     }
 
     private func passt(_ u: Uebung) -> Bool {
-        (koerper == nil || u.koerper == koerper) && (muskel == nil || u.muskel == muskel) && UebungsKatalog.passtGeraet(u, wahl: geraet)
+        (koerper == nil || u.koerper == koerper) && (muskel == nil || u.muskel == muskel) && (chip?.passt(u) ?? true)
+            && UebungsKatalog.passtGeraet(u, wahl: chip?.geraetWahl(geraet) ?? geraet)
     }
 
     private func gefiltert(_ liste: [Uebung]) -> [Uebung] { liste.filter(passt) }
@@ -120,22 +223,13 @@ struct UebungsSucheView: View {
                         .frame(minHeight: Abstand.tippflaeche)
                 }
                 .accessibilityLabel("Gerätefilter, \(geraet ?? UebungsKatalog.standardTitel)")
-                chip("Alle", aktiv: koerper == nil) { koerper = nil }
-                ForEach(UebungsKatalog.koerperteile, id: \.self) { teil in
-                    chip(teil, aktiv: koerper == teil) { koerper = teil }
+                GymChip(text: String(localized: "Alle"), aktiv: chip == nil) { chip = nil }
+                ForEach(GymKatalogChip.allCases) { c in
+                    GymChip(text: c.titel, aktiv: chip == c) { chip = chip == c ? nil : c }
                 }
             }
             .padding(.horizontal, Abstand.l)
         }
-    }
-
-    private func chip(_ name: String, aktiv: Bool, _ aktion: @escaping () -> Void) -> some View {
-        Button(action: aktion) {
-            Pille(text: name, symbolName: aktiv ? "checkmark" : nil)
-                .frame(minHeight: Abstand.tippflaeche)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(aktiv ? .isSelected : [])
     }
 
     /// Loveas "Erstellen", hier als erste Zeile; der Suchtext wird zum Namen.
@@ -145,7 +239,9 @@ struct UebungsSucheView: View {
                 eigenerName = text.trimmingCharacters(in: .whitespacesAndNewlines)
                 eigenesOffen = true
             } label: {
-                Label("Eigene Übung erstellen", systemImage: "plus.circle")
+                Label("Eigene Übung erstellen", systemImage: "plus")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(palette.akzent)
                     .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche, alignment: .leading)
             }
             .accessibilityHint("Öffnet ein Formular mit Name, Muskel und Gerät")
@@ -199,7 +295,7 @@ struct UebungsSucheView: View {
             }
         } else {
             // Der Katalog selbst ist ohne Route geöffnet; ein Route-Link hier änderte den Tab-Pfad darunter, und die Ansicht sprang.
-            NavigationLink { UebungDetailView(id: u.id) } label: { inhaltsZeile(u) }
+            NavigationLink { UebungDetailView(id: u.id, anleitungZuerst: true) } label: { inhaltsZeile(u) }
         }
     }
 

@@ -3,8 +3,10 @@ import Accessibility
 import Charts
 import SwiftUI
 
-/// Eine Übung im Detail (Route `.uebung(id:)`): oben das Bild, darunter drei Reiter. Übersicht (Diagramm und persönliche Rekorde),
-/// Historie (jede Einheit mit ihren Sätzen), So geht's (Muskeln und Gerät). Alles wird aus den Einheiten gerechnet, nichts Neues gespeichert.
+/// Eine Übung im Detail (Route `.uebung(id:)`, Entwurf `uebung`): oben die Animation, Name und "Muskel · Gerät", darunter drei Reiter.
+/// Anleitung (So geht's, Muskeln und Gerät, außerhalb des Trainings "Andere Varianten"), Verlauf (schwerstes Set, Diagramm mit Wahl des Werts, jede Einheit
+/// mit ihren Sätzen), Rekorde (persönliche Rekorde). Alles wird aus den Einheiten gerechnet, nichts Neues gespeichert.
+/// Platz für "Im Vergleich" (Freunde) im Reiter Rekorde: kommt als Baustein `StatsVergleichKarte(uebungID:)`, bis dahin ohne Abschnitt.
 struct UebungDetailView: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
@@ -19,14 +21,22 @@ struct UebungDetailView: View {
     @Environment(\.dismiss) private var schliessen
 
     private enum Reiter: String, CaseIterable, Identifiable {
-        case uebersicht = "Übersicht", historie = "Historie", sogehts = "So geht's"
+        case anleitung, verlauf, rekorde
         var id: String { rawValue }
+
+        var titel: LocalizedStringKey {
+            switch self {
+            case .anleitung: "Anleitung"
+            case .verlauf: "Verlauf"
+            case .rekorde: "Rekorde"
+            }
+        }
     }
 
-    /// `anleitungZuerst`: vom Tipp aufs Übungsbild, dann steht gleich "So geht's" offen.
+    /// `anleitungZuerst`: aus Katalog, Plan und Bild steht die Anleitung offen; aus dem Training ("Rekorde und Verlauf") der Verlauf.
     init(id: String, anleitungZuerst: Bool = false) {
         self.id = id
-        _reiter = State(initialValue: anleitungZuerst ? .sogehts : .uebersicht)
+        _reiter = State(initialValue: anleitungZuerst ? .anleitung : .verlauf)
     }
 
     var body: some View {
@@ -94,17 +104,23 @@ struct UebungDetailView: View {
                     .frame(maxWidth: .infinity)
                 VStack(alignment: .leading, spacing: Abstand.xs) {
                     Text(u.name).font(.title2.bold()).foregroundStyle(palette.text)
-                    Text(GymEigeneLogik.istEigene(u.id) ? "Primär: \(u.muskel) · Eigene" : "Primär: \(u.muskel)").font(.subheadline).foregroundStyle(palette.text2)
+                    Text(GymEigeneLogik.istEigene(u.id) ? "\(u.muskel) · \(u.geraet) · \(String(localized: "Eigene"))" : "\(u.muskel) · \(u.geraet)")
+                        .font(.subheadline).foregroundStyle(palette.text2)
                 }
                 .accessibilityElement(children: .combine)
                 Picker("Ansicht", selection: $reiter) {
-                    ForEach(Reiter.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(Reiter.allCases) { Text($0.titel).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 switch reiter {
-                case .uebersicht: uebersicht(tage)
-                case .historie: historie(tage)
-                case .sogehts: soGehts(u)
+                case .anleitung:
+                    soGehts(u)
+                    varianten(u)
+                case .verlauf:
+                    schwerstes(tage)
+                    uebersicht(tage)
+                    historie(tage)
+                case .rekorde: rekorde(tage)
                 }
             }
             .padding(Abstand.l)
@@ -146,14 +162,57 @@ struct UebungDetailView: View {
                     werte: punkte.enumerated().map { (name: "\($0.offset + 1). Einheit, \(Datum.anzeige(Datum.text($0.element.datum)))", wert: $0.element.wert) }))
             }
         }
-        Label("Persönliche Rekorde", systemImage: "medal.fill")
-            .font(.headline).foregroundStyle(palette.text)
-        ListenKarte {
-            ForEach(RekordArt.allCases) { a in
-                GymZeile(titel: a.titel) {
-                    Text(RekordLogik.text(RekordLogik.rekord(tage, a), art: a)).font(.body.weight(.semibold)).monospacedDigit()
+    }
+
+    /// Verlauf oben: das schwerste Set groß (Gewicht-Rekord), nur mit Gewicht.
+    @ViewBuilder
+    private func schwerstes(_ tage: [UebungTag]) -> some View {
+        if let kg = RekordLogik.rekord(tage, .gewicht) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Schwerstes Set").font(.footnote).foregroundStyle(palette.text2)
+                Text(RekordLogik.text(kg)).font(.largeTitle.weight(.bold)).fontDesign(.rounded).monospacedDigit().foregroundStyle(palette.text)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    // MARK: Rekorde
+
+    @ViewBuilder
+    private func rekorde(_ tage: [UebungTag]) -> some View {
+        if tage.isEmpty {
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Rekorde. Dein erstes Set ist gleich dein erster Rekord."))
+        } else {
+            ListenKarte {
+                ForEach(RekordArt.allCases) { a in
+                    GymZeile(titel: a.titel) {
+                        Text(RekordLogik.text(RekordLogik.rekord(tage, a), art: a)).font(.body.weight(.semibold)).monospacedDigit()
+                    }
+                    if a != RekordArt.allCases.last { Haarlinie() }
                 }
-                if a != RekordArt.allCases.last { Haarlinie() }
+            }
+            if let erste = tage.first {
+                Text("Aus \(tage.count) Einheiten seit \(Datum.anzeige(Datum.text(erste.datum)))").font(.footnote).foregroundStyle(palette.text2)
+            }
+        }
+    }
+
+    // MARK: Andere Varianten
+
+    /// Außerhalb des Trainings statt "Ersetzen": bis zu drei Übungen für denselben Muskel (`AusweichLogik`).
+    @ViewBuilder
+    private func varianten(_ u: Uebung) -> some View {
+        let liste = GymSitzung.von(umgebung).laufende == nil ? Array(AusweichLogik.alternativen(fuer: u).prefix(3)) : []
+        if !liste.isEmpty {
+            Text("Andere Varianten").font(.headline).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
+            ListenKarte {
+                ForEach(Array(liste.enumerated()), id: \.element.id) { i, v in
+                    if i > 0 { Haarlinie() }
+                    NavigationLink { UebungDetailView(id: v.id, anleitungZuerst: true) } label: {
+                        GymUebungZeile(id: v.id, koerper: v.koerper, titel: v.name, untertitel: "\(v.muskel) · \(v.geraet)")
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
