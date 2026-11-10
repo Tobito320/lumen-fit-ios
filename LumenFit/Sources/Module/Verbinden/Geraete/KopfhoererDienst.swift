@@ -70,7 +70,7 @@ final class KopfhoererDienst: NSObject, AVSpeechSynthesizerDelegate {
         sprecher.delegate = self
         self.sprecher = sprecher
         let aeusserung = AVSpeechUtterance(string: text)
-        aeusserung.voice = AVSpeechSynthesisVoice(language: "de-DE")
+        aeusserung.voice = AVSpeechSynthesisVoice(language: Bundle.main.preferredLocalizations.first == "en" ? "en-US" : "de-DE") // Stimme passend zur App-Sprache
         sprecher.speak(aeusserung)
     }
 

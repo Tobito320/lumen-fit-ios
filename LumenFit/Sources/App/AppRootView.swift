@@ -30,8 +30,8 @@ struct AppRootView: View {
             .lumenTheme(ProfilThemaWahl.wirksam(einstellungen.thema, loveaErlaubt: umgebung.konto.loveaErlaubt), erscheinung: einstellungen.erscheinung)
             .toggleStyle(.lumenSchalter)
             .environment(\.haptikAn, einstellungen.haptik)
-            // Die App spricht nur Deutsch: Zahlen und Daten in Text(...) folgen nicht dem Gerät (im Simulator "1,224" statt "1.224").
-            .environment(\.locale, Locale(identifier: "de_DE"))
+            // Auf Deutsch feste deutsche Zahlen und Daten (im Simulator sonst "1,224" statt "1.224"); sonst folgt alles dem Gerät, auch die Texte.
+            .environment(\.locale, Bundle.main.preferredLocalizations.first == "de" ? Locale(identifier: "de_DE") : .current)
             .task(id: umgebung.profil.aktiv?.id) {
                 nutzungAbgleichen()
                 if umgebung.profil.hatProfil {
