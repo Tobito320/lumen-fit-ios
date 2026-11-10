@@ -70,7 +70,7 @@ struct FreundeTabView: View {
             Button("Entfernen", role: .destructive) {
                 Task {
                     if !(await umgebung.konto.verbindungEntfernen(e.id)) {
-                        aktionFehler = "Die Verbindung ließ sich nicht entfernen. Prüfe das Netz und versuche es nochmal."
+                        aktionFehler = String(localized: "Die Verbindung ließ sich nicht entfernen. Prüfe das Netz und versuche es nochmal.")
                     }
                 }
             }
@@ -94,7 +94,7 @@ struct FreundeTabView: View {
         let neu = dienst.neue(seit: stand > 0 ? Date(timeIntervalSince1970: stand) : nil)
         if !einladungen.isEmpty || !neu.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Für dich")
+                kopf(String(localized: "Für dich"))
                 if !neu.isEmpty {
                     ListenKarte {
                         ForEach(Array(neu.enumerated()), id: \.element.id) { i, e in
@@ -109,7 +109,7 @@ struct FreundeTabView: View {
     }
 
     private func neuZeile(_ e: VerbindungEintrag) -> some View {
-        GymZeile(titel: "\(e.anzeigeName) ist jetzt mit dir verbunden", untertitel: e.erstellt?.formatted(.relative(presentation: .named))) {
+        GymZeile(titel: String(localized: "\(e.anzeigeName) ist jetzt mit dir verbunden"), untertitel: e.erstellt?.formatted(.relative(presentation: .named))) {
             Button("Entfernen", role: .destructive) { entfernen = e }
                 .font(.footnote.weight(.semibold))
                 .frame(minHeight: Abstand.tippflaeche)
@@ -119,7 +119,7 @@ struct FreundeTabView: View {
     private func einladungKarte(_ h: CrewHerausforderung) -> some View {
         let andere = h.teilnehmer.filter { !$0.ich }.map(\.name).joined(separator: ", ")
         return ListenKarte {
-            GymZeile(titel: "Einladung: \(CrewLogik.titel(h))", untertitel: "Mit \(andere) · \(CrewLogik.restText(h, jetzt: umgebung.uhr()))")
+            GymZeile(titel: String(localized: "Einladung: \(CrewLogik.titel(h))"), untertitel: String(localized: "Mit \(andere) · \(CrewLogik.restText(h, jetzt: umgebung.uhr()))"))
             HStack(spacing: Abstand.s) {
                 Button {
                     Task { aktionFehler = await dienst.annehmen(h.id) }
@@ -138,14 +138,14 @@ struct FreundeTabView: View {
 
 /// Texte der Crew, die mehrere Ansichten brauchen.
 enum CrewTexte {
-    nonisolated static let sichtbar = "Alle in dieser Herausforderung sehen deinen Namen und deinen Wert."
+    nonisolated static let sichtbar = String(localized: "Alle in dieser Herausforderung sehen deinen Namen und deinen Wert.")
 
     /// "heute · 54 min · 27 Sätze"
     static func trainingText(_ t: PartnerTrainingKurz, heute: String) -> String {
         let n = Datum.tageZwischen(t.tag, heute)
-        var teile = [n <= 0 ? "heute" : n == 1 ? "gestern" : "vor \(n) Tagen"]
+        var teile = [n <= 0 ? String(localized: "heute") : n == 1 ? String(localized: "gestern") : String(localized: "vor \(n) Tagen")]
         if let m = t.minuten { teile.append(TrainingLogik.dauerText(TimeInterval(m * 60))) }
-        if t.saetze > 0 { teile.append(t.saetze == 1 ? "1 Satz" : "\(t.saetze) Sätze") }
+        if t.saetze > 0 { teile.append(t.saetze == 1 ? String(localized: "1 Satz") : String(localized: "\(t.saetze) Sätze")) }
         return teile.joined(separator: " · ")
     }
 }

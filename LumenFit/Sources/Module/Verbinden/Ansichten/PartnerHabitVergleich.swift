@@ -10,7 +10,7 @@ struct PartnerHabitVergleich: View {
 
     private var text: String? {
         guard let datei = PartnerAnzeige.aktuell(umgebung), let g = PartnerAnzeige.gewohnheit(datei, id: habitID, name: name) else { return nil }
-        return "\(datei.profilName): \(g.serie) in Folge · \(g.quote) % in 30 Tagen"
+        return String(localized: "\(datei.profilName): \(g.serie) in Folge · \(g.quote) % in 30 Tagen")
     }
 
     var body: some View {

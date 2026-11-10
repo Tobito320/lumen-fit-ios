@@ -27,7 +27,7 @@ struct PartnerKoerperWeiche<Eigene: View>: View {
         let name: String
         switch stand {
         case .verbunden(let d), .veraltet(let d): name = d.profilName
-        case .nichtVerbunden, .unbekannteVersion: name = "Partner"
+        case .nichtVerbunden, .unbekannteVersion: name = String(localized: "Partner")
         }
         return Picker("Wessen Werte", selection: $partnerAnsicht) {
             Text("Ich").tag(false)
@@ -43,7 +43,7 @@ struct PartnerKoerperWeiche<Eigene: View>: View {
 /// Die Körperwerte des Partners: Gewicht und Maße wie in den eigenen Messungen (Auswahl der Messung, großer Wert, Kurve, Historie), nur lesen.
 struct PartnerKoerperAnsicht: View {
     var body: some View {
-        PartnerAnsichtRahmen(art: .koerper, titel: "Messungen") { datei in
+        PartnerAnsichtRahmen(art: .koerper, titel: String(localized: "Messungen")) { datei in
             PartnerKoerperInhalt(datei: datei)
         }
     }
@@ -137,8 +137,8 @@ private struct PartnerKoerperInhalt: View {
         .partnerZeichnet()
         .id(art)
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "\(art.titel) von \(datei.profilName)", zusammenfassung: "\(art.titel): \(art.text(punkte.last?.zehntel ?? 0)), \(punkte.count) Messungen",
-            xTitel: "Tag", yTitel: art.titel, einheit: art.einheit, stetig: true,
+            titel: String(localized: "\(art.titel) von \(datei.profilName)"), zusammenfassung: String(localized: "\(art.titel): \(art.text(punkte.last?.zehntel ?? 0)), \(punkte.count) Messungen"),
+            xTitel: String(localized: "Tag"), yTitel: art.titel, einheit: art.einheit, stetig: true,
             punkte: punkte.map { .init(x: PartnerAnsichtLogik.kurzDatum($0.tag), y: Double($0.zehntel) / 10) }))
     }
 

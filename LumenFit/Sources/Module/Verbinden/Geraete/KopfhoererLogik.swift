@@ -28,9 +28,9 @@ enum KopfhoererLogik {
 
     static func titel(_ status: KopfhoererStatus) -> String {
         switch status {
-        case .keine: "Nichts angeschlossen"
-        case .bluetooth(_, let airPods): airPods ? "AirPods verbunden" : "Bluetooth-Audio verbunden"
-        case .kabel: "Kopfhörer mit Kabel"
+        case .keine: String(localized: "Nichts angeschlossen")
+        case .bluetooth(_, let airPods): airPods ? String(localized: "AirPods verbunden") : String(localized: "Bluetooth-Audio verbunden")
+        case .kabel: String(localized: "Kopfhörer mit Kabel")
         }
     }
 
@@ -44,7 +44,7 @@ enum KopfhoererLogik {
     /// Kurzer Text für die Zeile in der Geräteliste.
     static func zeile(_ status: KopfhoererStatus) -> String {
         switch status {
-        case .keine: "Nichts verbunden"
+        case .keine: String(localized: "Nichts verbunden")
         case .bluetooth(let name, _), .kabel(let name): name
         }
     }
@@ -64,8 +64,8 @@ enum AnsageRegel {
     nonisolated static let rekordSchluessel = "fit.kopfhoerer.ansage.rekord"
     nonisolated static let nurKopfhoererSchluessel = "fit.kopfhoerer.ansage.nurkopfhoerer"
 
-    static let pauseText = "Pause vorbei. Nächster Satz."
-    static let rekordText = "Neuer Rekord!"
+    static let pauseText = String(localized: "Pause vorbei. Nächster Satz.")
+    static let rekordText = String(localized: "Neuer Rekord!")
 
     static func sprechen(an: Bool, nurMitKopfhoerern: Bool, status: KopfhoererStatus) -> Bool {
         guard an else { return false }

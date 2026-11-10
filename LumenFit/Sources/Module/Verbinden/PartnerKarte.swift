@@ -33,7 +33,7 @@ struct PartnerKarte: View {
             }
             ForEach(zeilen) { zeile in
                 Haarlinie()
-                if zeile.titel == "Schritte", !PartnerVergleich.partnerSchritte(datei).isEmpty {
+                if zeile.titel == String(localized: "Schritte"), !PartnerVergleich.partnerSchritte(datei).isEmpty {
                     Button { vergleichOffen = true } label: { schritteZeile(zeile, datei) }
                         .buttonStyle(.federnd)
                         .accessibilityHint("Zeigt die Woche im Vergleich mit dir")

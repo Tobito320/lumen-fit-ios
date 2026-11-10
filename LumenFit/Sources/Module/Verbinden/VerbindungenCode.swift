@@ -69,7 +69,7 @@ struct VerbindungCodeBlatt: View {
             Text("Dein Freund scannt ihn mit der iPhone-Kamera. Dann seid ihr sofort verbunden.")
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
         } else if fehlgeschlagen {
-            FehlerKarte(titel: "Kein QR-Code möglich", hilfe: "Die App konnte dein Konto nicht erreichen. Prüfe das Netz und versuche es nochmal.")
+            FehlerKarte(titel: String(localized: "Kein QR-Code möglich"), hilfe: String(localized: "Die App konnte dein Konto nicht erreichen. Prüfe das Netz und versuche es nochmal."))
             Button("Nochmal") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
         } else {
             ProgressView()
@@ -155,7 +155,7 @@ struct VerbindungVerbundenAnsicht: View {
     private var eintrag: VerbindungEintrag? { umgebung.konto.verbindungen.eintraege.first { $0.id == id } }
 
     var body: some View {
-        let name = eintrag?.anzeigeName ?? "der Person"
+        let name = eintrag?.anzeigeName ?? String(localized: "der Person")
         VStack(spacing: Abstand.m) {
             ScrollView {
                 VStack(spacing: Abstand.m) {
@@ -232,7 +232,7 @@ struct VerbindungScanBlatt: View {
                     Text("\(name) hat die Anfrage abgelehnt.").font(.headline).multilineTextAlignment(.center)
                     Button("Fertig") { dismiss() }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
                 case .fehler(let text):
-                    FehlerKarte(titel: "Das hat nicht geklappt", hilfe: text)
+                    FehlerKarte(titel: String(localized: "Das hat nicht geklappt"), hilfe: text)
                     Button("Nochmal") { aktuell = nil; phase = .scannen }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
                 }
                 Spacer(minLength: 0)
@@ -305,7 +305,7 @@ struct VerbindungScanBlatt: View {
     private func gelesen(_ text: String) async {
         guard aktuell == nil, phase == .scannen else { return }
         guard let t = VerbindungenLogik.einladung(aus: text) else {
-            phase = .fehler("Das ist kein Code von Lumen Fit. Ein Code hat 8 Zeichen, zum Beispiel K7Q2-9FX.")
+            phase = .fehler(String(localized: "Das ist kein Code von Lumen Fit. Ein Code hat 8 Zeichen, zum Beispiel K7Q2-9FX."))
             return
         }
         await ansehen(t)
@@ -317,7 +317,7 @@ struct VerbindungScanBlatt: View {
         switch await umgebung.konto.einladungAnsehen(t) {
         case .person(let name): phase = .frage(name)
         case .fehler(let text): phase = .fehler(text)
-        case .angefragt, .verbunden: phase = .fehler("Das hat nicht geklappt.")
+        case .angefragt, .verbunden: phase = .fehler(String(localized: "Das hat nicht geklappt."))
         }
     }
 
@@ -327,7 +327,7 @@ struct VerbindungScanBlatt: View {
         switch await umgebung.konto.einladungEinloesen(t) {
         case .angefragt(let id): phase = .wartet(name: name, id: id)
         case .verbunden(let id): phase = .verbunden(id: id)
-        case .person: phase = .fehler("Das hat nicht geklappt.")
+        case .person: phase = .fehler(String(localized: "Das hat nicht geklappt."))
         case .fehler(let text): phase = .fehler(text)
         }
     }
@@ -352,7 +352,7 @@ struct VerbindungScanBlatt: View {
     private func fotoLesen(_ auswahl: PhotosPickerItem) async {
         defer { foto = nil }
         guard let data = try? await auswahl.loadTransferable(type: Data.self), let bild = UIImage(data: data), let text = FreundeQR.text(in: bild) else {
-            phase = .fehler("Auf dem Foto ist kein Code zu lesen. Er muss ganz und scharf drauf sein.")
+            phase = .fehler(String(localized: "Auf dem Foto ist kein Code zu lesen. Er muss ganz und scharf drauf sein."))
             return
         }
         await gelesen(text)

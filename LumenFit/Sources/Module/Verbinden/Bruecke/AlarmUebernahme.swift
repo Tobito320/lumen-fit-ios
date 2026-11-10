@@ -166,13 +166,15 @@ struct AlarmUebernahme: Sendable {
     /// Die kleine Zeile für Profil > Geräte, nur Zahlen. nil, wenn nichts weitergereicht wurde.
     func zeile() -> String? {
         guard let fit = weitergereicht() else { return nil }
-        var text = "Aus Lovea weitergereicht: \(Self.zahlenText(Zahlen(wecker: fit.wecker, toene: fit.toene, erinnerungen: fit.erinnerungen)))."
-        if let e = ergebnis() { text += " Von Lumen Alarm übernommen: \(Self.zahlenText(e.uebernommen))." }
+        var text = String(localized: "Aus Lovea weitergereicht: \(Self.zahlenText(Zahlen(wecker: fit.wecker, toene: fit.toene, erinnerungen: fit.erinnerungen))).")
+        if let e = ergebnis() { text += String(localized: " Von Lumen Alarm übernommen: \(Self.zahlenText(e.uebernommen)).") }
         return text
     }
 
     nonisolated static func zahlenText(_ z: Zahlen) -> String {
-        "\(z.wecker) Wecker, \(z.toene) \(z.toene == 1 ? "Ton" : "Töne"), \(z.erinnerungen) \(z.erinnerungen == 1 ? "Erinnerung" : "Erinnerungen")"
+        let toene = z.toene == 1 ? String(localized: "Ton") : String(localized: "Töne")
+        let erinnerungen = z.erinnerungen == 1 ? String(localized: "Erinnerung") : String(localized: "Erinnerungen")
+        return String(localized: "\(z.wecker) Wecker, \(z.toene) \(toene), \(z.erinnerungen) \(erinnerungen)")
     }
 
     // MARK: - Dateien

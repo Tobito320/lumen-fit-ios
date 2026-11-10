@@ -6,7 +6,7 @@ struct PartnerTagebuchAnsicht: View {
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        PartnerAnsichtRahmen(art: .tagebuch, titel: "Tagebuch") { datei in
+        PartnerAnsichtRahmen(art: .tagebuch, titel: String(localized: "Tagebuch")) { datei in
             PartnerTagebuchInhalt(datei: datei, heute: Datum.text(umgebung.uhr()))
         }
     }
@@ -53,7 +53,7 @@ private struct PartnerTagebuchInhalt: View {
 
     private var leiste: some View {
         HStack {
-            pfeil("chevron.left", "Ein Tag zurück", richtung: -1)
+            pfeil("chevron.left", String(localized: "Ein Tag zurück"), richtung: -1)
             Spacer()
             VStack(spacing: 2) {
                 Text(PartnerAnsichtLogik.tagTitel(tag, heute: heute)).font(.headline).foregroundStyle(palette.text)
@@ -64,7 +64,7 @@ private struct PartnerTagebuchInhalt: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
             Spacer()
-            pfeil("chevron.right", "Ein Tag weiter", richtung: 1)
+            pfeil("chevron.right", String(localized: "Ein Tag weiter"), richtung: 1)
         }
         .padding(.horizontal, Abstand.s)
         .lumenKartenFlaeche()
@@ -96,7 +96,7 @@ private struct PartnerTagebuchInhalt: View {
                 Text("Kalorien von \(datei.profilName)").font(.footnote.weight(.semibold))
                 HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                     RollZahl(wert: Double(t.kcal), format: .number.precision(.fractionLength(0))).font(.largeTitle.weight(.bold)).fontDesign(.rounded)
-                    Text(ziel.map { "von \(PartnerAnsichtLogik.zahl($0)) kcal" } ?? "kcal").font(.subheadline)
+                    Text(ziel.map { String(localized: "von \(PartnerAnsichtLogik.zahl($0)) kcal") } ?? "kcal").font(.subheadline)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -106,9 +106,9 @@ private struct PartnerTagebuchInhalt: View {
     private func makros(_ t: PartnerTagebuchTag) -> some View {
         let ziele = datei.heute.tagebuchZiele
         return VStack(alignment: .leading, spacing: Abstand.m) {
-            makroZeile("Protein", t.protein, ziel: ziele?.protein)
-            makroZeile("Kohlenhydrate", t.kohlenhydrate, ziel: ziele?.kohlenhydrate)
-            makroZeile("Fett", t.fett, ziel: ziele?.fett)
+            makroZeile(String(localized: "Protein"), t.protein, ziel: ziele?.protein)
+            makroZeile(String(localized: "Kohlenhydrate"), t.kohlenhydrate, ziel: ziele?.kohlenhydrate)
+            makroZeile(String(localized: "Fett"), t.fett, ziel: ziele?.fett)
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -120,7 +120,7 @@ private struct PartnerTagebuchInhalt: View {
             HStack {
                 Text(titel).foregroundStyle(palette.text)
                 Spacer(minLength: Abstand.m)
-                Text(ziel.map { "\(wert) von \($0) g" } ?? "\(wert) g").font(.subheadline).monospacedDigit().foregroundStyle(palette.text2)
+                Text(ziel.map { String(localized: "\(wert) von \($0) g") } ?? "\(wert) g").font(.subheadline).monospacedDigit().foregroundStyle(palette.text2)
             }
             if let ziel { PartnerBalken(anteil: PartnerAnsichtLogik.anteil(wert, ziel: ziel)) }
         }

@@ -25,7 +25,7 @@ struct BandVerlaufAbschnitt: View {
     }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Verlauf", fuss: "Nur Werte, die das Band geliefert hat. Puls, Schlaf, Stress und HRV sind am Gerät noch nicht geprüft. Den Verlauf von Blutsauerstoff liest Lumen Fit noch nicht.") {
+        VerbindenAbschnitt(titel: String(localized: "Verlauf"), fuss: String(localized: "Nur Werte, die das Band geliefert hat. Puls, Schlaf, Stress und HRV sind am Gerät noch nicht geprüft. Den Verlauf von Blutsauerstoff liest Lumen Fit noch nicht.")) {
             if leer {
                 Text("Noch keine Verlaufsdaten. Sie erscheinen, sobald das Band verbunden ist und gelesen wurde.").foregroundStyle(palette.text2)
             }
@@ -43,9 +43,9 @@ struct BandVerlaufAbschnitt: View {
     @ViewBuilder private var pulsKarte: some View {
         let punkte = reihen.puls
         if punkte.count >= 2, let statistik = TrackerVerlauf.pulsStatistik(punkte) {
-            BandVerlaufKarte(titel: "Puls heute", symbol: "heart.fill", wert: "\(statistik.letzter) bpm",
-                             unterzeile: "Tief \(statistik.niedrig) · Hoch \(statistik.hoch) · \(statistik.anzahl) Messungen",
-                             beschreibung: "Zuletzt \(statistik.letzter), niedrigster \(statistik.niedrig), höchster \(statistik.hoch), \(statistik.anzahl) Messungen") {
+            BandVerlaufKarte(titel: String(localized: "Puls heute"), symbol: "heart.fill", wert: "\(statistik.letzter) bpm",
+                             unterzeile: String(localized: "Tief \(statistik.niedrig) · Hoch \(statistik.hoch) · \(statistik.anzahl) Messungen"),
+                             beschreibung: String(localized: "Zuletzt \(statistik.letzter), niedrigster \(statistik.niedrig), höchster \(statistik.hoch), \(statistik.anzahl) Messungen")) {
                 Chart(punkte) { p in
                     LineMark(x: .value("Stunde", Double(p.minute) / 60), y: .value("Puls", p.wert))
                         .interpolationMethod(.monotone)
@@ -61,9 +61,9 @@ struct BandVerlaufAbschnitt: View {
 
     @ViewBuilder private var schritteKarte: some View {
         if schritteSumme > 0 {
-            BandVerlaufKarte(titel: "Schritte heute", symbol: "figure.walk", wert: schritteSumme.formatted(),
-                             unterzeile: "Je Stunde laut Band",
-                             beschreibung: "\(schritteSumme) Schritte heute, verteilt auf die Stunden des Tages") {
+            BandVerlaufKarte(titel: String(localized: "Schritte heute"), symbol: "figure.walk", wert: schritteSumme.formatted(),
+                             unterzeile: String(localized: "Je Stunde laut Band"),
+                             beschreibung: String(localized: "\(schritteSumme) Schritte heute, verteilt auf die Stunden des Tages")) {
                 Chart(schritte) { s in
                     BarMark(x: .value("Stunde", s.stunde), y: .value("Schritte", s.schritte), width: .fixed(6))
                         .foregroundStyle(palette.akzent)
@@ -78,9 +78,9 @@ struct BandVerlaufAbschnitt: View {
     @ViewBuilder private var stressKarte: some View {
         let punkte = reihen.stress
         if punkte.count >= 2, let letzter = punkte.max(by: { $0.minute < $1.minute }) {
-            BandVerlaufKarte(titel: "Stress heute", symbol: "brain.head.profile", wert: "\(letzter.wert)",
-                             unterzeile: "Alle 30 Minuten. Bis 29 entspannt, ab 80 hoch.",
-                             beschreibung: "Zuletzt \(letzter.wert) von 100, \(punkte.count) Messungen heute") {
+            BandVerlaufKarte(titel: String(localized: "Stress heute"), symbol: "brain.head.profile", wert: "\(letzter.wert)",
+                             unterzeile: String(localized: "Alle 30 Minuten. Bis 29 entspannt, ab 80 hoch."),
+                             beschreibung: String(localized: "Zuletzt \(letzter.wert) von 100, \(punkte.count) Messungen heute")) {
                 Chart(punkte) { p in
                     LineMark(x: .value("Stunde", Double(p.minute) / 60), y: .value("Stress", p.wert)).foregroundStyle(palette.akzent)
                     PointMark(x: .value("Stunde", Double(p.minute) / 60), y: .value("Stress", p.wert)).foregroundStyle(palette.akzent).symbolSize(18)
@@ -94,9 +94,9 @@ struct BandVerlaufAbschnitt: View {
     @ViewBuilder private var hrvKarte: some View {
         let punkte = reihen.hrv
         if punkte.count >= 2, let letzter = punkte.max(by: { $0.minute < $1.minute }) {
-            BandVerlaufKarte(titel: "HRV heute", symbol: "waveform.path.ecg", wert: "\(letzter.wert) ms",
-                             unterzeile: "Alle 30 Minuten, in Millisekunden. Höher heißt meist erholter.",
-                             beschreibung: "Zuletzt \(letzter.wert) Millisekunden, \(punkte.count) Messungen heute") {
+            BandVerlaufKarte(titel: String(localized: "HRV heute"), symbol: "waveform.path.ecg", wert: "\(letzter.wert) ms",
+                             unterzeile: String(localized: "Alle 30 Minuten, in Millisekunden. Höher heißt meist erholter."),
+                             beschreibung: String(localized: "Zuletzt \(letzter.wert) Millisekunden, \(punkte.count) Messungen heute")) {
                 Chart(punkte) { p in
                     LineMark(x: .value("Stunde", Double(p.minute) / 60), y: .value("HRV", p.wert)).foregroundStyle(palette.akzent)
                     PointMark(x: .value("Stunde", Double(p.minute) / 60), y: .value("HRV", p.wert)).foregroundStyle(palette.akzent).symbolSize(18)

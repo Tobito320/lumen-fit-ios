@@ -37,7 +37,7 @@ struct SchlafDoppelKarte: View {
                     .foregroundStyle(palette.text)
                     .accessibilityAddTraits(.isHeader)
                 HStack(alignment: .top, spacing: Abstand.l) {
-                    person("Du", letzte?.mein, palette.text)
+                    person(String(localized: "Du"), letzte?.mein, palette.text)
                     person(name, letzte?.sein, palette.text2)
                 }
                 HStack(alignment: .bottom, spacing: Abstand.s) {
@@ -61,7 +61,7 @@ struct SchlafDoppelKarte: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(minuten.map { "\(name): \(PartnerAnzeige.schlafText($0))" } ?? "\(name): nichts eingetragen")
+        .accessibilityLabel(minuten.map { "\(name): \(PartnerAnzeige.schlafText($0))" } ?? String(localized: "\(name): nichts eingetragen"))
     }
 
     private func spalte(_ tag: PartnerVergleich.SchlafTag, hoechster: Int) -> some View {

@@ -211,9 +211,9 @@ enum CrewLogik {
         let zahl = wert.formatted(.number.locale(Locale(identifier: "de_DE")))
         guard wert == 1 else { return "\(zahl) \(mass.einheit)" }
         switch mass {
-        case .tage: return "1 Tag"
-        case .saetze: return "1 Satz"
-        case .rekorde: return "1 Rekord"
+        case .tage: return String(localized: "1 Tag")
+        case .saetze: return String(localized: "1 Satz")
+        case .rekorde: return String(localized: "1 Rekord")
         case .volumen, .uebung: return "\(zahl) \(mass.einheit)"
         }
     }
@@ -222,7 +222,7 @@ enum CrewLogik {
 
     static func rangliste(_ mass: CrewMass, ich: CrewWoche, eintraege: [VerbindungEintrag], jetzt: Date) -> [CrewRang] {
         var zeilen: [CrewRang] = []
-        if let w = ich.wert(mass) { zeilen.append(CrewRang(id: CrewRang.eigeneId, name: "Du", wert: w, rang: 0, ich: true)) }
+        if let w = ich.wert(mass) { zeilen.append(CrewRang(id: CrewRang.eigeneId, name: String(localized: "Du"), wert: w, rang: 0, ich: true)) }
         for e in crew(eintraege) {
             guard let w = woche(e.daten, jetzt: jetzt)?.wert(mass) else { continue }
             zeilen.append(CrewRang(id: e.id, name: name(e), wert: w, rang: 0, ich: false))
@@ -285,19 +285,19 @@ enum CrewLogik {
 
     static func text(_ s: CrewStand) -> String {
         switch s {
-        case .fuehrt: "du führst"
-        case .gleich: "Gleichstand"
-        case .hinten: "du liegst hinten"
-        case .gewonnen: "gewonnen"
-        case .verloren: "verloren"
-        case .abgebrochen: "abgebrochen"
-        case .gemeinsam(let p): "\(p) % geschafft"
+        case .fuehrt: String(localized: "du führst")
+        case .gleich: String(localized: "Gleichstand")
+        case .hinten: String(localized: "du liegst hinten")
+        case .gewonnen: String(localized: "gewonnen")
+        case .verloren: String(localized: "verloren")
+        case .abgebrochen: String(localized: "abgebrochen")
+        case .gemeinsam(let p): String(localized: "\(p) % geschafft")
         }
     }
 
     /// "Duell", "Gruppe" oder "Gemeinsam". Ein Duell hat genau zwei Personen (Eingeladene zählen mit).
     static func art(_ h: CrewHerausforderung) -> String {
-        h.modus == .gemeinsam ? "Gemeinsam" : h.teilnehmer.count <= 2 ? "Duell" : "Gruppe"
+        h.modus == .gemeinsam ? String(localized: "Gemeinsam") : h.teilnehmer.count <= 2 ? String(localized: "Duell") : String(localized: "Gruppe")
     }
 
     /// "Duell: Sätze", "Gemeinsam: Volumen", "Gruppe: Kniebeuge".
@@ -307,9 +307,9 @@ enum CrewLogik {
 
     /// "noch 3 Tage", "noch 1 Tag", "endet heute", "beendet".
     static func restText(_ h: CrewHerausforderung, jetzt: Date) -> String {
-        guard !vorbei(h, jetzt: jetzt) else { return "beendet" }
+        guard !vorbei(h, jetzt: jetzt) else { return String(localized: "beendet") }
         let tage = Int((h.ende.timeIntervalSince(jetzt) / 86_400).rounded(.down))
-        return tage < 1 ? "endet heute" : tage == 1 ? "noch 1 Tag" : "noch \(tage) Tage"
+        return tage < 1 ? String(localized: "endet heute") : tage == 1 ? String(localized: "noch 1 Tag") : String(localized: "noch \(tage) Tage")
     }
 
     /// Ende "bis Sonntag": Sonntag 23:59:59 (Berlin); liegt das weniger als eine Stunde vor `jetzt`, der Sonntag der nächsten Woche.
@@ -348,10 +348,10 @@ enum CrewLogik {
     static func reaktionText(_ r: CrewReaktion) -> String {
         let worauf = r.text.isEmpty ? "" : " · \(r.text)"
         switch r.art {
-        case .respekt: return "\(r.name) gibt dir Respekt\(worauf)"
-        case .stark: return "\(r.name) findet dein Training stark\(worauf)"
-        case .anfeuern: return "\(r.name) feuert dich an\(worauf)"
-        case .stups: return "\(r.name) fragt: Gym heute?"
+        case .respekt: return String(localized: "\(r.name) gibt dir Respekt\(worauf)")
+        case .stark: return String(localized: "\(r.name) findet dein Training stark\(worauf)")
+        case .anfeuern: return String(localized: "\(r.name) feuert dich an\(worauf)")
+        case .stups: return String(localized: "\(r.name) fragt: Gym heute?")
         }
     }
 
@@ -405,6 +405,6 @@ enum CrewLogik {
 
     /// "Bestwert bei Freunden: Beispiel Freund A 80 kg × 8"
     static func bestwertText(_ b: CrewBestwert) -> String {
-        "Bestwert bei Freunden: \(b.name) \(TrainingLogik.kgText(b.kg)) kg × \(b.wdh)"
+        String(localized: "Bestwert bei Freunden: \(b.name) \(TrainingLogik.kgText(b.kg)) kg × \(b.wdh)")
     }
 }

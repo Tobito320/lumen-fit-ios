@@ -6,7 +6,7 @@ struct PartnerPlanAnsicht: View {
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        PartnerAnsichtRahmen(art: .plan, titel: "Trainingsplan") { datei in
+        PartnerAnsichtRahmen(art: .plan, titel: String(localized: "Trainingsplan")) { datei in
             if let plan = datei.heute.plan { PartnerPlanInhalt(name: datei.profilName, plan: plan, heute: Datum.wochentag(Datum.text(umgebung.uhr()))) }
         }
     }
@@ -32,7 +32,7 @@ private struct PartnerPlanInhalt: View {
         return HeroKarte {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 Text("Plan von \(name)").font(.footnote.weight(.semibold))
-                Text(plan.name ?? "Trainingsplan").font(.title2.weight(.bold)).fontDesign(.rounded)
+                Text(plan.name ?? String(localized: "Trainingsplan")).font(.title2.weight(.bold)).fontDesign(.rounded)
                 HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                     RollZahl(wert: Double(tage), format: .number.precision(.fractionLength(0))).font(.largeTitle.weight(.bold)).fontDesign(.rounded)
                     Text(tage == 1 ? "Trainingstag pro Woche" : "Trainingstage pro Woche").font(.subheadline)
@@ -69,7 +69,7 @@ private struct PartnerPlanInhalt: View {
                 .overlay(form.strokeBorder(s.istHeute ? palette.text : Color.clear, lineWidth: 1.5))
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(s.langerName): \(s.beschreibung)\(s.istHeute ? ", heute" : "")")
+        .accessibilityLabel("\(s.langerName): \(s.beschreibung)\(s.istHeute ? String(localized: ", heute") : "")")
     }
 
     private func fuellung(_ art: PartnerAnsichtLogik.Spalte.Art) -> Color {
@@ -85,10 +85,10 @@ private struct PartnerPlanInhalt: View {
             Image(systemName: "dumbbell.fill").foregroundStyle(palette.text2).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Heute dran").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2)
-                Text(tag.name.isEmpty ? "Training" : tag.name).font(.headline).foregroundStyle(palette.text)
+                Text(tag.name.isEmpty ? String(localized: "Training") : tag.name).font(.headline).foregroundStyle(palette.text)
             }
             Spacer(minLength: Abstand.m)
-            Pille(text: tag.uebungen.count == 1 ? "1 Übung" : "\(tag.uebungen.count) Übungen")
+            Pille(text: tag.uebungen.count == 1 ? String(localized: "1 Übung") : String(localized: "\(tag.uebungen.count) Übungen"))
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -99,7 +99,7 @@ private struct PartnerPlanInhalt: View {
     private func tagKarte(_ tag: PartnerPlanTag) -> some View {
         ListenKarte {
             VStack(alignment: .leading, spacing: 2) {
-                Text(tag.name.isEmpty ? "Training" : tag.name).font(.headline).foregroundStyle(palette.text)
+                Text(tag.name.isEmpty ? String(localized: "Training") : tag.name).font(.headline).foregroundStyle(palette.text)
                 Text(PartnerAnsichtLogik.wochentageText(tag)).font(.subheadline).foregroundStyle(palette.text2)
             }
             .padding(Abstand.l)

@@ -8,7 +8,7 @@ struct MehrKlappe<Inhalt: View>: View {
     let inhalt: Inhalt
     @Environment(\.palette) private var palette
 
-    init(_ titel: String = "Mehr", untertitel: String, offen: Binding<Bool>, @ViewBuilder inhalt: () -> Inhalt) {
+    init(_ titel: String = String(localized: "Mehr"), untertitel: String, offen: Binding<Bool>, @ViewBuilder inhalt: () -> Inhalt) {
         self.titel = titel
         self.untertitel = untertitel
         _offen = offen

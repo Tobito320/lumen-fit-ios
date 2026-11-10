@@ -45,7 +45,7 @@ struct BandSeite: View {
 
     /// Lumen Alarm legt Weck-Wünsche ab, Lumen Fit vibriert das Band dazu. Der Ton von Lumen Alarm klingelt immer, auch ohne Band.
     private var weckerAbschnitt: some View {
-        VerbindenAbschnitt(fuss: "Standard an. Wirkt nur mit dem Band-Schalter oben und nur, wenn Lumen Alarm das Band mitwecken lässt. Der Ton klingelt immer.") {
+        VerbindenAbschnitt(fuss: String(localized: "Standard an. Wirkt nur mit dem Band-Schalter oben und nur, wenn Lumen Alarm das Band mitwecken lässt. Der Ton klingelt immer.")) {
             Toggle("Lumen Alarm darf das Band wecken", isOn: Binding(
                 get: { einstellungen?.werte.alarmWeckt ?? true },
                 set: { neu in einstellungen?.aendere { $0.alarmWeckt = neu } }))
@@ -56,10 +56,10 @@ struct BandSeite: View {
     /// Ohne Freigabe steht hier kein Wort von Lovea.
     private var fuss: String {
         if umgebung.konto.config.bandStandard {
-            return "Für dein Konto von selbst an, Aus bleibt aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Fehlen Daten, schalte eine der beiden aus."
+            return String(localized: "Für dein Konto von selbst an, Aus bleibt aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Fehlen Daten, schalte eine der beiden aus.")
         }
-        let basis = "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth."
-        return umgebung.konto.loveaErlaubt ? "Standard aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth." : basis
+        let basis = String(localized: "Standard aus. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth.")
+        return umgebung.konto.loveaErlaubt ? String(localized: "Standard aus. Ob Lovea und Lumen Fit dasselbe Band zugleich nutzen können und sich beim Lesen stören, ist am Gerät nicht bewiesen. Erst mit dem Schalter fragt Lumen Fit nach Bluetooth.") : basis
     }
 }
 
@@ -90,7 +90,7 @@ struct BandAkkuVerlauf: View {
     let punkte: [TrackerAkkuVerlauf.Punkt]
 
     var body: some View {
-        DiagrammKarte(aussage: "Akku der letzten Tage", kernzeile: kernzeile) {
+        DiagrammKarte(aussage: String(localized: "Akku der letzten Tage"), kernzeile: kernzeile) {
             Chart(punkte) { punkt in
                 LineMark(x: .value("Zeit", punkt.datum), y: .value("Prozent", punkt.prozent))
                     .interpolationMethod(.monotone)
@@ -104,8 +104,8 @@ struct BandAkkuVerlauf: View {
 
     /// "Jetzt 82 %, am niedrigsten 41 %."
     private var kernzeile: String {
-        guard let letzter = punkte.last, let tiefster = punkte.map(\.prozent).min() else { return "Noch kein Verlauf" }
-        return "Jetzt \(letzter.prozent) %, am niedrigsten \(tiefster) %."
+        guard let letzter = punkte.last, let tiefster = punkte.map(\.prozent).min() else { return String(localized: "Noch kein Verlauf") }
+        return String(localized: "Jetzt \(letzter.prozent) %, am niedrigsten \(tiefster) %.")
     }
 }
 
@@ -116,12 +116,12 @@ struct BandAkkuBeschreibung: AXChartDescriptorRepresentable {
     func makeChartDescriptor() -> AXChartDescriptor {
         let start = punkte.first?.zeit ?? 0
         let stunden = punkte.map { Double($0.zeit - start) / 3600 }
-        let x = AXNumericDataAxisDescriptor(title: "Stunden seit dem ersten Wert", range: 0...max(1, stunden.last ?? 1), gridlinePositions: []) {
-            "\(Int($0.rounded())) Stunden"
+        let x = AXNumericDataAxisDescriptor(title: String(localized: "Stunden seit dem ersten Wert"), range: 0...max(1, stunden.last ?? 1), gridlinePositions: []) {
+            String(localized: "\(Int($0.rounded())) Stunden")
         }
-        let y = AXNumericDataAxisDescriptor(title: "Akku in Prozent", range: 0...100, gridlinePositions: []) { "\(Int($0.rounded())) Prozent" }
-        let reihe = AXDataSeriesDescriptor(name: "Akku", isContinuous: true,
+        let y = AXNumericDataAxisDescriptor(title: String(localized: "Akku in Prozent"), range: 0...100, gridlinePositions: []) { String(localized: "\(Int($0.rounded())) Prozent") }
+        let reihe = AXDataSeriesDescriptor(name: String(localized: "Akku"), isContinuous: true,
                                            dataPoints: zip(stunden, punkte).map { AXDataPoint(x: $0, y: Double($1.prozent)) })
-        return AXChartDescriptor(title: "Akku des Bands", summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
+        return AXChartDescriptor(title: String(localized: "Akku des Bands"), summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
     }
 }

@@ -9,11 +9,11 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
 
     var titel: String {
         switch self {
-        case .heute: "Heute"
-        case .training: "Training"
-        case .fortschritt: "Fortschritt"
-        case .freunde: "Stats"
-        case .profil: "Profil"
+        case .heute: String(localized: "Heute")
+        case .training: String(localized: "Training")
+        case .fortschritt: String(localized: "Fortschritt")
+        case .freunde: String(localized: "Stats")
+        case .profil: String(localized: "Profil")
         }
     }
 

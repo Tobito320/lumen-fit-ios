@@ -13,46 +13,46 @@ enum BandAnzeige {
         var arbeitet = false
     }
 
-    static let wecken = "Das Band einmal antippen oder bewegen. Es sendet nach dem Trennen nicht mehr, bis es geweckt wird."
+    static let wecken = String(localized: "Das Band einmal antippen oder bewegen. Es sendet nach dem Trennen nicht mehr, bis es geweckt wird.")
 
     /// Ein Zustand, ein Titel, ein Satz, der sagt, was jetzt hilft. Der Status steht immer mit Symbol und Text, nie nur in Farbe.
     static func status(_ zustand: TrackerModell.Zustand, gekoppelt: Bool, abfrageLaeuft: Bool) -> Status {
         switch zustand {
         case .verbunden:
-            Status(symbol: "checkmark.circle.fill", titel: abfrageLaeuft ? "Verbunden, liest" : "Verbunden", hilfe: nil, arbeitet: abfrageLaeuft)
+            Status(symbol: "checkmark.circle.fill", titel: abfrageLaeuft ? String(localized: "Verbunden, liest") : String(localized: "Verbunden"), hilfe: nil, arbeitet: abfrageLaeuft)
         case .sucht:
-            Status(symbol: "magnifyingglass", titel: "Sucht das Band", hilfe: nil, arbeitet: true)
+            Status(symbol: "magnifyingglass", titel: String(localized: "Sucht das Band"), hilfe: nil, arbeitet: true)
         case .wartet:
-            Status(symbol: "hourglass", titel: "Wartet auf das Band", hilfe: wecken)
+            Status(symbol: "hourglass", titel: String(localized: "Wartet auf das Band"), hilfe: wecken)
         case .nichtGefunden:
-            Status(symbol: "exclamationmark.circle", titel: "Nicht gefunden", hilfe: wecken, warnung: true)
+            Status(symbol: "exclamationmark.circle", titel: String(localized: "Nicht gefunden"), hilfe: wecken, warnung: true)
         case .getrennt:
             gekoppelt
-                ? Status(symbol: "circle.dashed", titel: "Getrennt", hilfe: "Lumen Fit hält keine Verbindung offen. Tippe auf Verbinden.")
-                : Status(symbol: "circle.dashed", titel: "Nicht verbunden", hilfe: "Das Band antippen, dann auf Band suchen tippen.")
+                ? Status(symbol: "circle.dashed", titel: String(localized: "Getrennt"), hilfe: String(localized: "Lumen Fit hält keine Verbindung offen. Tippe auf Verbinden."))
+                : Status(symbol: "circle.dashed", titel: String(localized: "Nicht verbunden"), hilfe: String(localized: "Das Band antippen, dann auf Band suchen tippen."))
         case .bluetoothAus:
-            Status(symbol: "bolt.horizontal.circle", titel: "Bluetooth ist aus", hilfe: "Schalte Bluetooth im Kontrollzentrum ein.", warnung: true)
+            Status(symbol: "bolt.horizontal.circle", titel: String(localized: "Bluetooth ist aus"), hilfe: String(localized: "Schalte Bluetooth im Kontrollzentrum ein."), warnung: true)
         case .nichtErlaubt:
-            Status(symbol: "lock.circle", titel: "Bluetooth nicht erlaubt", hilfe: "Erlaube Bluetooth für Lumen Fit in den iOS-Einstellungen.", warnung: true)
+            Status(symbol: "lock.circle", titel: String(localized: "Bluetooth nicht erlaubt"), hilfe: String(localized: "Erlaube Bluetooth für Lumen Fit in den iOS-Einstellungen."), warnung: true)
         case .nichtVerfuegbar:
-            Status(symbol: "xmark.circle", titel: "Bluetooth nicht verfügbar",
-                   hilfe: "Dieses Gerät kann Bluetooth gerade nicht nutzen. Starte das iPhone neu, wenn es so bleibt.", warnung: true)
+            Status(symbol: "xmark.circle", titel: String(localized: "Bluetooth nicht verfügbar"),
+                   hilfe: String(localized: "Dieses Gerät kann Bluetooth gerade nicht nutzen. Starte das iPhone neu, wenn es so bleibt."), warnung: true)
         case .fehler(let text):
-            Status(symbol: "exclamationmark.triangle", titel: "Verbindung fehlgeschlagen",
-                   hilfe: "\(text). Das Band antippen und erneut auf Verbinden tippen.", warnung: true)
+            Status(symbol: "exclamationmark.triangle", titel: String(localized: "Verbindung fehlgeschlagen"),
+                   hilfe: String(localized: "\(text). Das Band antippen und erneut auf Verbinden tippen."), warnung: true)
         }
     }
 
     static func akkuText(prozent: Int, laedt: Bool, vermutet: Bool) -> String {
         guard laedt else { return "\(prozent) %" }
-        return vermutet ? "\(prozent) %, lädt vermutlich" : "\(prozent) %, lädt"
+        return vermutet ? String(localized: "\(prozent) %, lädt vermutlich") : String(localized: "\(prozent) %, lädt")
     }
 
     /// Ein Wert, der Stunden alt ist (Verbindung weg), trägt sein Alter; VoiceOver sagt "nicht aktuell".
     static func akkuSprechtext(prozent: Int, laedt: Bool, vermutet: Bool, veraltet: Bool) -> String {
-        var text = "\(prozent) Prozent"
-        if laedt { text += vermutet ? ", lädt vermutlich" : ", lädt" }
-        if veraltet { text += ", nicht aktuell" }
+        var text = String(localized: "\(prozent) Prozent")
+        if laedt { text += vermutet ? String(localized: ", lädt vermutlich") : String(localized: ", lädt") }
+        if veraltet { text += String(localized: ", nicht aktuell") }
         return text
     }
 
@@ -88,8 +88,8 @@ enum BandAnzeige {
     static func pulsMessungText(_ messung: TrackerModell.PulsMessung) -> String? {
         switch messung {
         case .aus: nil
-        case .misst: "Misst. Das dauert bis zu 45 Sekunden, das Band muss eng am Arm sitzen."
-        case .fertig(let wert, let um): "Zuletzt \(wert) Schläge/Min. um \(Datum.uhrzeit(um)) Uhr."
+        case .misst: String(localized: "Misst. Das dauert bis zu 45 Sekunden, das Band muss eng am Arm sitzen.")
+        case .fertig(let wert, let um): String(localized: "Zuletzt \(wert) Schläge/Min. um \(Datum.uhrzeit(um)) Uhr.")
         case .fehler(let text): text
         }
     }

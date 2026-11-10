@@ -42,7 +42,7 @@ final class CrewDienst {
     nonisolated static let gesehenSchluessel = "fit.crew.gesehen"
     /// So oft holt das Öffnen einer Ansicht höchstens neu.
     nonisolated static let pause: TimeInterval = 60
-    nonisolated static let keinNetz = "Das hat nicht geklappt. Prüfe die Verbindung und versuche es nochmal."
+    nonisolated static let keinNetz = String(localized: "Das hat nicht geklappt. Prüfe die Verbindung und versuche es nochmal.")
 
     private(set) var antwort: CrewAntwort?
     private(set) var laedt = false
@@ -191,8 +191,8 @@ final class CrewDienst {
         case 201?, 200?:
             await laden(erzwingen: true)
             return nil
-        case 400?: return "Eine Person ist nicht mehr verbunden oder hat pausiert."
-        case 429?: return "Du bist schon in zehn laufenden Herausforderungen, oder es waren zu viele Versuche. Warte eine Minute."
+        case 400?: return String(localized: "Eine Person ist nicht mehr verbunden oder hat pausiert.")
+        case 429?: return String(localized: "Du bist schon in zehn laufenden Herausforderungen, oder es waren zu viele Versuche. Warte eine Minute.")
         default: return Self.keinNetz
         }
     }
@@ -220,9 +220,9 @@ final class CrewDienst {
             }
             if r != nil { await laden(erzwingen: true) }
             return nil
-        case 409?: return "Diese Herausforderung läuft nicht mehr."
-        case 404?: return "Diese Herausforderung gibt es nicht mehr."
-        case 429?: return "Du bist schon in zehn laufenden Herausforderungen."
+        case 409?: return String(localized: "Diese Herausforderung läuft nicht mehr.")
+        case 404?: return String(localized: "Diese Herausforderung gibt es nicht mehr.")
+        case 429?: return String(localized: "Du bist schon in zehn laufenden Herausforderungen.")
         default: return Self.keinNetz
         }
     }

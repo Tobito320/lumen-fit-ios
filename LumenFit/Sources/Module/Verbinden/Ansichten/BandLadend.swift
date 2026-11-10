@@ -25,7 +25,7 @@ private struct BandLadendStil: ViewModifier {
 extension View {
     /// `an: false` lässt die Ansicht unverändert.
     @ViewBuilder
-    func bandLadend(_ an: Bool = true, label: String = "Liest") -> some View {
+    func bandLadend(_ an: Bool = true, label: String = String(localized: "Liest")) -> some View {
         if an { modifier(BandLadendStil(label: label)) } else { self }
     }
 }

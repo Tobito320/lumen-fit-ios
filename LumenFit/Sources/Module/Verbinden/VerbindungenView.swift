@@ -12,7 +12,7 @@ struct VerbindungenView: View {
             if let daten = umgebung.daten {
                 VerbindungenInhalt(daten: daten)
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege zuerst ein Profil an."))
             }
         }
         .navigationTitle("Freunde und Partner")
@@ -54,14 +54,14 @@ private struct VerbindungenInhalt: View {
     // MARK: Anfragen
 
     private var anfragenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Anfragen", fuss: "Erst nach Annehmen sieht die Person etwas, zuerst nur Schritte und Gym.") {
+        VerbindenAbschnitt(titel: String(localized: "Anfragen"), fuss: String(localized: "Erst nach Annehmen sieht die Person etwas, zuerst nur Schritte und Gym.")) {
             ForEach(speicher.anfragen) { a in
                 VStack(alignment: .leading, spacing: Abstand.s) {
                     Text("\(a.name) möchte sich mit dir verbinden").foregroundStyle(palette.text)
                     HStack(spacing: Abstand.m) {
-                        Button("Annehmen") { Task { if !(await umgebung.konto.anfrageAnnehmen(a.id)) { fehler = "Das ließ sich nicht annehmen. Versuche es nochmal." } } }
+                        Button("Annehmen") { Task { if !(await umgebung.konto.anfrageAnnehmen(a.id)) { fehler = String(localized: "Das ließ sich nicht annehmen. Versuche es nochmal.") } } }
                             .buttonStyle(.lumenHauptknopf)
-                        Button("Ablehnen", role: .destructive) { Task { if !(await umgebung.konto.anfrageAblehnen(a.id)) { fehler = "Das ließ sich nicht ablehnen. Versuche es nochmal." } } }
+                        Button("Ablehnen", role: .destructive) { Task { if !(await umgebung.konto.anfrageAblehnen(a.id)) { fehler = String(localized: "Das ließ sich nicht ablehnen. Versuche es nochmal.") } } }
                             .buttonStyle(.bordered)
                     }
                 }
@@ -73,7 +73,7 @@ private struct VerbindungenInhalt: View {
     // MARK: Personen
 
     private var personenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Personen", fuss: personenFuss) {
+        VerbindenAbschnitt(titel: String(localized: "Personen"), fuss: personenFuss) {
             if personen.isEmpty {
                 Text(speicher.antwort == nil ? "Verbindungen werden geladen." : "Noch niemand verbunden.").foregroundStyle(palette.text2)
             }
@@ -84,11 +84,11 @@ private struct VerbindungenInhalt: View {
     }
 
     private var personenFuss: String {
-        "Jede Person sieht nur, was du für sie einschaltest. Neue Freunde lädst du im Tab Freunde ein."
+        String(localized: "Jede Person sieht nur, was du für sie einschaltest. Neue Freunde lädst du im Tab Freunde ein.")
     }
 
     private var wartendAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Wartet auf Antwort") {
+        VerbindenAbschnitt(titel: String(localized: "Wartet auf Antwort")) {
             ForEach(speicher.wartend) { w in
                 HStack {
                     Label(w.name, systemImage: "hourglass")
@@ -107,20 +107,20 @@ private struct VerbindungenInhalt: View {
     private var mitteilungenAbschnitt: some View {
         VerbindenAbschnitt {
             NavigationLink { VerbindungMitteilungenSeite(einstellungen: einstellungen, arten: Self.ereignisArten) } label: {
-                ProfilListenZeile("Mitteilungen", symbol: "bell.badge", wert: mitteilungenWert)
+                ProfilListenZeile(String(localized: "Mitteilungen"), symbol: "bell.badge", wert: mitteilungenWert)
             }
         }
     }
 
     private var mitteilungenWert: String {
         let an = Self.ereignisArten.filter { PartnerEreignisRegeln.an($0, einstellungen.werte) }.count
-        return "\(an) von \(Self.ereignisArten.count) an"
+        return String(localized: "\(an) von \(Self.ereignisArten.count) an")
     }
 
     // MARK: Freunde
 
     private var freundeAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Freunde", fuss: "Wochenkarten per Bild, Link oder QR-Code tauschen, ganz ohne Server.") {
+        VerbindenAbschnitt(titel: String(localized: "Freunde"), fuss: String(localized: "Wochenkarten per Bild, Link oder QR-Code tauschen, ganz ohne Server.")) {
             NavigationLink { FreundeView() } label: { Label("Wochenkarten tauschen", systemImage: "person.2") }
         }
     }

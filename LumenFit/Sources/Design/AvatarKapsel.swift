@@ -5,7 +5,7 @@ struct AvatarKapsel: View {
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        let name = umgebung.profil.aktiv?.name ?? "Profil"
+        let name = umgebung.profil.aktiv?.name ?? String(localized: "Profil")
         Button {
             umgebung.router.oeffne(.profil(.uebersicht))
         } label: {

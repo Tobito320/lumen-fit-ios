@@ -43,13 +43,13 @@ enum BandLaborAuswertung {
 
         var text: String {
             switch self {
-            case .ignoriert: "Zweiter Befehl wird ignoriert"
-            case .verlaengert: "Zweiter Befehl verlängert den Puls"
-            case .neuGestartet: "Zweiter Befehl startet den Puls neu"
-            case .angehaengt: "Zweiter Puls kommt nach dem ersten"
-            case .abgebrochen: "Zweiter Befehl bricht den Puls ab"
-            case .getrennt: "Abstand so groß wie ein Puls: zwei getrennte Pulse"
-            case .unklar: "Passt zu keinem Muster, noch einmal messen"
+            case .ignoriert: String(localized: "Zweiter Befehl wird ignoriert")
+            case .verlaengert: String(localized: "Zweiter Befehl verlängert den Puls")
+            case .neuGestartet: String(localized: "Zweiter Befehl startet den Puls neu")
+            case .angehaengt: String(localized: "Zweiter Puls kommt nach dem ersten")
+            case .abgebrochen: String(localized: "Zweiter Befehl bricht den Puls ab")
+            case .getrennt: String(localized: "Abstand so groß wie ein Puls: zwei getrennte Pulse")
+            case .unklar: String(localized: "Passt zu keinem Muster, noch einmal messen")
             }
         }
     }

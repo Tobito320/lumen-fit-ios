@@ -7,14 +7,14 @@ enum FreigabeStufe: CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .wenig: "Wenig"
-        case .alles: "Alles"
-        case .crew: "Crew"
+        case .wenig: String(localized: "Wenig")
+        case .alles: String(localized: "Alles")
+        case .crew: String(localized: "Crew")
         }
     }
 
     /// Ein Satz unter der Auswahl, was die Stufe zeigt (nil: keiner nötig).
-    var hilfe: String? { self == .crew ? "Training, Plan und Gewichte der letzten Einheiten. Nie Schlaf, Essen, Körper." : nil }
+    var hilfe: String? { self == .crew ? String(localized: "Training, Plan und Gewichte der letzten Einheiten. Nie Schlaf, Essen, Körper.") : nil }
 
     var bereiche: Set<VerbindungBereich> {
         switch self {

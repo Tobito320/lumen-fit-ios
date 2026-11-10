@@ -35,8 +35,8 @@ enum TrackerModus: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .sparen: "Sparen"
-        case .daten: "Viele Daten"
+        case .sparen: String(localized: "Sparen")
+        case .daten: String(localized: "Viele Daten")
         }
     }
 
@@ -96,28 +96,28 @@ enum TrackerModus: String, CaseIterable, Identifiable, Sendable {
     var erklaerung: String {
         switch self {
         case .sparen:
-            return "Puls alle \(pulsMinuten) Min., Blutsauerstoff, Stress und HRV aus, Abfrage stündlich. Schritte, Schlaf und Vibrationswünsche bleiben."
+            return String(localized: "Puls alle \(pulsMinuten) Min., Blutsauerstoff, Stress und HRV aus, Abfrage stündlich. Schritte, Schlaf und Vibrationswünsche bleiben.")
         case .daten:
-            return "Puls alle \(pulsMinuten) Min., Blutsauerstoff, Stress und HRV an, Abfrage alle 10 Min. Mehr Verlauf, dafür hält der Akku kürzer."
+            return String(localized: "Puls alle \(pulsMinuten) Min., Blutsauerstoff, Stress und HRV an, Abfrage alle 10 Min. Mehr Verlauf, dafür hält der Akku kürzer.")
         }
     }
 
     /// Ein Satz zum Akku. Gemessen ist noch nichts: das Akku-Log hält den Modus je Messpunkt fest.
     var akkuSatz: String {
         switch self {
-        case .sparen: "Spart Akku am Tracker (der Sensor misst seltener) und am iPhone (weniger Abfragen). Wie viel, ist noch nicht gemessen."
-        case .daten: "Kostet Akku am Tracker (der Sensor misst öfter) und am iPhone (mehr Abfragen). Wie viel, ist noch nicht gemessen."
+        case .sparen: String(localized: "Spart Akku am Tracker (der Sensor misst seltener) und am iPhone (weniger Abfragen). Wie viel, ist noch nicht gemessen.")
+        case .daten: String(localized: "Kostet Akku am Tracker (der Sensor misst öfter) und am iPhone (mehr Abfragen). Wie viel, ist noch nicht gemessen.")
         }
     }
 
     /// "alle 10 Minuten" für die Texte der Tracker-Seite.
     static func abfrageText(_ modus: TrackerModus?) -> String {
-        "alle \(Int((modus?.abfrageAbstand ?? standardAbstand) / 60)) Minuten"
+        String(localized: "alle \(Int((modus?.abfrageAbstand ?? standardAbstand) / 60)) Minuten")
     }
 
     private static func bezeichnung(_ aenderung: TrackerProtokoll.Aenderung) -> String {
         switch aenderung {
-        case .puls: "Puls"
+        case .puls: String(localized: "Puls")
         case .messung(let art, _): art.name
         }
     }
@@ -125,11 +125,11 @@ enum TrackerModus: String, CaseIterable, Identifiable, Sendable {
     /// Die Zeile unter der Wahl. Sagt nur, was Lumen Fit weiß: ohne gelesenen Stand keine Behauptung, ob der Tracker passt.
     static func status(modus: TrackerModus?, offen: Bool, verbunden: Bool, gelesen: Bool,
                        abweichungen: [TrackerProtokoll.Aenderung]) -> String {
-        guard modus != nil else { return "Noch kein Modus gewählt. Lumen Fit ändert nichts am Tracker." }
-        if offen { return verbunden ? "Lumen Fit stellt den Tracker gerade um." : "Lumen Fit stellt den Tracker um, sobald er verbunden ist." }
-        guard gelesen else { return "Der Tracker meldet seine Einstellungen, sobald er verbunden ist." }
-        if abweichungen.isEmpty { return "Der Tracker hat die Einstellungen dieses Modus." }
+        guard modus != nil else { return String(localized: "Noch kein Modus gewählt. Lumen Fit ändert nichts am Tracker.") }
+        if offen { return verbunden ? String(localized: "Lumen Fit stellt den Tracker gerade um.") : String(localized: "Lumen Fit stellt den Tracker um, sobald er verbunden ist.") }
+        guard gelesen else { return String(localized: "Der Tracker meldet seine Einstellungen, sobald er verbunden ist.") }
+        if abweichungen.isEmpty { return String(localized: "Der Tracker hat die Einstellungen dieses Modus.") }
         let namen: String = abweichungen.map { bezeichnung($0) }.joined(separator: ", ")
-        return "Am Tracker weicht ab: \(namen)."
+        return String(localized: "Am Tracker weicht ab: \(namen).")
     }
 }

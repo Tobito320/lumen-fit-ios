@@ -80,8 +80,8 @@ struct LeerZustand: View {
 
 /// Texte der Fehler, die jede Seite betreffen können. Eigene Enum, damit Tests die Worte prüfen.
 enum FehlerTexte {
-    static let speichernTitel = "Konnte nicht speichern"
-    static let speichernHilfe = "Ist auf dem iPhone der Speicher voll? Gib etwas Platz frei und versuch es nochmal. Die letzte Eingabe ist nicht gespeichert."
+    static let speichernTitel = String(localized: "Konnte nicht speichern")
+    static let speichernHilfe = String(localized: "Ist auf dem iPhone der Speicher voll? Gib etwas Platz frei und versuch es nochmal. Die letzte Eingabe ist nicht gespeichert.")
 }
 
 /// Fehler, die helfen: was schiefging und was jetzt hilft. Lumi ist dabei (Idee 10), der Text sagt, was jetzt hilft.

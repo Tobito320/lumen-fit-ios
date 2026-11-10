@@ -266,7 +266,7 @@ final class TrackerFunk: NSObject, CBCentralManagerDelegate, CBPeripheralDelegat
             return
         }
         guard let dienst = peripheral.services?.first(where: { $0.uuid == dienstUUID }) else {
-            melden(.fehler("Funkdienst des Trackers nicht gefunden"))
+            melden(.fehler(String(localized: "Funkdienst des Trackers nicht gefunden")))
             return
         }
         peripheral.discoverCharacteristics([schreibenUUID, antwortUUID], for: dienst)

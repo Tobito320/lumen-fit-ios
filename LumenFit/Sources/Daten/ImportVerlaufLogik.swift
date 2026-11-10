@@ -45,9 +45,9 @@ enum StimmungStufe: String, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .schlecht: "Mies"
-        case .mittel: "Geht so"
-        case .gut: "Richtig gut"
+        case .schlecht: String(localized: "Mies")
+        case .mittel: String(localized: "Geht so")
+        case .gut: String(localized: "Richtig gut")
         }
     }
 
@@ -199,12 +199,12 @@ enum ImportVerlaufLogik {
 
     /// Eine Zeile fürs Diagramm und VoiceOver: wie oft welche Stufe, sonst ein Hinweis.
     static func stimmungAussage(_ reihe: [StimmungPunkt]) -> String {
-        guard !reihe.isEmpty else { return "Noch keine Stimmung eingetragen" }
+        guard !reihe.isEmpty else { return String(localized: "Noch keine Stimmung eingetragen") }
         let teile = StimmungStufe.allCases.reversed().compactMap { stufe -> String? in
             let n = reihe.filter { $0.stufe == stufe }.count
-            return n > 0 ? "\(n) mal \(stufe.name.lowercased())" : nil
+            return n > 0 ? String(localized: "\(n) mal \(stufe.name.lowercased())") : nil
         }
-        return "Letzte \(reihe.count) Einträge: " + teile.joined(separator: ", ")
+        return String(localized: "Letzte \(reihe.count) Einträge: ") + teile.joined(separator: ", ")
     }
 
     // MARK: - Zeit

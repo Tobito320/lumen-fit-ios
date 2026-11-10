@@ -18,9 +18,9 @@ enum BandNachrichtRegel {
         var id: String { rawValue }
         var name: String {
             switch self {
-            case .sanft: "1 Puls"
-            case .normal: "2 Pulse"
-            case .stark: "3 Pulse"
+            case .sanft: String(localized: "1 Puls")
+            case .normal: String(localized: "2 Pulse")
+            case .stark: String(localized: "3 Pulse")
             }
         }
         var pulse: Int {

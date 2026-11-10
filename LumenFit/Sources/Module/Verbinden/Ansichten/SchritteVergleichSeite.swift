@@ -59,7 +59,7 @@ struct SchritteVergleichSeite: View {
         let differenz = gewaehlt == nil ? woche.differenz : gewaehlt?.differenz
         return ListenKarte {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                Text(gewaehlt.map { Datum.anzeige($0.tag) } ?? "Diese Woche").font(.headline)
+                Text(gewaehlt.map { Datum.anzeige($0.tag) } ?? String(localized: "Diese Woche")).font(.headline)
                 HStack(alignment: .firstTextBaseline) {
                     Text(differenz.map(PartnerVergleich.differenzText) ?? "–")
                         .font(.system(.largeTitle, design: .rounded).weight(.bold))
@@ -86,9 +86,9 @@ struct SchritteVergleichSeite: View {
 
     private func diagramm(_ woche: PartnerVergleich.SchrittWoche) -> some View {
         let punkte = woche.tage.flatMap { t in
-            [Reihe(tag: t, name: "Du", wert: t.mein), Reihe(tag: t, name: partner.profilName, wert: t.sein)]
+            [Reihe(tag: t, name: String(localized: "Du"), wert: t.mein), Reihe(tag: t, name: partner.profilName, wert: t.sein)]
         }
-        return DiagrammKarte(aussage: "Schritte der Woche", kernzeile: woche.differenz == 0 ? "Gleichauf" : (woche.differenz > 0 ? "Du liegst vorn" : "\(partner.profilName) liegt vorn")) {
+        return DiagrammKarte(aussage: String(localized: "Schritte der Woche"), kernzeile: woche.differenz == 0 ? String(localized: "Gleichauf") : (woche.differenz > 0 ? String(localized: "Du liegst vorn") : String(localized: "\(partner.profilName) liegt vorn"))) {
             Chart(punkte) { p in
                 BarMark(x: .value("Tag", p.tag.kuerzel), y: .value("Schritte", p.wert ?? 0), width: .ratio(0.9))
                     .position(by: .value("Person", p.name))
@@ -96,16 +96,16 @@ struct SchritteVergleichSeite: View {
                     .cornerRadius(4)
                     .opacity(auswahl == nil || auswahl == p.tag.kuerzel ? (p.wert == nil ? 0.25 : 1) : 0.35)
             }
-            .chartForegroundStyleScale(domain: ["Du", partner.profilName], range: [palette.text, palette.text2])
+            .chartForegroundStyleScale(domain: [String(localized: "Du"), partner.profilName], range: [palette.text, palette.text2])
             .chartXSelection(value: $auswahl)
             .chartYScale(domain: 0...Int(Double(woche.hoechster) * 1.2))
             .chartYAxis(.hidden)
             .environment(\.locale, Locale(identifier: "de_DE"))
             .frame(height: 180)
             .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
-                titel: "Schritte der Woche, du gegen \(partner.profilName)",
-                zusammenfassung: "Du \(PartnerVergleich.zahl(woche.meinGesamt)), \(partner.profilName) \(PartnerVergleich.zahl(woche.seinGesamt)) Schritte",
-                xTitel: "Tag", yTitel: "Schritte", einheit: "Schritte",
+                titel: String(localized: "Schritte der Woche, du gegen \(partner.profilName)"),
+                zusammenfassung: String(localized: "Du \(PartnerVergleich.zahl(woche.meinGesamt)), \(partner.profilName) \(PartnerVergleich.zahl(woche.seinGesamt)) Schritte"),
+                xTitel: String(localized: "Tag"), yTitel: String(localized: "Schritte"), einheit: String(localized: "Schritte"),
                 punkte: woche.tage.filter { !$0.zukunft }.map { HeuteDiagrammPunkt(name: $0.kuerzel, wert: Double($0.mein ?? 0)) }))
         }
     }
@@ -146,7 +146,7 @@ struct SchritteVergleichSeite: View {
         .frame(minHeight: Abstand.tippflaeche)
         .opacity(tag.zukunft ? 0.35 : 1)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(Datum.anzeige(tag.tag)): du \(tag.mein.map { PartnerVergleich.zahl($0) } ?? "keine Daten"), \(partner.profilName) \(tag.sein.map { PartnerVergleich.zahl($0) } ?? "keine Daten")")
+        .accessibilityLabel("\(Datum.anzeige(tag.tag)): du \(tag.mein.map { PartnerVergleich.zahl($0) } ?? String(localized: "keine Daten")), \(partner.profilName) \(tag.sein.map { PartnerVergleich.zahl($0) } ?? String(localized: "keine Daten"))")
     }
 
     private func balken(_ wert: Int?, hoechster: Int, farbe: Color) -> some View {

@@ -17,11 +17,11 @@ struct CrewHerausforderungSeite: View {
             if let h = dienst.herausforderung(id) {
                 inhalt(h)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Diese Herausforderung gibt es nicht mehr.")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Herausforderung gibt es nicht mehr."))
             }
         }
         .lumenHintergrund()
-        .navigationTitle(dienst.herausforderung(id).map(CrewLogik.titel) ?? "Herausforderung")
+        .navigationTitle(dienst.herausforderung(id).map(CrewLogik.titel) ?? String(localized: "Herausforderung"))
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await dienst.laden(erzwingen: true) }
         .modifier(CrewFehlerAnzeige(extra: $fehler))
@@ -89,9 +89,9 @@ struct CrewHerausforderungSeite: View {
                 if i > 0 { Haarlinie() }
                 VStack(alignment: .leading, spacing: Abstand.xs) {
                     HStack {
-                        Text(t.ich ? "Du" : t.name).font(.body.weight(t.ich ? .bold : .regular)).foregroundStyle(palette.text).lineLimit(1)
+                        Text(t.ich ? String(localized: "Du") : t.name).font(.body.weight(t.ich ? .bold : .regular)).foregroundStyle(palette.text).lineLimit(1)
                         Spacer(minLength: Abstand.s)
-                        Text(t.dabei ? CrewLogik.wertText(t.wert, h.mass) : "eingeladen")
+                        Text(t.dabei ? CrewLogik.wertText(t.wert, h.mass) : String(localized: "eingeladen"))
                             .font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(t.dabei ? palette.text : palette.text2)
                     }
                     if t.dabei {

@@ -21,8 +21,8 @@ enum TrackerEnergie {
     /// Der Satz unter dem Schalter. Nennt den Abstand, den der Tracker meldet, und sagt ehrlich, dass die Ersparnis offen ist.
     static func erklaerung(minuten: Int) -> String {
         if an(minuten: minuten) {
-            return "Der Puls wird alle \(minuten) Minuten gemessen statt alle \(standardMinuten). Das spart Akku, wie viel ist noch nicht gemessen."
+            return String(localized: "Der Puls wird alle \(minuten) Minuten gemessen statt alle \(standardMinuten). Das spart Akku, wie viel ist noch nicht gemessen.")
         }
-        return "Der Puls wird alle \(minuten) Minuten gemessen. Mit Energiesparen alle \(sparMinuten) Minuten: das spart Akku, wie viel ist noch nicht gemessen."
+        return String(localized: "Der Puls wird alle \(minuten) Minuten gemessen. Mit Energiesparen alle \(sparMinuten) Minuten: das spart Akku, wie viel ist noch nicht gemessen.")
     }
 }

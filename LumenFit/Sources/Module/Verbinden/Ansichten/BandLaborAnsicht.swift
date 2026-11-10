@@ -45,7 +45,7 @@ struct BandLaborAnsicht: View {
         Section {
             LabeledContent("Band", value: modell.statusText)
             if let akku = modell.akku {
-                LabeledContent("Akku", value: akku.laedt ? "\(akku.prozent) % (lädt)" : "\(akku.prozent) %")
+                LabeledContent("Akku", value: akku.laedt ? String(localized: "\(akku.prozent) % (lädt)") : "\(akku.prozent) %")
             }
             Button("Akku lesen (nur Lesen)") { modell.abfragen() }
                 .frame(minHeight: 44)
@@ -118,7 +118,7 @@ struct BandLaborAnsicht: View {
     private var ergebnisAbschnitt: some View {
         Section {
             let puls = BandLaborAuswertung.pulsLaenge(messungen)
-            LabeledContent("Gemessene Pulslänge", value: puls.map(Self.sekunden) ?? "noch keine")
+            LabeledContent("Gemessene Pulslänge", value: puls.map(Self.sekunden) ?? String(localized: "noch keine"))
             LabeledContent("Lumen Fit rechnet mit", value: Self.sekunden(TrackerProtokoll.findenPulsDauer))
             if let puls {
                 Button("Gemessene Länge übernehmen") {
@@ -163,7 +163,7 @@ struct BandLaborAnsicht: View {
                 Text("Ein Befehl: Puls \(Self.sekunden(m.dauer))")
             case .doppel:
                 Text("Zwei Befehle, Abstand \(Self.sekunden(m.abstand ?? 0)): \(Self.sekunden(m.dauer))")
-                Text(m.urteil?.text ?? "Ohne Einzelmessung kein Urteil")
+                Text(m.urteil?.text ?? String(localized: "Ohne Einzelmessung kein Urteil"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }

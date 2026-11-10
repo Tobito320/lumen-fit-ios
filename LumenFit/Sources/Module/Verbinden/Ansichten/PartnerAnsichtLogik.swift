@@ -45,34 +45,34 @@ enum PartnerAnsichtLogik {
         }
     }
 
-    static let nichtFreigegebenSatz = "Dein Partner hat das nicht freigegeben."
-    static let keinPartnerSatz = "Es ist noch kein Partner verbunden."
+    static let nichtFreigegebenSatz = String(localized: "Dein Partner hat das nicht freigegeben.")
+    static let keinPartnerSatz = String(localized: "Es ist noch kein Partner verbunden.")
 
     static func leerSatz(_ lage: Lage, art: FreigabeArt) -> String {
         switch lage {
         case .keinPartner: keinPartnerSatz
         case .nichtFreigegeben: nichtFreigegebenSatz
-        case .keineDaten(let name): "\(name) hat dazu noch nichts, \(leerGrund(art))."
+        case .keineDaten(let name): String(localized: "\(name) hat dazu noch nichts, \(leerGrund(art)).")
         case .bereit: ""
         }
     }
 
     private static func leerGrund(_ art: FreigabeArt) -> String {
         switch art {
-        case .plan: "zum Beispiel noch keinen Plan angelegt"
-        case .verlauf: "zum Beispiel noch kein Training gemacht"
-        case .tagebuch: "zum Beispiel in den letzten Tagen nichts eingetragen"
-        case .koerper: "zum Beispiel noch keinen Messwert eingetragen"
-        case .stimmung: "zum Beispiel noch keinen Morgen-Check gemacht"
-        case .gewohnheiten: "zum Beispiel noch keine Gewohnheit angelegt"
-        case .schritte, .gym, .schlaf, .essen: "noch keine Werte"
+        case .plan: String(localized: "zum Beispiel noch keinen Plan angelegt")
+        case .verlauf: String(localized: "zum Beispiel noch kein Training gemacht")
+        case .tagebuch: String(localized: "zum Beispiel in den letzten Tagen nichts eingetragen")
+        case .koerper: String(localized: "zum Beispiel noch keinen Messwert eingetragen")
+        case .stimmung: String(localized: "zum Beispiel noch keinen Morgen-Check gemacht")
+        case .gewohnheiten: String(localized: "zum Beispiel noch keine Gewohnheit angelegt")
+        case .schritte, .gym, .schlaf, .essen: String(localized: "noch keine Werte")
         }
     }
 
     /// Der Hinweis über den Daten, wenn der Stand älter als 48 Stunden ist. Sonst nil.
     static func veraltetHinweis(_ datei: ZusammenfassungDatei, veraltet: Bool) -> String? {
         guard veraltet else { return nil }
-        return "Stand vom \(kurzDatum(Datum.text(datei.geschrieben))) \(datei.profilName) hat sich länger nicht gemeldet."
+        return String(localized: "Stand vom \(kurzDatum(Datum.text(datei.geschrieben))) \(datei.profilName) hat sich länger nicht gemeldet.")
     }
 
     // MARK: Einstiege (Partner-Karte, Verbindungen)
@@ -104,16 +104,16 @@ enum PartnerAnsichtLogik {
 
     static func titel(_ art: FreigabeArt) -> String {
         switch art {
-        case .plan: "Trainingsplan"
-        case .verlauf: "Training und Verlauf"
-        case .tagebuch: "Tagebuch"
-        case .koerper: "Körperwerte"
-        case .stimmung: "Stimmung"
-        case .gewohnheiten: "Gewohnheiten"
-        case .schritte: "Schritte"
-        case .gym: "Gym"
-        case .schlaf: "Schlaf"
-        case .essen: "Essen"
+        case .plan: String(localized: "Trainingsplan")
+        case .verlauf: String(localized: "Training und Verlauf")
+        case .tagebuch: String(localized: "Tagebuch")
+        case .koerper: String(localized: "Körperwerte")
+        case .stimmung: String(localized: "Stimmung")
+        case .gewohnheiten: String(localized: "Gewohnheiten")
+        case .schritte: String(localized: "Schritte")
+        case .gym: String(localized: "Gym")
+        case .schlaf: String(localized: "Schlaf")
+        case .essen: String(localized: "Essen")
         }
     }
 
@@ -138,19 +138,19 @@ enum PartnerAnsichtLogik {
         case .plan:
             guard let plan = datei.heute.plan else { return "" }
             let tage = trainingsTage(plan)
-            return [plan.name, tage == 1 ? "1 Trainingstag" : "\(tage) Trainingstage"].compactMap { $0 }.joined(separator: " · ")
+            return [plan.name, tage == 1 ? String(localized: "1 Trainingstag") : String(localized: "\(tage) Trainingstage")].compactMap { $0 }.joined(separator: " · ")
         case .verlauf:
             guard let v = datei.heute.verlauf else { return "" }
             if let status = statusZeile(v, jetzt: jetzt) { return status }
-            return (v.gesamt ?? v.trainings.count) == 1 ? "1 Training" : "\(v.gesamt ?? v.trainings.count) Trainings"
+            return (v.gesamt ?? v.trainings.count) == 1 ? String(localized: "1 Training") : String(localized: "\(v.gesamt ?? v.trainings.count) Trainings")
         case .tagebuch:
             let tage = tagebuchTage(datei)
-            if let t = tage.first(where: { $0.tag == heute }) { return "Heute \(zahl(t.kcal)) kcal" }
-            return tage.count == 1 ? "Ein Tag" : "Letzte \(tage.count) Tage"
+            if let t = tage.first(where: { $0.tag == heute }) { return String(localized: "Heute \(zahl(t.kcal)) kcal") }
+            return tage.count == 1 ? String(localized: "Ein Tag") : String(localized: "Letzte \(tage.count) Tage")
         case .koerper:
-            if let p = punkte(datei, .gewicht).last { return "Gewicht \(MessArt.gewicht.text(p.zehntel))" }
+            if let p = punkte(datei, .gewicht).last { return String(localized: "Gewicht \(MessArt.gewicht.text(p.zehntel))") }
             let n = koerperArten(datei).count
-            return n == 1 ? "1 Messung" : "\(n) Messungen"
+            return n == 1 ? String(localized: "1 Messung") : String(localized: "\(n) Messungen")
         case .stimmung, .gewohnheiten, .schritte, .gym, .schlaf, .essen:
             return ""
         }
@@ -168,16 +168,16 @@ enum PartnerAnsichtLogik {
         var langerName: String { TrainingLogik.wochentagName[wochentag - 1] }
         var titel: String {
             switch art {
-            case .training(let n): n.isEmpty ? "Training" : n
-            case .ruhe: "Ruhe"
+            case .training(let n): n.isEmpty ? String(localized: "Training") : n
+            case .ruhe: String(localized: "Ruhe")
             case .offen: "?"
             }
         }
         var beschreibung: String {
             switch art {
-            case .training(let n): n.isEmpty ? "Training" : n
-            case .ruhe: "Ruhetag"
-            case .offen: "noch nicht geplant"
+            case .training(let n): n.isEmpty ? String(localized: "Training") : n
+            case .ruhe: String(localized: "Ruhetag")
+            case .offen: String(localized: "noch nicht geplant")
             }
         }
     }
@@ -199,14 +199,14 @@ enum PartnerAnsichtLogik {
 
     /// "Mo, Mi, Fr" oder "an jedem Tag möglich" für einen Tag ohne festen Wochentag.
     static func wochentageText(_ tag: PartnerPlanTag) -> String {
-        tag.wochentage.isEmpty ? "an jedem Tag möglich" : TrainingLogik.wochentageText(tag.wochentage)
+        tag.wochentage.isEmpty ? String(localized: "an jedem Tag möglich") : TrainingLogik.wochentageText(tag.wochentage)
     }
 
     static func uebungText(_ u: PartnerPlanUebung) -> String {
         switch u.saetze {
-        case ...0: "Cardio oder frei"
-        case 1: "1 Satz"
-        default: "\(u.saetze) Sätze"
+        case ...0: String(localized: "Cardio oder frei")
+        case 1: String(localized: "1 Satz")
+        default: String(localized: "\(u.saetze) Sätze")
         }
     }
 
@@ -222,9 +222,9 @@ enum PartnerAnsichtLogik {
         guard v.imGym == true, let seit = v.imGymSeit else { return nil }
         let dauer = jetzt.timeIntervalSince(seit)
         guard dauer < TrainingLogik.langNach else { return nil }
-        let ort = v.imGymName.map { "Im Gym (\($0))" } ?? "Im Gym"
+        let ort = v.imGymName.map { String(localized: "Im Gym (\($0))") } ?? String(localized: "Im Gym")
         let min = max(0, Int(dauer / 60))
-        return min < 1 ? ort : "\(ort) seit \(min) min"
+        return min < 1 ? ort : String(localized: "\(ort) seit \(min) min")
     }
 
     struct Kennzahl: Identifiable, Equatable, Sendable {
@@ -234,17 +234,17 @@ enum PartnerAnsichtLogik {
     }
 
     static func kennzahlen(_ v: PartnerVerlauf) -> [Kennzahl] {
-        [Kennzahl(titel: "Diese Woche", wert: v.woche ?? 0), Kennzahl(titel: "Serie in Wochen", wert: v.serieWochen ?? 0),
-         Kennzahl(titel: "Gesamt", wert: v.gesamt ?? v.trainings.count)]
+        [Kennzahl(titel: String(localized: "Diese Woche"), wert: v.woche ?? 0), Kennzahl(titel: String(localized: "Serie in Wochen"), wert: v.serieWochen ?? 0),
+         Kennzahl(titel: String(localized: "Gesamt"), wert: v.gesamt ?? v.trainings.count)]
     }
 
     /// Titel und Detailzeile einer Einheit: "Push" und "Do 29.10. · 61 min · 18 Sätze · 5 Übungen".
     static func trainingZeile(_ t: PartnerTrainingKurz) -> (titel: String, detail: String) {
         var teile = ["\(HabitLogik.wochentagKuerzel[Datum.wochentag(t.tag) - 1]) \(kurzDatum(t.tag))"]
         if let m = t.minuten, m > 0 { teile.append("\(m) min") }
-        teile.append(t.saetze == 1 ? "1 Satz" : "\(t.saetze) Sätze")
-        if t.uebungen > 0 { teile.append(t.uebungen == 1 ? "1 Übung" : "\(t.uebungen) Übungen") }
-        return (t.name ?? "Training", teile.joined(separator: " · "))
+        teile.append(t.saetze == 1 ? String(localized: "1 Satz") : String(localized: "\(t.saetze) Sätze"))
+        if t.uebungen > 0 { teile.append(t.uebungen == 1 ? String(localized: "1 Übung") : String(localized: "\(t.uebungen) Übungen")) }
+        return (t.name ?? String(localized: "Training"), teile.joined(separator: " · "))
     }
 
     struct DauerPunkt: Identifiable, Equatable, Sendable {
@@ -307,8 +307,8 @@ enum PartnerAnsichtLogik {
     }
 
     static func tagTitel(_ tag: String, heute: String) -> String {
-        if tag == heute { return "Heute" }
-        if tag == Datum.addTage(heute, -1) { return "Gestern" }
+        if tag == heute { return String(localized: "Heute") }
+        if tag == Datum.addTage(heute, -1) { return String(localized: "Gestern") }
         return Datum.anzeige(tag)
     }
 

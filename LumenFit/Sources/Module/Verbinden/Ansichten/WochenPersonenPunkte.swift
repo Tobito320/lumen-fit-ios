@@ -26,9 +26,9 @@ struct WochenPersonenPunkte: View {
 
     private var beschreibung: String {
         switch (ichGym, partnerName) {
-        case (true, let name?): "Gym: du und \(name)"
-        case (true, nil): "Gym: du"
-        case (false, let name?): "Gym: \(name)"
+        case (true, let name?): String(localized: "Gym: du und \(name)")
+        case (true, nil): String(localized: "Gym: du")
+        case (false, let name?): String(localized: "Gym: \(name)")
         case (false, nil): ""
         }
     }

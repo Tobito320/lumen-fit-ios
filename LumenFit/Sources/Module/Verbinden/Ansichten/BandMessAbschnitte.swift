@@ -14,16 +14,16 @@ struct BandMessungenAbschnitt: View {
     }
 
     private var fuss: String {
-        if let hinweis = modell.aenderungsHinweis { return "Achtung: \(hinweis)" }
+        if let hinweis = modell.aenderungsHinweis { return String(localized: "Achtung: \(hinweis)") }
         if modell.pulsEinstellung == nil && modell.messungen.isEmpty && !modell.abfrageLaeuft {
-            return "Verbinde das Band, dann liest Lumen Fit hier ab, was es misst."
+            return String(localized: "Verbinde das Band, dann liest Lumen Fit hier ab, was es misst.")
         }
-        return "Nur bei Verbindung änderbar. Lumen Fit schickt die Änderung und liest sie vom Band zurück. Schreiben am Band ist noch nicht am Gerät getestet."
+        return String(localized: "Nur bei Verbindung änderbar. Lumen Fit schickt die Änderung und liest sie vom Band zurück. Schreiben am Band ist noch nicht am Gerät getestet.")
     }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Messungen am Band", fuss: fuss) {
-            zeile("Puls-Dauermessung", "heart.fill", wert: modell.pulsEinstellung?.an) { modell.aendern(.puls(an: $0, minuten: pulsAbstand)) }
+        VerbindenAbschnitt(titel: String(localized: "Messungen am Band"), fuss: fuss) {
+            zeile(String(localized: "Puls-Dauermessung"), "heart.fill", wert: modell.pulsEinstellung?.an) { modell.aendern(.puls(an: $0, minuten: pulsAbstand)) }
             if modell.pulsEinstellung?.an == true {
                 Picker(selection: pulsAbstandWahl) {
                     ForEach(BandAnzeige.abstandsListe(aktuell: pulsAbstand), id: \.self) { Text("\($0) Min.").tag($0) }
@@ -50,7 +50,7 @@ struct BandMessungenAbschnitt: View {
             Toggle(isOn: Binding(get: { wert }, set: { neu in MainActor.assumeIsolated { setzen(neu) } })) { Label(titel, systemImage: symbol) }
         } else {
             LabeledContent {
-                Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: "wird gelesen")
+                Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: String(localized: "wird gelesen"))
             } label: {
                 Label(titel, systemImage: symbol)
             }
@@ -75,7 +75,7 @@ struct BandSchritteAbschnitt: View {
     private var fruehere: [(tag: String, schritte: Int)] { BandAnzeige.fruehereTage(modell.bandTage.tage, heute: Datum.text(Date())) }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Schritte", fuss: "Es zählt je Tag der höhere Wert von Band und Apple Health, sie werden nie addiert. Aus: es zählt nur Apple Health. Das Band schreibt nichts in Apple Health, sonst zählt Health dieselben Schritte doppelt. Bereits gemeldete Tage bleiben, wenn du das hier ausschaltest.") {
+        VerbindenAbschnitt(titel: String(localized: "Schritte"), fuss: String(localized: "Es zählt je Tag der höhere Wert von Band und Apple Health, sie werden nie addiert. Aus: es zählt nur Apple Health. Das Band schreibt nichts in Apple Health, sonst zählt Health dieselben Schritte doppelt. Bereits gemeldete Tage bleiben, wenn du das hier ausschaltest.")) {
             heute
             if let stand = modell.bandTage.stand {
                 LabeledContent("Zuletzt gelesen") { Text(stand, style: .relative) }
@@ -105,7 +105,7 @@ struct BandSchritteAbschnitt: View {
             .accessibilityElement(children: .combine)
             LabeledContent("Strecke", value: BandAnzeige.kilometer(meter: heute.meter))
             if let minute = heute.letzteMinute {
-                LabeledContent("Letzte Bewegung", value: "ab \(Datum.uhrzeit(minuten: minute)) Uhr")
+                LabeledContent("Letzte Bewegung", value: String(localized: "ab \(Datum.uhrzeit(minuten: minute)) Uhr"))
             }
         } else if modell.abfrageLaeuft {
             VStack(alignment: .leading, spacing: 2) {
@@ -113,7 +113,7 @@ struct BandSchritteAbschnitt: View {
                 Text("00.000").font(.largeTitle.weight(.bold))
             }
             .padding(.vertical, Abstand.xs)
-            .bandLadend(label: "Schritte werden gelesen")
+            .bandLadend(label: String(localized: "Schritte werden gelesen"))
         } else {
             Text("Für heute hat das Band noch nichts geliefert. Das Band antippen, verbinden und auf Jetzt abfragen tippen.").foregroundStyle(palette.text2)
         }
@@ -134,7 +134,7 @@ struct BandFunktionenAbschnitt: View {
     }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Funktionen", fuss: "Vibrieren hilft beim Finden. Puls jetzt messen schaltet den Sensor für bis zu 45 Sekunden ein; am Gerät noch nicht geprüft. Der Wecker des Bands gehört zu Lumen Alarm.") {
+        VerbindenAbschnitt(titel: String(localized: "Funktionen"), fuss: String(localized: "Vibrieren hilft beim Finden. Puls jetzt messen schaltet den Sensor für bis zu 45 Sekunden ein; am Gerät noch nicht geprüft. Der Wecker des Bands gehört zu Lumen Alarm.")) {
             Button { modell.abfragen() } label: { Label("Jetzt abfragen", systemImage: "arrow.clockwise") }
                 .frame(minHeight: Abstand.tippflaeche)
                 .disabled(!verbunden || modell.abfrageLaeuft)
@@ -168,7 +168,7 @@ struct BandVibrationAbschnitt: View {
     let modell: TrackerModell
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Vibration", fuss: "Wann das Band vibriert: Wünsche von Lovea, Partner-Ereignisse, Gym, Sitzen, Ruhezeiten. Anrufe und Mitteilungen anderer Apps sieht Lumen Fit nicht (iOS).") {
+        VerbindenAbschnitt(titel: String(localized: "Vibration"), fuss: String(localized: "Wann das Band vibriert: Wünsche von Lovea, Partner-Ereignisse, Gym, Sitzen, Ruhezeiten. Anrufe und Mitteilungen anderer Apps sieht Lumen Fit nicht (iOS).")) {
             NavigationLink { BandRegelnBlatt() } label: { Label("Band-Vibration", systemImage: "waveform") }
                 .frame(minHeight: Abstand.tippflaeche)
             #if DEBUG
@@ -186,7 +186,7 @@ struct BandAkkuWarnAbschnitt: View {
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Akku", fuss: "Eine Mitteilung bei \(TrackerAkkuWarnung.grenze) % oder weniger, einmal je Entladung. Sie kommt nur, wenn Lumen Fit den Akku ohnehin liest (bei jeder Verbindung und im Takt des Modus). Lumen Fit fragt dafür nichts zusätzlich ab.") {
+        VerbindenAbschnitt(titel: String(localized: "Akku"), fuss: String(localized: "Eine Mitteilung bei \(TrackerAkkuWarnung.grenze) % oder weniger, einmal je Entladung. Sie kommt nur, wenn Lumen Fit den Akku ohnehin liest (bei jeder Verbindung und im Takt des Modus). Lumen Fit fragt dafür nichts zusätzlich ab.")) {
             Toggle(isOn: $warnen) { Label("Warnen bei niedrigem Akku", systemImage: "battery.25percent") }
                 .frame(minHeight: Abstand.tippflaeche)
                 .onChange(of: warnen) { _, an in
@@ -212,7 +212,7 @@ struct BandHilfeAbschnitt: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Hilfe", fuss: nil) {
+        VerbindenAbschnitt(titel: String(localized: "Hilfe"), fuss: nil) {
             DisclosureGroup("Verbindung klappt nicht") {
                 VStack(alignment: .leading, spacing: Abstand.s) {
                     Text("Ob mehrere Apps sich die Verbindung zum Band teilen, ist am Gerät noch nicht bewiesen. Ob das Band beim Verbinden schon verbunden war, steht bei den Rohdaten unter Verbindung (von wem, sagt iOS nicht). In QWatch Pro muss das Band unter Device, Device Binding gelöst sein.")
@@ -225,10 +225,10 @@ struct BandHilfeAbschnitt: View {
             }
             DisclosureGroup("Rohdaten (Fehlersuche)") {
                 VStack(alignment: .leading, spacing: Abstand.s) {
-                    Text("Verbindung: \(modell.verbindungsWeg ?? "noch keine seit dem App-Start")")
+                    Text("Verbindung: \(modell.verbindungsWeg ?? String(localized: "noch keine seit dem App-Start"))")
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
-                    Text(modell.rohLog.isEmpty ? "Noch nichts gelesen." : modell.rohLog.joined(separator: "\n"))
+                    Text(modell.rohLog.isEmpty ? String(localized: "Noch nichts gelesen.") : modell.rohLog.joined(separator: "\n"))
                         .font(.caption.monospaced())
                         .textSelection(.enabled)
                     if !modell.bandLog.isEmpty {
