@@ -1,7 +1,7 @@
 // Quelle: Lovea Health/WorkoutView.swift (Inhalt als Vorbild, neu im Lumen-Design)
 import SwiftUI
 
-/// Training beenden: Dauer, Sätze, Volumen und Rekorde auf einen Blick, dann beenden, weiter trainieren oder verwerfen.
+/// Training beenden ("Fertig?"): Dauer, Sets, Volumen und Rekorde auf einen Blick, dann beenden (weiter zur Seite "Geschafft"), weiter trainieren oder verwerfen.
 /// Hat sich der Aufbau geändert, fragt es einmal, ob der Plan so bleiben soll (`WorkoutLogik.neuerTag`).
 struct TrainingBeendenView: View {
     let sitzung: GymSitzung
@@ -64,27 +64,19 @@ struct TrainingBeendenView: View {
     }
 
     private var zusammenfassung: some View {
-        HeroKarte(platte: true) {
-            VStack(alignment: .leading, spacing: Abstand.s) {
-                HStack(alignment: .top) {
-                    kennzahl("Dauer", dauerText)
-                    Spacer()
-                    kennzahl("Sätze", "\(sitzung.saetzeZahl)")
-                    Spacer()
-                    kennzahl("Volumen", "\(TrainingLogik.kgText(sitzung.volumen)) kg")
-                }
-                if rekorde > 0 {
-                    Label("\(rekorde) \(rekorde == 1 ? "Rekord" : "Rekorde") heute", systemImage: "medal.fill").font(.subheadline.weight(.semibold))
-                }
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            LaufKachelReihe {
+                LaufKachel("Dauer") { Text(dauerText) }
+                Divider()
+                LaufKachel("Sets") { Text(sitzung.saetzeZahl, format: .number) }
+                Divider()
+                LaufKachel("Volumen") { Text("\(TrainingLogik.kgText(sitzung.volumen)) kg") }
             }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private func kennzahl(_ titel: String, _ wert: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(titel).font(.footnote.weight(.semibold)).textCase(.uppercase)
-            Text(wert).font(.title2.weight(.bold)).fontDesign(.rounded).monospacedDigit()
+            if rekorde > 0 {
+                Label(rekorde == 1 ? "1 Rekord heute" : "\(rekorde) Rekorde heute", systemImage: "trophy.fill")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(palette.akzent)
+                    .padding(.horizontal, Abstand.xs)
+            }
         }
     }
 
@@ -135,6 +127,8 @@ struct TrainingBeendenView: View {
         if sitzung.tag == nil, !tagName.trimmingCharacters(in: .whitespaces).isEmpty { sitzung.alsTagSpeichern(name: tagName) }
         sitzung.beende(notiz: notiz)
         schliessen()
+        // Beenden -> Fertig? -> Geschafft (Entwurf): die Seite liegt auf Heute, "Fertig" dort führt zurück zu Heute.
+        umgebung.router.oeffne(.gym(.geschafft))
     }
 }
 

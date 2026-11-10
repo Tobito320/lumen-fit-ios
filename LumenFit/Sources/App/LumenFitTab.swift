@@ -31,6 +31,7 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
     static func fuer(_ route: Route) -> LumenFitTab {
         switch route {
         case .heute, .gewichtEintragen: .heute
+        case .gym(.geschafft): .heute // Training laufend: nach dem Beenden auf Heute (Entwurf)
         case .gym(.training), .gym(.plaene), .uebung: .training
         case .gym(.fortschritt), .verlauf, .einsichten: .fortschritt
         case .freund, .profil(.verbindungen): .freunde

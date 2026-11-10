@@ -16,7 +16,7 @@ final class NutzungVertragTests: XCTestCase {
 
     private func seiten() -> [String] {
         let routen: [Route] = [.heute, .verlauf, .einsichten, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)]
-            + [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
+            + [GymBereich.training, .plaene, .fortschritt, .geschafft].map { Route.gym($0) }
             + [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
             + [SchlafBereich.letzteNacht, .verlauf, .werte].map { Route.schlaf($0) }
             + [ProfilBereich.uebersicht, .einstellungen, .aussehen, .ziele, .verbindungen, .datensicherung, .quellen, .meilensteine, .lumi].map { Route.profil($0) }

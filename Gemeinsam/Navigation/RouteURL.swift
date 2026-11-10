@@ -1,7 +1,7 @@
 import Foundation
 
 /// `lumenfit://`-Links für Widgets, Live Activity, Siri, Spotlight und geteilte Karten:
-/// `heute` | `gym?bereich=training|plaene|fortschritt` | `essen?bereich=heute|scan|favoriten` | `schlaf?bereich=letzteNacht|verlauf|werte`
+/// `heute` | `gym?bereich=training|plaene|fortschritt|geschafft` | `essen?bereich=heute|scan|favoriten` | `schlaf?bereich=letzteNacht|verlauf|werte`
 /// | `profil?bereich=uebersicht|einstellungen|aussehen|ziele|verbindungen|datensicherung|quellen|meilensteine|lumi`
 /// | `verlauf` | `gewicht` | `uebung?id=...` | `freund?d=<Nutzlast, base64url>`.
 /// Fehlender oder unbekannter `bereich` heißt der erste Fall. Für jede Route gilt `route(aus: url(fuer: route)) == route`; ein leerer Text zählt als fehlend.
