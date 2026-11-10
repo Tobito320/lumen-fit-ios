@@ -8,9 +8,9 @@ enum KoerperLogik {
     enum Art: Sendable {
         case beine, oben
         /// Das Wort unter dem Kreis der Wochenleiste, kurz genug für sieben Spalten.
-        var wort: String { self == .beine ? "Beine" : "Ober" }
+        var wort: String { self == .beine ? String(localized: "Beine") : String(localized: "Ober") }
         /// Für VoiceOver.
-        var name: String { self == .beine ? "Beine" : "Oberkörper" }
+        var name: String { self == .beine ? String(localized: "Beine") : String(localized: "Oberkörper") }
     }
 
     /// Der schlechteste Teil einer Gruppe, ein Teil ohne Eintrag gilt als erholt (100). Nicht der Mittelwert: ein
@@ -68,10 +68,11 @@ enum KoerperLogik {
             guard let tag = TrainingLogik.tag(plan, datum: datum), !tag.uebungen.isEmpty else { continue }
             let saetze = tag.uebungen.reduce(0) { $0 + $1.saetze.count }
             let minuten = ZeitSchaetzung.minuten(tag)
-            let wann = i == 0 ? "Heute" : i == 1 ? "Morgen" : TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
-            var meta = ["\(wann), \(tagMonat(datum))", "\(tag.uebungen.count) \(tag.uebungen.count == 1 ? "Übung" : "Übungen")"]
-            if saetze > 0 { meta.append("\(saetze) Sätze") }
-            meta.append("etwa \(minuten) min")
+            let wann = i == 0 ? String(localized: "Heute") : i == 1 ? String(localized: "Morgen") : TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
+            let anzahl = tag.uebungen.count
+            var meta = ["\(wann), \(tagMonat(datum))", anzahl == 1 ? String(localized: "1 Übung") : String(localized: "\(anzahl) Übungen")]
+            if saetze > 0 { meta.append(String(localized: "\(saetze) Sätze")) }
+            meta.append(String(localized: "etwa \(minuten) min"))
             var chips = faellig.map(\.name)
             if chips.isEmpty {
                 for g in tag.uebungen.compactMap({ katalog($0.uebung).flatMap(haupt)?.gruppe.name }) where !chips.contains(g) { chips.append(g) }
@@ -114,10 +115,11 @@ enum KoerperLogik {
 
     static func vorschlagText(_ v: Vorschlag, oben: Int = 12) -> String {
         guard let kg = v.kg else {
-            return v.mehrGewicht ? "Alle Sätze bei \(oben). Nimm Zusatzgewicht." : "\(v.wdh) Wiederholungen. Bei \(oben) in jedem Satz: Zusatzgewicht."
+            return v.mehrGewicht ? String(localized: "Alle Sätze bei \(oben). Nimm Zusatzgewicht.")
+                : String(localized: "\(v.wdh) Wiederholungen. Bei \(oben) in jedem Satz: Zusatzgewicht.")
         }
-        if v.mehrGewicht { return "Alle Sätze bei \(oben). Nächstes Mal \(TrainingLogik.kgText(kg)) kg × \(v.wdh)." }
-        return "\(TrainingLogik.kgText(kg)) kg × \(v.wdh). Bei \(oben) in jedem Satz: \(TrainingLogik.kgText(kg + 2.5)) kg."
+        if v.mehrGewicht { return String(localized: "Alle Sätze bei \(oben). Nächstes Mal \(TrainingLogik.kgText(kg)) kg × \(v.wdh).") }
+        return String(localized: "\(TrainingLogik.kgText(kg)) kg × \(v.wdh). Bei \(oben) in jedem Satz: \(TrainingLogik.kgText(kg + 2.5)) kg.")
     }
 
     /// 3,5 und 12.
@@ -125,7 +127,7 @@ enum KoerperLogik {
 
     /// "60 × 8", ohne Gewicht "12 Wdh".
     static func satzText(_ s: PlanSatz) -> String {
-        s.kg.map { "\(TrainingLogik.kgText($0)) × \(s.wdh)" } ?? "\(s.wdh) Wdh"
+        s.kg.map { "\(TrainingLogik.kgText($0)) × \(s.wdh)" } ?? String(localized: "\(s.wdh) Wdh")
     }
 
     // MARK: Übungen einer Gruppe
@@ -254,13 +256,13 @@ struct KoerperWoche: Sendable {
             let name = TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
             let stand: String
             switch anzeige {
-            case .fertig: stand = heute ? "heute, Training gemacht" : "Training gemacht"
-            case .heute(let art): stand = art.map { "heute, \($0.name) geplant" } ?? "heute"
-            case .verpasst(let art): stand = "\(art.name) geplant, nicht trainiert"
-            case .kommt(let art): stand = "\(art.name) geplant"
-            case .ruhe: stand = "kein Training"
+            case .fertig: stand = heute ? String(localized: "heute, Training gemacht") : String(localized: "Training gemacht")
+            case .heute(let art): stand = art.map { String(localized: "heute, \($0.name) geplant") } ?? String(localized: "heute")
+            case .verpasst(let art): stand = String(localized: "\(art.name) geplant, nicht trainiert")
+            case .kommt(let art): stand = String(localized: "\(art.name) geplant")
+            case .ruhe: stand = String(localized: "kein Training")
             }
-            return "\(name) \(nummer)., \(stand)"
+            return String(localized: "\(name) \(nummer)., \(stand)")
         }
     }
 
@@ -274,10 +276,10 @@ struct KoerperWoche: Sendable {
 
     var bilanz: String {
         let b = max(beineGeplant, beine), o = max(obenGeplant, oben)
-        guard b + o > 0 else { return "Noch kein Training geplant. Im Tab Gym legst du deinen Plan an." }
+        guard b + o > 0 else { return String(localized: "Noch kein Training geplant. Im Tab Gym legst du deinen Plan an.") }
         // Eine Art ohne Plan und ohne Training (0 von 0) bleibt weg.
-        let teile = [b > 0 ? "Beine \(beine) von \(b)" : nil, o > 0 ? "Oberkörper \(oben) von \(o)" : nil].compactMap { $0 }
-        return (teile + ["\(pausen) \(pausen == 1 ? "Pause" : "Pausen")"]).joined(separator: " · ")
+        let teile = [b > 0 ? String(localized: "Beine \(beine) von \(b)") : nil, o > 0 ? String(localized: "Oberkörper \(oben) von \(o)") : nil].compactMap { $0 }
+        return (teile + [pausen == 1 ? String(localized: "1 Pause") : String(localized: "\(pausen) Pausen")]).joined(separator: " · ")
     }
 
     /// `montagVon`: irgendein Tag der gezeigten Woche, Standard die Woche von `heute`.

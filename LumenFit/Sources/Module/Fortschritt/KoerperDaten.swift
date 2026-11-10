@@ -58,9 +58,9 @@ struct KoerperDaten: Sendable {
     /// Wort im Feld: "kein Training" ohne erfasstes Training in der Gruppe, sonst Prozent, solange nicht erholt,
     /// dann "geschafft" (Ziel erreicht) oder "erholt".
     func wort(_ g: MuskelGruppe) -> String {
-        if stand(g, teil: nil) == nil { return "kein Training" }
+        if stand(g, teil: nil) == nil { return String(localized: "kein Training") }
         if stufe(g) != .erholt { return "\(prozent(g)) %" }
-        guard let ziel = ziele.saetze[g] else { return "erholt" }
-        return saetze(g) >= Double(ziel) ? "geschafft" : "erholt"
+        guard let ziel = ziele.saetze[g] else { return String(localized: "erholt") }
+        return saetze(g) >= Double(ziel) ? String(localized: "geschafft") : String(localized: "erholt")
     }
 }

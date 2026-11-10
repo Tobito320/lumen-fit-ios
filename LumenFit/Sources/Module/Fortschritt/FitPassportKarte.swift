@@ -14,10 +14,10 @@ struct FitPassportBild: View {
                     if let name = daten.name { Text(name).font(.footnote).foregroundStyle(palette.text2) }
                 }
             }
-            abschnitt("Kraft", daten.kraft.isEmpty ? "Noch kein Satz mit Gewicht." : daten.kraft.map { "\($0.name): \($0.e1rmKg) kg (1RM)" }.joined(separator: "\n"))
-            abschnitt("Schlaf", daten.schlafSchnitt.map { "Im Schnitt \(Rueckblick.dauer($0)) in \(daten.schlafNaechte) Nächten" } ?? "Noch keine Nacht erfasst.")
-            abschnitt("Konstanz", "\(daten.aktiveWochen) von \(KonstanzRaster.wochen) Wochen mit Training, Serie \(daten.serieWochen) \(daten.serieWochen == 1 ? "Woche" : "Wochen")")
-            abschnitt("Medaillen", "\(daten.medaillen) von \(MeilensteinKatalog.anzahl)")
+            abschnitt(String(localized: "Kraft"), daten.kraft.isEmpty ? String(localized: "Noch kein Satz mit Gewicht.") : daten.kraft.map { "\($0.name): \($0.e1rmKg) kg (1RM)" }.joined(separator: "\n"))
+            abschnitt(String(localized: "Schlaf"), daten.schlafSchnitt.map { String(localized: "Im Schnitt \(Rueckblick.dauer($0)) in \(daten.schlafNaechte) Nächten") } ?? String(localized: "Noch keine Nacht erfasst."))
+            abschnitt(String(localized: "Konstanz"), String(localized: "\(daten.aktiveWochen) von \(KonstanzRaster.wochen) Wochen mit Training, Serie \(daten.serieWochen) \(daten.serieWochen == 1 ? String(localized: "Woche") : String(localized: "Wochen"))"))
+            abschnitt(String(localized: "Medaillen"), String(localized: "\(daten.medaillen) von \(MeilensteinKatalog.anzahl)"))
             Text("Lumen Fit").font(.caption.weight(.semibold)).foregroundStyle(palette.text2)
         }
         .foregroundStyle(palette.text)

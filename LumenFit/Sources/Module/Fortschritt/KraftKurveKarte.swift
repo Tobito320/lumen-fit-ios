@@ -9,9 +9,9 @@ enum KraftMesswert: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .gewicht: "Gewicht"
+        case .gewicht: String(localized: "Gewicht")
         case .e1rm: "1RM"
-        case .volumen: "Volumen"
+        case .volumen: String(localized: "Volumen")
         }
     }
 
@@ -55,7 +55,7 @@ struct KraftKurveKarte: View {
             .haptik(.auswahl, bei: messwert)
             .haptik(.auswahl, bei: aktuell.id)
         } else {
-            LeerZustand(stimmung: .bereit, satz: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit.", handlung: "Training starten") {
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Kraftkurve. Hake Sätze mit Gewicht ab, Lumi zeichnet mit."), handlung: String(localized: "Training starten")) {
                 umgebung.router.oeffne(.gym(.training))
             }
                 .lumenKartenFlaeche()
@@ -109,7 +109,7 @@ struct KraftKurveKarte: View {
         }
         .frame(height: 180)
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "Kraftkurve", zusammenfassung: KraftKurve.kernzeile(punkte), xTitel: "Woche ab", yTitel: wert.name, einheit: wert.einheit, stetig: true,
+            titel: String(localized: "Kraftkurve"), zusammenfassung: KraftKurve.kernzeile(punkte), xTitel: String(localized: "Woche ab"), yTitel: wert.name, einheit: wert.einheit, stetig: true,
             punkte: punkte.map { .init(x: KoerperLogik.tagMonat($0.woche), y: wert.wert($0)) }))
     }
 }

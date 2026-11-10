@@ -85,13 +85,13 @@ final class MeilensteinWaechter {
     nonisolated static func toastInhalt(_ ids: [String], neueStufe: Int?) -> ToastInhalt? {
         let medaillen = ids.compactMap { MeilensteinKatalog.nachId[$0] }
         if let stufe = neueStufe {
-            return ToastInhalt(titel: "Lumi ist jetzt Stufe \(stufe)", zeile: medaillen.first.map { "Neue Medaille: \($0.titel)" }, stimmung: .ziel)
+            return ToastInhalt(titel: String(localized: "Lumi ist jetzt Stufe \(stufe)"), zeile: medaillen.first.map { String(localized: "Neue Medaille: \($0.titel)") }, stimmung: .ziel)
         }
         if medaillen.count == 1, let m = medaillen.first {
-            return ToastInhalt(titel: "Neue Medaille: \(m.titel)", zeile: m.bedingung, stimmung: .ziel)
+            return ToastInhalt(titel: String(localized: "Neue Medaille: \(m.titel)"), zeile: m.bedingung, stimmung: .ziel)
         }
         guard !medaillen.isEmpty else { return nil }
-        return ToastInhalt(titel: "\(medaillen.count) neue Medaillen", zeile: medaillen.prefix(3).map(\.titel).joined(separator: ", "), stimmung: .ziel)
+        return ToastInhalt(titel: String(localized: "\(medaillen.count) neue Medaillen"), zeile: medaillen.prefix(3).map(\.titel).joined(separator: ", "), stimmung: .ziel)
     }
 }
 

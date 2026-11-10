@@ -144,8 +144,8 @@ private struct EinheitKarte: View {
     }
 
     private var sprechtext: String {
-        let dauer = daten.dauer.map { ", Dauer \(TrainingLogik.dauerText($0))" } ?? ""
-        let rekorde = daten.rekorde > 0 ? ", \(daten.rekorde) \(daten.rekorde == 1 ? "Rekord" : "Rekorde")" : ""
-        return "\(daten.titel), \(FortschrittLogik.kurzDatum(daten.start))\(dauer), Volumen \(FortschrittLogik.volumenText(daten.volumen)), \(daten.saetze) Sets\(rekorde)"
+        let dauer = daten.dauer.map { ", " + String(localized: "Dauer \(TrainingLogik.dauerText($0))") } ?? ""
+        let rekorde = daten.rekorde > 0 ? ", " + (daten.rekorde == 1 ? String(localized: "1 Rekord") : String(localized: "\(daten.rekorde) Rekorde")) : ""
+        return String(localized: "\(daten.titel), \(FortschrittLogik.kurzDatum(daten.start))\(dauer), Volumen \(FortschrittLogik.volumenText(daten.volumen)), \(daten.saetze) Sets\(rekorde)")
     }
 }

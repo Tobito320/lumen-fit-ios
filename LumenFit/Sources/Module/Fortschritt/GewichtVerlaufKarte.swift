@@ -12,7 +12,7 @@ struct GewichtVerlaufKarte: View {
 
     var body: some View {
         if trend.reihe.isEmpty {
-            LeerZustand(stimmung: .bereit, satz: "Noch kein Gewicht eingetragen. Ein Wert, dann zeichnet Lumi die Kurve.", handlung: "Gewicht eintragen", aktion: beiEintragen)
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch kein Gewicht eingetragen. Ein Wert, dann zeichnet Lumi die Kurve."), handlung: String(localized: "Gewicht eintragen"), aktion: beiEintragen)
                 .lumenKartenFlaeche()
         } else {
             DiagrammKarte(aussage: GewichtVerlauf.aussage(trend), kernzeile: GewichtVerlauf.kernzeile(trend)) {
@@ -70,7 +70,7 @@ struct GewichtVerlaufKarte: View {
         }
         .frame(height: 200)
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "Gewichtsverlauf", zusammenfassung: "\(GewichtVerlauf.aussage(trend)). \(GewichtVerlauf.kernzeile(trend))", xTitel: "Tag", yTitel: "Gewicht (Mittel)", einheit: "kg",
+            titel: String(localized: "Gewichtsverlauf"), zusammenfassung: "\(GewichtVerlauf.aussage(trend)). \(GewichtVerlauf.kernzeile(trend))", xTitel: String(localized: "Tag"), yTitel: String(localized: "Gewicht (Mittel)"), einheit: "kg",
             stetig: true, punkte: trend.reihe.map { .init(x: KoerperLogik.tagMonat($0.tag), y: $0.kg) }))
     }
 }

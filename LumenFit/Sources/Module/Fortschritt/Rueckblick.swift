@@ -5,7 +5,7 @@ struct RueckblickDaten: Equatable, Sendable {
     enum Zeitraum: String, CaseIterable, Identifiable, Sendable {
         case woche, monat
         var id: String { rawValue }
-        var name: String { self == .woche ? "Woche" : "Monat" }
+        var name: String { self == .woche ? String(localized: "Woche") : String(localized: "Monat") }
     }
 
     let zeitraum: Zeitraum
@@ -25,8 +25,11 @@ struct RueckblickDaten: Equatable, Sendable {
 
     /// Die Aussage als Titel: "Deine Woche: 3 Gym-Tage" oder "Noch kein Training in dieser Woche".
     var titel: String {
-        guard gymTage > 0 else { return "Noch kein Training in \(zeitraum == .woche ? "dieser Woche" : "diesem Monat")" }
-        return "Dein\(zeitraum == .woche ? "e Woche" : " Monat"): \(gymTage) \(gymTage == 1 ? "Gym-Tag" : "Gym-Tage")"
+        guard gymTage > 0 else {
+            return zeitraum == .woche ? String(localized: "Noch kein Training in dieser Woche") : String(localized: "Noch kein Training in diesem Monat")
+        }
+        let tage = gymTage == 1 ? String(localized: "Gym-Tag") : String(localized: "Gym-Tage")
+        return zeitraum == .woche ? String(localized: "Deine Woche: \(gymTage) \(tage)") : String(localized: "Dein Monat: \(gymTage) \(tage)")
     }
 
     /// Lumi freut sich mit, wenn etwas gelaufen ist.
@@ -34,8 +37,8 @@ struct RueckblickDaten: Equatable, Sendable {
 
     /// "Volumen 12.400 kg · 42 Sätze" und der Schlaf.
     var zeile: String {
-        var teile = ["Volumen \(Rueckblick.zahl(volumenKg)) kg", "\(saetze) Sätze"]
-        if let s = schlafSchnitt { teile.append("Schlaf im Schnitt \(Rueckblick.dauer(s))") }
+        var teile = [String(localized: "Volumen \(Rueckblick.zahl(volumenKg)) kg"), String(localized: "\(saetze) Sätze")]
+        if let s = schlafSchnitt { teile.append(String(localized: "Schlaf im Schnitt \(Rueckblick.dauer(s))")) }
         return teile.joined(separator: " · ")
     }
 
@@ -100,22 +103,22 @@ enum Rueckblick {
             guard let alt = davor[uebung], bestes.e1rm > alt, let u = katalog(uebung) else { return nil }
             return (u.name, bestes.satz, bestes.e1rm / alt)
         }.max { $0.sprung != $1.sprung ? $0.sprung < $1.sprung : $0.name > $1.name }
-        if let r = rekorde { return "Rekord: \(r.name), \(satzText(r.satz))" }
+        if let r = rekorde { return String(localized: "Rekord: \(r.name), \(satzText(r.satz))") }
 
         let schwerster = inZeitraum.compactMap { uebung, bestes -> (name: String, satz: PlanSatz)? in
             katalog(uebung).map { (name: $0.name, satz: bestes.satz) }
         }.max { ($0.satz.kg ?? 0) != ($1.satz.kg ?? 0) ? ($0.satz.kg ?? 0) < ($1.satz.kg ?? 0) : $0.name > $1.name }
-        if let s = schwerster { return "Schwerster Satz: \(s.name), \(satzText(s.satz))" }
+        if let s = schwerster { return String(localized: "Schwerster Satz: \(s.name), \(satzText(s.satz))") }
 
         if let beste = schlafMinuten.filter({ $0.key >= von && $0.key <= bis }).max(by: { $0.value != $1.value ? $0.value < $1.value : $0.key > $1.key }), beste.value > 0 {
-            return "Beste Nacht: \(dauer(beste.value)) am \(Datum.anzeige(beste.key))"
+            return String(localized: "Beste Nacht: \(dauer(beste.value)) am \(Datum.anzeige(beste.key))")
         }
-        return "Dein bester Moment kommt noch. Lumi wartet."
+        return String(localized: "Dein bester Moment kommt noch. Lumi wartet.")
     }
 
     /// "70 kg × 8", ohne Gewicht "12 Wdh".
     static func satzText(_ s: PlanSatz) -> String {
-        s.kg.map { "\(TrainingLogik.kgText($0)) kg × \(s.wdh)" } ?? "\(s.wdh) Wdh"
+        s.kg.map { "\(TrainingLogik.kgText($0)) kg × \(s.wdh)" } ?? String(localized: "\(s.wdh) Wdh")
     }
 
     /// 450 -> "7 h 30 min".

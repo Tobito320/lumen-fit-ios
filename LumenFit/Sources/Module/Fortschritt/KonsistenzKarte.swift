@@ -3,9 +3,11 @@ import SwiftUI
 
 /// Reine Hilfen der Konsistenz-Karte: deutsche Beschriftung und Monatssummen für die Diagrammbeschreibung.
 enum KonsistenzKarteLogik {
-    static let monatsKurz = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+    static let monatsKurz = [String(localized: "Jan"), String(localized: "Feb"), String(localized: "Mär"), String(localized: "Apr"), String(localized: "Mai"),
+                             String(localized: "Jun"), String(localized: "Jul"), String(localized: "Aug"), String(localized: "Sep"), String(localized: "Okt"),
+                             String(localized: "Nov"), String(localized: "Dez")]
     /// Nur Mo, Mi, Fr: jede zweite Zeile, damit die Namen bei 390 pt nicht aufeinander liegen.
-    static let wochentage: [(zeile: Int, name: String)] = [(0, "Mo"), (2, "Mi"), (4, "Fr")]
+    static let wochentage: [(zeile: Int, name: String)] = [(0, String(localized: "Mo")), (2, String(localized: "Mi")), (4, String(localized: "Fr"))]
 
     /// Deutscher Kurzname des Monats, den `KonsistenzLogik.Monat` englisch trägt.
     static func monatName(_ m: KonsistenzLogik.Monat) -> String {
@@ -23,13 +25,13 @@ enum KonsistenzKarteLogik {
     }
 
     /// "Gesamt" oder das Jahr.
-    static func zeitraumText(_ auswahl: Int?) -> String { auswahl.map { String($0) } ?? "Gesamt" }
+    static func zeitraumText(_ auswahl: Int?) -> String { auswahl.map { String($0) } ?? String(localized: "Gesamt") }
 
     /// Aussage über der Karte: "27 Trainingstage in 2026" oder "112 Trainingstage insgesamt".
     static func aussage(_ jahre: [KonsistenzLogik.Jahr], auswahl: Int?) -> String {
         let tage = jahre.reduce(0) { $0 + $1.trainingstage }
-        let wort = tage == 1 ? "Trainingstag" : "Trainingstage"
-        return auswahl.map { "\(tage) \(wort) in \($0)" } ?? "\(tage) \(wort) insgesamt"
+        let wort = tage == 1 ? String(localized: "Trainingstag") : String(localized: "Trainingstage")
+        return auswahl.map { String(localized: "\(tage) \(wort) in \(String($0))") } ?? String(localized: "\(tage) \(wort) insgesamt")
     }
 }
 
@@ -77,7 +79,7 @@ struct KonsistenzKarte: View {
             }
         }
         DiagrammKarte(aussage: KonsistenzKarteLogik.aussage(jahre, auswahl: auswahl),
-                      kernzeile: sessions.isEmpty ? "Sobald du im Gym eincheckst, füllt sich das Raster." : "Tipp auf einen Tag zeigt das Training.") {
+                      kernzeile: sessions.isEmpty ? String(localized: "Sobald du im Gym eincheckst, füllt sich das Raster.") : String(localized: "Tipp auf einen Tag zeigt das Training.")) {
             stapel
         }
         .sheet(isPresented: $kategorienOffen, onDismiss: { einstellung = KonsistenzKategorienDatei.lesen(ordner) }) {
@@ -139,8 +141,8 @@ struct KonsistenzKarte: View {
     private var legende: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: Abstand.m, alignment: .leading)], alignment: .leading, spacing: Abstand.xs) {
             ForEach(einstellung.kategorien) { k in legendePunkt(farbe(k.farbe), k.name) }
-            legendePunkt(neutral, "Ohne Kategorie")
-            legendePunkt(leer, "Kein Training")
+            legendePunkt(neutral, String(localized: "Ohne Kategorie"))
+            legendePunkt(leer, String(localized: "Kein Training"))
         }
         .accessibilityElement(children: .combine)
     }
@@ -194,7 +196,7 @@ struct KonsistenzKarte: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Raster \(j.jahr): \(j.trainingstage) Trainingstage, \(j.workouts) Workouts")
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "Konsistenz \(j.jahr)", zusammenfassung: "\(j.trainingstage) Trainingstage, \(j.workouts) Workouts", xTitel: "Monat", yTitel: "Workouts",
+            titel: String(localized: "Konsistenz \(String(j.jahr))"), zusammenfassung: String(localized: "\(j.trainingstage) Trainingstage, \(j.workouts) Workouts"), xTitel: String(localized: "Monat"), yTitel: String(localized: "Workouts"),
             einheit: "", stetig: false,
             punkte: KonsistenzKarteLogik.monatsSummen(j).map { .init(x: $0.monat, y: Double($0.workouts)) }))
         .accessibilityAction(named: "Letzten Trainingstag zeigen") { gewaehlt = j.letzterTag }

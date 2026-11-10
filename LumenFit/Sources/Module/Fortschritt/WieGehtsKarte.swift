@@ -15,11 +15,11 @@ struct WieGehtsKarte: View {
                 Text("gegen Schnitt der 4 Wochen davor").font(.footnote).foregroundStyle(palette.text2)
             }
             HStack(spacing: Abstand.s) {
-                kachel("Einheiten", wert: FortschrittLogik.zahl(Double(vergleich.einheiten)), ist: Double(vergleich.einheiten),
+                kachel(String(localized: "Einheiten"), wert: FortschrittLogik.zahl(Double(vergleich.einheiten)), ist: Double(vergleich.einheiten),
                        schnitt: vergleich.einheitenSchnitt, schnittText: FortschrittLogik.zahl(vergleich.einheitenSchnitt))
-                kachel("Volumen", wert: FortschrittLogik.volumenText(vergleich.volumen), ist: vergleich.volumen,
+                kachel(String(localized: "Volumen"), wert: FortschrittLogik.volumenText(vergleich.volumen), ist: vergleich.volumen,
                        schnitt: vergleich.volumenSchnitt, schnittText: FortschrittLogik.volumenText(vergleich.volumenSchnitt))
-                kachel("Sets", wert: FortschrittLogik.zahl(Double(vergleich.saetze)), ist: Double(vergleich.saetze),
+                kachel(String(localized: "Sets"), wert: FortschrittLogik.zahl(Double(vergleich.saetze)), ist: Double(vergleich.saetze),
                        schnitt: vergleich.saetzeSchnitt, schnittText: FortschrittLogik.zahl(vergleich.saetzeSchnitt))
             }
             if let satz {
@@ -55,9 +55,9 @@ struct WieGehtsKarte: View {
     /// Pfeil und Wort gegen den Schnitt; nil ohne Schnitt (noch keine Woche davor).
     static func richtung(ist: Double, schnitt: Double) -> (symbol: String, text: String)? {
         guard schnitt > 0 else { return nil }
-        if ist > schnitt { return ("arrow.up", "über dem Schnitt") }
-        if ist < schnitt { return ("arrow.down", "unter dem Schnitt") }
-        return ("minus", "wie der Schnitt")
+        if ist > schnitt { return ("arrow.up", String(localized: "über dem Schnitt")) }
+        if ist < schnitt { return ("arrow.down", String(localized: "unter dem Schnitt")) }
+        return ("minus", String(localized: "wie der Schnitt"))
     }
 
     private func letztes(_ e: EinheitDaten) -> some View {

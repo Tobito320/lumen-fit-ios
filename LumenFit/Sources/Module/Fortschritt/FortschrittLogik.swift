@@ -138,9 +138,9 @@ enum FortschrittLogik {
     static func satz(_ v: TrainingsWochenVergleich, geplantRest: Int) -> String? {
         guard v.hauptuebungen > 0 else { return nil }
         let eine = v.hauptuebungen == 1
-        var text = "\(v.gestiegen) von \(v.hauptuebungen) \(eine ? "Hauptübung ist" : "Hauptübungen sind") gestiegen."
+        var text = String(localized: "\(v.gestiegen) von \(v.hauptuebungen) \(eine ? String(localized: "Hauptübung ist") : String(localized: "Hauptübungen sind")) gestiegen.")
         if geplantRest > 0 {
-            text += " Die Woche läuft noch, \(geplantRest) \(geplantRest == 1 ? "Training ist" : "Trainings sind") geplant."
+            text += " " + String(localized: "Die Woche läuft noch, \(geplantRest) \(geplantRest == 1 ? String(localized: "Training ist") : String(localized: "Trainings sind")) geplant.")
         }
         return text
     }
@@ -198,7 +198,7 @@ enum FortschrittLogik {
             Datum.montagDerWoche(Datum.text($0.start))
         }
         return gruppen.keys.sorted(by: >).map { m in
-            (titel: m == montag ? "Diese Woche" : m == letzte ? "Letzte Woche" : "KW \(kalenderwoche(m))", sessions: gruppen[m] ?? [])
+            (titel: m == montag ? String(localized: "Diese Woche") : m == letzte ? String(localized: "Letzte Woche") : String(localized: "KW \(kalenderwoche(m))"), sessions: gruppen[m] ?? [])
         }
     }
 
@@ -227,10 +227,10 @@ enum FortschrittLogik {
             guard !arbeit.isEmpty else { continue }
             let rekord = !RekordLogik.neue(arbeit, gegen: RekordLogik.tage(katalogId: lauf.uebung, planId: lauf.plan, in: davor)).isEmpty
             let bester = arbeit.max { ($0.kg ?? 0, $0.wdh) < ($1.kg ?? 0, $1.wdh) }
-            zeilen.append(EinheitUebungZeile(id: "\(lauf.plan)-\(i)", name: lauf.name ?? katalog(lauf.uebung)?.name ?? "Übung",
+            zeilen.append(EinheitUebungZeile(id: "\(lauf.plan)-\(i)", name: lauf.name ?? katalog(lauf.uebung)?.name ?? String(localized: "Übung"),
                                              saetze: arbeit.count, bester: bester, rekord: rekord))
         }
-        return EinheitDaten(id: s.id, titel: titel ?? "Training", start: s.start, dauer: s.ende.map { max(0, $0.timeIntervalSince(s.start)) },
+        return EinheitDaten(id: s.id, titel: titel ?? String(localized: "Training"), start: s.start, dauer: s.ende.map { max(0, $0.timeIntervalSince(s.start)) },
                             volumen: summe.volumen, saetze: summe.saetze, rekorde: zeilen.filter(\.rekord).count, zeilen: zeilen)
     }
 
@@ -269,8 +269,8 @@ enum FortschrittLogik {
 extension GewichtZeile {
     /// Für VoiceOver: "Brustpresse, 32,5 Kilo, plus 5 seit 4 Wochen".
     var sprechtext: String {
-        let aenderung = aenderung4Wochen > 0 ? "plus \(FortschrittLogik.zahl(aenderung4Wochen)) seit 4 Wochen"
-            : aenderung4Wochen < 0 ? "minus \(FortschrittLogik.zahl(-aenderung4Wochen)) seit 4 Wochen" : "unverändert seit 4 Wochen"
-        return "\(name), \(FortschrittLogik.zahl(aktuell)) Kilo, \(aenderung)"
+        let aenderung = aenderung4Wochen > 0 ? String(localized: "plus \(FortschrittLogik.zahl(aenderung4Wochen)) seit 4 Wochen")
+            : aenderung4Wochen < 0 ? String(localized: "minus \(FortschrittLogik.zahl(-aenderung4Wochen)) seit 4 Wochen") : String(localized: "unverändert seit 4 Wochen")
+        return String(localized: "\(name), \(FortschrittLogik.zahl(aktuell)) Kilo, \(aenderung)")
     }
 }

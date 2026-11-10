@@ -20,10 +20,10 @@ enum NaechstesTraining {
 
         var name: String {
             switch self {
-            case .beine: "Beine"
-            case .druecken: "Brust und Schulter"
-            case .ziehen: "Rücken und Bizeps"
-            case .rumpf: "Bauch"
+            case .beine: String(localized: "Beine")
+            case .druecken: String(localized: "Brust und Schulter")
+            case .ziehen: String(localized: "Rücken und Bizeps")
+            case .rumpf: String(localized: "Bauch")
             }
         }
 
@@ -75,21 +75,21 @@ enum NaechstesTraining {
         var begruendung: String
         if let geplant, (prozent[geplant] ?? 0) >= planSchwelle || geplant == frischeste {
             gewaehlt = geplant
-            begruendung = "Das steht heute im Plan, und \(geplant.name) \(verb(geplant)) zu \(prozent[geplant] ?? 0) Prozent erholt."
+            begruendung = String(localized: "Das steht heute im Plan, und \(geplant.name) \(verb(geplant)) zu \(prozent[geplant] ?? 0) Prozent erholt.")
             let andere = Art.allCases.filter { $0 != geplant }.min { (prozent[$0] ?? 0) < (prozent[$1] ?? 0) }
             if let andere, (prozent[andere] ?? 100) < 90 {
-                begruendung += " \(andere.name) \(verb(andere)) erst zu \(prozent[andere] ?? 0) Prozent erholt."
+                begruendung += " " + String(localized: "\(andere.name) \(verb(andere)) erst zu \(prozent[andere] ?? 0) Prozent erholt.")
             }
         } else {
             gewaehlt = frischeste
-            begruendung = "\(gewaehlt.name) \(verb(gewaehlt)) zu \(prozent[gewaehlt] ?? 0) Prozent erholt, am meisten von allen."
+            begruendung = String(localized: "\(gewaehlt.name) \(verb(gewaehlt)) zu \(prozent[gewaehlt] ?? 0) Prozent erholt, am meisten von allen.")
             if let geplant {
-                begruendung += " Dein Plan sieht \(geplant.name) vor, aber \(geplant.name) \(verb(geplant)) erst zu \(prozent[geplant] ?? 0) Prozent erholt."
+                begruendung += " " + String(localized: "Dein Plan sieht \(geplant.name) vor, aber \(geplant.name) \(verb(geplant)) erst zu \(prozent[geplant] ?? 0) Prozent erholt.")
             }
         }
-        return TrainingsVorschlag(art: gewaehlt, minuten: zeit, titel: "Heute \(gewaehlt.name), \(zeit) Minuten", begruendung: begruendung, saetze: ZeitSchaetzung.saetze(inMinuten: zeit))
+        return TrainingsVorschlag(art: gewaehlt, minuten: zeit, titel: String(localized: "Heute \(gewaehlt.name), \(zeit) Minuten"), begruendung: begruendung, saetze: ZeitSchaetzung.saetze(inMinuten: zeit))
     }
 
     /// "ist" für eine Gruppe, "sind" für mehrere ("Beine sind", "Bauch ist").
-    private static func verb(_ art: Art) -> String { art == .rumpf ? "ist" : "sind" }
+    private static func verb(_ art: Art) -> String { art == .rumpf ? String(localized: "ist") : String(localized: "sind") }
 }

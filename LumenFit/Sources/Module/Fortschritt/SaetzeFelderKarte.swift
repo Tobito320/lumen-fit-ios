@@ -88,8 +88,8 @@ private struct SaetzeFeld: View {
     private var anteil: Double { SaetzeFelderLogik.anteil(saetze: daten.saetze(gruppe), ziel: ziel) }
     private var stufe: ErholungsStufe? { daten.stand(gruppe, teil: nil) == nil ? nil : daten.stufe(gruppe) }
     private var label: String {
-        let von = ziel.map { " von \($0)" } ?? ""
-        return "\(gruppe.name), \(KoerperLogik.komma(daten.saetze(gruppe)))\(von) Sätze, \(daten.wort(gruppe))"
+        let saetze = KoerperLogik.komma(daten.saetze(gruppe)), wort = daten.wort(gruppe)
+        return ziel.map { String(localized: "\(gruppe.name), \(saetze) von \($0) Sätze, \(wort)") } ?? String(localized: "\(gruppe.name), \(saetze) Sätze, \(wort)")
     }
 
     var body: some View {
@@ -110,7 +110,7 @@ private struct SaetzeFeld: View {
             Spacer(minLength: 0)
             HStack(alignment: .firstTextBaseline, spacing: 1) {
                 RollZahl(wert: daten.saetze(gruppe), format: .number.precision(.fractionLength(0...1))).font(.title3.weight(.bold)).fontDesign(.rounded)
-                Text(ziel.map { "/\($0)" } ?? " Sätze").font(.caption).foregroundStyle(palette.text2)
+                Text(ziel.map { "/\($0)" } ?? " " + String(localized: "Sätze")).font(.caption).foregroundStyle(palette.text2)
                 Spacer(minLength: 2)
                 Text(daten.wort(gruppe)).font(.caption2).foregroundStyle(palette.text2)
             }

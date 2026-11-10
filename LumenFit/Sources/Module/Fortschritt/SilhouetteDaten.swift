@@ -5,7 +5,7 @@ import SwiftUI
 enum SilhouetteSeite: String, CaseIterable, Sendable {
     case vorne, hinten
 
-    var name: String { self == .vorne ? "Vorne" : "Hinten" }
+    var name: String { self == .vorne ? String(localized: "Vorne") : String(localized: "Hinten") }
 }
 
 /// Eine Grundform im Raum 100 x 200.
@@ -150,10 +150,10 @@ enum SilhouetteStufe: CaseIterable, Sendable {
     /// Das Wort in der Liste und für VoiceOver.
     var wort: String {
         switch self {
-        case .leer: "Kein Training"
-        case .erholt: "Erholt"
-        case .fast: "Fast erholt"
-        case .muede: "Müde"
+        case .leer: String(localized: "Kein Training")
+        case .erholt: String(localized: "Erholt")
+        case .fast: String(localized: "Fast erholt")
+        case .muede: String(localized: "Müde")
         }
     }
 
@@ -182,7 +182,7 @@ struct SilhouetteZeile: Identifiable, Equatable, Sendable {
 
     /// Für VoiceOver: "Rücken, 66 Prozent, fast erholt. Latissimus 66 Prozent".
     var sprechtext: String {
-        let kopf = "\(gruppe.name), \(prozent) Prozent, \(stufe == .leer ? "kein Training erfasst" : stufe.wort.lowercased())"
+        let kopf = String(localized: "\(gruppe.name), \(prozent) Prozent, \(stufe == .leer ? String(localized: "kein Training erfasst") : stufe.wort.lowercased())")
         return teilText.map { "\(kopf). \($0)" } ?? kopf
     }
 
@@ -192,7 +192,7 @@ struct SilhouetteZeile: Identifiable, Equatable, Sendable {
         let alle = reihenfolge.map { g -> SilhouetteZeile in
             let stand = daten.stand(g, teil: nil)
             let stufe = stand == nil ? SilhouetteStufe.leer : SilhouetteStufe(daten.stufe(g))
-            let unter = stand.flatMap { $0.prozent < 90 ? "\(KoerperLogik.teilName($0.teil)) \($0.prozent) Prozent" : nil }
+            let unter = stand.flatMap { $0.prozent < 90 ? String(localized: "\(KoerperLogik.teilName($0.teil)) \($0.prozent) Prozent") : nil }
             return SilhouetteZeile(gruppe: g, prozent: daten.prozent(g), stufe: stufe, teilText: unter, letztes: stand?.letztes?.text)
         }
         return alle.enumerated().sorted { a, b in

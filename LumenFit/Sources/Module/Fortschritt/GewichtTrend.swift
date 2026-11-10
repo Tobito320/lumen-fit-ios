@@ -68,21 +68,24 @@ enum GewichtVerlauf {
 
     /// Die Aussage als Titel: "In 9 Wochen am Ziel", "Am Ziel", sonst die Richtung.
     static func aussage(_ t: GewichtTrend) -> String {
-        guard let aktuell = t.aktuell else { return "Noch kein Gewicht eingetragen" }
-        if t.amZiel { return "Du bist am Ziel: \(kg(aktuell)) kg" }
-        if let wochen = t.prognoseWochen { return "In \(wochen) \(wochen == 1 ? "Woche" : "Wochen") am Ziel" }
-        guard let steigung = t.kgProWoche else { return "Gewicht \(kg(aktuell)) kg" }
-        if abs(steigung) < mindestSteigung { return "Dein Gewicht bleibt stabil bei \(kg(aktuell)) kg" }
-        if t.zielKg != nil { return "Der Trend zeigt gerade vom Ziel weg" }
-        return steigung > 0 ? "Dein Gewicht steigt langsam" : "Dein Gewicht sinkt langsam"
+        guard let aktuell = t.aktuell else { return String(localized: "Noch kein Gewicht eingetragen") }
+        if t.amZiel { return String(localized: "Du bist am Ziel: \(kg(aktuell)) kg") }
+        if let wochen = t.prognoseWochen { return String(localized: "In \(wochen) \(wochen == 1 ? String(localized: "Woche") : String(localized: "Wochen")) am Ziel") }
+        guard let steigung = t.kgProWoche else { return String(localized: "Gewicht \(kg(aktuell)) kg") }
+        if abs(steigung) < mindestSteigung { return String(localized: "Dein Gewicht bleibt stabil bei \(kg(aktuell)) kg") }
+        if t.zielKg != nil { return String(localized: "Der Trend zeigt gerade vom Ziel weg") }
+        return steigung > 0 ? String(localized: "Dein Gewicht steigt langsam") : String(localized: "Dein Gewicht sinkt langsam")
     }
 
     /// Die Kernzeile: aktueller Mittelwert, Trend je Woche und das Ziel.
     static func kernzeile(_ t: GewichtTrend) -> String {
-        guard let aktuell = t.aktuell else { return "Trag dein Gewicht ein, dann zeichnet Lumi die Kurve." }
-        var teile = ["Mittel \(kg(aktuell)) kg"]
-        if let s = t.kgProWoche { teile.append("\(s > 0 ? "+" : s < 0 ? "-" : "")\(kg(abs(s))) kg je Woche") }
-        if let z = t.zielKg { teile.append("Ziel \(kg(z)) kg") }
+        guard let aktuell = t.aktuell else { return String(localized: "Trag dein Gewicht ein, dann zeichnet Lumi die Kurve.") }
+        var teile = [String(localized: "Mittel \(kg(aktuell)) kg")]
+        if let s = t.kgProWoche {
+            let wert = "\(s > 0 ? "+" : s < 0 ? "-" : "")\(kg(abs(s)))"
+            teile.append(String(localized: "\(wert) kg je Woche"))
+        }
+        if let z = t.zielKg { teile.append(String(localized: "Ziel \(kg(z)) kg")) }
         return teile.joined(separator: " · ")
     }
 

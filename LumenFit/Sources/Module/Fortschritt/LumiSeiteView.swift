@@ -13,7 +13,7 @@ struct LumiSeiteView: View {
             VStack(spacing: Abstand.l) {
                 hero(stand, stimmung: q.stimmung)
                 if q.medaillen.isEmpty {
-                    LeerZustand(stimmung: .willkommen, satz: "Hake deinen ersten Satz ab, dann wächst Lumi.", handlung: "Training starten") {
+                    LeerZustand(stimmung: .willkommen, satz: String(localized: "Hake deinen ersten Satz ab, dann wächst Lumi."), handlung: String(localized: "Training starten")) {
                         umgebung.router.oeffne(.gym(.training))
                     }
                     .lumenKartenFlaeche()
@@ -76,11 +76,11 @@ struct LumiPfadKarte: View {
                         .frame(width: 44, height: 44)
                         .accessibilityHidden(true)
                         Text("Stufe \(k.stufe)").font(.footnote.weight(.semibold))
-                        Text(k.ab == 0 ? "Start" : "ab \(k.ab) \(k.ab == 1 ? "Medaille" : "Medaillen")").font(.caption2).foregroundStyle(palette.text2)
+                        Text(k.ab == 0 ? String(localized: "Start") : String(localized: "ab \(k.ab) \(k.ab == 1 ? String(localized: "Medaille") : String(localized: "Medaillen"))")).font(.caption2).foregroundStyle(palette.text2)
                     }
                     .frame(maxWidth: .infinity)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Stufe \(k.stufe), \(k.erreicht ? "erreicht" : "ab \(k.ab) Medaillen")")
+                    .accessibilityLabel("Stufe \(k.stufe), \(k.erreicht ? String(localized: "erreicht") : String(localized: "ab \(k.ab) Medaillen"))")
                 }
             }
         }

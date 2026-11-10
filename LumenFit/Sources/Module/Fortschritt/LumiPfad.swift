@@ -25,12 +25,12 @@ struct LumiPfadStand: Equatable, Sendable {
 
     /// "Noch 2 Medaillen bis Stufe 5".
     var ziel: String {
-        guard let naechsteStufe, let fehlen else { return "Höchste Stufe erreicht" }
-        return "Noch \(fehlen) \(fehlen == 1 ? "Medaille" : "Medaillen") bis Stufe \(naechsteStufe)"
+        guard let naechsteStufe, let fehlen else { return String(localized: "Höchste Stufe erreicht") }
+        return String(localized: "Noch \(fehlen) \(fehlen == 1 ? String(localized: "Medaille") : String(localized: "Medaillen")) bis Stufe \(naechsteStufe)")
     }
 
     /// "Serie: 12 Wochen".
-    var serieText: String { "\(serieWochen) \(serieWochen == 1 ? "Woche" : "Wochen") in Folge" }
+    var serieText: String { String(localized: "\(serieWochen) \(serieWochen == 1 ? String(localized: "Woche") : String(localized: "Wochen")) in Folge") }
 }
 
 /// Das nächste Ziel auf einer Medaille: die, die am weitesten gediehen ist, mit Zahlen für den Balken.
@@ -46,7 +46,7 @@ struct MeilensteinZiel: Equatable, Sendable {
     /// "80 von 100 Tagen".
     var text: String {
         let zahl: (Double) -> String = { $0.formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE"))) }
-        return "\(zahl(aktuell.rounded(.down))) von \(zahl(ziel)) \(einheit)"
+        return String(localized: "\(zahl(aktuell.rounded(.down))) von \(zahl(ziel)) \(einheit)")
     }
 }
 
@@ -72,19 +72,19 @@ enum LumiPfad {
             return nil
         }
         switch (teile[0], id) {
-        case ("gym", _): return (Double(z.gymTage), ziel, "Tagen")
+        case ("gym", _): return (Double(z.gymTage), ziel, String(localized: "Tagen"))
         case ("volumen", _): return (z.volumenKg, ziel, "kg")
-        case ("serie", _): return (Double(z.serieWochen), ziel, "Wochen")
-        case ("rekorde", _): return (Double(z.rekorde), ziel, "Rekorden")
-        case ("tagebuch", _): return (Double(z.essenTage), ziel, "Tagen")
-        case ("schlaf", "schlaf-7"): return (Double(z.schlafSerie), ziel, "Nächten in Folge")
-        case ("schlaf", "schlaf-30"): return (Double(z.schlafNaechteImZiel), ziel, "Nächten")
-        case ("wochenziel", _): return (Double(z.wochenzielSerie), ziel, "Wochen im Ziel")
-        case ("schritte", "schritte-7"): return (Double(z.schrittSerie), ziel, "Tagen in Folge")
-        case ("schritte", "schritte-30"): return (Double(z.schrittTage), ziel, "Tagen")
-        case ("protein", "protein-7"): return (Double(z.proteinSerie), ziel, "Tagen in Folge")
-        case ("protein", "protein-30"): return (Double(z.proteinTage), ziel, "Tagen")
-        case ("kalorien", _): return (Double(z.kalorienTage), ziel, "Tagen")
+        case ("serie", _): return (Double(z.serieWochen), ziel, String(localized: "Wochen"))
+        case ("rekorde", _): return (Double(z.rekorde), ziel, String(localized: "Rekorden"))
+        case ("tagebuch", _): return (Double(z.essenTage), ziel, String(localized: "Tagen"))
+        case ("schlaf", "schlaf-7"): return (Double(z.schlafSerie), ziel, String(localized: "Nächten in Folge"))
+        case ("schlaf", "schlaf-30"): return (Double(z.schlafNaechteImZiel), ziel, String(localized: "Nächten"))
+        case ("wochenziel", _): return (Double(z.wochenzielSerie), ziel, String(localized: "Wochen im Ziel"))
+        case ("schritte", "schritte-7"): return (Double(z.schrittSerie), ziel, String(localized: "Tagen in Folge"))
+        case ("schritte", "schritte-30"): return (Double(z.schrittTage), ziel, String(localized: "Tagen"))
+        case ("protein", "protein-7"): return (Double(z.proteinSerie), ziel, String(localized: "Tagen in Folge"))
+        case ("protein", "protein-30"): return (Double(z.proteinTage), ziel, String(localized: "Tagen"))
+        case ("kalorien", _): return (Double(z.kalorienTage), ziel, String(localized: "Tagen"))
         default: return nil
         }
     }

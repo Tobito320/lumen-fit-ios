@@ -21,7 +21,7 @@ struct RueckblickView: View {
                 if daten.gymTage > 0 {
                     RueckblickKarte(daten: daten, stufe: q.stufe)
                 } else {
-                    LeerZustand(stimmung: .bereit, satz: "\(daten.titel). Starte eins, Lumi schreibt mit.", handlung: "Training starten") {
+                    LeerZustand(stimmung: .bereit, satz: String(localized: "\(daten.titel). Starte eins, Lumi schreibt mit."), handlung: String(localized: "Training starten")) {
                         umgebung.router.oeffne(.gym(.training))
                     }
                     .lumenKartenFlaeche()

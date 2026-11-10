@@ -62,11 +62,11 @@ enum VerlaufWoche {
 
     /// "Heute: Push starten". Name leer = "Training", kein Plantag heute = freies Training.
     static func startText(_ knopf: VerlaufStartArt, tagName: String?) -> String {
-        let name = tagName.map { $0.isEmpty ? "Training" : $0 } ?? "Freies Training"
+        let name = tagName.map { $0.isEmpty ? String(localized: "Training") : $0 } ?? String(localized: "Freies Training")
         switch knopf {
-        case .starten: return "Heute: \(name) starten"
-        case .weiter: return "Heute: \(name) weiter"
-        case .fortsetzen: return "Heute: \(name) fortsetzen"
+        case .starten: return String(localized: "Heute: \(name) starten")
+        case .weiter: return String(localized: "Heute: \(name) weiter")
+        case .fortsetzen: return String(localized: "Heute: \(name) fortsetzen")
         }
     }
 
@@ -74,7 +74,7 @@ enum VerlaufWoche {
 
     /// "1 Besuch ohne Sätze", "2 Besuche ohne Sätze".
     static func ohneSaetzeText(_ anzahl: Int) -> String {
-        "\(anzahl) \(anzahl == 1 ? "Besuch" : "Besuche") ohne Sätze"
+        anzahl == 1 ? String(localized: "1 Besuch ohne Sätze") : String(localized: "\(anzahl) Besuche ohne Sätze")
     }
 }
 

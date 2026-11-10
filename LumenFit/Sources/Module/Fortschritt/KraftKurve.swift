@@ -66,18 +66,18 @@ enum KraftKurve {
 
     /// Die Aussage als Titel: "Bankdrücken: 70 kg, plus 10", bei gleichem Gewicht "unverändert", bei nur einem Punkt ohne Vergleich.
     static func aussage(name: String, _ punkte: [KraftPunkt]) -> String {
-        guard let neu = punkte.last else { return "\(name): noch keine Sätze mit Gewicht" }
+        guard let neu = punkte.last else { return String(localized: "\(name): noch keine Sätze mit Gewicht") }
         let kg = VerlaufLogik.zahl(neu.gewicht)
         guard punkte.count >= 2, let alt = punkte.first else { return "\(name): \(kg) kg" }
         let diff = neu.gewicht - alt.gewicht
-        if abs(diff) < 0.05 { return "\(name): \(kg) kg, unverändert" }
-        return "\(name): \(kg) kg, \(diff > 0 ? "plus" : "minus") \(VerlaufLogik.zahl(abs(diff)))"
+        if abs(diff) < 0.05 { return String(localized: "\(name): \(kg) kg, unverändert") }
+        return diff > 0 ? String(localized: "\(name): \(kg) kg, plus \(VerlaufLogik.zahl(abs(diff)))") : String(localized: "\(name): \(kg) kg, minus \(VerlaufLogik.zahl(abs(diff)))")
     }
 
     /// Die Kernzeile unter dem Titel: bestes Gewicht, 1RM und Volumen der letzten Woche mit Training.
     static func kernzeile(_ punkte: [KraftPunkt]) -> String {
-        guard let neu = punkte.last else { return "Sobald du Sätze mit Gewicht abhakst, wächst hier die Kurve." }
+        guard let neu = punkte.last else { return String(localized: "Sobald du Sätze mit Gewicht abhakst, wächst hier die Kurve.") }
         let volumen = neu.volumen.formatted(.number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
-        return "Letzte Woche mit Training: bestes Gewicht \(VerlaufLogik.zahl(neu.gewicht)) kg, 1RM \(VerlaufLogik.zahl(neu.e1rm.rounded())) kg, Volumen \(volumen) kg"
+        return String(localized: "Letzte Woche mit Training: bestes Gewicht \(VerlaufLogik.zahl(neu.gewicht)) kg, 1RM \(VerlaufLogik.zahl(neu.e1rm.rounded())) kg, Volumen \(volumen) kg")
     }
 }
