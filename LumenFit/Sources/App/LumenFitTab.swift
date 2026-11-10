@@ -1,58 +1,59 @@
 import Foundation
 
 enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
-    /// Reihenfolge der Tabs: Heute, Training, Plan, Essen, Schlaf. Training und Plan sind beide der Bereich Gym (`AppBereich.gym`).
-    case heute, training, plan, essen, schlaf
+    /// Aufteilung B (Wunsch vom 09.11.2026): Startseite, Training, Fortschritt, Freunde, Profil ganz rechts. Der Rohwert `heute` bleibt (Nutzungsname, gemerkter Tab).
+    case heute, training, fortschritt, freunde, profil
 
     var id: String { rawValue }
 
     var titel: String {
         switch self {
-        case .heute: "Heute"
+        case .heute: "Startseite"
         case .training: "Training"
-        case .plan: "Plan"
-        case .essen: "Essen"
-        case .schlaf: "Schlaf"
+        case .fortschritt: "Fortschritt"
+        case .freunde: "Freunde"
+        case .profil: "Profil"
         }
     }
 
     var symbolName: String {
         switch self {
-        case .heute: "sun.max.fill"
+        case .heute: "house.fill"
         case .training: "dumbbell.fill"
-        case .plan: "list.bullet.clipboard"
-        case .essen: "fork.knife"
-        case .schlaf: "bed.double.fill"
+        case .fortschritt: "chart.xyaxis.line"
+        case .freunde: "person.2.fill"
+        case .profil: "person.crop.circle.fill"
         }
     }
 
-    /// Der wählbare Bereich des Tabs; nil bei Heute (bleibt immer).
+    /// Der Tab, auf dem eine Route liegt. Essen und Schlaf liegen bis zum Umzug im Stapel des Profils.
+    static func fuer(_ route: Route) -> LumenFitTab {
+        switch route {
+        case .heute, .gewichtEintragen: .heute
+        case .gym(.training), .gym(.plaene), .uebung: .training
+        case .gym(.fortschritt), .verlauf: .fortschritt
+        case .freund, .profil(.verbindungen): .freunde
+        case .essen, .schlaf, .profil: .profil
+        }
+    }
+
+    /// Die Mini-Leiste "Training läuft" steht auf allen Tabs außer dem Training selbst.
+    static func zeigtMiniLeiste(auf tab: LumenFitTab, trainingLaeuft: Bool) -> Bool { trainingLaeuft && tab != .training }
+}
+
+extension Route {
+    /// Der Bereich, den die Person abschalten kann; nil für Seiten, die immer da sind.
     var bereich: AppBereich? {
         switch self {
-        case .training, .plan: .gym
+        case .gym, .uebung: .gym
         case .essen: .essen
         case .schlaf: .schlaf
-        case .heute: nil
-        }
-    }
-
-    /// Der Tab, auf dem eine Route liegt; nil für Blätter (Profil, Freunde), die über dem Tab erscheinen.
-    static func fuer(_ route: Route) -> LumenFitTab? {
-        switch route {
-        case .heute, .gewichtEintragen, .verlauf: .heute
-        case .gym(.training): .training
-        case .gym(.plaene), .gym(.fortschritt), .uebung: .plan
-        case .essen: .essen
-        case .schlaf: .schlaf
-        case .profil, .freund: nil
+        case .heute, .profil, .verlauf, .gewichtEintragen, .freund: nil
         }
     }
 }
 
 extension Einstellungen {
-    /// Zeigt die App diesen Tab? Heute immer.
-    func zeigt(_ tab: LumenFitTab) -> Bool { tab.bereich.map(zeigt) ?? true }
-
-    /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) und Heute-Seiten immer.
-    func zeigt(_ route: Route) -> Bool { LumenFitTab.fuer(route).map(zeigt) ?? true }
+    /// Zeigt die App die Seite dieser Route? Seiten ohne Bereich immer.
+    func zeigt(_ route: Route) -> Bool { route.bereich.map(zeigt) ?? true }
 }

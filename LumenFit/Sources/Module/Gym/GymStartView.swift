@@ -41,7 +41,6 @@ struct GymStartView: View {
         .sheet(item: $endzeitFuer) { EinheitEndzeitBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $nachtragen) { EinheitNachtragenBlatt(jetzt: umgebung.uhr()) }
         .task { sitzung.ladeWennNoetig() }
-        .gymCrewAbruf()
     }
 
     private func inhalt(_ training: TrainingStore) -> some View {
@@ -58,11 +57,23 @@ struct GymStartView: View {
             tagesKarte(stand, training: training, anderer: anderer)
             if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
             letzte(training, jetzt: jetzt)
-            GymCrewAbschnitt()
-            GymRekordPinnwandView()
-            PartnerKarte(bereich: .gym)
+            planZeile
             mehrBereich(stand, training: training)
         }
+    }
+
+    // MARK: Plan
+
+    /// Der Plan ist eine Unterseite des Trainings (Task 7 ordnet die Zeilen Plan, Kalender, Übungen neu).
+    private var planZeile: some View {
+        NavigationLink(value: Route.gym(.plaene)) {
+            ListenKarte {
+                GymZeile(titel: "Plan", untertitel: "Tage, Übungen und Split-Bibliothek") {
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Mehr

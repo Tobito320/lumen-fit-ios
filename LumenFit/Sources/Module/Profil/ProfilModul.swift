@@ -24,7 +24,7 @@ enum ProfilModul {
     }
 
     @MainActor static func oeffneWillkommenZurueck(_ umgebung: AppUmgebung) {
-        guard umgebung.neuinstallationErkannt, umgebung.profil.hatProfil, umgebung.router.blatt == nil else { return }
+        guard umgebung.neuinstallationErkannt, umgebung.profil.hatProfil, umgebung.router.pfade[.profil, default: []].isEmpty else { return }
         umgebung.router.oeffne(.profil(.datensicherung))
     }
 

@@ -1,6 +1,7 @@
 // Die einzige Liste der Namen, die die App über die Nutzung melden darf (Vertrag App <-> Server). Reine JSON-Daten hinter `export const NAMEN =`:
 // der Swift-Test (NutzungVertragTests) liest diese Datei und prüft, dass jeder Name der App hier steht. Der Server nimmt nur Namen aus dieser Liste an.
 // "tab.gym" bleibt für ältere App-Stände der Nutzungsmeldung (seit dem Umbau 05.11. melden Training und Plan je einen eigenen Tab).
+// Seit Aufteilung B (10.11.2026): tab.fortschritt, tab.freunde, tab.profil; tab.plan, tab.essen, tab.schlaf bleiben für ältere App-Stände.
 // Nie Freitext, nie Werte, nie Kennungen. Neue Seite, Funktion oder Fehlerart in der App: hier eintragen, sonst wirft der Server sie weg.
 export const NAMEN = {
   "bereiche": [
@@ -10,6 +11,9 @@ export const NAMEN = {
     "tab.plan",
     "tab.essen",
     "tab.schlaf",
+    "tab.fortschritt",
+    "tab.freunde",
+    "tab.profil",
     "blatt.profil",
     "blatt.freund",
     "seite.gym.plaene",
@@ -65,6 +69,9 @@ export const NAMEN = {
     "tab.plan",
     "tab.essen",
     "tab.schlaf",
+    "tab.fortschritt",
+    "tab.freunde",
+    "tab.profil",
     "fn.training",
     "fn.satz",
     "fn.mahlzeit",
@@ -81,6 +88,9 @@ export const NAMEN = {
       "tab.plan",
       "tab.essen",
       "tab.schlaf",
+      "tab.fortschritt",
+      "tab.freunde",
+      "tab.profil",
       "blatt.profil",
       "blatt.freund",
       "seite.gym.plaene",
@@ -113,6 +123,9 @@ export const NAMEN = {
       "tab.plan",
       "tab.essen",
       "tab.schlaf",
+      "tab.fortschritt",
+      "tab.freunde",
+      "tab.profil",
       "blatt.profil",
       "blatt.freund",
       "seite.gym.plaene",
@@ -146,6 +159,9 @@ export const NAMEN = {
     "tab.plan",
     "tab.essen",
     "tab.schlaf",
+    "tab.fortschritt",
+    "tab.freunde",
+    "tab.profil",
     "blatt.profil",
     "blatt.freund",
     "seite.gym.plaene",

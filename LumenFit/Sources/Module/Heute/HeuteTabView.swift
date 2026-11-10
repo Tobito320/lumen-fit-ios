@@ -26,7 +26,6 @@ struct HeuteTabView: View {
         .navigationTitle("Heute")
         .navigationBarTitleDisplayMode(.automatic)
         .lumenHintergrund()
-        .toolbar { ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() } }
         .sheet(item: $blatt) { blatt in
             if let stand = modell?.stand {
                 blattInhalt(blatt, stand)
@@ -89,7 +88,6 @@ struct HeuteTabView: View {
         WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
         habitsKarte(s, m)
         GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
-        PartnerKarte(bereich: .heute)
     }
 
     /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen

@@ -8,7 +8,8 @@ struct RouteAnsicht: View {
         switch route {
         case .heute: HeuteTabView()
         case .gym(.training): TrainingTabView().kartenTint(HabitFarbe.mint.farbe)
-        case .gym(let bereich): PlanTabView(bereich: bereich).kartenTint(HabitFarbe.mint.farbe)
+        case .gym(.plaene): PlanSeiteView().kartenTint(HabitFarbe.mint.farbe)
+        case .gym(.fortschritt): FortschrittSegmentView().kartenTint(HabitFarbe.mint.farbe).navigationTitle("Fortschritt")
         case .essen(let bereich): EssenTabView(bereich: bereich).kartenTint(LumenFarben.loveaEssen)
         case .schlaf(let bereich): SchlafTabView(bereich: bereich).kartenTint(HabitFarbe.indigo.farbe)
         case .profil(let bereich): profil(bereich)
@@ -40,9 +41,10 @@ struct RouteAnsicht: View {
         switch tab {
         case .heute: HeuteTabView()
         case .training: TrainingTabView().kartenTint(HabitFarbe.mint.farbe)
-        case .plan: PlanTabView().kartenTint(HabitFarbe.mint.farbe)
-        case .essen: EssenTabView().kartenTint(LumenFarben.loveaEssen)
-        case .schlaf: SchlafTabView().kartenTint(HabitFarbe.indigo.farbe)
+        // Vorerst der alte Fortschritt; die neue Seite (`FortschrittTabView`) tauscht die Sitzung lumenfit beim Zusammenführen.
+        case .fortschritt: FortschrittSegmentView().kartenTint(HabitFarbe.mint.farbe).navigationTitle("Fortschritt")
+        case .freunde: FreundeTabView()
+        case .profil: ProfilBlattView()
         }
     }
 }

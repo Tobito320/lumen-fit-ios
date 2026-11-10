@@ -57,7 +57,6 @@ struct EssenTabView: View {
         .lumenHintergrund()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { mehrMenue }
-            ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() }
         }
         .navigationDestination(item: $offeneMahlzeit) { EssenMahlzeitSeite(mahlzeit: $0, tag: tag) }
         .navigationDestination(isPresented: $uebersichtOffen) { EssenMahlzeitenUebersicht(tag: tag) }

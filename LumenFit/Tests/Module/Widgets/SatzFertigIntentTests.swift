@@ -70,8 +70,8 @@ final class SatzFertigIntentTests: XCTestCase {
         _ = try await GewichtEintragenIntent().perform()
         XCTAssertTrue(u.router.pfade.values.flatMap { $0 }.contains(.gewichtEintragen))
         _ = try await EssenScannenIntent().perform()
-        XCTAssertEqual(u.router.tab, .essen)
-        XCTAssertEqual(u.router.pfade[.essen], [.essen(.scan)])
+        XCTAssertEqual(u.router.tab, .profil)
+        XCTAssertEqual(u.router.pfade[.profil], [.essen(.scan)])
     }
 
     func testStartIstIdempotentUndSetztDieLiveAnzeige() throws {
@@ -104,8 +104,8 @@ final class SatzFertigIntentTests: XCTestCase {
         XCTAssertEqual(steuerung.gestartet.count, 1)
         XCTAssertEqual(u.router.tab, .training)
         _ = try await SchnellzugriffIntent(aktion: .scan).perform()
-        XCTAssertEqual(u.router.tab, .essen)
-        XCTAssertEqual(u.router.pfade[.essen], [.essen(.scan)])
+        XCTAssertEqual(u.router.tab, .profil)
+        XCTAssertEqual(u.router.pfade[.profil], [.essen(.scan)])
     }
 
     func testSchnellzugriffImWidgetProzessTutNichts() async throws {

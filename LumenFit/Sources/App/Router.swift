@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Navigation der App: der aktive Tab, je Tab ein Pfad tieferer Seiten und ein Blatt über allem (Profil, Freunde).
+/// Navigation der App: der aktive Tab, je Tab ein Pfad tieferer Seiten und ein Blatt über allem (Freundeskarte bestätigen).
 /// Jede Seite hat eine `Route` und einen Link (`RouteURL`); Widgets, Spotlight und Mitteilungen öffnen sie über `oeffne(url:)`.
 @MainActor @Observable
 final class Router {
@@ -10,42 +10,46 @@ final class Router {
     var blatt: Route?
     /// Vom Server pro Konto (`schlafSichtbar`); ohne wird jede Schlaf-Seite zu Heute.
     var schlafSichtbar = false
-    /// Von den Einstellungen des Profils (`AppBereich`): ausgeschaltete Bereiche haben keinen Tab und keine Seite.
+    /// Von den Einstellungen des Profils (`AppBereich`): ausgeschaltete Bereiche haben keine Seiten.
     var einstellungen = Einstellungen()
 
-    /// Stellt die Erlaubnis ein; wird sie weggenommen, verlässt ein offener oder gemerkter Schlaf-Tab die Seite.
+    /// Stellt die Erlaubnis ein; wird sie weggenommen, verlässt jede offene oder gemerkte Schlaf-Seite den Stapel.
     func setzeSchlafSichtbar(_ sichtbar: Bool) {
         schlafSichtbar = sichtbar
-        guard !sichtbar else { return }
-        pfade[.schlaf] = nil
-        if tab == .schlaf { tab = .heute }
+        if !sichtbar { raeumeStapelAuf() }
     }
 
-    /// Zeigt die App diesen Tab: Bereich an (Profil) und, beim Schlaf, vom Server erlaubt.
-    func zeigt(_ tab: LumenFitTab) -> Bool { einstellungen.wirksam(schlafSichtbar: schlafSichtbar).zeigt(tab) }
+    /// Alle fünf Tabs sind immer da (Wunsch vom 09.11.2026); nur einzelne Seiten hängen an den Bereichen.
+    func zeigt(_ tab: LumenFitTab) -> Bool { true }
 
-    /// Zeigt die App die Seite dieser Route? Blätter (Profil, Freunde) immer.
-    func zeigt(_ route: Route) -> Bool { LumenFitTab.fuer(route).map { zeigt($0) } ?? true }
+    /// Zeigt die App die Seite dieser Route: Bereich an (Profil) und, beim Schlaf, vom Server erlaubt.
+    func zeigt(_ route: Route) -> Bool { einstellungen.wirksam(schlafSichtbar: schlafSichtbar).zeigt(route) }
 
-    /// Nimmt neue Einstellungen an; zeigt der offene oder gemerkte Tab einen ausgeschalteten Bereich, landet er auf Heute (die Daten bleiben).
+    /// Nimmt neue Einstellungen an; Seiten eines ausgeschalteten Bereichs verlassen die Stapel (die Daten bleiben).
     func setze(einstellungen neu: Einstellungen) {
         einstellungen = neu
-        for tab in LumenFitTab.allCases where !zeigt(tab) { pfade[tab] = nil }
-        if !zeigt(tab) { tab = .heute }
+        raeumeStapelAuf()
+    }
+
+    private func raeumeStapelAuf() {
+        for (tab, pfad) in pfade {
+            let bleibt = pfad.filter { zeigt($0) }
+            if bleibt.count != pfad.count { pfade[tab] = bleibt.isEmpty ? nil : bleibt }
+        }
     }
 
     func oeffne(_ route: Route) {
         if !zeigt(route) { return wechsle(.heute, []) }
         switch route {
-        case .profil, .freund:
+        // Wurzeln ihres Tabs: nichts obendrauf.
+        case .heute, .gym(.training), .gym(.fortschritt), .profil(.uebersicht), .profil(.einstellungen), .freund(daten: nil):
+            wechsle(LumenFitTab.fuer(route), [])
+        case .freund:
+            // Das Bestätigen nach dem Scannen bleibt ein Blatt über dem Freunde-Tab.
+            wechsle(.freunde, [])
             blatt = route
-        case .heute: wechsle(.heute, [])
-        case .gym(.training): wechsle(.training, [])
-        case .gym(.plaene): wechsle(.plan, [])
-        case .essen(.heute): wechsle(.essen, [])
-        case .schlaf(.letzteNacht): wechsle(.schlaf, [])
         default:
-            if let tab = LumenFitTab.fuer(route) { wechsle(tab, [route]) }
+            wechsle(LumenFitTab.fuer(route), [route])
         }
     }
 
