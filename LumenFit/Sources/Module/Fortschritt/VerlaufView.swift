@@ -8,11 +8,13 @@ struct VerlaufView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var ruhig
-    @State private var seite = VerlaufSeite.woche
+    @State private var seite: VerlaufSeite
     @State private var weitereOffen: Bool?
     @State private var ziel: VerlaufZiel?
     @State private var tipp = 0
     @State private var start = 0
+
+    init(ansicht: VerlaufSeite = .woche) { _seite = State(initialValue: ansicht) }
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
@@ -140,7 +142,6 @@ struct VerlaufView: View {
 
     @ViewBuilder
     private func verlauf(_ q: FortschrittQuelle) -> some View {
-        let trend = GewichtVerlauf.trend(werte: q.gewicht, zielKg: q.gewichtZielKg, heute: q.heute)
         let highlights = VerlaufHighlights.berechnen(VerlaufLogik.laeufe(q.sessions), heute: q.heute)
         VStack(alignment: .leading, spacing: Abstand.l) {
             if q.hatTraining || !q.gym.isEmpty {
@@ -151,7 +152,7 @@ struct VerlaufView: View {
                 }
                 .lumenKartenFlaeche()
             }
-            GewichtVerlaufKarte(trend: trend) { umgebung.router.oeffne(.gewichtEintragen) }
+            // Gewichtsverlauf mit Prognose steht jetzt auf "Körper und Gewicht" (Messungen, Art Gewicht).
             StimmungVerlaufKarte()
             if !highlights.isEmpty {
                 VerlaufHighlightsListe(eintraege: highlights) { id in

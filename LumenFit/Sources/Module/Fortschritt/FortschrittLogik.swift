@@ -34,9 +34,9 @@ enum StatistikArt: CaseIterable, Sendable {
 
     var titel: String {
         switch self {
-        case .dauer: "Dauer"
-        case .volumen: "Volumen"
-        case .wiederholungen: "Wiederholungen"
+        case .dauer: String(localized: "Dauer")
+        case .volumen: String(localized: "Volumen")
+        case .wiederholungen: String(localized: "Reps")
         }
     }
 }

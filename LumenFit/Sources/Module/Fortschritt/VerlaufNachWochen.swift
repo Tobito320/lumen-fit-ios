@@ -14,8 +14,9 @@ extension FortschrittQuelle {
     }
 }
 
-/// Alle beendeten Einheiten wie in Hevy: je Woche eine Gruppe, neueste zuerst. Die neueste Woche und die davor stehen offen mit ihren Karten, ältere Wochen
-/// sind Zeilen "KW 41" und öffnen erst beim Tipp (dann erst rechnet die Karte). Ein Tipp auf eine Karte öffnet die Einheit zum Nachlesen.
+/// Alle beendeten Einheiten wie in Hevy: je Woche eine Gruppe, neueste zuerst. Nur die laufende Woche steht offen mit ihren Karten, alle anderen
+/// sind einzeilige Köpfe ("KW 41 · 4 Einheiten · 5. Okt. – 11. Okt."), ein Tipp klappt auf und zu (erst dann rechnet die Karte).
+/// Ein Tipp auf eine Karte öffnet die Einheit zum Nachlesen.
 struct VerlaufNachWochen: View {
     let sessions: [GymSession]
     let heute: String
@@ -29,10 +30,10 @@ struct VerlaufNachWochen: View {
         let q = FortschrittQuelle(umgebung: umgebung)
         VStack(alignment: .leading, spacing: Abstand.l) {
             ForEach(Array(gruppen.enumerated()), id: \.offset) { i, g in
-                if i < 2 {
+                if i == 0, Datum.montagDerWoche(Datum.text(g.sessions.first?.start ?? .distantPast)) == Datum.montagDerWoche(heute) {
                     VStack(alignment: .leading, spacing: Abstand.s) {
                         HStack(alignment: .firstTextBaseline) {
-                            Text(g.titel).font(.title3.weight(.bold)).accessibilityAddTraits(.isHeader)
+                            Text(g.titel).font(.title2.weight(.bold)).accessibilityAddTraits(.isHeader)
                             Spacer(minLength: Abstand.s)
                             Text(Self.einheitenText(g.sessions.count)).font(.footnote).foregroundStyle(palette.text2)
                         }
@@ -54,7 +55,7 @@ struct VerlaufNachWochen: View {
                 if ist { offen.remove(schluessel) } else { offen.insert(schluessel) }
             } label: {
                 HStack(spacing: Abstand.s) {
-                    Text(g.titel).font(.headline).foregroundStyle(palette.text)
+                    Text(g.titel).font(.headline).foregroundStyle(palette.text).lineLimit(1).layoutPriority(1)
                     Spacer(minLength: Abstand.s)
                     Text("\(Self.einheitenText(g.sessions.count)) · \(FortschrittLogik.wochenSpanne(montag))")
                         .font(.footnote).foregroundStyle(palette.text2).lineLimit(1).minimumScaleFactor(0.8)
@@ -78,7 +79,7 @@ struct VerlaufNachWochen: View {
         }
     }
 
-    static func einheitenText(_ n: Int) -> String { n == 1 ? "1 Einheit" : "\(n) Einheiten" }
+    static func einheitenText(_ n: Int) -> String { n == 1 ? String(localized: "1 Einheit") : String(localized: "\(n) Einheiten") }
 }
 
 /// Die Karte einer Einheit: Name und Tag, Dauer, Volumen, Sätze, Rekorde, darunter jede Übung mit Satzzahl und schwerstem Satz.
@@ -100,7 +101,7 @@ private struct EinheitKarte: View {
                 HStack(alignment: .top, spacing: Abstand.m) {
                     zahl("Dauer", daten.dauer.map { TrainingLogik.dauerText($0) } ?? "–")
                     zahl("Volumen", FortschrittLogik.volumenText(daten.volumen))
-                    zahl("Sätze", "\(daten.saetze)")
+                    zahl("Sets", "\(daten.saetze)")
                     if daten.rekorde > 0 { zahl("Rekorde", "\(daten.rekorde)", symbol: "trophy.fill") }
                 }
                 if !daten.zeilen.isEmpty {
@@ -121,7 +122,7 @@ private struct EinheitKarte: View {
         .accessibilityHint("Öffnet die Einheit")
     }
 
-    private func zahl(_ titel: String, _ wert: String, symbol: String? = nil) -> some View {
+    private func zahl(_ titel: LocalizedStringKey, _ wert: String, symbol: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(titel).font(.footnote).foregroundStyle(palette.text2)
             HStack(spacing: Abstand.xs) {
@@ -145,6 +146,6 @@ private struct EinheitKarte: View {
     private var sprechtext: String {
         let dauer = daten.dauer.map { ", Dauer \(TrainingLogik.dauerText($0))" } ?? ""
         let rekorde = daten.rekorde > 0 ? ", \(daten.rekorde) \(daten.rekorde == 1 ? "Rekord" : "Rekorde")" : ""
-        return "\(daten.titel), \(FortschrittLogik.kurzDatum(daten.start))\(dauer), Volumen \(FortschrittLogik.volumenText(daten.volumen)), \(daten.saetze) Sätze\(rekorde)"
+        return "\(daten.titel), \(FortschrittLogik.kurzDatum(daten.start))\(dauer), Volumen \(FortschrittLogik.volumenText(daten.volumen)), \(daten.saetze) Sets\(rekorde)"
     }
 }
