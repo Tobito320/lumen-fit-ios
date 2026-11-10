@@ -152,7 +152,7 @@ struct EinheitNachtragenBlatt: View {
                     Section {
                         Picker("Trainingstag", selection: $tag) {
                             Text("Ohne Tag").tag(String?.none)
-                            ForEach(tage) { t in Text(t.name.isEmpty ? "Ohne Namen" : t.name).tag(String?.some(t.id)) }
+                            ForEach(tage) { t in Text(t.name.isEmpty ? String(localized: "Ohne Namen") : t.name).tag(String?.some(t.id)) }
                         }
                         .frame(minHeight: Abstand.tippflaeche)
                     }

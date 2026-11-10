@@ -228,12 +228,12 @@ enum WorkoutLogik {
 
     /// "32 kg × 12", ohne Gewicht "12 Wdh".
     static func satzText(_ s: PlanSatz) -> String {
-        s.kg.map { "\(TrainingLogik.kgText($0)) kg × \(s.wdh)" } ?? "\(s.wdh) Wdh"
+        s.kg.map { "\(TrainingLogik.kgText($0)) kg × \(s.wdh)" } ?? String(localized: "\(s.wdh) Wdh")
     }
 
     /// "Satz 0:42 · Pause 1:58"; "Satz" nur mit Schalter. Gespeicherte Werte bleiben, sie werden nur ausgeblendet.
     static func zeitenText(sek: Double?, pause: Double?, satzzeit: Bool) -> String? {
-        let teile = [satzzeit ? sek.map { "Satz \(zeitText($0))" } : nil, pause.map { "Pause \(zeitText($0))" }].compactMap { $0 }
+        let teile = [satzzeit ? sek.map { String(localized: "Satz \(zeitText($0))") } : nil, pause.map { String(localized: "Pause \(zeitText($0))") }].compactMap { $0 }
         return teile.isEmpty ? nil : teile.joined(separator: " · ")
     }
 
@@ -245,7 +245,7 @@ enum WorkoutLogik {
 
     /// "2:00", bei 0 "aus".
     static func pauseText(_ sekunden: Int) -> String {
-        sekunden == 0 ? "aus" : zeitText(Double(sekunden))
+        sekunden == 0 ? String(localized: "aus") : zeitText(Double(sekunden))
     }
 }
 
@@ -270,12 +270,12 @@ enum Anstrengung: CaseIterable, Sendable {
 
     var titel: String {
         switch self {
-        case .versagen: "Nichts mehr drin, bis zum Versagen"
-        case .fastVersagen: "Vielleicht eine halbe Wiederholung übrig"
-        case .eineNoch: "Eine Wiederholung noch drin"
-        case .zweiNoch: "Zwei Wiederholungen noch drin"
-        case .dreiNoch: "Drei Wiederholungen noch drin"
-        case .leicht: "Leicht, Aufwärm-Bereich"
+        case .versagen: String(localized: "Nichts mehr drin, bis zum Versagen")
+        case .fastVersagen: String(localized: "Vielleicht eine halbe Wiederholung übrig")
+        case .eineNoch: String(localized: "Eine Wiederholung noch drin")
+        case .zweiNoch: String(localized: "Zwei Wiederholungen noch drin")
+        case .dreiNoch: String(localized: "Drei Wiederholungen noch drin")
+        case .leicht: String(localized: "Leicht, Aufwärm-Bereich")
         }
     }
 

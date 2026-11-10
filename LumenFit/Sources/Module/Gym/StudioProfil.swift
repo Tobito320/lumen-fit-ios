@@ -112,5 +112,7 @@ enum StudioBesuche {
     }
 
     /// "3 Besuche diese Woche", "1 Besuch diese Woche".
-    static func wochenText(_ z: Zaehler) -> String { "\(z.dieseWoche) \(z.dieseWoche == 1 ? "Besuch" : "Besuche") diese Woche" }
+    static func wochenText(_ z: Zaehler) -> String {
+        z.dieseWoche == 1 ? String(localized: "1 Besuch diese Woche") : String(localized: "\(z.dieseWoche) Besuche diese Woche")
+    }
 }

@@ -14,7 +14,7 @@ enum GymLive {
         let fertig = liste.filter(\.fertig).count
         guard let dran else {
             // Alles abgehakt: die Anzeige bleibt bis zum Beenden stehen.
-            return TrainingLiveStand(uebung: "Alles geschafft", satz: 0, von: 0, pauseEnde: nil, start: session.start, planName: planName,
+            return TrainingLiveStand(uebung: String(localized: "Alles geschafft"), satz: 0, von: 0, pauseEnde: nil, start: session.start, planName: planName,
                                      uebungenFertig: fertig, uebungenGesamt: liste.count)
         }
         let u = liste[dran.uebung]

@@ -16,7 +16,7 @@ enum SatzUhrLogik {
     /// Beschriftung des großen Knopfs in der Leiste der Übung (Lovea `WorkoutView.swift:807`): läuft ein Satz, "Satz fertig"; sonst
     /// "Übung starten" für den ersten offenen Satz und "Nächster Satz" für jeden späteren.
     static func knopfText(laeuft: Bool, offener: Int) -> String {
-        laeuft ? "Satz fertig" : offener == 0 ? "Übung starten" : "Nächster Satz"
+        laeuft ? String(localized: "Satz fertig") : offener == 0 ? String(localized: "Übung starten") : String(localized: "Nächster Satz")
     }
 
     /// Eine Dauer über einer halben Stunde ist kein Satz (Telefon weggelegt): sie wird nicht gespeichert.

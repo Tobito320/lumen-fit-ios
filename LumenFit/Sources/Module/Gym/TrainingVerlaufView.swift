@@ -30,7 +30,7 @@ struct TrainingVerlaufView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 if sessions.isEmpty && nurHaken.isEmpty {
-                    LeerZustand(stimmung: .bereit, satz: "Noch keine Einheit. Starte ein Training, dann steht es hier.", handlung: "Training starten") {
+                    LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Einheit. Starte ein Training, dann steht es hier."), handlung: String(localized: "Training starten")) {
                         umgebung.router.oeffne(.gym(.training))
                     }
                     .lumenKartenFlaeche()
@@ -66,14 +66,14 @@ struct TrainingVerlaufView: View {
         let serie = TrainingLogik.serieWochen(sessions, heute: heute)
         return ListenKarte {
             HStack(alignment: .top, spacing: Abstand.l) {
-                zahl("Diese Woche", wert: Double(woche), einheit: nil)
-                zahl("Serie", wert: Double(serie), einheit: serie == 1 ? "Woche" : "Wochen")
-                zahl("Gesamt", wert: Double(sessions.count), einheit: nil)
+                zahl(String(localized: "Diese Woche"), wert: Double(woche), einheit: nil)
+                zahl(String(localized: "Serie"), wert: Double(serie), einheit: serie == 1 ? String(localized: "Woche") : String(localized: "Wochen"))
+                zahl(String(localized: "Gesamt"), wert: Double(sessions.count), einheit: nil)
             }
             .padding(Abstand.l)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Diese Woche \(woche), Serie \(serie) \(serie == 1 ? "Woche" : "Wochen"), insgesamt \(sessions.count)")
+        .accessibilityLabel("Diese Woche \(woche), Serie \(serie) \(serie == 1 ? String(localized: "Woche") : String(localized: "Wochen")), insgesamt \(sessions.count)")
     }
 
     private func zahl(_ titel: String, wert: Double, einheit: String?) -> some View {
@@ -94,8 +94,9 @@ struct TrainingVerlaufView: View {
         let tage = Set(sessions.map { Datum.text($0.start) })
         let aeltester = (tage.union(nurHaken)).min()
         let anzahl = EinheitZeitenLogik.monateAnzahl(aeltesterTag: aeltester, heute: heute)
-        return DiagrammKarte(aussage: "\(tage.count) \(tage.count == 1 ? "Trainingstag" : "Trainingstage") insgesamt",
-                             kernzeile: "Wische nach rechts für frühere Monate. Gefüllt ist Training, ein Ring ist nur das Gym-Häkchen.") {
+        let aussage = tage.count == 1 ? String(localized: "1 Trainingstag insgesamt") : String(localized: "\(tage.count) Trainingstage insgesamt")
+        return DiagrammKarte(aussage: aussage,
+                             kernzeile: String(localized: "Wische nach rechts für frühere Monate. Gefüllt ist Training, ein Ring ist nur das Gym-Häkchen.")) {
             EinheitMonatsPager(anzahl: anzahl) { zurueck in
                 EinheitMonat(tage: tage, nurHaken: nurHaken, heute: heute, monateZurueck: zurueck) { tag in
                     tipp += 1
@@ -121,7 +122,7 @@ struct TrainingVerlaufView: View {
     private func liste(_ sessions: [GymSession]) -> some View {
         if !sessions.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                GymAbschnitt(titel: "Alle Einheiten")
+                GymAbschnitt(titel: String(localized: "Alle Einheiten"))
                 ListenKarte {
                     ForEach(sessions) { s in
                         Button { offen = s.id } label: { zeile(s) }

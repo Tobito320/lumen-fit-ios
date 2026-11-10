@@ -15,22 +15,22 @@ enum RekordArt: String, CaseIterable, Identifiable, Sendable {
 
     var titel: String {
         switch self {
-        case .gewicht: "Schwerstes Gewicht"
-        case .e1rm: "One-Rep-Max"
-        case .satzVolumen: "Bestes Satzvolumen"
-        case .sitzungsVolumen: "Bestes Sitzungsvolumen"
-        case .wiederholungen: "Meiste Wiederholungen"
+        case .gewicht: String(localized: "Schwerstes Gewicht")
+        case .e1rm: String(localized: "One-Rep-Max")
+        case .satzVolumen: String(localized: "Bestes Satzvolumen")
+        case .sitzungsVolumen: String(localized: "Bestes Sitzungsvolumen")
+        case .wiederholungen: String(localized: "Meiste Wiederholungen")
         }
     }
 
     /// Kurzwort für den Toast ("Neuer Rekord: Gewicht").
     var kurz: String {
         switch self {
-        case .gewicht: "Gewicht"
-        case .e1rm: "1RM"
-        case .satzVolumen: "Satzvolumen"
-        case .sitzungsVolumen: "Volumen"
-        case .wiederholungen: "Wiederholungen"
+        case .gewicht: String(localized: "Gewicht")
+        case .e1rm: String(localized: "1RM")
+        case .satzVolumen: String(localized: "Satzvolumen")
+        case .sitzungsVolumen: String(localized: "Volumen")
+        case .wiederholungen: String(localized: "Wiederholungen")
         }
     }
 }
@@ -107,13 +107,14 @@ enum RekordLogik {
     /// Der Wert einer Rekordart als Text: "80 kg", "12 Wdh", ohne Wert "–".
     static func text(_ wert: Double?, art: RekordArt = .gewicht) -> String {
         guard let wert else { return "–" }
-        return art == .wiederholungen ? "\(Int(wert)) Wdh" : "\(TrainingLogik.kgText(wert)) kg"
+        return art == .wiederholungen ? String(localized: "\(Int(wert)) Wdh") : "\(TrainingLogik.kgText(wert)) kg"
     }
 
     /// Toast-Inhalt für einen oder mehrere Rekorde eines Satzes; nil ohne Rekord. Lumi ist stolz (Idee 24).
     static func toast(uebung: String, arten: [RekordArt], satz: PlanSatz) -> ToastInhalt? {
         guard !arten.isEmpty else { return nil }
-        let titel = arten.count == 1 ? "Neuer Rekord: \(arten[0].kurz)" : "Neue Rekorde: \(arten.map(\.kurz).joined(separator: ", "))"
+        let liste = arten.map(\.kurz).joined(separator: ", ")
+        let titel = arten.count == 1 ? String(localized: "Neuer Rekord: \(liste)") : String(localized: "Neue Rekorde: \(liste)")
         return ToastInhalt(titel: titel, zeile: "\(uebung), \(WorkoutLogik.satzText(satz))", stimmung: .stolz)
     }
 }

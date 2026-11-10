@@ -10,8 +10,8 @@ enum ZeitTipp: Equatable, Sendable {
 
     var text: String {
         switch self {
-        case let .supersatz(a, b, spart): "Tipp: \(a) und \(b) als Supersatz, spart ca. \(spart) min."
-        case let .streichen(namen, spart): "Tipp: \(namen.joined(separator: ", ")) weglassen, spart ca. \(spart) min."
+        case let .supersatz(a, b, spart): String(localized: "Tipp: \(a) und \(b) als Supersatz, spart ca. \(spart) min.")
+        case let .streichen(namen, spart): String(localized: "Tipp: \(namen.joined(separator: ", ")) weglassen, spart ca. \(spart) min.")
         }
     }
 }
@@ -27,8 +27,8 @@ struct ZeitUrteil: Equatable, Sendable {
 
     /// "ca. 52 min, 7 min über deinem Slot (45 min)", "ca. 38 min, passt in deinen Slot (45 min)", "ca. 38 min".
     var titel: String {
-        guard let slot else { return "ca. \(minuten) min" }
-        return warnt ? "ca. \(minuten) min, \(ueber) min über deinem Slot (\(slot) min)" : "ca. \(minuten) min, passt in deinen Slot (\(slot) min)"
+        guard let slot else { return String(localized: "ca. \(minuten) min") }
+        return warnt ? String(localized: "ca. \(minuten) min, \(ueber) min über deinem Slot (\(slot) min)") : String(localized: "ca. \(minuten) min, passt in deinen Slot (\(slot) min)")
     }
 }
 

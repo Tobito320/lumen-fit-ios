@@ -19,7 +19,7 @@ struct EinheitNachlesenView: View {
         if let training = umgebung.daten?.training, let s = training.sessions.first(where: { $0.id == sessionId }) {
             inhalt(s, training: training)
         } else {
-            LeerZustand(stimmung: .denkt, satz: "Diese Einheit gibt es nicht mehr.")
+            LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Einheit gibt es nicht mehr."))
                 .frame(maxHeight: .infinity)
                 .lumenHintergrund()
         }
@@ -51,7 +51,7 @@ struct EinheitNachlesenView: View {
             .padding(.vertical, Abstand.m)
         }
         .lumenHintergrund()
-        .navigationTitle(training.tag(id: s.tag).map { $0.name.isEmpty ? "Training" : $0.name } ?? Datum.anzeige(Datum.text(s.start)))
+        .navigationTitle(training.tag(id: s.tag).map { $0.name.isEmpty ? String(localized: "Training") : $0.name } ?? Datum.anzeige(Datum.text(s.start)))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -69,7 +69,7 @@ struct EinheitNachlesenView: View {
         }
         .sheet(item: $zeiten) { EinheitZeitenBlatt(session: $0, jetzt: umgebung.uhr()) }
         .sheet(isPresented: $sucheOffen) {
-            UebungsSucheView(titel: "Übung hinzufügen") { hinzufuegen($0, s, training: training) }
+            UebungsSucheView(titel: String(localized: "Übung hinzufügen")) { hinzufuegen($0, s, training: training) }
         }
         .sheet(item: $bearbeiten) { EinheitSaetzeBlatt(sessionId: sessionId, uebung: $0) }
         .alert("Notiz zum Training", isPresented: $notizOffen) {
@@ -87,11 +87,11 @@ struct EinheitNachlesenView: View {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 Text(EinheitZeitenLogik.kopfZeit(s)).font(.footnote.weight(.semibold))
                 HStack(alignment: .top) {
-                    kennzahl("Dauer", Text(s.ende.map { TrainingLogik.dauerText($0.timeIntervalSince(s.start)) } ?? "–"))
+                    kennzahl(String(localized: "Dauer"), Text(s.ende.map { TrainingLogik.dauerText($0.timeIntervalSince(s.start)) } ?? "–"))
                     Spacer()
-                    kennzahl("Sätze", RollZahl(wert: Double(saetze), format: .number.precision(.fractionLength(0))))
+                    kennzahl(String(localized: "Sätze"), RollZahl(wert: Double(saetze), format: .number.precision(.fractionLength(0))))
                     Spacer()
-                    kennzahl("Volumen", HStack(spacing: 2) {
+                    kennzahl(String(localized: "Volumen"), HStack(spacing: 2) {
                         RollZahl(wert: volumen, format: .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
                         Text("kg")
                     })
@@ -110,11 +110,11 @@ struct EinheitNachlesenView: View {
 
     private func werte(_ s: GymSession) -> some View {
         ListenKarte {
-            if let kcal = s.kcal { GymZeile(titel: "Aktive Kalorien") { Text("\(kcal) kcal").foregroundStyle(palette.text2).monospacedDigit() } }
+            if let kcal = s.kcal { GymZeile(titel: String(localized: "Aktive Kalorien")) { Text("\(kcal) kcal").foregroundStyle(palette.text2).monospacedDigit() } }
             if s.kcal != nil, s.puls != nil || s.notiz != nil { Haarlinie() }
-            if let puls = s.puls { GymZeile(titel: "Puls im Schnitt") { Text("\(puls)").foregroundStyle(palette.text2).monospacedDigit() } }
+            if let puls = s.puls { GymZeile(titel: String(localized: "Puls im Schnitt")) { Text("\(puls)").foregroundStyle(palette.text2).monospacedDigit() } }
             if s.puls != nil, s.notiz != nil { Haarlinie() }
-            if let notiz = s.notiz { GymZeile(titel: "Notiz", untertitel: notiz) }
+            if let notiz = s.notiz { GymZeile(titel: String(localized: "Notiz"), untertitel: notiz) }
         }
     }
 
@@ -123,9 +123,9 @@ struct EinheitNachlesenView: View {
             GymAbschnitt(titel: u.planUebung.anzeigeName)
             ListenKarte {
                 if u.planUebung.istCardio {
-                    GymZeile(titel: u.cardioFertig ? "\(u.planUebung.minuten ?? 20) min" : "nicht gemacht")
+                    GymZeile(titel: u.cardioFertig ? String(localized: "\(u.planUebung.minuten ?? 20) min") : String(localized: "nicht gemacht"))
                 } else if u.fertigZahl == 0 {
-                    GymZeile(titel: "nicht gemacht")
+                    GymZeile(titel: String(localized: "nicht gemacht"))
                 } else {
                     ForEach(u.saetze.indices, id: \.self) { i in
                         if u.saetze[i].ok == true {
@@ -136,7 +136,7 @@ struct EinheitNachlesenView: View {
                 }
                 if bearbeitbar, !u.planUebung.istCardio {
                     Button { bearbeiten = u } label: {
-                        GymZeile(titel: "Sätze bearbeiten") { Image(systemName: "pencil").accessibilityHidden(true) }
+                        GymZeile(titel: String(localized: "Sätze bearbeiten")) { Image(systemName: "pencil").accessibilityHidden(true) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Gewicht, Wiederholungen und Haken dieser Übung korrigieren")
@@ -259,10 +259,10 @@ struct EinheitSaetzeBlatt: View {
             .accessibilityLabel("Satz \(WorkoutLogik.nummer(saetze, i))")
             .accessibilityHint("Öffnet die Satztypen")
             Spacer(minLength: 0)
-            GymSchalter(titel: "Gewicht", wert: s.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "– kg",
+            GymSchalter(titel: String(localized: "Gewicht"), wert: s.kg.map { String(localized: "\(TrainingLogik.kgText($0)) kg") } ?? String(localized: "– kg"),
                         minus: { aendern { LetztesMal.aendereKg($0, i, richtung: -1, schritt: schritt) } },
                         plus: { aendern { LetztesMal.aendereKg($0, i, richtung: 1, schritt: schritt) } })
-            GymSchalter(titel: "Wiederholungen", wert: "\(s.wdh)",
+            GymSchalter(titel: String(localized: "Wiederholungen"), wert: "\(s.wdh)",
                         minus: { aendern { LetztesMal.aendereWdh($0, i, richtung: -1) } },
                         plus: { aendern { LetztesMal.aendereWdh($0, i, richtung: 1) } })
             Button { aendern { WorkoutLogik.hakenNachtrag($0, i) } } label: {

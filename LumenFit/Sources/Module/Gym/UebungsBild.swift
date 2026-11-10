@@ -33,7 +33,7 @@ struct UebungsBild: View {
             // `.plain`: in Listenzeilen mit eigenem Tipp (Suche, Auswahl) bekommt das Bild seinen eigenen Tipp.
             Button { detail = true } label: { flaeche }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Video und Erklärung: \(UebungsKatalog.nachId[id]?.name ?? "Übung")")
+                .accessibilityLabel("Video und Erklärung: \(UebungsKatalog.nachId[id]?.name ?? String(localized: "Übung"))")
                 .sheet(isPresented: $detail) {
                     NavigationStack { UebungDetailView(id: id, anleitungZuerst: true) }
                         .presentationDragIndicator(.visible)

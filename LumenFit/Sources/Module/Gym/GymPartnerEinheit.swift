@@ -10,7 +10,7 @@ struct GymPartnerEinheitView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Zeit", value: einheit.minuten.map { TrainingLogik.dauerText(TimeInterval($0 * 60)) } ?? "läuft oder ohne Ende")
+                LabeledContent("Zeit", value: einheit.minuten.map { TrainingLogik.dauerText(TimeInterval($0 * 60)) } ?? String(localized: "läuft oder ohne Ende"))
                 LabeledContent("Volumen") {
                     HStack(spacing: 2) {
                         RollZahl(wert: GymPartnerLogik.volumen(einheit).rounded(), format: .number.precision(.fractionLength(0)).locale(Locale(identifier: "de_DE")))
@@ -21,7 +21,7 @@ struct GymPartnerEinheitView: View {
                 LabeledContent("Sätze") {
                     RollZahl(wert: Double(GymPartnerLogik.saetzeZahl(einheit)), format: .number.precision(.fractionLength(0))).foregroundStyle(.secondary)
                 }
-                if let kcal = einheit.kcal { LabeledContent("Aktive Kalorien", value: "\(kcal) kcal") }
+                if let kcal = einheit.kcal { LabeledContent("Aktive Kalorien", value: String(localized: "\(kcal) kcal")) }
             }
             ForEach(Array(einheit.uebungen.enumerated()), id: \.offset) { _, u in
                 Section(u.name) {

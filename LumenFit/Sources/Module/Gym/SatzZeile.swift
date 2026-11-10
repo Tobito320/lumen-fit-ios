@@ -104,7 +104,7 @@ struct SatzZeile: View {
                 .frame(width: LaufSpalten.nummer, height: Abstand.tippflaeche)
                 .contentShape(.rect)
         }
-        .accessibilityLabel("Set \(nummer)\(s.typ == "w" ? ", Aufwärmen" : s.typ == "d" ? ", Dropsatz" : s.failure ? ", bis zum Versagen" : "")\(aktiv ? ", ist dran" : "")")
+        .accessibilityLabel("Set \(nummer)\(s.typ == "w" ? String(localized: ", Aufwärmen") : s.typ == "d" ? String(localized: ", Dropsatz") : s.failure ? String(localized: ", bis zum Versagen") : "")\(aktiv ? String(localized: ", ist dran") : "")")
         .accessibilityHint("Öffnet die Satztypen")
     }
 
@@ -208,7 +208,7 @@ struct SatzZeile: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Anstrengung")
-        .accessibilityValue(s.rpe.map { Anstrengung.stufe(rpe: $0).titel } ?? "nicht gewählt")
+        .accessibilityValue(s.rpe.map { Anstrengung.stufe(rpe: $0).titel } ?? String(localized: "nicht gewählt"))
         .sheet(isPresented: $rpeBlatt) {
             AnstrengungBlatt(aktuell: s.rpe) { sitzung.rpe(uebung, satz, $0) }
         }

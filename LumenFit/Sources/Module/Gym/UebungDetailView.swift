@@ -44,11 +44,11 @@ struct UebungDetailView: View {
             if let u = uebung {
                 inhalt(u)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Diese Übung gibt es im Katalog nicht (mehr).")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Übung gibt es im Katalog nicht (mehr)."))
             }
         }
         .lumenHintergrund()
-        .navigationTitle(uebung?.name ?? "Übung")
+        .navigationTitle(uebung?.name ?? String(localized: "Übung"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Nur mit laufendem Training: die Übung kommt ans Ende der Liste (wie "Übung hinzufügen" im Training).
@@ -149,10 +149,12 @@ struct UebungDetailView: View {
         .pickerStyle(.menu)
         .frame(minHeight: Abstand.tippflaeche)
         if punkte.isEmpty {
-            LeerZustand(stimmung: .bereit, satz: "Noch keine Daten. Mach die Übung einmal mit Gewicht, dann steht sie hier.")
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Daten. Mach die Übung einmal mit Gewicht, dann steht sie hier."))
         } else {
             let letzter = punkte[punkte.count - 1]
-            DiagrammKarte(aussage: "\(art.titel) über die Zeit", kernzeile: "Zuletzt \(RekordLogik.text(letzter.wert, art: art)), \(punkte.count) \(punkte.count == 1 ? "Einheit" : "Einheiten")") {
+            let wert = RekordLogik.text(letzter.wert, art: art)
+            let kern = punkte.count == 1 ? String(localized: "Zuletzt \(wert), 1 Einheit") : String(localized: "Zuletzt \(wert), \(punkte.count) Einheiten")
+            DiagrammKarte(aussage: String(localized: "\(art.titel) über die Zeit"), kernzeile: kern) {
                 Chart(punkte) { p in
                     LineMark(x: .value("Datum", p.datum), y: .value("Wert", p.wert))
                         .foregroundStyle(gruen)
@@ -162,8 +164,8 @@ struct UebungDetailView: View {
                 .chartYScale(domain: .automatic(includesZero: false))
                 .frame(height: 180)
                 .accessibilityChartDescriptor(VerlaufBeschreibung(
-                    titel: art.titel, einheit: art == .wiederholungen ? "Wdh" : "kg",
-                    werte: punkte.enumerated().map { (name: "\($0.offset + 1). Einheit, \(Datum.anzeige(Datum.text($0.element.datum)))", wert: $0.element.wert) }))
+                    titel: art.titel, einheit: art == .wiederholungen ? String(localized: "Wdh") : "kg",
+                    werte: punkte.enumerated().map { (name: String(localized: "\($0.offset + 1). Einheit, \(Datum.anzeige(Datum.text($0.element.datum)))"), wert: $0.element.wert) }))
             }
         }
     }
@@ -227,7 +229,7 @@ struct UebungDetailView: View {
     @ViewBuilder
     private func historie(_ tage: [UebungTag]) -> some View {
         if tage.isEmpty {
-            LeerZustand(stimmung: .bereit, satz: "Noch nie gemacht. Nach dem ersten Training steht hier jeder Satz.")
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch nie gemacht. Nach dem ersten Training steht hier jeder Satz."))
         }
         ForEach(tage.reversed()) { t in
             VStack(alignment: .leading, spacing: Abstand.s) {
@@ -267,8 +269,8 @@ struct UebungDetailView: View {
     private func anleitung(ablauf: String, fehler: String, unsicher: Bool) -> some View {
         ListenKarte {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                anleitungsBlock("Ablauf", ablauf)
-                anleitungsBlock("Typischer Fehler", fehler)
+                anleitungsBlock(String(localized: "Ablauf"), ablauf)
+                anleitungsBlock(String(localized: "Typischer Fehler"), fehler)
                 if unsicher {
                     Label("Unsicher, selbst prüfen", systemImage: "exclamationmark.triangle.fill")
                         .font(.caption.weight(.semibold)).foregroundStyle(palette.text2)
@@ -289,20 +291,20 @@ struct UebungDetailView: View {
 
     private func muskelnUndGeraet(_ u: Uebung) -> some View {
         ListenKarte {
-            GymZeile(titel: "Zielmuskel") { Text(u.muskel).foregroundStyle(palette.text2) }
+            GymZeile(titel: String(localized: "Zielmuskel")) { Text(u.muskel).foregroundStyle(palette.text2) }
             Haarlinie()
-            GymZeile(titel: "Gerät") { Text(u.geraet).foregroundStyle(palette.text2) }
+            GymZeile(titel: String(localized: "Gerät")) { Text(u.geraet).foregroundStyle(palette.text2) }
             if !u.neben.isEmpty {
                 Haarlinie()
-                GymZeile(titel: "Hilft mit") { Text(u.neben.joined(separator: ", ")).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
+                GymZeile(titel: String(localized: "Hilft mit")) { Text(u.neben.joined(separator: ", ")).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
             }
             if let notiz = eigene?.daten(u.id)?.notiz {
                 Haarlinie()
-                GymZeile(titel: "Notiz") { Text(notiz).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
+                GymZeile(titel: String(localized: "Notiz")) { Text(notiz).foregroundStyle(palette.text2).multilineTextAlignment(.trailing) }
             }
             if !GymEigeneLogik.istEigene(u.id) {
                 Haarlinie()
-                GymZeile(titel: "Englisch") { Text(u.en.capitalized).foregroundStyle(palette.text2) }
+                GymZeile(titel: String(localized: "Englisch")) { Text(u.en.capitalized).foregroundStyle(palette.text2) }
             }
         }
     }
@@ -316,7 +318,7 @@ private struct VerlaufBeschreibung: AXChartDescriptorRepresentable {
 
     func makeChartDescriptor() -> AXChartDescriptor {
         let zahlen = werte.map(\.wert)
-        let x = AXCategoricalDataAxisDescriptor(title: "Einheit", categoryOrder: werte.map(\.name))
+        let x = AXCategoricalDataAxisDescriptor(title: String(localized: "Einheit"), categoryOrder: werte.map(\.name))
         let y = AXNumericDataAxisDescriptor(title: titel, range: (zahlen.min() ?? 0)...(zahlen.max() ?? 0), gridlinePositions: []) { "\(TrainingLogik.kgText($0)) \(einheit)" }
         let reihe = AXDataSeriesDescriptor(name: titel, isContinuous: true, dataPoints: werte.map { AXDataPoint(x: $0.name, y: $0.wert) })
         return AXChartDescriptor(title: titel, summary: nil, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])

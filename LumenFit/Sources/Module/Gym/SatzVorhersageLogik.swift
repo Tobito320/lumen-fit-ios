@@ -24,16 +24,16 @@ enum VorhersageZiel: String, CaseIterable, Identifiable, Sendable {
 
     var titel: String {
         switch self {
-        case .schwer: "Schwer"
-        case .klassisch: "Klassisch"
+        case .schwer: String(localized: "Schwer")
+        case .klassisch: String(localized: "Klassisch")
         }
     }
 
     /// Die Bereiche in Worten, für den Hinweis unter der Wahl.
     var bereicheText: String {
         switch self {
-        case .schwer: "Grundübungen 4 bis 8, Maschinen und Isolation 6 bis 10, kleine Muskeln 8 bis 12 Wiederholungen."
-        case .klassisch: "Grundübungen 6 bis 10, Maschinen und Isolation 8 bis 12, kleine Muskeln 10 bis 15 Wiederholungen."
+        case .schwer: String(localized: "Grundübungen 4 bis 8, Maschinen und Isolation 6 bis 10, kleine Muskeln 8 bis 12 Wiederholungen.")
+        case .klassisch: String(localized: "Grundübungen 6 bis 10, Maschinen und Isolation 8 bis 12, kleine Muskeln 10 bis 15 Wiederholungen.")
         }
     }
 }
@@ -59,18 +59,18 @@ enum VorschlagGrund: Equatable, Sendable {
 
     var text: String {
         switch self {
-        case .mehrGewicht(let kg): "+\(TrainingLogik.kgText(kg)) kg: letztes Mal oben im Bereich geschafft"
-        case .inDenBereich(let kg): "+\(TrainingLogik.kgText(kg)) kg: mehr Gewicht, weniger Wiederholungen"
-        case .mehrWiederholungen: "Gleiches Gewicht, eine Wiederholung mehr als letztes Mal"
-        case .halten: "Gleich wie letztes Mal, diesmal sauberer"
-        case .leichter(let kg): "−\(TrainingLogik.kgText(kg)) kg, damit die Wiederholungen im Bereich bleiben"
-        case .schwerer(let kg): "+\(TrainingLogik.kgText(kg)) kg: der letzte Satz war leicht"
-        case .ermuedung: "Gleiches Gewicht, die Ermüdung ist eingerechnet"
-        case .deload: "\(SatzVorhersageLogik.stillstandEinheiten) Einheiten ohne Fortschritt: heute 10 % leichter, gern ein Satz weniger (Deload)"
-        case .nachPause(let tage): "Nach \(tage) Tagen Pause etwas leichter einsteigen"
-        case .aufwaermen(let prozent): "Aufwärmen mit \(prozent) % vom Arbeitsgewicht"
-        case .drop: "Dropsatz: 20 % leichter, so viele wie sauber gehen"
-        case .ohneGewicht: "Eine Wiederholung mehr als zuletzt"
+        case .mehrGewicht(let kg): String(localized: "+\(TrainingLogik.kgText(kg)) kg: letztes Mal oben im Bereich geschafft")
+        case .inDenBereich(let kg): String(localized: "+\(TrainingLogik.kgText(kg)) kg: mehr Gewicht, weniger Wiederholungen")
+        case .mehrWiederholungen: String(localized: "Gleiches Gewicht, eine Wiederholung mehr als letztes Mal")
+        case .halten: String(localized: "Gleich wie letztes Mal, diesmal sauberer")
+        case .leichter(let kg): String(localized: "−\(TrainingLogik.kgText(kg)) kg, damit die Wiederholungen im Bereich bleiben")
+        case .schwerer(let kg): String(localized: "+\(TrainingLogik.kgText(kg)) kg: der letzte Satz war leicht")
+        case .ermuedung: String(localized: "Gleiches Gewicht, die Ermüdung ist eingerechnet")
+        case .deload: String(localized: "\(SatzVorhersageLogik.stillstandEinheiten) Einheiten ohne Fortschritt: heute 10 % leichter, gern ein Satz weniger (Deload)")
+        case .nachPause(let tage): String(localized: "Nach \(tage) Tagen Pause etwas leichter einsteigen")
+        case .aufwaermen(let prozent): String(localized: "Aufwärmen mit \(prozent) % vom Arbeitsgewicht")
+        case .drop: String(localized: "Dropsatz: 20 % leichter, so viele wie sauber gehen")
+        case .ohneGewicht: String(localized: "Eine Wiederholung mehr als zuletzt")
         }
     }
 
@@ -91,12 +91,12 @@ struct SatzVorschlag: Equatable, Sendable {
     var grund: VorschlagGrund
 
     /// "62,5 kg × 8", ohne Gewicht "12 Wdh".
-    var text: String { kg.map { "\(TrainingLogik.kgText($0)) kg × \(wdh)" } ?? "\(wdh) Wdh" }
+    var text: String { kg.map { "\(TrainingLogik.kgText($0)) kg × \(wdh)" } ?? String(localized: "\(wdh) Wdh") }
 
     /// "1 Wdh Reserve", bei 0 "bis kurz vor Schluss"; nil bei Aufwärm- und Dropsätzen.
     var reserveText: String? {
         guard grund.mitReserve else { return nil }
-        return reserve == 0 ? "bis kurz vor Schluss" : "\(reserve) Wdh Reserve"
+        return reserve == 0 ? String(localized: "bis kurz vor Schluss") : String(localized: "\(reserve) Wdh Reserve")
     }
 
     /// Steht genau das schon in der Zeile?

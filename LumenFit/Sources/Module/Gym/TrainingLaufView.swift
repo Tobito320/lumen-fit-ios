@@ -60,7 +60,7 @@ struct TrainingLaufView: View {
         .gymCrewAbruf()
         .sheet(isPresented: $beenden) { TrainingBeendenView(sitzung: sitzung) }
         .sheet(isPresented: $suche) {
-            UebungsSucheView(titel: "Übung hinzufügen", auswahl: { sitzung.uebungDazu($0) }, mehrfach: true, wegnehmen: { sitzung.uebungDazuZurueck($0.id) })
+            UebungsSucheView(titel: String(localized: "Übung hinzufügen"), auswahl: { sitzung.uebungDazu($0) }, mehrfach: true, wegnehmen: { sitzung.uebungDazuZurueck($0.id) })
         }
         .sheet(isPresented: $tagWahl) { TagWechselBlatt(sitzung: sitzung) }
         .sheet(isPresented: $einstellungen) { GymEinstellungenBlatt(sitzung: sitzung) }
@@ -143,7 +143,7 @@ struct TrainingLaufView: View {
     /// Puls und kcal vom Sensor (Uhr oder Band), alle 10 s neu gelesen; ohne Sensor steht nichts da.
     private var liveWerte: some View {
         TimelineView(.periodic(from: .now, by: 10)) { _ in
-            let teile = [sitzung.puls.puls.map { "\($0) Puls" }, sitzung.puls.kcal.map { "\($0) kcal" }].compactMap { $0 }
+            let teile = [sitzung.puls.puls.map { String(localized: "\($0) Puls") }, sitzung.puls.kcal.map { "\($0) kcal" }].compactMap { $0 }
             if !teile.isEmpty {
                 Label(teile.joined(separator: " · "), systemImage: "heart.fill")
                     .font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).monospacedDigit()
@@ -259,7 +259,7 @@ struct TagWechselBlatt: View {
                             sitzung.tagWechseln(zu: t)
                             schliessen()
                         } label: {
-                            GymZeile(titel: t.name.isEmpty ? "Training" : t.name, untertitel: ZeitSchaetzung.umfang(t)) {
+                            GymZeile(titel: t.name.isEmpty ? String(localized: "Training") : t.name, untertitel: ZeitSchaetzung.umfang(t)) {
                                 if t.id == sitzung.laufende?.tag { Image(systemName: "checkmark").accessibilityLabel("gewählt") }
                             }
                         }

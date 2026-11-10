@@ -6,7 +6,7 @@ import SwiftUI
 /// Neues Design (Entwurf `entdecken`): Zahl der Übungen, Chips Brust bis Ganzkörper, ohne Auswahl dazu "Nach Muskel" (mit bereit/erholt sich)
 /// und die große Ansicht als Raster; "Eigene Übung erstellen" als Lime-Textknopf.
 struct UebungsSucheView: View {
-    var titel = "Übungen"
+    var titel = String(localized: "Übungen")
     var auswahl: ((Uebung) -> Void)?
     /// true = das Blatt bleibt offen, jeder Tipp fügt eine Übung hinzu (Plus wird zum Haken), "Fertig" schließt.
     var mehrfach = false
@@ -109,12 +109,12 @@ struct UebungsSucheView: View {
     @ViewBuilder
     private var standardAbschnitte: some View {
             if text.isEmpty, koerper == nil, chip == nil {
-                abschnitt("Zuletzt", zuletzt)
-                abschnitt("Eigene", gefiltert(eigene?.uebungen ?? []))
-                abschnitt("Gängig", UebungsKatalog.vorschlaege(in: gefiltert(UebungsKatalog.alle)))
+                abschnitt(String(localized: "Zuletzt"), zuletzt)
+                abschnitt(String(localized: "Eigene"), gefiltert(eigene?.uebungen ?? []))
+                abschnitt(String(localized: "Gängig"), UebungsKatalog.vorschlaege(in: gefiltert(UebungsKatalog.alle)))
             }
             let treffer = ergebnis
-            Section(treffer.isEmpty ? "Nichts gefunden" : "\(treffer.count) \(treffer.count == 1 ? "Übung" : "Übungen")") {
+            Section(treffer.isEmpty ? String(localized: "Nichts gefunden") : treffer.count == 1 ? String(localized: "1 Übung") : String(localized: "\(treffer.count) Übungen")) {
                 if treffer.isEmpty {
                     Text("Versuch ein anderes Wort, zum Beispiel Muskel oder Gerät. Oder stell oben den Filter auf Alle Geräte.")
                         .font(.subheadline).foregroundStyle(palette.text2)
@@ -309,7 +309,7 @@ struct UebungsSucheView: View {
         }
         .frame(minHeight: Abstand.tippflaeche)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(GymEigeneLogik.istEigene(u.id) ? "\(UebungsSymbol.beschreibung(u)), eigene Übung" : UebungsSymbol.beschreibung(u))
+        .accessibilityLabel(GymEigeneLogik.istEigene(u.id) ? String(localized: "\(UebungsSymbol.beschreibung(u)), eigene Übung") : UebungsSymbol.beschreibung(u))
     }
 }
 
