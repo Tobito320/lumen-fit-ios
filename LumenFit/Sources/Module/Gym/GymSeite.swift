@@ -12,6 +12,7 @@ enum GymSeite: Equatable, Sendable {
         case .training: laeuft ? .lauf : .start
         case .plaene: .plan
         case .fortschritt: .fortschritt
+        case .geschafft: .start // Training laufend: "Geschafft" ist eine eigene Seite auf Heute (`GeschafftView`), nie im Gym-Tab
         }
     }
 }

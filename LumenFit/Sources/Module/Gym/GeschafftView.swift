@@ -6,12 +6,13 @@ struct GeschafftView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var stand: GeschafftStand?
+    @State private var geladen = false
 
     var body: some View {
         ScrollView {
             if let stand {
                 inhalt(stand).padding(.horizontal, Abstand.l).padding(.bottom, Abstand.xl)
-            } else {
+            } else if geladen {
                 LeerZustand(stimmung: .denkt, satz: String(localized: "Noch kein beendetes Training. Beende eins, dann steht es hier."))
                     .padding(Abstand.l)
             }
@@ -28,6 +29,7 @@ struct GeschafftView: View {
         }
         // Nicht im Körper: `GymSitzung.von` setzt den Port; das Training kommt aus dem Store, die Sitzung ist nach dem Beenden leer.
         .task {
+            defer { geladen = true }
             guard let d = umgebung.daten, let s = GeschafftLogik.letzte(d.training.sessions) else { return }
             let sitzung = GymSitzung.von(umgebung)
             stand = GeschafftLogik.stand(s, tag: d.training.tag(id: s.tag), alle: d.training.sessions,
