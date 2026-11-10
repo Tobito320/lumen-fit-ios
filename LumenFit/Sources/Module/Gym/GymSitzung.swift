@@ -32,6 +32,8 @@ final class GymSitzung: TrainingSteuerung {
     nonisolated static let entwurfHoechstens: TimeInterval = 5
     /// Wann der erste noch nicht geschriebene Tipp kam (`umgebung.uhr`); nil ohne offenen Entwurf. Nur im Speicher.
     @ObservationIgnored private var entwurfErster: Date?
+    /// Der Store, in dem der offene Entwurf entstand: ein Profilwechsel im Verzug schreibt ihn trotzdem in die Einheit des alten Profils. Nur im Speicher.
+    @ObservationIgnored private var entwurfStore: TrainingStore?
     /// Der zuletzt gesetzte Haken (Plan-Id, Satz, Zeit): startet die Pause nach, wenn die Person bei der ersten Frage Ja zum Pausen-Timer sagt.
     @ObservationIgnored private var letzterHaken: (plan: String, satz: Int, zeit: Date)?
     /// Präferenz Pausen-Timer (Standard aus, 09.11.2026): ohne sie startet der Haken keine Pause.
@@ -673,8 +675,8 @@ final class GymSitzung: TrainingSteuerung {
 
     // MARK: - Senden
 
-    private func sende(_ u: Int) {
-        guard let t = training, let sid = sessionId, liste.indices.contains(u), !liste[u].planUebung.istCardio else { return }
+    private func sende(_ u: Int, in store: TrainingStore? = nil) {
+        guard let t = store ?? training, let sid = sessionId, liste.indices.contains(u), !liste[u].planUebung.istCardio else { return }
         entwurfOffen.remove(liste[u].id)
         t.saetzeSenden(sid, liste[u].planUebung, liste[u].saetze)
     }
@@ -683,6 +685,7 @@ final class GymSitzung: TrainingSteuerung {
     private func entwurfMerken(_ u: Int) {
         guard liste.indices.contains(u) else { return }
         entwurfOffen.insert(liste[u].id)
+        if entwurfStore == nil { entwurfStore = training }
         let jetzt = umgebung.uhr()
         let erster = entwurfErster ?? jetzt
         entwurfErster = erster
@@ -708,9 +711,12 @@ final class GymSitzung: TrainingSteuerung {
         entwurfErster = nil
         let offen = entwurfOffen
         entwurfOffen = []
-        // Nur in eine Einheit, die der Store noch kennt: eine verworfene oder die eines anderen Profils bekäme sonst einen Geister-Eintrag.
-        guard !offen.isEmpty, let sid = sessionId, training?.sessions.contains(where: { $0.id == sid }) == true else { return }
-        for id in offen { if let u = liste.firstIndex(where: { $0.id == id }) { sende(u) } }
+        let store = entwurfStore ?? training
+        entwurfStore = nil
+        // Nur in eine Einheit, die ihr Store noch kennt: eine verworfene bekäme sonst einen Geister-Eintrag. Der Store ist der, in dem der Entwurf
+        // entstand, nicht der des jetzt aktiven Profils.
+        guard !offen.isEmpty, let sid = sessionId, let t = store, t.sessions.contains(where: { $0.id == sid }) else { return }
+        for id in offen { if let u = liste.firstIndex(where: { $0.id == id }) { sende(u, in: t) } }
     }
 
     /// Stellt die Live Activity auf den Stand des Trainings (nil beendet sie). Die Aufgaben laufen der Reihe nach.

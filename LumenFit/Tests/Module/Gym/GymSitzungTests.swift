@@ -514,4 +514,111 @@ final class GymSitzungTests: XCTestCase {
         a.sitzung.cardioPuls?.setze(eintrag.id, puls: 5)
         XCTAssertNil(a.sitzung.cardioPuls?.puls(eintrag.id), "ein unmöglicher Puls wird nicht gespeichert")
     }
+
+    // MARK: - Fortschritt geht nie verloren (Update, Absturz, Kill, Profilwechsel)
+
+    /// Wie nach einem Kill: eine frische Umgebung samt `DatenSatz` und Sitzung über demselben Ordner und Schlüsselbund; alles kommt von der Platte.
+    private func neuGestartet(_ a: GymTestAufbau) -> GymSitzung {
+        let u = AppUmgebung(ordner: a.umgebung.ordner, schluesselbund: a.umgebung.schluesselbund, http: FixtureLader(ordner: nil), mitteiler: StilleMitteilung(),
+                            leser: LeererHealthLeser(), healthSchreiber: KeinHealthSchreiber(), bruecke: KeinePartnerBruecke(), uhr: a.umgebung.uhr, passwortRunden: 1_000)
+        let neu = GymSitzung(umgebung: u)
+        neu.ladeWennNoetig()
+        return neu
+    }
+
+    /// Wie viele Übungs-Ops das aktive Profil hat (jedes Schreiben eines Standes ist eine).
+    private func uebungsOps(_ a: GymTestAufbau) -> Int { a.daten.raum.ops(arten: ["gym.uebung"]).count }
+
+    func testProfilwechselMitOffenemEntwurf() throws {
+        let a = try aufbau()
+        let datenA = a.daten
+        a.sitzung.starte(planTag: "push")
+        let sid = try XCTUnwrap(a.sitzung.sessionId)
+        a.sitzung.werteSetzen(1, 0, kg: 22.5, wdh: 9)
+        XCTAssertNil(gespeichert(a, plan: "b"), "noch im Verzug")
+        _ = try a.umgebung.profil.anlegen(name: "Zwei", passwort: "")   // ein zweites Profil, es wird sofort aktiv
+        let datenB = try XCTUnwrap(a.umgebung.daten)
+        XCTAssertFalse(datenB === datenA, "Voraussetzung: das aktive Profil ist jetzt ein anderes")
+        a.sitzung.entwurfSenden()
+        XCTAssertTrue(datenB.raum.ops(arten: ["gym.uebung"]).isEmpty, "das neue Profil bekommt keinen fremden Satz")
+        let stand = datenA.training.sessions.first { $0.id == sid }?.laeufe.first { $0.plan == "b" }?.stand
+        XCTAssertEqual(stand?.first?.kg, 22.5, "der Entwurf landet in der Einheit des alten Profils")
+        XCTAssertEqual(stand?.first?.wdh, 9)
+        XCTAssertNil(stand?.first?.ok)
+        var log = LokalerOpLog(datei: datenA.ordner.appendingPathComponent("ops.jsonl"))
+        let aufDerPlatte = log.lade().filter { $0.art == "gym.uebung" }.compactMap { $0.daten(GymD.self) }.first { $0.session == sid && $0.plan == "b" }
+        XCTAssertEqual(aufDerPlatte?.saetze?.first?.kg, 22.5, "und steht im Log des alten Profils auf der Platte")
+        XCTAssertNil(a.sitzung.entwurfAufgabe)
+    }
+
+    func testHintergrundEntwurfUeberlebtKillAufDerPlatte() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        let sid = try XCTUnwrap(a.sitzung.sessionId)
+        a.sitzung.werteSetzen(1, 0, kg: 22.5, wdh: 9)   // ohne Haken
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        // Kill: Sitzung, Umgebung und Datensatz sind weg, nur die Platte bleibt.
+        let neu = neuGestartet(a)
+        XCTAssertFalse(neu.umgebung.daten === a.daten, "Voraussetzung: ein frisch von der Platte gelesener Datensatz")
+        XCTAssertEqual(neu.sessionId, sid, "das Training läuft weiter")
+        let b = try XCTUnwrap(neu.liste.first { $0.id == "b" })
+        XCTAssertEqual(b.saetze.first?.kg, 22.5)
+        XCTAssertEqual(b.saetze.first?.wdh, 9)
+        XCTAssertNil(b.saetze.first?.ok, "kein Haken, nur die Werte")
+    }
+
+    func testZurueckgesetzterEntwurfUeberlebtKillAufDerPlatte() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        let sid = try XCTUnwrap(a.sitzung.sessionId)
+        a.sitzung.werteSetzen(1, 0, kg: 22.5, wdh: 9)
+        a.uhr.vor(sekunden: 4 * 3600)   // nach drei Stunden läuft nichts mehr: `ladeWennNoetig` setzt die Sitzung zurück
+        a.sitzung.ladeWennNoetig()
+        XCTAssertNil(a.sitzung.sessionId)
+        let neu = neuGestartet(a)
+        XCTAssertFalse(neu.umgebung.daten === a.daten, "Voraussetzung: ein frisch von der Platte gelesener Datensatz")
+        XCTAssertNil(neu.sessionId)
+        let vergessen = try XCTUnwrap(neu.training?.vergessene(), "die Startseite bietet das Nachtragen der Endzeit an")
+        XCTAssertEqual(vergessen.id, sid)
+        let stand = vergessen.laeufe.first { $0.plan == "b" }?.stand
+        XCTAssertEqual(stand?.first?.kg, 22.5, "der Entwurf ging vor dem Zurücksetzen auf die Platte")
+        XCTAssertEqual(stand?.first?.wdh, 9)
+        XCTAssertNil(stand?.first?.ok)
+    }
+
+    func testNachDemSchreibenBeginntDieFuenfSekundenFristNeu() throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        a.sitzung.werteSetzen(1, 0, kg: 21, wdh: 8)   // 0 s
+        a.sitzung.entwurfSenden()
+        let geschrieben = uebungsOps(a)
+        XCTAssertEqual(gespeichert(a, plan: "b")?.first?.kg, 21)
+        a.uhr.vor(sekunden: 6)
+        a.sitzung.werteSetzen(1, 0, kg: 22, wdh: 8)   // 6 s nach dem ersten Tipp, aber der erste offene seit dem Schreiben
+        XCTAssertNotNil(a.sitzung.entwurfAufgabe, "wieder im Verzug")
+        XCTAssertEqual(uebungsOps(a), geschrieben, "nicht sofort geschrieben: die Frist zählt ab dem neuen ersten Tipp")
+        XCTAssertEqual(gespeichert(a, plan: "b")?.first?.kg, 21)
+        a.sitzung.entwurfSenden()
+        XCTAssertEqual(uebungsOps(a), geschrieben + 1)
+        XCTAssertEqual(gespeichert(a, plan: "b")?.first?.kg, 22)
+    }
+
+    func testHintergrundOhneOffenenEntwurfSchreibtNichts() async throws {
+        let a = try aufbau()
+        a.sitzung.starte(planTag: "push")
+        let sid = try XCTUnwrap(a.sitzung.sessionId)
+        a.sitzung.haken(0, 0)
+        let vorher = uebungsOps(a)
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertEqual(uebungsOps(a), vorher, "ohne offenen Entwurf kein Op")
+        a.uhr.vor(sekunden: 600)
+        a.sitzung.beende()
+        await a.sitzung.endeAufgabe?.value
+        let nachEnde = uebungsOps(a)
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertEqual(uebungsOps(a), nachEnde, "nach dem Beenden schreibt der Hintergrund nichts mehr")
+        let fertig = try XCTUnwrap(a.daten.training.sessions.first { $0.id == sid })
+        XCTAssertNotNil(fertig.ende, "die Einheit bleibt beendet")
+        XCTAssertNil(a.daten.training.laufende())
+    }
 }
