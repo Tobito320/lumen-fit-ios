@@ -94,6 +94,88 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertFalse(alt.config.schlafBeleg, "Schlaf-Beleg ist ohne Antwort des Servers aus")
     }
 
+    /// Crew-Dateien (`crew-server.json`, `crew-ausstehend.json`), der Konto-Stand und ein Plan mit den Feldern, deren Editoren entfernt sind:
+    /// ohne neuere Felder, mit unbekannten Feldern und mit `null` bleibt alles lesbar, nichts geht verloren.
+    func testAlteCrewDateienUndPlanFelderBleibenLesbar() throws {
+        // Crew-Cache: nur die Pflichtfelder, dazu Unbekanntes; ein Eintrag mit unbekannter Art fällt einzeln weg.
+        let umgebung = AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)
+        try FileManager.default.createDirectory(at: umgebung.konto.ordner, withIntermediateDirectories: true)
+        let id = String(repeating: "a", count: 32)
+        let cache = """
+        {"herausforderungen":[
+          {"id":"\(id)","art":"saetze","modus":"gegen","start":"2026-11-02T00:00:00Z","ende":"2026-11-09T00:00:00Z",
+           "teilnehmer":[{"id":"t1","ich":true,"name":"Du","zukunft":{"x":1}},{"id":"t2","name":"Freund","status":"dabei","wert":3}],"neuesFeld":[1,2]},
+          {"id":"\(id)","art":"mass-von-morgen","modus":"gegen","start":"2026-11-02T00:00:00Z","ende":"2026-11-09T00:00:00Z"}],
+         "reaktionen":[{"id":"r1","von":"v1","art":"respekt","zeit":"2026-11-08T10:00:00Z","zukunft":true},
+                       {"id":"r2","von":"v1","art":"zeichen-von-morgen","zeit":"2026-11-08T10:00:00Z"}],
+         "gesendet":[{"an":"v1","art":"respekt","ziel":"einheit:2026-11-08"}],"unbekannt":{"a":1}}
+        """
+        try Data(cache.utf8).write(to: umgebung.konto.ordner.appendingPathComponent(CrewDienst.dateiName))
+        let warte = #"[{"pfad":"/freunde/reaktionen","methode":"POST","koerper":null},{"pfad":"/freunde/reaktionen","methode":"DELETE","koerper":"e30=","zukunft":1},{"pfad":"/x","methode":"POST"}]"#
+        try Data(warte.utf8).write(to: umgebung.konto.ordner.appendingPathComponent(CrewDienst.ausstehendName))
+        let dienst = CrewDienst(umgebung: umgebung)
+        let h = try XCTUnwrap(dienst.antwort?.herausforderungen.first)
+        XCTAssertEqual(dienst.antwort?.herausforderungen.count, 1)
+        XCTAssertEqual(h.status, "laeuft", "ohne Status gilt: läuft")
+        XCTAssertEqual(h.ich, "", "ohne eigenen Stand")
+        XCTAssertFalse(h.ersteller)
+        XCTAssertEqual(h.teilnehmer.map(\.wert), [0, 3])
+        XCTAssertTrue(h.teilnehmer[0].ich)
+        XCTAssertEqual(dienst.antwort?.reaktionen.map(\.id), ["r1"])
+        XCTAssertEqual(dienst.antwort?.gesendet.count, 1)
+        XCTAssertEqual(dienst.ausstehend.count, 3)
+        XCTAssertNil(dienst.ausstehend[0].koerper, "null ist kein Körper")
+        XCTAssertEqual(dienst.ausstehend[1].koerper, Data("{}".utf8))
+        XCTAssertNil(dienst.ausstehend[2].koerper, "ohne Feld")
+
+        // Konto-Stand: ohne die neueren Felder, mit Unbekanntem und mit einem falschen Typ im neuen Feld.
+        let alt = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"config":{},"loveaErlaubt":true,"loveaImportErledigt":true,"zukunft":[1]}"#.utf8))
+        XCTAssertTrue(alt.loveaErlaubt)
+        XCTAssertFalse(alt.essenExportAn)
+        XCTAssertEqual(alt.essenExportAnzahl, 0)
+        XCTAssertNil(alt.essenExportZiele)
+        XCTAssertNil(alt.kontoProfil, "alte Stände kennen das Profil des Kontos nicht")
+        let schief = try JSONDecoder().decode(KontoStand.self, from: Data(#"{"loveaErlaubt":true,"essenExportAnzahl":4,"kontoProfil":5}"#.utf8))
+        XCTAssertNil(schief.kontoProfil)
+        XCTAssertEqual(schief.essenExportAnzahl, 4, "ein Typfehler kostet nur sein Feld")
+        var neu = KontoStand()
+        neu.kontoProfil = "p1"
+        XCTAssertEqual(try JSONDecoder().decode(KontoStand.self, from: JSONEncoder().encode(neu)).kontoProfil, "p1")
+
+        // Plan: Notiz, Pausenzeit und Supersatz haben keine Oberfläche mehr, die Felder bleiben an der Übung, auch durch Verschieben, Ändern und Speichern.
+        let json = """
+        {"tage":[{"id":"t1","name":"Push","wochentage":[1],"uebungen":[
+          {"id":"u1","uebung":"bank","name":null,"saetze":[{"wdh":8,"kg":60,"failure":false}],"notiz":"Sitz auf Stufe 4","pause":90,"supersatz":true},
+          {"id":"u2","uebung":"lat","saetze":[{"wdh":10,"failure":false}]},
+          {"id":"u3","uebung":"eigen","name":"Dips","saetze":[],"zukunft":1}]}]}
+        """
+        let plan = try JSONDecoder().decode(TrainingsPlan.self, from: Data(json.utf8))
+        func ersteUebung(_ p: TrainingsPlan) -> PlanUebung? { p.tage.first?.uebungen.first { $0.id == "u1" } }
+        func pruefe(_ p: TrainingsPlan, _ was: String, file: StaticString = #filePath, line: UInt = #line) {
+            let u = ersteUebung(p)
+            XCTAssertEqual(u?.notiz, "Sitz auf Stufe 4", was, file: file, line: line)
+            XCTAssertEqual(u?.pause, 90, was, file: file, line: line)
+            XCTAssertEqual(u?.supersatz, true, was, file: file, line: line)
+        }
+        pruefe(plan, "gelesen")
+
+        var tag = try XCTUnwrap(plan.tage.first)
+        tag = PlanEditor.verschieben(tag, von: 2, nach: 0)
+        XCTAssertEqual(tag.uebungen.map(\.id), ["u3", "u1", "u2"])
+        let verschoben = TrainingLogik.tagSetzen(plan, tag)
+        pruefe(verschoben, "verschoben")
+        pruefe(TrainingLogik.uebernehmen(verschoben, planUebung: "u1", saetze: [PlanSatz(wdh: 6, kg: 65, failure: false)]), "Sätze übernommen")
+        XCTAssertEqual(ersteUebung(TrainingLogik.uebernehmen(verschoben, planUebung: "u1", saetze: [PlanSatz(wdh: 6, kg: 65, failure: false)]))?.saetze.first?.wdh, 6)
+        pruefe(TrainingLogik.aendern(verschoben, planUebung: "u2") { $0.notiz = "andere Übung" }, "andere Übung geändert")
+        pruefe(PlanEditor.tagWeg(verschoben, id: "gibt-es-nicht"), "unbekannter Tag")
+
+        let ordner = try tempOrdner()
+        let vorher = DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: TestUhr().uhr)
+        vorher.training.planSichern(verschoben)
+        pruefe(vorher.training.plan, "gespeichert")
+        pruefe(DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: TestUhr().uhr).training.plan, "nach dem Neustart")
+    }
+
     /// W-003: alte Datei ohne `schlichtGesetzt`. Monochrom (der alte Standard) wird einmal Schlicht, ein selbst gewähltes Theme bleibt,
     /// und wer danach wieder Monochrom wählt, behält es beim nächsten Start.
     func testAltesMonochromWirdEinmalSchlichtEigeneWahlBleibt() throws {
