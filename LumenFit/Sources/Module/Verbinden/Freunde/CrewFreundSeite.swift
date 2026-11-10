@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Eine Person der Crew: Status, Trainingspartner wählen, eure Woche, Zahlen der Woche, Live-Einheit, Rekorde und letzte Trainings mit Respekt, Vergleich
+/// Eine Person der Crew: Status, Trainingspartner wählen, eure Woche, Zahlen der Woche, Live-Einheit, Rekorde und letzte Trainings, Vergleich
 /// gemeinsamer Übungen, Herausfordern und die Einstellungen der Verbindung. Alles nur aus dem, was die Person mir zeigt; ohne Freigabe steht
 /// "nicht geteilt", nie eine 0.
 struct CrewFreundSeite: View {
@@ -86,7 +86,7 @@ struct CrewFreundSeite: View {
             .buttonStyle(.bordered)
             .accessibilityHint(istPartner ? "Tippen nimmt die Wahl zurück" : "Seine Karte steht dann auf Heute und im Training")
             if !CrewLogik.darfReagieren(e) {
-                Text(e.ich.pause ? "Die Verbindung ist pausiert." : "Diese Person teilt Gym nicht mit dir. Respekt geht erst, wenn sie Gym freigibt.")
+                Text(e.ich.pause ? "Die Verbindung ist pausiert." : "Diese Person teilt Gym nicht mit dir.")
                     .font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -147,12 +147,7 @@ struct CrewFreundSeite: View {
                 ListenKarte {
                     ForEach(Array(liste.enumerated()), id: \.element) { i, r in
                         if i > 0 { Haarlinie() }
-                        HStack(spacing: 0) {
-                            GymZeile(titel: r.uebung, untertitel: GymRekordPinnwandLogik.text(r, heute: heute))
-                            CrewReaktionKnopf(eintrag: e, art: .respekt, ziel: CrewLogik.zielRekord(tag: r.tag, uebung: r.uebung),
-                                              text: "\(r.uebung) \(TrainingLogik.kgText(r.kg)) kg × \(r.wdh)")
-                                .padding(.trailing, Abstand.s)
-                        }
+                        GymZeile(titel: r.uebung, untertitel: GymRekordPinnwandLogik.text(r, heute: heute))
                     }
                 }
             }
@@ -175,19 +170,16 @@ struct CrewFreundSeite: View {
         }
     }
 
+    @ViewBuilder
     private func trainingZeile(_ e: VerbindungEintrag, _ d: ZusammenfassungDatei, _ t: PartnerTrainingKurz, heute: String) -> some View {
         let titel = t.name ?? Datum.anzeige(t.tag)
         let untertitel = CrewTexte.trainingText(t, heute: heute)
-        return HStack(spacing: 0) {
-            if let einheit = GymPartnerLogik.einheit(am: t.tag, in: d) {
-                NavigationLink { GymPartnerEinheitView(name: CrewLogik.name(e), einheit: einheit) } label: { GymZeile(titel: titel, untertitel: untertitel) }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Zeigt die Sätze")
-            } else {
-                GymZeile(titel: titel, untertitel: untertitel)
-            }
-            CrewReaktionKnopf(eintrag: e, art: .respekt, ziel: CrewLogik.zielEinheit(tag: t.tag), text: untertitel)
-                .padding(.trailing, Abstand.s)
+        if let einheit = GymPartnerLogik.einheit(am: t.tag, in: d) {
+            NavigationLink { GymPartnerEinheitView(name: CrewLogik.name(e), einheit: einheit) } label: { GymZeile(titel: titel, untertitel: untertitel) }
+                .buttonStyle(.plain)
+                .accessibilityHint("Zeigt die Sätze")
+        } else {
+            GymZeile(titel: titel, untertitel: untertitel)
         }
     }
 

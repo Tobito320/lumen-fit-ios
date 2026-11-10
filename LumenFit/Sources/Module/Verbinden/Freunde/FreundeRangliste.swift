@@ -1,7 +1,7 @@
 import Foundation
 
 /// Die eigene Wochenkarte und die Wochen-Rangliste aus importierten Freundeskarten (Idee 89, 90). Rein, ohne Stores und Oberfläche.
-/// "Respekt" statt Like: ein stilles Zeichen an die Karte eines Freundes, nur auf diesem Gerät gemerkt (`FreundKarte.respekt`), kein Zähler, keine Zahl bei anderen.
+/// `FreundKarte.respekt` (früher ein stilles Zeichen an die Karte, seit Build 19 ohne Knopf, W-034) bleibt in gespeicherten Karten lesbar.
 enum FreundeRangliste {
     struct Zeile: Identifiable, Equatable, Sendable {
         var karte: FreundKarte

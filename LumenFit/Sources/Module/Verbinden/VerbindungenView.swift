@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Die Seite "Verbindungen" (Profil): deine Personen (QR-Code oder Lovea), offene Anfragen, Mein Code, Code scannen, Mitteilungen bei Partner-Ereignissen (83)
+/// Die Seite "Verbindungen" (Profil, im Tab Freunde "Freunde verwalten"): deine Personen (QR-Code, Code oder Lovea), offene Anfragen alter Links,
+/// Mitteilungen bei Partner-Ereignissen (83)
 /// und die Freunde (89). Pro Person: was du zeigst (mit Vorschau), was du sehen willst, Pause, Mitteilungen, Favorit, Name, Entfernen (`VerbindungPersonView`).
 /// Das Band wohnt unter Profil > Geräte (`GeraeteView`).
 struct VerbindungenView: View {
@@ -24,8 +25,6 @@ private struct VerbindungenInhalt: View {
     let daten: DatenSatz
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
-    @State private var codeOffen = false
-    @State private var scanOffen = false
     @State private var fehler: String?
 
     private static let ereignisArten: [PartnerEreignisArt] = [.gymStart, .gymEnde, .ziel, .rekord, .schlafGut]
@@ -40,7 +39,6 @@ private struct VerbindungenInhalt: View {
         Form {
             if !speicher.anfragen.isEmpty { anfragenAbschnitt }
             personenAbschnitt
-            hinzufuegenAbschnitt
             if !speicher.wartend.isEmpty { wartendAbschnitt }
             if !personen.isEmpty { mitteilungenAbschnitt }
             freundeAbschnitt
@@ -48,8 +46,6 @@ private struct VerbindungenInhalt: View {
         .verbindenFormular()
         .refreshable { await umgebung.konto.verbindungenNeuLaden() }
         .task { await umgebung.konto.verbindungenNeuLaden() }
-        .sheet(isPresented: $codeOffen) { VerbindungCodeBlatt() }
-        .sheet(isPresented: $scanOffen) { VerbindungScanBlatt() }
         .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
             Button("Verstanden", role: .cancel) {}
         } message: { Text(fehler ?? "") }
@@ -88,14 +84,7 @@ private struct VerbindungenInhalt: View {
     }
 
     private var personenFuss: String {
-        "Jede Person sieht nur, was du für sie einschaltest."
-    }
-
-    private var hinzufuegenAbschnitt: some View {
-        VerbindenAbschnitt(titel: "Person hinzufügen", fuss: "Der Code gilt einmal für 10 Minuten und enthält keine Gesundheitsdaten. Einen Link für eine Person teilst du im Tab Freunde.") {
-            Button { codeOffen = true } label: { Label("Mein Code zeigen", systemImage: "qrcode") }.frame(minHeight: Abstand.tippflaeche)
-            Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }.frame(minHeight: Abstand.tippflaeche)
-        }
+        "Jede Person sieht nur, was du für sie einschaltest. Neue Freunde lädst du im Tab Freunde ein."
     }
 
     private var wartendAbschnitt: some View {

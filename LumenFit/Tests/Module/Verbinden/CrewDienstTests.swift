@@ -126,20 +126,28 @@ final class CrewDienstTests: XCTestCase {
         XCTAssertFalse(json.contains("ende"))
     }
 
-    /// Offline zuerst: ohne Netz bleibt Respekt gezeigt und wartet; Zurücknehmen kommt dahinter; die Warteschlange überlebt einen Neustart.
-    func testOhneNetzBleibtRespektGezeigtUndWartet() async {
+    /// Offline zuerst: ohne Netz wartet Annehmen in der Warteschlange und überlebt einen Neustart (Likes gibt es seit Build 19 nicht mehr, W-034).
+    func testOhneNetzWartetAnnehmenUndUeberlebtNeustart() async {
         let umgebung = AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)
         let dienst = CrewDienst(umgebung: umgebung)
-        let ziel = CrewLogik.zielEinheit(tag: "2026-11-09")
-        let ok = await dienst.reagieren(an: "v1", art: .respekt, ziel: ziel)
-        XCTAssertTrue(ok)
-        XCTAssertTrue(dienst.istGesendet(an: "v1", art: .respekt, ziel: ziel))
-        XCTAssertEqual(dienst.ausstehend.map(\.methode), ["POST"])
-        XCTAssertNil(dienst.fehler)
-        await dienst.zuruecknehmen(an: "v1", art: .respekt, ziel: ziel)
-        XCTAssertFalse(dienst.istGesendet(an: "v1", art: .respekt, ziel: ziel))
-        XCTAssertEqual(dienst.ausstehend.map(\.methode), ["POST", "DELETE"])
-        XCTAssertEqual(CrewDienst(umgebung: umgebung).ausstehend.count, 2)
+        let id = String(repeating: "a", count: 32)
+        let fehler = await dienst.annehmen(id)
+        XCTAssertNil(fehler)
+        XCTAssertEqual(dienst.ausstehend.map(\.pfad), ["/freunde/herausforderungen/\(id)/annehmen"])
+        XCTAssertEqual(CrewDienst(umgebung: umgebung).ausstehend.count, 1)
+    }
+
+    /// "Für dich" und die Zahl am Tab: nur wer über meine Einladung neu verbunden ist, keine Reaktionen mehr.
+    func testNeueSindNeuVerbundeneNichtReaktionen() {
+        let umgebung = AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)
+        let jetzt = umgebung.uhr()
+        umgebung.konto.verbindungen.setze(VerbindungenAntwort(verbindungen: [
+            VerbindungEintrag(id: "neu", name: "Freund A", erstellt: jetzt.addingTimeInterval(-60), eingeladen: true),
+            VerbindungEintrag(id: "selbst", name: "Freund B", erstellt: jetzt.addingTimeInterval(-60), eingeladen: false),
+        ]))
+        let dienst = CrewDienst(umgebung: umgebung)
+        XCTAssertEqual(dienst.neue(seit: nil).map(\.id), ["neu"])
+        XCTAssertEqual(dienst.neue(seit: jetzt).map(\.id), [])
     }
 
     #if DEBUG

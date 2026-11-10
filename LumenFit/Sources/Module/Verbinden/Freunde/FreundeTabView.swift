@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Der Tab Freunde (Aufteilung B, 10.11.2026): Für dich (Reaktionen, Einladungen), Trainingspartner mit eurer Woche, Rangliste der Woche,
-/// Herausforderungen, Rekorde der Freunde, Freunde mit Status und Einladen mit einem Tipp. Kein Feed (Design 09.11.2026); die Trainings einer Person
-/// stehen auf ihrer Seite. Ohne Freunde steht das Einladen oben. Wurzel des Tabs ohne eigenen NavigationStack (den gibt das Tab-Gerüst).
-/// Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
+/// Der Tab Freunde (Aufteilung B, 10.11.2026): Für dich (neu Verbundene, Einladungen), Trainingspartner mit eurer Woche, Rangliste der Woche,
+/// Herausforderungen, Rekorde der Freunde, Freunde mit Status, Einladen per QR-Code oder Code und "Code eingeben" (W-033); keine Likes (W-034).
+/// Kein Feed (Design 09.11.2026); die Trainings einer Person stehen auf ihrer Seite. Ohne Freunde steht das Einladen oben. Wurzel des Tabs ohne
+/// eigenen NavigationStack (den gibt das Tab-Gerüst). Neues kommt beim Öffnen und beim Ziehen nach unten (kein Push).
 struct FreundeTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -13,6 +13,9 @@ struct FreundeTabView: View {
     /// Der Stand von "gesehen" beim Öffnen: alles danach ist für diesen Besuch "neu" markiert.
     @State private var gesehenBeimOeffnen: Double?
     @State private var aktionFehler: String?
+    @State private var einladenOffen = false
+    @State private var codeOffen = false
+    @State private var entfernen: VerbindungEintrag?
 
     private var dienst: CrewDienst { CrewDienst.von(umgebung) }
     private var eintraege: [VerbindungEintrag] { GymCrewQuelle.eintraege(umgebung) }
@@ -47,6 +50,20 @@ struct FreundeTabView: View {
         .onAppear { if gesehenBeimOeffnen == nil { gesehenBeimOeffnen = gesehen } }
         .onDisappear { gesehen = umgebung.uhr().timeIntervalSince1970 }
         .sheet(isPresented: $herausfordern) { CrewHerausforderungBlatt() }
+        .sheet(isPresented: $einladenOffen) { VerbindungCodeBlatt() }
+        .sheet(isPresented: $codeOffen) { VerbindungScanBlatt() }
+        .confirmationDialog("Verbindung mit \(entfernen?.anzeigeName ?? "") entfernen?",
+                            isPresented: Binding(get: { entfernen != nil }, set: { if !$0 { entfernen = nil } }),
+                            titleVisibility: .visible, presenting: entfernen) { e in
+            Button("Entfernen", role: .destructive) {
+                Task {
+                    if !(await umgebung.konto.verbindungEntfernen(e.id)) {
+                        aktionFehler = "Die Verbindung ließ sich nicht entfernen. Prüfe das Netz und versuche es nochmal."
+                    }
+                }
+            }
+            Button("Abbrechen", role: .cancel) {}
+        }
         .modifier(CrewFehlerAnzeige(extra: $aktionFehler))
         .gymCrewAbruf()
     }
@@ -57,44 +74,34 @@ struct FreundeTabView: View {
 
     // MARK: Für dich
 
+    /// Wer über meine Einladung neu verbunden ist (seit dem letzten Blick, höchstens sieben Tage), mit Entfernen; darunter Einladungen zu Herausforderungen.
     @ViewBuilder
     private var fuerDich: some View {
         let einladungen = dienst.einladungen
-        let reaktionen = Array(dienst.neue(seit: nil).prefix(6))
-        if !einladungen.isEmpty || !reaktionen.isEmpty {
+        let stand = gesehenBeimOeffnen ?? gesehen
+        let neu = dienst.neue(seit: stand > 0 ? Date(timeIntervalSince1970: stand) : nil)
+        if !einladungen.isEmpty || !neu.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 kopf("Für dich")
-                ForEach(einladungen) { einladungKarte($0) }
-                if !reaktionen.isEmpty {
+                if !neu.isEmpty {
                     ListenKarte {
-                        ForEach(Array(reaktionen.enumerated()), id: \.element.id) { i, r in
+                        ForEach(Array(neu.enumerated()), id: \.element.id) { i, e in
                             if i > 0 { Haarlinie() }
-                            reaktionZeile(r)
+                            neuZeile(e)
                         }
                     }
                 }
+                ForEach(einladungen) { einladungKarte($0) }
             }
         }
     }
 
-    private func reaktionZeile(_ r: CrewReaktion) -> some View {
-        let neu = r.zeit.timeIntervalSince1970 > (gesehenBeimOeffnen ?? gesehen)
-        return HStack(spacing: Abstand.m) {
-            Image(systemName: r.art.symbol).foregroundStyle(neu ? palette.akzent : palette.text2).frame(width: 28).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(CrewLogik.reaktionText(r)).font(.subheadline).foregroundStyle(palette.text)
-                Text(r.zeit.formatted(.relative(presentation: .named))).font(.footnote).foregroundStyle(palette.text2)
-            }
-            Spacer(minLength: Abstand.s)
-            if neu {
-                Circle().fill(palette.akzent).frame(width: 8, height: 8).accessibilityHidden(true)
-            }
+    private func neuZeile(_ e: VerbindungEintrag) -> some View {
+        GymZeile(titel: "\(e.anzeigeName) ist jetzt mit dir verbunden", untertitel: e.erstellt?.formatted(.relative(presentation: .named))) {
+            Button("Entfernen", role: .destructive) { entfernen = e }
+                .font(.footnote.weight(.semibold))
+                .frame(minHeight: Abstand.tippflaeche)
         }
-        .padding(.horizontal, Abstand.l)
-        .padding(.vertical, Abstand.m)
-        .frame(minHeight: Abstand.tippflaeche)
-        .accessibilityElement(children: .combine)
-        .accessibilityValue(neu ? "neu" : "")
     }
 
     private func einladungKarte(_ h: CrewHerausforderung) -> some View {
@@ -193,18 +200,30 @@ struct FreundeTabView: View {
 
     // MARK: Freunde
 
-    /// Wer gerade trainiert oder zuletzt trainiert hat (antippbar), Einladen mit einem Tipp (Link teilen); Code, Scan und Einstellungen je Person
-    /// wohnen in "Freunde hinzufügen und verwalten".
+    /// Wer gerade trainiert oder zuletzt trainiert hat (antippbar), Einladen per QR-Code oder Code und "Code eingeben"; was jede Person sieht und
+    /// Entfernen wohnen in "Freunde verwalten".
     private var freunde: some View {
         let zeilen = GymCrewQuelle.zeilen(umgebung)
         return VStack(alignment: .leading, spacing: Abstand.s) {
             kopf("Freunde")
             if !zeilen.isEmpty { GymCrewZeilen(zeilen: zeilen, grenze: .max) }
             ListenKarte {
-                CrewLinkTeilen(imHub: true)
+                Button { einladenOffen = true } label: {
+                    GymZeile(titel: "Freund einladen", untertitel: "QR-Code zeigen, dein Freund scannt ihn") {
+                        Image(systemName: "qrcode").foregroundStyle(palette.akzent).accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(.plain)
+                Haarlinie()
+                Button { codeOffen = true } label: {
+                    GymZeile(titel: "Code eingeben", untertitel: "Den Code eines Freundes eintippen") {
+                        Image(systemName: "keyboard").foregroundStyle(palette.akzent).accessibilityHidden(true)
+                    }
+                }
+                .buttonStyle(.plain)
                 Haarlinie()
                 NavigationLink { VerbindungenView() } label: {
-                    GymZeile(titel: "Freunde hinzufügen und verwalten", untertitel: "Code zeigen oder scannen, was jede Person sieht") {
+                    GymZeile(titel: "Freunde verwalten", untertitel: "Was jede Person sieht, entfernen") {
                         Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                     }
                 }

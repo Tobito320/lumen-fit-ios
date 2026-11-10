@@ -107,13 +107,17 @@ struct VerbindungEintrag: Codable, Equatable, Identifiable, Sendable {
     var siehst: [String]
     var zuletzt: Date?
     var daten: ZusammenfassungDatei?
+    /// Seit wann verbunden (bei einer wieder aufgenommenen Verbindung der neue Zeitpunkt).
+    var erstellt: Date?
+    /// Die Person kam über meine Einladung (QR-Code oder Code): dann steht sie kurz unter "Für dich" als neu verbunden.
+    var eingeladen: Bool
 
-    enum CodingKeys: String, CodingKey { case id, name, auto, lovea, status, ich, siehst, zuletzt, daten }
+    enum CodingKeys: String, CodingKey { case id, name, auto, lovea, status, ich, siehst, zuletzt, daten, erstellt, eingeladen }
 
     init(id: String, name: String, auto: Bool = false, lovea: Bool = false, status: VerbindungStatus = .aktiv, ich: VerbindungEinstellung = VerbindungEinstellung(),
-         siehst: [String] = [], zuletzt: Date? = nil, daten: ZusammenfassungDatei? = nil) {
+         siehst: [String] = [], zuletzt: Date? = nil, daten: ZusammenfassungDatei? = nil, erstellt: Date? = nil, eingeladen: Bool = false) {
         self.id = id; self.name = name; self.auto = auto; self.lovea = lovea; statusText = status.rawValue
-        self.ich = ich; self.siehst = siehst; self.zuletzt = zuletzt; self.daten = daten
+        self.ich = ich; self.siehst = siehst; self.zuletzt = zuletzt; self.daten = daten; self.erstellt = erstellt; self.eingeladen = eingeladen
     }
 
     init(from decoder: Decoder) throws {
@@ -128,6 +132,8 @@ struct VerbindungEintrag: Codable, Equatable, Identifiable, Sendable {
         zuletzt = try? c.decodeIfPresent(Date.self, forKey: .zuletzt)
         // Eine kaputte Zusammenfassung einer Person kippt nicht die ganze Liste.
         daten = try? c.decodeIfPresent(ZusammenfassungDatei.self, forKey: .daten)
+        erstellt = try? c.decodeIfPresent(Date.self, forKey: .erstellt)
+        eingeladen = (try? c.decodeIfPresent(Bool.self, forKey: .eingeladen)) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -141,6 +147,8 @@ struct VerbindungEintrag: Codable, Equatable, Identifiable, Sendable {
         try c.encode(siehst, forKey: .siehst)
         try c.encodeIfPresent(zuletzt, forKey: .zuletzt)
         try c.encodeIfPresent(daten, forKey: .daten)
+        try c.encodeIfPresent(erstellt, forKey: .erstellt)
+        try c.encode(eingeladen, forKey: .eingeladen)
     }
 
     /// Unbekannter Status heißt "nicht aktiv": nichts anzeigen, was der Server nicht ausdrücklich als aktiv meldet.
@@ -188,14 +196,36 @@ enum VerbindungenLogik {
     /// So lange gilt ein Code (der Server entscheidet; die App zeigt den Rest nur an).
     nonisolated static let codeSekunden = 600
 
-    /// Das Token aus einem Link (`lumenfit://freund?d=<Token>`) oder dem nackten Token. Ein Token hat genau 43 Zeichen aus `A-Za-z0-9_-`
-    /// (32 Byte zufällig); alles andere (zum Beispiel eine alte Wochenkarte mit Punkt) ist keins.
+    /// Das Token aus einem Link (`lumenfit://freund?d=<Token>`), der Seite des Servers (`https://…/f/<Token>`, so steht es im QR-Code) oder dem nackten
+    /// Token. Ein Token hat genau 43 Zeichen aus `A-Za-z0-9_-` (32 Byte zufällig); alles andere (zum Beispiel eine alte Wochenkarte mit Punkt) ist keins.
     nonisolated static func token(aus text: String?) -> String? {
         guard let roh = text?.trimmingCharacters(in: .whitespacesAndNewlines), !roh.isEmpty else { return nil }
         var kandidat = roh
-        if let url = URL(string: roh), case .freund(let daten)? = RouteURL.route(aus: url) { kandidat = daten ?? "" }
+        if let url = URL(string: roh) {
+            if case .freund(let daten)? = RouteURL.route(aus: url) {
+                kandidat = daten ?? ""
+            } else if url.scheme == "https", url.pathComponents.count == 3, url.pathComponents[1] == "f" {
+                kandidat = url.pathComponents[2]
+            }
+        }
         return istToken(kandidat) ? kandidat : nil
     }
+
+    /// Code zum Abtippen (ab Build 19, 24 Stunden): 8 Zeichen ohne Verwechsler (0 O 1 I L). Groß/Klein, Leerzeichen und Bindestriche sind egal;
+    /// zurück kommt er in Großbuchstaben ohne Bindestrich, sonst nil.
+    nonisolated static func code(aus text: String?) -> String? {
+        guard let text else { return nil }
+        let roh = text.uppercased().filter { !$0.isWhitespace && $0 != "-" }
+        return roh.count == 8 && roh.allSatisfy { codeZeichen.contains($0) } ? roh : nil
+    }
+
+    nonisolated static let codeZeichen = Set("ABCDEFGHJKMNPQRSTUVWXYZ23456789")
+
+    /// Was unter "Code eingeben" steht oder gescannt wurde: ein Token (Link, Seite, nackt) oder ein Code. nil, wenn es keins von beiden ist.
+    nonisolated static func einladung(aus text: String?) -> String? { token(aus: text) ?? code(aus: text) }
+
+    /// Der Inhalt des QR-Codes: die Seite des Servers. Die iPhone-Kamera öffnet sie; mit App startet sie Lumen Fit, ohne App zeigt sie TestFlight.
+    nonisolated static func seite(server: URL, token: String) -> URL { server.appendingPathComponent("f").appendingPathComponent(token) }
 
     nonisolated static func istToken(_ text: String) -> Bool {
         text.utf8.count == 43 && text.utf8.allSatisfy { ($0 >= 48 && $0 <= 57) || ($0 >= 65 && $0 <= 90) || ($0 >= 97 && $0 <= 122) || $0 == 45 || $0 == 95 }
@@ -256,9 +286,17 @@ enum VerbindungenLogik {
         return e.aktiv ? .verbunden : .wartet
     }
 
-    /// Die erste Anfrage an mich, die ich noch nicht kenne (beim Öffnen des Blatts standen schon andere in der Liste: die bleiben dort).
-    nonisolated static func neueAnfrage(_ anfragen: [VerbindungEintrag], bekannt: Set<String>) -> VerbindungEintrag? {
-        anfragen.first { !bekannt.contains($0.id) }
+    /// Die erste Person, die über meine Einladung dazugekommen ist und beim Öffnen des Blatts noch nicht in der Liste stand.
+    nonisolated static func neuePerson(_ eintraege: [VerbindungEintrag], bekannt: Set<String>) -> VerbindungEintrag? {
+        eintraege.first { $0.aktiv && $0.eingeladen && !bekannt.contains($0.id) }
+    }
+
+    /// Über meine Einladung neu verbunden, nach `seit` und höchstens sieben Tage her, die neueste zuerst ("Für dich" und die Zahl am Tab).
+    nonisolated static func neuVerbunden(_ eintraege: [VerbindungEintrag], seit: Date?, jetzt: Date) -> [VerbindungEintrag] {
+        let ab = max(seit ?? .distantPast, jetzt.addingTimeInterval(-7 * 86_400))
+        return eintraege
+            .filter { e in e.aktiv && e.eingeladen && (e.erstellt.map { $0 > ab } ?? false) }
+            .sorted { ($0.erstellt ?? .distantPast) > ($1.erstellt ?? .distantPast) }
     }
 
     /// Bereiche, die die Person dir erlaubt, die aber in ihren Daten fehlen (bei ihr ausgeschaltet): "wird nicht geteilt". Ohne Daten nichts behaupten.

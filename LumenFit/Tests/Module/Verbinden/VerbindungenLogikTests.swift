@@ -264,11 +264,54 @@ final class VerbindungenLogikTests: XCTestCase {
         XCTAssertEqual(VerbindungenLogik.anfrageStand(id: "x", gesehen: true, in: [VerbindungEintrag(id: "y", name: "Andere", status: .aktiv)]), .abgelehnt)
     }
 
-    func testNeueAnfrageIgnoriertDieSchonBekannten() {
-        let alt = VerbindungEintrag(id: "alt", name: "Alt", status: .anfrageEingehend)
-        let neu = VerbindungEintrag(id: "neu", name: "Neu", status: .anfrageEingehend)
-        XCTAssertNil(VerbindungenLogik.neueAnfrage([alt], bekannt: ["alt"]))
-        XCTAssertEqual(VerbindungenLogik.neueAnfrage([alt, neu], bekannt: ["alt"])?.id, "neu")
-        XCTAssertNil(VerbindungenLogik.neueAnfrage([], bekannt: []))
+    func testNeuePersonNurUeberMeineEinladungUndNochNichtBekannt() {
+        let alt = VerbindungEintrag(id: "alt", name: "Alt", eingeladen: true)
+        let neu = VerbindungEintrag(id: "neu", name: "Neu", eingeladen: true)
+        let gescannt = VerbindungEintrag(id: "ich-scannte", name: "Andere", eingeladen: false)
+        let anfrage = VerbindungEintrag(id: "anfrage", name: "Anfrage", status: .anfrageEingehend, eingeladen: true)
+        XCTAssertNil(VerbindungenLogik.neuePerson([alt], bekannt: ["alt"]))
+        XCTAssertEqual(VerbindungenLogik.neuePerson([alt, gescannt, anfrage, neu], bekannt: ["alt"])?.id, "neu")
+        XCTAssertNil(VerbindungenLogik.neuePerson([], bekannt: []))
+    }
+
+    // MARK: Einladen per QR-Code oder Code (W-033)
+
+    func testTokenAusDerSeiteImQRCode() {
+        let server = URL(string: "https://lumen-fit-test.example.workers.dev")!
+        let seite = VerbindungenLogik.seite(server: server, token: token)
+        XCTAssertEqual(seite.absoluteString, "https://lumen-fit-test.example.workers.dev/f/\(token)")
+        XCTAssertEqual(VerbindungenLogik.token(aus: seite.absoluteString), token)
+        XCTAssertNil(VerbindungenLogik.token(aus: "https://example.org/g/\(token)"), "nur der Weg /f/")
+        XCTAssertNil(VerbindungenLogik.token(aus: "https://example.org/f/\(token)/mehr"))
+        XCTAssertNil(VerbindungenLogik.token(aus: "http://example.org/f/\(token)"), "nur https")
+    }
+
+    func testCodeGrossKleinLeerzeichenUndBindestrichEgal() {
+        XCTAssertEqual(VerbindungenLogik.code(aus: "K7Q2-9FXA"), "K7Q29FXA")
+        XCTAssertEqual(VerbindungenLogik.code(aus: " k7q2 9fxa\n"), "K7Q29FXA")
+        XCTAssertEqual(VerbindungenLogik.code(aus: "k7q29fxa"), "K7Q29FXA")
+        for falsch in [nil, "", "K7Q2-9FX", "K7Q2-9FXAB", "K7Q2-9FX0", "K7Q2-9FXO", "K7Q2-9FXI", "K7Q2-9FX1", "K7Q2-9FXL", "K7Q2-9FXÄ", "K7Q2_9FXA"] {
+            XCTAssertNil(VerbindungenLogik.code(aus: falsch), falsch ?? "nil")
+        }
+        XCTAssertEqual(VerbindungenLogik.codeZeichen.count, 31)
+    }
+
+    func testEinladungNimmtTokenSeiteOderCode() {
+        XCTAssertEqual(VerbindungenLogik.einladung(aus: token), token)
+        XCTAssertEqual(VerbindungenLogik.einladung(aus: VerbindungenLogik.link(token: token).absoluteString), token)
+        XCTAssertEqual(VerbindungenLogik.einladung(aus: "abcd-efgh"), "ABCDEFGH")
+        XCTAssertNil(VerbindungenLogik.einladung(aus: "Hallo"))
+    }
+
+    func testNeuVerbundenNurMeineEinladungenNachDemLetztenBlickHoechstensSiebenTage() {
+        let jetzt = Date(timeIntervalSince1970: 1_794_300_000)
+        func e(_ id: String, vor stunden: Double?, eingeladen: Bool = true, status: VerbindungStatus = .aktiv) -> VerbindungEintrag {
+            VerbindungEintrag(id: id, name: id, status: status, erstellt: stunden.map { jetzt.addingTimeInterval(-$0 * 3600) }, eingeladen: eingeladen)
+        }
+        let liste = [e("alt", vor: 24 * 8), e("gestern", vor: 20), e("eben", vor: 1), e("selbst", vor: 1, eingeladen: false),
+                     e("anfrage", vor: 1, status: .anfrageEingehend), e("ohneZeit", vor: nil)]
+        XCTAssertEqual(VerbindungenLogik.neuVerbunden(liste, seit: nil, jetzt: jetzt).map(\.id), ["eben", "gestern"], "neueste zuerst, höchstens sieben Tage")
+        XCTAssertEqual(VerbindungenLogik.neuVerbunden(liste, seit: jetzt.addingTimeInterval(-2 * 3600), jetzt: jetzt).map(\.id), ["eben"])
+        XCTAssertEqual(VerbindungenLogik.neuVerbunden(liste, seit: jetzt, jetzt: jetzt), [])
     }
 }

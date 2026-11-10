@@ -22,7 +22,7 @@ struct CrewNeueHerausforderung: Encodable, Equatable, Sendable {
     }
 }
 
-/// Ein Weg zum Server, der ohne Netz liegen blieb (Respekt geben oder zurücknehmen, Annehmen, Ablehnen, Verlassen). Geht beim nächsten Abgleich in derselben
+/// Ein Weg zum Server, der ohne Netz liegen blieb (Annehmen, Ablehnen, Verlassen; aus Build 18 auch Respekt). Geht beim nächsten Abgleich in derselben
 /// Reihenfolge raus; was der Server dann ablehnt (etwa die Verbindung ist weg), ist erledigt.
 struct CrewAuftrag: Codable, Equatable, Sendable {
     var pfad: String
@@ -96,12 +96,11 @@ final class CrewDienst {
 
     // MARK: Lesen
 
-    func neue(seit: Date?) -> [CrewReaktion] { CrewLogik.neue(antwort?.reaktionen ?? [], seit: seit) }
+    /// Neu über meine Einladung verbunden (seit dem letzten Blick, höchstens sieben Tage): "Für dich" und die Zahl am Tab. Likes gibt es seit Build 19
+    /// nicht mehr (W-034); Reaktionen im Cache bleiben nur lesbar.
+    func neue(seit: Date?) -> [VerbindungEintrag] { VerbindungenLogik.neuVerbunden(umgebung.konto.verbindungen.eintraege, seit: seit, jetzt: umgebung.uhr()) }
     var einladungen: [CrewHerausforderung] { (antwort?.herausforderungen ?? []).filter { $0.eingeladen && !$0.abgebrochen } }
     func herausforderung(_ id: String) -> CrewHerausforderung? { antwort?.herausforderungen.first { $0.id == id } }
-    func istGesendet(an: String, art: CrewReaktionArt, ziel: String) -> Bool {
-        antwort?.gesendet.contains(CrewGesendet(an: an, art: art, ziel: ziel)) ?? false
-    }
 
     // MARK: Abgleich
 
@@ -226,63 +225,5 @@ final class CrewDienst {
         case 429?: return "Du bist schon in zehn laufenden Herausforderungen."
         default: return Self.keinNetz
         }
-    }
-
-    // MARK: Reaktionen
-
-    /// Sofort als gesendet zeigen; klappt es nicht, wieder zurück und `fehler` setzen.
-    @discardableResult
-    func reagieren(an: String, art: CrewReaktionArt, ziel: String, text: String = "") async -> Bool {
-        let g = CrewGesendet(an: an, art: art, ziel: CrewLogik.begrenzt(ziel))
-        guard !(antwort?.gesendet.contains(g) ?? false) else { return true }
-        aendere { $0.gesendet.append(g) }
-        let body = try? JSONSerialization.data(withJSONObject: ["an": an, "art": art.rawValue, "ziel": g.ziel, "text": CrewLogik.begrenzt(text)])
-        let r = await sende("/freunde/reaktionen", "POST", body)
-        if r?.status == 201 || r?.status == 200 { return true }
-        if r == nil {
-            // Ohne Netz: es bleibt gezeigt und geht beim nächsten Abgleich raus.
-            merke(CrewAuftrag(pfad: "/freunde/reaktionen", methode: "POST", koerper: body))
-            return true
-        }
-        aendere { $0.gesendet.removeAll { $0 == g } }
-        fehler = switch r?.status {
-        case 403?: "Diese Person teilt Gym gerade nicht mit dir."
-        case 404?: "Ihr seid nicht mehr verbunden."
-        case 429?: "Zu viele Reaktionen. Warte eine Minute."
-        default: Self.keinNetz
-        }
-        return false
-    }
-
-    func zuruecknehmen(an: String, art: CrewReaktionArt, ziel: String) async {
-        let g = CrewGesendet(an: an, art: art, ziel: CrewLogik.begrenzt(ziel))
-        guard antwort?.gesendet.contains(g) == true else { return }
-        aendere { $0.gesendet.removeAll { $0 == g } }
-        let body = try? JSONSerialization.data(withJSONObject: ["an": an, "art": art.rawValue, "ziel": g.ziel])
-        let r = await sende("/freunde/reaktionen", "DELETE", body)
-        if r == nil {
-            merke(CrewAuftrag(pfad: "/freunde/reaktionen", methode: "DELETE", koerper: body))
-            return
-        }
-        guard r?.status != 200 else { return }
-        aendere { $0.gesendet.append(g) }
-        fehler = Self.keinNetz
-    }
-
-    // MARK: Einladungslink
-
-    /// Ein https-Link, 24 Stunden gültig. Die Seite des Servers öffnet `lumenfit://freund?d=<Token>`, dann übernimmt der bekannte Ablauf.
-    func einladungsLink() async -> URL? {
-        if demo { return URL(string: "https://lumenfit.example.invalid/f/" + String(repeating: "A", count: 43)) }
-        guard let zugang = KontoZugang.lade(), let r = await sende("/freunde/einladung", "POST"), r.status == 201 else {
-            fehler = Self.keinNetz
-            return nil
-        }
-        struct Antwort: Decodable { var token: String }
-        guard let a = try? JSONDecoder().decode(Antwort.self, from: r.daten), VerbindungenLogik.istToken(a.token) else {
-            fehler = Self.keinNetz
-            return nil
-        }
-        return zugang.server.appendingPathComponent("f").appendingPathComponent(a.token)
     }
 }

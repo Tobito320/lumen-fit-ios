@@ -137,7 +137,7 @@ private struct TabsAnsicht: View {
     @State private var sitzung: GymSitzung?
     @AppStorage(CrewDienst.gesehenSchluessel) private var crewGesehen: Double = 0
 
-    /// Zahl am Tab Freunde: neue Reaktionen seit dem letzten Blick plus offene Einladungen (vorher an der Crew-Zeile im Training).
+    /// Zahl am Tab Freunde: neu über meine Einladung Verbundene seit dem letzten Blick plus offene Einladungen zu Herausforderungen.
     private var freundeNeu: Int {
         let dienst = CrewDienst.von(umgebung)
         return dienst.neue(seit: crewGesehen > 0 ? Date(timeIntervalSince1970: crewGesehen) : nil).count + dienst.einladungen.count

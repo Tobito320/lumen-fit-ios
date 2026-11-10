@@ -55,7 +55,7 @@ struct CrewBestwert: Equatable, Sendable {
     var wdh: Int
 }
 
-/// Ein Rekord der Pinnwand mit der Verbindung, von der er kommt (für den Respekt-Knopf).
+/// Ein Rekord der Pinnwand mit der Verbindung, von der er kommt.
 struct CrewPinnwandEintrag: Identifiable, Equatable, Sendable {
     var person: String
     var rekord: PinnwandRekord

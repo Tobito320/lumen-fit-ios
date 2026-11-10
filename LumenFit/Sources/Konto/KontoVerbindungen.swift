@@ -48,13 +48,21 @@ final class VerbindungenSpeicher {
 /// Was beim Scannen oder Annehmen eines Codes herauskommt.
 enum EinladungErgebnis: Equatable, Sendable {
     case person(String)
-    /// Die Anfrage ist raus; `id` ist die Verbindung beim Server (bis zur Annahme eine "wartende" in der Liste).
+    /// Ein alter Link aus Build 18: die Anfrage ist raus; `id` ist die Verbindung beim Server (bis zur Annahme eine "wartende" in der Liste).
     case angefragt(id: String)
+    /// QR-Code oder Code: gleich verbunden.
+    case verbunden(id: String)
     case fehler(String)
 }
 
 struct EigeneEinladung: Equatable, Sendable {
     var token: String
+    var laeuftAb: Date
+}
+
+/// Ein Code zum Abtippen ("K7Q2-9FX"), so wie der Server ihn zeigt.
+struct EigenerCode: Equatable, Sendable {
+    var code: String
     var laeuftAb: Date
 }
 
@@ -135,29 +143,42 @@ extension KontoDienst {
         }
     }
 
-    /// Die Anfrage an den Besitzer des Codes. Daten fließen erst, wenn er sie annimmt.
+    /// Mit dem Besitzer des Codes verbinden. QR-Code und Code verbinden sofort; ein alter Link aus Build 18 wird eine Anfrage, die er erst annimmt.
     func einladungEinloesen(_ token: String) async -> EinladungErgebnis {
         let e = await einladungSenden("/verbindungen/anfrage", token) { daten in
-            struct Antwort: Decodable { var id: String }
+            struct Antwort: Decodable { var id: String; var status: String? }
             guard let a = try? JSONDecoder().decode(Antwort.self, from: daten) else { return EinladungErgebnis.fehler(Self.keinNetz) }
-            return EinladungErgebnis.angefragt(id: a.id)
+            return a.status == "aktiv" ? EinladungErgebnis.verbunden(id: a.id) : EinladungErgebnis.angefragt(id: a.id)
         }
-        if case .angefragt = e { await verbindungenNeuLaden() }
+        switch e {
+        case .angefragt, .verbunden: await verbindungenNeuLaden()
+        case .person, .fehler: break
+        }
         return e
+    }
+
+    /// Ein Code zum Abtippen für eine Person, 24 Stunden gültig (statt eines Links). Im Code steht nie ein Wert aus Health.
+    func codeErzeugen() async -> EigenerCode? {
+        guard let k = await kennungBereit(), let body = try? JSONSerialization.data(withJSONObject: ["art": "code"]),
+              let r = await sendeMitKonto("/freunde/einladung", methode: "POST", body: body, kennung: k), r.status == 201 else { return nil }
+        struct Antwort: Decodable { var code: String; var laeuftAb: String }
+        guard let a = try? JSONDecoder().decode(Antwort.self, from: r.daten), VerbindungenLogik.code(aus: a.code) != nil,
+              let ende = LoveaVertrag.isoDatum(a.laeuftAb) else { return nil }
+        return EigenerCode(code: a.code, laeuftAb: ende)
     }
 
     private static let keinNetz = "Das hat nicht geklappt. Prüfe die Verbindung und versuche es nochmal."
 
     private func einladungSenden(_ pfad: String, _ token: String, ok: (Data) -> EinladungErgebnis) async -> EinladungErgebnis {
-        guard VerbindungenLogik.istToken(token) else { return .fehler("Das ist kein Code von Lumen Fit.") }
-        guard let k = await kennungBereit(), let body = try? JSONSerialization.data(withJSONObject: ["token": token]),
+        guard let eingabe = VerbindungenLogik.istToken(token) ? token : VerbindungenLogik.code(aus: token) else { return .fehler("Das ist kein Code von Lumen Fit.") }
+        guard let k = await kennungBereit(), let body = try? JSONSerialization.data(withJSONObject: ["token": eingabe]),
               let r = await sendeMitKonto(pfad, methode: "POST", body: body, kennung: k) else { return .fehler(Self.keinNetz) }
         switch r.status {
         case 200, 201: return ok(r.daten)
         case 400: return .fehler("Das ist dein eigener Code.")
         case 404: return .fehler("Der Code ist abgelaufen oder schon benutzt. Bitte um einen neuen.")
         case 409: return .fehler("Ihr seid schon verbunden oder die Anfrage ist schon offen.")
-        case 429: return .fehler("Zu viele Versuche. Warte eine Minute.")
+        case 429: return .fehler("Zu viele Versuche. Versuche es später nochmal.")
         default: return .fehler(Self.keinNetz)
         }
     }

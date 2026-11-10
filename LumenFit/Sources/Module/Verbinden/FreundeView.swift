@@ -2,7 +2,7 @@ import PhotosUI
 import SwiftUI
 
 /// Wochenkarten (Idee 89, 90): die eigene Wochenkarte als Bild, Link oder QR teilen, Karten von Freunden lesen (Link, Zwischenablage, QR im Foto),
-/// vor dem Übernehmen ansehen, die Karten der Woche mit "Respekt" statt Like. Alles ohne Server; `daten` ist die Nutzlast eines geöffneten Links.
+/// vor dem Übernehmen ansehen, die Karten der Woche (ohne Likes, W-034). Alles ohne Server; `daten` ist die Nutzlast eines geöffneten Links.
 /// Die eine Rangliste steht im Tab Freunde (10.11.2026), hier nur die Karten ohne Plätze.
 struct FreundeView: View {
     var daten: String?
@@ -135,7 +135,6 @@ private struct FreundeInhalt: View {
                 Text(FreundeText.zusammenfassung(zeile.karte)).font(.footnote).foregroundStyle(palette.text2)
             }
             Spacer(minLength: Abstand.s)
-            respektKnopf(zeile.karte)
         }
         .foregroundStyle(palette.text)
         .padding(.horizontal, Abstand.l)
@@ -143,22 +142,6 @@ private struct FreundeInhalt: View {
         .contextMenu {
             Button("Karte entfernen", systemImage: "trash", role: .destructive) { entferne(zeile.karte) }
         }
-    }
-
-    /// "Respekt" statt Like: ein stilles Zeichen, nur auf diesem Gerät gemerkt, ohne Zähler.
-    private func respektKnopf(_ karte: FreundKarte) -> some View {
-        Button {
-            var liste = daten.verbindung.freunde
-            if let i = liste.firstIndex(where: { $0.id == karte.id }) {
-                liste[i].respekt.toggle()
-                daten.verbindung.freunde = liste
-            }
-        } label: {
-            Image(systemName: karte.respekt ? "hands.clap.fill" : "hands.clap")
-                .frame(minWidth: Abstand.tippflaeche, minHeight: Abstand.tippflaeche)
-        }
-        .accessibilityLabel(karte.respekt ? "Respekt für \(karte.name) zurücknehmen" : "\(karte.name) Respekt geben")
-        .haptik(.erfolg, bei: karte.respekt)
     }
 
     private func entferne(_ karte: FreundKarte) {

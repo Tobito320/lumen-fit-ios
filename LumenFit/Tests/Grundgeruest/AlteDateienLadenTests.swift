@@ -176,6 +176,30 @@ final class AlteDateienLadenTests: XCTestCase {
         pruefe(DatenSatz(profil: .testA, ordner: ordner, ereignisse: EreignisKanal(), uhr: TestUhr().uhr).training.plan, "nach dem Neustart")
     }
 
+    /// W-033: `verbindungen-server.json` aus Build 18 ohne `erstellt` und `eingeladen` bleibt lesbar; die neuen Felder (Server-Zeit mit Millisekunden)
+    /// kommen an, ein Typfehler kostet nur sein Feld, und beides übersteht Speichern und Laden.
+    func testVerbindungenOhneUndMitErstelltUndEingeladenSindLesbar() throws {
+        let alt = #"{"verbindungen":[{"id":"v1","name":"Freund","status":"aktiv","ich":{},"siehst":["gym"]}],"teilen":["gym"]}"#
+        let a = try LoveaVertrag.decoder().decode(VerbindungenAntwort.self, from: Data(alt.utf8))
+        XCTAssertEqual(a.verbindungen.map(\.id), ["v1"])
+        XCTAssertEqual(a.verbindungen.first?.eingeladen, false)
+        XCTAssertNil(a.verbindungen.first?.erstellt)
+
+        let neu = #"{"verbindungen":[{"id":"v1","name":"Freund","status":"aktiv","erstellt":"2026-11-10T09:12:34.567Z","eingeladen":true},"#
+            + #"{"id":"v2","name":"Zwei","status":"aktiv","erstellt":"kaputt","eingeladen":"ja"}],"teilen":[]}"#
+        let n = try LoveaVertrag.decoder().decode(VerbindungenAntwort.self, from: Data(neu.utf8))
+        XCTAssertEqual(n.verbindungen.map(\.eingeladen), [true, false], "ein Typfehler kostet nur sein Feld")
+        XCTAssertNotNil(n.verbindungen.first?.erstellt)
+        XCTAssertEqual(n.verbindungen.first?.erstellt, LoveaVertrag.isoDatum("2026-11-10T09:12:34.567Z"))
+        XCTAssertNil(n.verbindungen.last?.erstellt)
+
+        let datei = try tempOrdner().appendingPathComponent(VerbindungenSpeicher.dateiName)
+        VerbindungenSpeicher(datei: datei).setze(n)
+        let wieder = VerbindungenSpeicher(datei: datei)
+        XCTAssertEqual(wieder.eintraege.map(\.eingeladen), [true, false])
+        XCTAssertNotNil(wieder.eintraege.first?.erstellt)
+    }
+
     /// W-003: alte Datei ohne `schlichtGesetzt`. Monochrom (der alte Standard) wird einmal Schlicht, ein selbst gewähltes Theme bleibt,
     /// und wer danach wieder Monochrom wählt, behält es beim nächsten Start.
     func testAltesMonochromWirdEinmalSchlichtEigeneWahlBleibt() throws {

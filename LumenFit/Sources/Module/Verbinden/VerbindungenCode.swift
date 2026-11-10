@@ -1,9 +1,10 @@
 import PhotosUI
 import SwiftUI
 
-/// Das eine Blatt "Kollegen verbinden" für beide Seiten: oben groß mein Code, darunter "Code scannen". Der Code ist ein zufälliges Token vom Server,
-/// zehn Minuten gültig, nur einmal nutzbar; im Code steht kein Wert aus Health. Wer ihn scannt, schickt eine Anfrage; sie erscheint hier gleich mit
-/// "Annehmen" und "Ablehnen", danach die Wahl "Wenig" oder "Alles". Erst nach dem Annehmen fließen Daten (der Server prüft das).
+/// "Freund einladen" (W-033, ab Build 19): oben groß der QR-Code, darunter klein "Stattdessen mit Code". Der QR-Code trägt die Seite des Servers
+/// (`https://…/f/<Token>`): die iPhone-Kamera öffnet damit Lumen Fit, ohne App zeigt die Seite TestFlight. Er gilt zehn Minuten (vor Ort), der Code
+/// 24 Stunden, beide nur einmal; in keinem steht ein Wert aus Health. Wer einen davon benutzt, ist sofort verbunden: das Blatt zeigt dann
+/// "Verbunden mit NAME" und die Wahl, was die Person sieht (Standard Schritte und Gym).
 struct VerbindungCodeBlatt: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
@@ -12,21 +13,21 @@ struct VerbindungCodeBlatt: View {
     @State private var bild: UIImage?
     @State private var fehlgeschlagen = false
     @State private var bekannt: Set<String> = []
-    @State private var offen: String?
-    @State private var angenommen: String?
-    @State private var scanOffen = false
-    @State private var fehler: String?
+    @State private var verbunden: String?
+    @State private var code: EigenerCode?
+    @State private var codeLaedt = false
+    @State private var codeFehler = false
+    @State private var kopiert = false
 
     private var speicher: VerbindungenSpeicher { umgebung.konto.verbindungen }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: Abstand.l) {
-                if let angenommen {
-                    VerbindungVerbundenAnsicht(id: angenommen)
-                } else if let anfrage = speicher.anfragen.first(where: { $0.id == offen }) {
-                    anfrageAnsicht(anfrage)
+                if let verbunden {
+                    VerbindungVerbundenAnsicht(id: verbunden)
                 } else {
+                    qrAnsicht
                     codeAnsicht
                 }
                 Spacer(minLength: 0)
@@ -34,21 +35,17 @@ struct VerbindungCodeBlatt: View {
             .padding(Abstand.l)
             .frame(maxWidth: .infinity)
             .lumenHintergrund()
-            .navigationTitle("Kollegen verbinden")
+            .navigationTitle("Freund einladen")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
             .task { await ablauf() }
-            .sheet(isPresented: $scanOffen) { VerbindungScanBlatt() }
-            .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
-                Button("Verstanden", role: .cancel) {}
-            } message: { Text(fehler ?? "") }
         }
     }
 
-    // MARK: Mein Code
+    // MARK: QR-Code
 
     @ViewBuilder
-    private var codeAnsicht: some View {
+    private var qrAnsicht: some View {
         if let einladung, let bild {
             Image(uiImage: bild)
                 .interpolation(.none)
@@ -57,58 +54,58 @@ struct VerbindungCodeBlatt: View {
                 .padding(Abstand.m)
                 .background(Color.white, in: .rect(cornerRadius: Rundung.karte, style: .continuous))
                 .frame(maxWidth: 280)
-                .accessibilityLabel("QR-Code für eine Verbindung")
+                .accessibilityLabel("QR-Code zum Einladen")
             TimelineView(.periodic(from: .now, by: 1)) { zeit in
                 let rest = Int(einladung.laeuftAb.timeIntervalSince(zeit.date))
                 if rest > 0 {
                     Text("Gültig noch \(rest / 60):\(String(format: "%02d", rest % 60))").monospacedDigit().foregroundStyle(palette.text2)
                 } else {
                     VStack(spacing: Abstand.s) {
-                        Text("Der Code ist abgelaufen.").foregroundStyle(palette.text2)
-                        Button("Neuen Code zeigen") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
+                        Text("Der QR-Code ist abgelaufen.").foregroundStyle(palette.text2)
+                        Button("Neuen QR-Code zeigen") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
                     }
                 }
             }
-            Text("Die andere Person scannt den Code mit der Kamera. Dann siehst du sie hier und nimmst sie an.")
+            Text("Dein Freund scannt ihn mit der iPhone-Kamera. Dann seid ihr sofort verbunden.")
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
         } else if fehlgeschlagen {
-            FehlerKarte(titel: "Kein Code möglich", hilfe: "Die App konnte dein Konto nicht erreichen. Prüfe das Netz und versuche es nochmal.")
+            FehlerKarte(titel: "Kein QR-Code möglich", hilfe: "Die App konnte dein Konto nicht erreichen. Prüfe das Netz und versuche es nochmal.")
             Button("Nochmal") { Task { await erzeugen() } }.buttonStyle(.lumenHauptknopf)
         } else {
             ProgressView()
         }
-        Button { scanOffen = true } label: { Label("Code scannen", systemImage: "qrcode.viewfinder") }
-            .buttonStyle(.bordered)
-            .frame(minHeight: Abstand.tippflaeche)
-        if let einladung {
-            ShareLink(item: VerbindungenLogik.link(token: einladung.token), message: Text("Verbinde dich mit mir in Lumen Fit. Der Link gilt 10 Minuten.")) {
-                Label("Link teilen", systemImage: "link")
+    }
+
+    // MARK: Code
+
+    @ViewBuilder
+    private var codeAnsicht: some View {
+        if let code {
+            VStack(spacing: Abstand.s) {
+                Text(code.code)
+                    .font(.title.weight(.semibold).monospaced())
+                    .foregroundStyle(palette.text)
+                    .textSelection(.enabled)
+                Button {
+                    UIPasteboard.general.string = code.code
+                    kopiert = true
+                } label: {
+                    Label(kopiert ? "Kopiert" : "Code kopieren", systemImage: kopiert ? "checkmark" : "doc.on.doc")
+                }
+                .buttonStyle(.bordered)
+                .frame(minHeight: Abstand.tippflaeche)
+                .sensoryFeedback(.success, trigger: kopiert)
+                Text("Gilt 24 Stunden für eine Person. Dein Freund tippt ihn in Lumen Fit unter Freunde bei \"Code eingeben\" ein.")
+                    .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
             }
+        } else {
+            Button { Task { await codeHolen() } } label: {
+                if codeLaedt { ProgressView() } else { Text(codeFehler ? "Kein Netz. Nochmal mit Code versuchen" : "Stattdessen mit Code") }
+            }
+            .font(.footnote.weight(.semibold))
+            .disabled(codeLaedt)
             .frame(minHeight: Abstand.tippflaeche)
         }
-    }
-
-    // MARK: Anfrage
-
-    private func anfrageAnsicht(_ a: VerbindungEintrag) -> some View {
-        VStack(spacing: Abstand.m) {
-            Image(systemName: "person.crop.circle.badge.plus").font(.system(size: 48)).foregroundStyle(palette.text2).accessibilityHidden(true)
-            Text("\(a.name) möchte sich verbinden").font(.headline).multilineTextAlignment(.center)
-            Text("Erst nach Annehmen sieht die Person etwas, zuerst nur Schritte und Gym.")
-                .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
-            Button("Annehmen") { Task { await annehmen(a.id) } }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
-            Button("Ablehnen", role: .destructive) { Task { await ablehnen(a.id) } }.frame(minHeight: Abstand.tippflaeche)
-        }
-    }
-
-    private func annehmen(_ id: String) async {
-        if await umgebung.konto.anfrageAnnehmen(id) { angenommen = id } else { fehler = "Das ließ sich nicht annehmen. Versuche es nochmal." }
-    }
-
-    private func ablehnen(_ id: String) async {
-        guard await umgebung.konto.anfrageAblehnen(id) else { fehler = "Das ließ sich nicht ablehnen. Versuche es nochmal."; return }
-        offen = nil
-        await erzeugen()   // der Code der abgelehnten Anfrage ist verbraucht
     }
 
     // MARK: Ablauf
@@ -116,33 +113,37 @@ struct VerbindungCodeBlatt: View {
     private func erzeugen() async {
         fehlgeschlagen = false
         guard let e = await umgebung.konto.einladungErzeugen() else { einladung = nil; bild = nil; fehlgeschlagen = true; return }
-        bild = FreundeQR.bild(VerbindungenLogik.link(token: e.token).absoluteString)
+        let ziel = KontoZugang.lade().map { VerbindungenLogik.seite(server: $0.server, token: e.token) } ?? VerbindungenLogik.link(token: e.token)
+        bild = FreundeQR.bild(ziel.absoluteString)
         einladung = e
     }
 
-    /// Erst die Liste neu holen und merken, was schon da ist, dann den Code zeigen; danach alle drei Sekunden nachsehen. Eine neue Anfrage bleibt im Blatt.
+    private func codeHolen() async {
+        codeLaedt = true
+        code = await umgebung.konto.codeErzeugen()
+        codeFehler = code == nil
+        codeLaedt = false
+    }
+
+    /// Erst die Liste neu holen und merken, wer schon da ist, dann den QR-Code zeigen; danach alle drei Sekunden nachsehen. Wer über den QR-Code
+    /// oder den Code dazukommt, steht gleich im Blatt.
     private func ablauf() async {
         await umgebung.konto.verbindungenNeuLaden()
-        bekannt = Set(speicher.anfragen.map(\.id))
+        bekannt = Set(speicher.eintraege.map(\.id))
         await erzeugen()
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(3))
             if Task.isCancelled { return }
             await umgebung.konto.verbindungenNeuLaden()
-            guard angenommen == nil else { continue }
-            if let id = offen, !speicher.anfragen.contains(where: { $0.id == id }) {
-                offen = nil   // woanders beantwortet (Liste, anderes Gerät): zurück zum Code
-                await erzeugen()
-            } else if offen == nil, let neu = VerbindungenLogik.neueAnfrage(speicher.anfragen, bekannt: bekannt) {
-                bekannt.insert(neu.id)
-                offen = neu.id
-            }
+            guard verbunden == nil, let neu = VerbindungenLogik.neuePerson(speicher.eintraege, bekannt: bekannt) else { continue }
+            bekannt.insert(neu.id)
+            verbunden = neu.id
         }
     }
 }
 
 /// "Verbunden mit NAME": die Wahl "Wenig" oder "Alles" und darunter jeder Bereich einzeln (Standard Schritte und Gym, wie es der Server setzt),
-/// ein Knopf zur Person und "Fertig". Die Liste scrollt, "Fertig" bleibt unten stehen. Für beide Seiten, im Blatt "Kollegen verbinden" und im Scan-Blatt.
+/// ein Knopf zur Person und "Fertig". Die Liste scrollt, "Fertig" bleibt unten stehen. Für beide Seiten, im Blatt "Freund einladen" und in "Code eingeben".
 struct VerbindungVerbundenAnsicht: View {
     let id: String
     @Environment(AppUmgebung.self) private var umgebung
@@ -186,7 +187,9 @@ struct VerbindungVerbundenAnsicht: View {
     }
 }
 
-/// Einen Code einlesen (Kamera, Foto oder Link) und fragen, ob du dich mit dieser Person verbinden willst. Mit `token` direkt der Schritt "wer ist das?".
+/// "Code eingeben": zuerst das Feld für den Code eines Freundes, darunter Scannen mit der Kamera (erst auf Tipp) oder ein Foto; dann "Mit NAME verbinden?".
+/// QR-Code und Code verbinden sofort, ein alter Link aus Build 18 wartet auf die Annahme. Mit `token` (Link, QR-Code mit der Kamera-App) direkt der
+/// Schritt "wer ist das?".
 struct VerbindungScanBlatt: View {
     var token: String?
     @Environment(AppUmgebung.self) private var umgebung
@@ -196,6 +199,7 @@ struct VerbindungScanBlatt: View {
     @State private var phase: Phase = .scannen
     @State private var foto: PhotosPickerItem?
     @State private var eingabe = ""
+    @State private var kamera = false
 
     private enum Phase: Equatable {
         case scannen
@@ -236,7 +240,7 @@ struct VerbindungScanBlatt: View {
             .padding(Abstand.l)
             .frame(maxWidth: .infinity)
             .lumenHintergrund()
-            .navigationTitle("Code scannen")
+            .navigationTitle(token == nil ? "Code eingeben" : "Verbinden")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Schließen") { dismiss() } } }
             .task { if let token { await ansehen(token) } }
@@ -262,39 +266,48 @@ struct VerbindungScanBlatt: View {
 
     @ViewBuilder
     private var scannen: some View {
-        if EssenBarcodeKamera.verfuegbar {
+        Text("Tippe den Code ein, den dein Freund dir geschickt hat.").foregroundStyle(palette.text2).multilineTextAlignment(.center)
+        TextField("K7Q2-9FX", text: $eingabe)
+            .font(.title2.monospaced())
+            .multilineTextAlignment(.center)
+            .textInputAutocapitalization(.characters).autocorrectionDisabled()
+            .submitLabel(.go).onSubmit { Task { await gelesen(eingabe) } }
+            .textFieldStyle(.roundedBorder)
+            .frame(minHeight: Abstand.tippflaeche)
+            .accessibilityLabel("Code deines Freundes")
+        Button("Weiter") { Task { await gelesen(eingabe) } }
+            .buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
+            .disabled(eingabe.trimmingCharacters(in: .whitespaces).isEmpty)
+        if kamera {
             EssenBarcodeKamera(gefunden: { text in Task { await gelesen(text) } }, symbologien: [.qr])
                 .clipShape(.rect(cornerRadius: Rundung.karte, style: .continuous))
-                .frame(maxHeight: 360)
-                .accessibilityLabel("Kamera zum Scannen des Codes")
-        } else {
-            Text("Die Kamera ist nicht verfügbar. Wähle ein Foto vom Code oder füge den Link ein.").foregroundStyle(palette.text2).multilineTextAlignment(.center)
+                .frame(maxHeight: 300)
+                .accessibilityLabel("Kamera zum Scannen des QR-Codes")
+        } else if EssenBarcodeKamera.verfuegbar {
+            Button { kamera = true } label: { Label("QR-Code mit der Kamera scannen", systemImage: "qrcode.viewfinder") }
+                .frame(minHeight: Abstand.tippflaeche)
         }
-        PhotosPicker(selection: $foto, matching: .images) { Label("Foto mit Code wählen", systemImage: "photo") }
+        PhotosPicker(selection: $foto, matching: .images) { Label("Foto mit QR-Code wählen", systemImage: "photo") }
             .frame(minHeight: Abstand.tippflaeche)
-        HStack {
-            TextField("Link oder Code einfügen", text: $eingabe)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
-                .submitLabel(.go).onSubmit { Task { await gelesen(eingabe) } }
-            Button("Prüfen") { Task { await gelesen(eingabe) } }.disabled(eingabe.isEmpty)
-        }
-        .frame(minHeight: Abstand.tippflaeche)
     }
 
     private func frage(_ name: String) -> some View {
         VStack(spacing: Abstand.m) {
             Image(systemName: "person.crop.circle.badge.questionmark").font(.system(size: 48)).foregroundStyle(palette.text2).accessibilityHidden(true)
             Text("Mit \(name) verbinden?").font(.headline).multilineTextAlignment(.center)
-            Text("\(name) bekommt eine Anfrage und muss sie annehmen. Du zeigst zuerst nur Schritte und Gym; das änderst du danach.")
+            Text("Ihr seht euch danach gegenseitig. Du zeigst zuerst nur Schritte und Gym; das änderst du gleich danach.")
                 .font(.footnote).foregroundStyle(palette.text2).multilineTextAlignment(.center)
-            Button("Anfrage senden") { Task { await senden(name) } }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
+            Button("Verbinden") { Task { await senden(name) } }.buttonStyle(.lumenHauptknopf).frame(minHeight: Abstand.tippflaeche)
             Button("Abbrechen", role: .cancel) { dismiss() }.frame(minHeight: Abstand.tippflaeche)
         }
     }
 
     private func gelesen(_ text: String) async {
         guard aktuell == nil, phase == .scannen else { return }
-        guard let t = VerbindungenLogik.token(aus: text) else { phase = .fehler("Das ist kein Code von Lumen Fit."); return }
+        guard let t = VerbindungenLogik.einladung(aus: text) else {
+            phase = .fehler("Das ist kein Code von Lumen Fit. Ein Code hat 8 Zeichen, zum Beispiel K7Q2-9FX.")
+            return
+        }
         await ansehen(t)
     }
 
@@ -304,7 +317,7 @@ struct VerbindungScanBlatt: View {
         switch await umgebung.konto.einladungAnsehen(t) {
         case .person(let name): phase = .frage(name)
         case .fehler(let text): phase = .fehler(text)
-        case .angefragt: phase = .fehler("Das hat nicht geklappt.")
+        case .angefragt, .verbunden: phase = .fehler("Das hat nicht geklappt.")
         }
     }
 
@@ -313,6 +326,7 @@ struct VerbindungScanBlatt: View {
         phase = .sendet
         switch await umgebung.konto.einladungEinloesen(t) {
         case .angefragt(let id): phase = .wartet(name: name, id: id)
+        case .verbunden(let id): phase = .verbunden(id: id)
         case .person: phase = .fehler("Das hat nicht geklappt.")
         case .fehler(let text): phase = .fehler(text)
         }
