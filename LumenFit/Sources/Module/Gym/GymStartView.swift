@@ -236,8 +236,9 @@ struct GymStartView: View {
                 .font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
         }
         .buttonStyle(.borderedProminent)
-        .tint(.white)
-        .foregroundStyle(.black)
+        // Hell schwarzer Knopf mit weißer Schrift, dunkel umgekehrt (vorher immer weiß: im hellen Modus kaum zu sehen).
+        .tint(palette.text)
+        .foregroundStyle(palette.grund)
     }
 
     /// Ein freies Training ohne Plantag (derselbe Weg wie "Freies Training" im Menü von "Anderer Tag").

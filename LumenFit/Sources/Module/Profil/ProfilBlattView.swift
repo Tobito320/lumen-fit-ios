@@ -58,8 +58,10 @@ struct ProfilBlattView: View {
     }
 
     private func link<Ziel: View>(_ titel: String, _ eintrag: NutzungEintrag, symbol: String, wert: String? = nil, @ViewBuilder ziel: @escaping () -> Ziel) -> some View {
-        NavigationLink { ziel() } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
-            .nutzungEintrag(eintrag)
+        // Getippt zählt, wenn die Zielseite erscheint: eine Tipp-Geste an der Zeile schluckt in der Liste den Tipp auf Text und Symbol
+        // (nur die freie Fläche öffnete die Seite, Fund 10.11.2026).
+        NavigationLink { ziel().onAppear { umgebung.konto.nutzung.getippt(eintrag) } } label: { ProfilListenZeile(titel, symbol: symbol, wert: wert) }
+            .onAppear { umgebung.konto.nutzung.gesehen(eintrag) }
     }
 }
 

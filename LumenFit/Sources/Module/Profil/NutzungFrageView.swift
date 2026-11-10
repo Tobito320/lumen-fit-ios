@@ -89,7 +89,7 @@ private struct NutzungEintragMarke: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onAppear { umgebung.konto.nutzung.gesehen(eintrag) }
-            .simultaneousGesture(TapGesture().onEnded { umgebung.konto.nutzung.getippt(eintrag) })
+            // Keine Tipp-Geste hier: in einer Liste schluckt sie den Tipp auf den Zeileninhalt. "Getippt" zählt die Zielseite beim Erscheinen.
     }
 }
 
