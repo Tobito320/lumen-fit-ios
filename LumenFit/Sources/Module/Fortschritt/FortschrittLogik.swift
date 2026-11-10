@@ -107,11 +107,11 @@ enum FortschrittLogik {
                           katalog: (String) -> Uebung? = { UebungsKatalog.nachId[$0] }) -> TrainingsWochenVergleich {
         let montag = Datum.montagDerWoche(heute)
         let davor = Datum.addTage(montag, -28)
-        var jetzt = Summe(), schnitt = Summe(), einheiten = 0, einheitenDavor = 0
+        var woche = Summe(), schnitt = Summe(), einheiten = 0, einheitenDavor = 0
         for s in sessions where beendet(s, heute: heute, jetzt: jetzt) {
             let tag = Datum.text(s.start)
             if tag >= montag, tag <= heute {
-                jetzt.add(s)
+                woche.add(s)
                 einheiten += 1
             } else if tag >= davor, tag < montag {
                 schnitt.add(s)
@@ -121,8 +121,8 @@ enum FortschrittLogik {
         let zeilen = gewichte(sessions, plan: plan, heute: heute, katalog: katalog)
         return TrainingsWochenVergleich(
             einheiten: einheiten, einheitenSchnitt: Double(einheitenDavor) / 4,
-            volumen: jetzt.volumen, volumenSchnitt: schnitt.volumen / 4,
-            saetze: jetzt.saetze, saetzeSchnitt: Double(schnitt.saetze) / 4,
+            volumen: woche.volumen, volumenSchnitt: schnitt.volumen / 4,
+            saetze: woche.saetze, saetzeSchnitt: Double(schnitt.saetze) / 4,
             gestiegen: zeilen.filter { $0.aenderung4Wochen > 0 }.count, hauptuebungen: zeilen.count)
     }
 

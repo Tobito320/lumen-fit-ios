@@ -97,6 +97,7 @@ final class GesundheitsStandTests: XCTestCase {
     }
 
     func testSchritteNurAusHealthHandNurAnTagenOhneHealth() async {
+        let heute = self.heute
         // Besitzer 10.11.2026: Schritte und Strecke nur aus Apple Health; vorher galt je Tag das Maximum mit Band und Hand.
         let gestern = Datum.addTage(heute, -1)
         let vorgestern = Datum.addTage(heute, -2)
