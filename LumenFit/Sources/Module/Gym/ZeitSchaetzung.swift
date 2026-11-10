@@ -42,7 +42,7 @@ enum ZeitSchaetzung {
     static let kurzMinuten = 30
 
     /// Eine Übung allein oder ein Supersatz-Paar (`supersatz` an der ersten). Cardio zählt nie als Paar.
-    private static func bloecke(_ uebungen: [PlanUebung]) -> [[PlanUebung]] {
+    static func bloecke(_ uebungen: [PlanUebung]) -> [[PlanUebung]] {
         var aus: [[PlanUebung]] = []
         var i = 0
         while i < uebungen.count {

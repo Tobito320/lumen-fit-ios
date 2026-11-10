@@ -7,14 +7,15 @@ enum GymTabLogik {
     static func rund(_ minuten: Int) -> Int { max(5, Int((Double(minuten) / 5).rounded()) * 5) }
 
     /// Kurzversion des Tages ("Kurz · 30 min"): die ersten Übungen des Plans, solange der Tag auf 5 min gerundet in `grenze` passt;
-    /// immer mindestens eine. `minuten` ist die Schätzung (Standard `ZeitSchaetzung`), damit die Regel deren Formel folgt.
+    /// immer mindestens eine. Ein Supersatz-Paar bleibt zusammen (beide oder keine). `minuten` ist die Schätzung (Standard `ZeitSchaetzung`),
+    /// damit die Regel deren Formel folgt.
     static func kurzversion(_ tag: TrainingsTag, grenze: Int = 30,
                             minuten: (TrainingsTag) -> Int = { ZeitSchaetzung.minuten($0) }) -> TrainingsTag {
         var kurz = tag
         kurz.uebungen = []
-        for u in tag.uebungen {
+        for block in ZeitSchaetzung.bloecke(tag.uebungen) {
             var probe = kurz
-            probe.uebungen.append(u)
+            probe.uebungen += block
             if !kurz.uebungen.isEmpty, rund(minuten(probe)) > grenze { break }
             kurz = probe
         }
