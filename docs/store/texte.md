@@ -60,11 +60,13 @@ Lumen Fit works without sign-in: the app creates a local profile on first launch
 
 # App Store page Lumen Fit (English, all other countries)
 
+The plain name "Lumen Fit" is taken in English by another developer (App Store Connect 409, 10.11.2026), German keeps it.
+
 ## Name (30)
-Lumen Fit
+Lumen Fit: Gym Planner
 
 ## Subtitle (30)
-Gym plan, sets and progress
+Track sets, reps and progress
 
 ## Promotional text (170)
 Your gym plan, ready after eight questions. Check off sets, add weight and watch yourself get stronger. No ads, no subscription.
