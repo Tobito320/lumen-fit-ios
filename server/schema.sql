@@ -135,3 +135,7 @@ CREATE TABLE IF NOT EXISTS reaktionen (
 CREATE UNIQUE INDEX IF NOT EXISTS reaktionen_eindeutig ON reaktionen (von, an, art, ziel);
 -- Crew: Reaktionen an ein Konto nach Zeit.
 CREATE INDEX IF NOT EXISTS reaktionen_an ON reaktionen (an, zeit);
+-- Crew: Alte Reaktionen nach Zeit wegräumen.
+CREATE INDEX IF NOT EXISTS reaktionen_zeit ON reaktionen (zeit);
+-- Crew: neue Herausforderungen je Ersteller in 24 Stunden zählen.
+CREATE INDEX IF NOT EXISTS herausforderungen_ersteller ON herausforderungen (ersteller, erstellt);

@@ -158,11 +158,15 @@ const UNGUELTIG = (h) => h.nein(404, "Einladung ungültig oder abgelaufen");
 
 async function einladungAnlegen(k, env, h) {
   if (!(await drosseln(env, `einladung:${k.id}`))) return h.nein(429, "zu schnell");
-  // Nur die eigenen kurzen QR-Codes und Abgelaufenes: eine 24-h-Link-Einladung (freunde.js) bleibt.
-  await env.DB.prepare("DELETE FROM einladungen WHERE (konto = ? AND laeuft_ab <= ?) OR laeuft_ab < ?").bind(k.id, Date.now() + EINLADUNG_MS, Date.now() - 3600_000).run();
+  // Genau der vorige QR-Code dieses Kontos (Merker) und Abgelaufenes gehen. Eine 24-h-Link-Einladung (freunde.js) bleibt bis zu ihrem Ablauf,
+  // auch in ihren letzten 10 Minuten (über die Ablaufzeit allein sind beide dann nicht zu trennen).
+  const vorig = await env.DB.prepare("SELECT wert FROM konto_merker WHERE konto = ? AND schluessel = 'qr_einladung'").bind(k.id).first();
+  await env.DB.prepare("DELETE FROM einladungen WHERE (konto = ? AND hash = ?) OR laeuft_ab < ?").bind(k.id, vorig?.wert ?? "", Date.now() - 3600_000).run();
   const token = tokenNeu();
+  const hash = await h.sha256(token);
   const laeuftAb = Date.now() + EINLADUNG_MS;
-  await env.DB.prepare("INSERT INTO einladungen (hash, konto, laeuft_ab, benutzt) VALUES (?, ?, ?, 0)").bind(await h.sha256(token), k.id, laeuftAb).run();
+  await env.DB.prepare("INSERT INTO einladungen (hash, konto, laeuft_ab, benutzt) VALUES (?, ?, ?, 0)").bind(hash, k.id, laeuftAb).run();
+  await env.DB.prepare("INSERT OR REPLACE INTO konto_merker (konto, schluessel, wert) VALUES (?, 'qr_einladung', ?)").bind(k.id, hash).run();
   return h.json({ token, laeuftAb: new Date(laeuftAb).toISOString(), sekunden: EINLADUNG_MS / 1000 }, 201);
 }
 

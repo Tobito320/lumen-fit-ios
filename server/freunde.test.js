@@ -190,9 +190,11 @@ test("Der Ersteller bricht ab, indem er verlässt", async () => {
   // Werte werden dort nicht mehr angenommen, Annehmen auch nicht.
   const w = await ruf(env, "du", "PUT", "/freunde/werte", { werte: [{ id: x, wert: 5 }] });
   assert.deepEqual(w.json, { ok: true, gesetzt: 0 });
+  // Wer nur eingeladen war, hat nichts mehr anzunehmen: die Einladung ist weg.
   const y = (await erstellen(env, "ich", duell([vd]))).json.id;
   await ruf(env, "ich", "POST", `/freunde/herausforderungen/${y}/verlassen`);
-  assert.equal((await ruf(env, "du", "POST", `/freunde/herausforderungen/${y}/annehmen`)).status, 409);
+  assert.equal(await hole(env, "du", y), undefined);
+  assert.equal((await ruf(env, "du", "POST", `/freunde/herausforderungen/${y}/annehmen`)).status, 404);
 });
 
 test("Werte: nur wo ich dabei bin, nicht abgebrochen, bis Ende plus 24 Stunden", async () => {
@@ -306,20 +308,21 @@ test("Reaktion einer entfernten oder pausierten Verbindung ist nicht mehr sichtb
   assert.deepEqual(await uebersicht(env, "du"), { herausforderungen: [], reaktionen: [], gesendet: [] });
   assert.deepEqual((await uebersicht(env, "ich")).reaktionen, []);
   assert.deepEqual((await uebersicht(env, "ich")).gesendet, []);
-  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "x" })).status, 404, "an eine entfernte Verbindung geht nichts");
+  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "einheit:" + heute() })).status, 404, "an eine entfernte Verbindung geht nichts");
   // Wieder verbunden: nur Reaktionen der letzten 30 Tage.
   sql(env, "UPDATE reaktionen SET zeit = ?", new Date(Date.now() - 31 * 86400_000).toISOString());
   const v2 = await verbinden(env, "ich", "du");
   assert.equal((await uebersicht(env, "du")).reaktionen.length, 0, "älter als 30 Tage");
-  await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: v2, art: "stark", ziel: "x" });
+  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: v2, art: "stark", ziel: "einheit:" + heute() })).status, 201);
   assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM reaktionen").get().n, 1, "die alte wird beim nächsten Senden gelöscht");
 });
 
 test("Reaktion: Drossel 30 je Minute", async () => {
-  const env = await welt("ich", "du");
+  const env = await welt("ich", "du", "fremd");
   const vd = await verbinden(env, "ich", "du");
-  for (let i = 0; i < 30; i++) assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: `einheit:${i}` })).status, 201);
-  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "einheit:x" })).status, 429);
+  const vf = await verbinden(env, "ich", "fremd");
+  for (let i = 0; i < 30; i++) assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: `rekord:${heute()}:übung ${i}` })).status, 201);
+  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vf, art: "respekt", ziel: "einheit:" + heute() })).status, 429, "auch an eine andere Person");
 });
 
 test("Gruppe: Namen, Teilnehmer-Ids für Unverbundene, keine Konto-Id in irgendeiner Antwort", async () => {
@@ -349,7 +352,7 @@ test("Gruppe: Namen, Teilnehmer-Ids für Unverbundene, keine Konto-Id in irgende
   sql(env, "UPDATE konten SET name = ? WHERE id = ?", "N".repeat(60), KONTEN.fremd.id);
   assert.equal((await hole(env, "du", id)).teilnehmer.find((t) => !t.ich && !t.verbunden).name, "N".repeat(40));
   // Reaktionen und Einladungen laufen auch noch einmal durch `ruf`, das jede Antwort auf die Konto-Ids der anderen prüft.
-  await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "x" });
+  assert.equal((await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "einheit:" + heute() })).status, 201);
   await ruf(env, "du", "POST", "/freunde/einladung");
   for (const k of ["ich", "du", "fremd", "vier"]) await ruf(env, k, "GET", "/freunde");
   await ruf(env, "ich", "GET", "/verbindungen");
@@ -363,7 +366,7 @@ test("Gruppe: wer noch nicht angenommen hat, bleibt für Unverbundene ohne Namen
   const id = (await erstellen(env, "ich", duell([vd, vf]))).json.id;
   await ruf(env, "du", "POST", `/freunde/herausforderungen/${id}/annehmen`);
   const vorher = (await hole(env, "du", id)).teilnehmer.find((t) => !t.ich && !t.verbunden);
-  assert.deepEqual([vorher.name, vorher.status], ["Eingeladen", "eingeladen"]);
+  assert.deepEqual([vorher.name, vorher.status, vorher.wert, vorher.aktualisiert], ["Eingeladen", "eingeladen", null, null]);
   assert.equal((await hole(env, "ich", id)).teilnehmer.find((t) => t.id === vf).name, "Beispiel Fremd", "der Ersteller ist verbunden und sieht den Namen");
   await ruf(env, "fremd", "POST", `/freunde/herausforderungen/${id}/annehmen`);
   assert.equal((await hole(env, "du", id)).teilnehmer.find((t) => !t.ich && !t.verbunden).name, "Beispiel Fremd");
@@ -520,4 +523,133 @@ test("Verwaltung /admin/freunde: nur mit Admin-Schlüssel, Zahlen und Ids je Kon
   assert.deepEqual([nurVier.konten.length, nurVier.verbindungen.length, nurVier.herausforderungen.length], [1, 0, 0]);
   assert.equal((await admin(env, `/admin/freunde?konto=${"e".repeat(32)}`)).status, 404);
   assert.equal((await admin(env, "/admin/freunde?konto=x!")).status, 400);
+});
+
+// Sicherheits-Review Build 18 (M1, M2, L2, L3, L5).
+const profil = (env, k, profilName) => ruf(env, k, "PUT", "/partner", { version: 1, geschrieben: new Date().toISOString(), profilName, freigaben: ["gym"], heute: { tag: heute() }, ereignisse: [] });
+
+test("Gruppe: wer nur eingeladen ist, sieht Unverbundene als Teilnehmer N ohne Namen, Wert und Zeit; Verbundene wie bisher", async () => {
+  const env = await welt("ich", "du", "fremd", "vier");
+  const vd = await verbinden(env, "ich", "du");
+  const vf = await verbinden(env, "ich", "fremd");
+  const vv = await verbinden(env, "ich", "vier");
+  assert.equal((await profil(env, "fremd", "Beispiel Profil Fremd")).status, 200);
+  const id = (await erstellen(env, "ich", duell([vd, vf, vv]))).json.id;
+  for (const k of ["fremd", "vier"]) await ruf(env, k, "POST", `/freunde/herausforderungen/${id}/annehmen`);
+  await ruf(env, "fremd", "PUT", "/freunde/werte", { werte: [{ id, wert: 25 }] });
+  await ruf(env, "vier", "PUT", "/freunde/werte", { werte: [{ id, wert: 9 }] });
+  await ruf(env, "ich", "PUT", "/freunde/werte", { werte: [{ id, wert: 7 }] });
+  const r = await ruf(env, "du", "GET", "/freunde");
+  for (const geheim of ["Beispiel Fremd", "Beispiel Profil Fremd", "Beispiel Vier"]) assert.ok(!r.text.includes(geheim), `${geheim} beim Eingeladenen`);
+  const sicht = r.json.herausforderungen.find((x) => x.id === id);
+  assert.equal(sicht.ich, "eingeladen");
+  const fremde = sicht.teilnehmer.filter((t) => !t.ich && !t.verbunden);
+  assert.deepEqual(fremde.map((t) => [t.name, t.status, t.wert, t.aktualisiert, t.id]),
+    [["Teilnehmer 1", "dabei", null, null, sha16(`${id}:${KONTEN.fremd.id}`)], ["Teilnehmer 2", "dabei", null, null, sha16(`${id}:${KONTEN.vier.id}`)]]);
+  const ersteller = sicht.teilnehmer.find((t) => t.id === vd);
+  assert.deepEqual([ersteller.name, ersteller.wert], ["Beispiel Ich", 7], "verbunden: Name und Wert");
+  // Angenommen: jetzt sind beide dabei, Name und Wert kommen.
+  await ruf(env, "du", "POST", `/freunde/herausforderungen/${id}/annehmen`);
+  const danach = (await hole(env, "du", id)).teilnehmer.filter((t) => !t.ich && !t.verbunden);
+  assert.deepEqual(danach.map((t) => [t.name, t.wert]), [["Beispiel Profil Fremd", 25], ["Beispiel Vier", 9]]);
+  assert.ok(danach.every((t) => typeof t.aktualisiert === "string"));
+});
+
+test("Einladungs-Flut: je Empfänger höchstens 20 offene Einladungen, egal von wem; Ablehnen macht Platz", async () => {
+  const env = await welt("ich", "du", "fremd", "vier");
+  const v = { ich: await verbinden(env, "ich", "du"), fremd: await verbinden(env, "fremd", "du"), vier: await verbinden(env, "vier", "du") };
+  for (const k of ["ich", "fremd"]) for (let i = 0; i < 10; i++) assert.equal((await erstellen(env, k, duell([v[k]]))).status, 201, `${k} ${i + 1}`);
+  const voll = await erstellen(env, "vier", duell([v.vier]));
+  assert.equal(voll.status, 429, "20 offene Einladungen");
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM herausforderungen").get().n, 20, "nichts angelegt");
+  const eine = (await uebersicht(env, "du")).herausforderungen[0].id;
+  assert.equal((await ruf(env, "du", "POST", `/freunde/herausforderungen/${eine}/ablehnen`)).status, 200);
+  assert.equal((await erstellen(env, "vier", duell([v.vier]))).status, 201, "nach dem Ablehnen wieder Platz");
+});
+
+test("Erstellen und Verlassen im Kreis: höchstens 20 neue in 24 Stunden, beim Eingeladenen bleibt nichts liegen", async () => {
+  const env = await welt("ich", "du");
+  const vd = await verbinden(env, "ich", "du");
+  for (let i = 0; i < 20; i++) {
+    if (i % 10 === 0) sql(env, "DELETE FROM drossel");
+    const id = (await erstellen(env, "ich", duell([vd]))).json.id;
+    assert.equal((await ruf(env, "ich", "POST", `/freunde/herausforderungen/${id}/verlassen`)).status, 200);
+  }
+  sql(env, "DELETE FROM drossel");
+  assert.equal((await erstellen(env, "ich", duell([vd]))).status, 429, "die 21. in 24 Stunden");
+  assert.deepEqual((await uebersicht(env, "du")).herausforderungen, [], "abgebrochene Einladungen sind weg");
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM herausforderung_teilnehmer WHERE status = 'eingeladen'").get().n, 0);
+  sql(env, "UPDATE herausforderungen SET erstellt = ?", new Date(Date.now() - 25 * 3600_000).toISOString());
+  assert.equal((await erstellen(env, "ich", duell([vd]))).status, 201, "nach 24 Stunden wieder");
+});
+
+test("Übersicht: gleich viele Abfragen bei einer oder neun Herausforderungen mit vier Personen", async () => {
+  const env = await welt("ich", "du", "fremd", "vier");
+  const vs = [await verbinden(env, "ich", "du"), await verbinden(env, "ich", "fremd"), await verbinden(env, "ich", "vier")];
+  const mache = async () => {
+    sql(env, "DELETE FROM drossel");
+    const id = (await erstellen(env, "ich", duell(vs))).json.id;
+    for (const k of ["du", "fremd"]) await ruf(env, k, "POST", `/freunde/herausforderungen/${id}/annehmen`);
+  };
+  const zaehle = async () => {
+    const echt = env.DB.prepare;
+    let n = 0;
+    env.DB.prepare = (text) => { n++; return echt(text); };
+    try { assert.equal((await ruf(env, "du", "GET", "/freunde")).status, 200); } finally { env.DB.prepare = echt; }
+    return n;
+  };
+  await ruf(env, "ich", "POST", "/freunde/reaktionen", { an: vs[0], art: "respekt", ziel: "einheit:" + heute() });
+  await mache();
+  await zaehle();
+  const eins = await zaehle();
+  for (let i = 0; i < 8; i++) await mache();
+  assert.equal((await uebersicht(env, "du")).herausforderungen.length, 9);
+  assert.equal(await zaehle(), eins);
+});
+
+test("QR-Code löscht nur den vorigen QR-Code: eine Link-Einladung in ihren letzten 10 Minuten bleibt gültig", async () => {
+  const env = await welt("ich", "du");
+  const hash = (t) => createHash("sha256").update(t).digest("hex");
+  const link = (await ruf(env, "ich", "POST", "/freunde/einladung")).json.token;
+  sql(env, "UPDATE einladungen SET laeuft_ab = ? WHERE hash = ?", Date.now() + 5 * 60_000, hash(link));
+  const qr1 = (await ruf(env, "ich", "POST", "/verbindungen/einladung")).json.token;
+  const qr2 = (await ruf(env, "ich", "POST", "/verbindungen/einladung")).json.token;
+  assert.deepEqual(env.DB.roh.prepare("SELECT hash FROM einladungen").all().map((x) => x.hash).sort(), [hash(link), hash(qr2)].sort(), "qr1 ist weg");
+  assert.notEqual(qr1, qr2);
+  assert.equal((await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: link })).json.name, "Beispiel Ich", "der Link gilt bis zum Schluss");
+});
+
+test("Reaktion: Ziel nur in den Formen der App, je Paar höchstens 30 in 24 Stunden", async () => {
+  const env = await welt("ich", "du", "fremd");
+  const vd = await verbinden(env, "ich", "du");
+  const vf = await verbinden(env, "ich", "fremd");
+  const r = (an, ziel) => { sql(env, "DELETE FROM drossel"); return ruf(env, "ich", "POST", "/freunde/reaktionen", { an, art: "respekt", ziel }); };
+  for (const ziel of ["x", "einheit:heute", "einheit:2026-11-9", "einheit:2026-11-09:mehr", " einheit:2026-11-09", "rekord:2026-11-09", "rekord:2026-11-09:", "foto:2026-11-09", "live:"]) {
+    assert.equal((await r(vd, ziel)).status, 400, ziel);
+  }
+  for (const ziel of ["einheit:2026-11-09", "live:2026-11-09", "rekord:2026-11-09:bankdrücken (kurzhantel)"]) assert.equal((await r(vd, ziel)).status, 201, ziel);
+  for (let i = 3; i < 30; i++) assert.equal((await r(vd, `rekord:2026-11-09:übung ${i}`)).status, 201, `Nummer ${i + 1}`);
+  assert.equal((await r(vd, "rekord:2026-11-09:übung 30")).status, 429, "die 31. an dieselbe Person");
+  assert.equal((await r(vf, "rekord:2026-11-09:übung 30")).status, 201, "an eine andere Person geht es");
+  sql(env, "UPDATE reaktionen SET zeit = ? WHERE ziel = 'einheit:2026-11-09'", new Date(Date.now() - 25 * 3600_000).toISOString());
+  assert.equal((await r(vd, "rekord:2026-11-09:übung 30")).status, 201, "die von vor 25 Stunden zählt nicht mehr");
+  // Zurücknehmen nimmt jede Form, damit Altes aus der Zeit vor der Prüfung weggeht.
+  sql(env, "INSERT INTO reaktionen (id, von, an, art, ziel, text, zeit) VALUES ('alt', ?, ?, 'respekt', 'x', '', ?)", KONTEN.ich.id, KONTEN.du.id, new Date().toISOString());
+  assert.equal((await ruf(env, "ich", "DELETE", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "x" })).status, 200);
+  assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM reaktionen WHERE id = 'alt'").get().n, 0);
+});
+
+test("Werte, Antworten und Zurücknehmen: Drossel 30 je Minute und Konto", async () => {
+  const env = await welt("ich", "du");
+  const vd = await verbinden(env, "ich", "du");
+  const id = (await erstellen(env, "ich", duell([vd]))).json.id;
+  for (const [was, f] of [
+    ["werte", () => ruf(env, "ich", "PUT", "/freunde/werte", { werte: [{ id, wert: 1 }] })],
+    ["antworten", () => ruf(env, "du", "POST", `/freunde/herausforderungen/${"f".repeat(32)}/annehmen`)],
+    ["zurücknehmen", () => ruf(env, "ich", "DELETE", "/freunde/reaktionen", { an: vd, art: "respekt", ziel: "einheit:2026-11-09" })],
+  ]) {
+    for (let i = 0; i < 30; i++) assert.notEqual((await f()).status, 429, `${was} ${i + 1}`);
+    assert.equal((await f()).status, 429, `${was}: der 31. Aufruf in der Minute`);
+  }
+  assert.equal((await ruf(env, "du", "PUT", "/freunde/werte", { werte: [] })).status, 200, "andere Konten nicht betroffen");
 });
