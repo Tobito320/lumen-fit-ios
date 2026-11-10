@@ -44,3 +44,15 @@ Ahmed nutzt nur UIs, die flüssig sind. Für jede UI-Bewegung gilt:
 - Gummiband über den Rand statt harter Anschlag.
 - Details: `RoundedRectangle(cornerRadius:, style: .continuous)`, dezenter Blur, Haptik (`sensoryFeedback`) wo sie passt.
 - Eigener Code, keine Fremdbibliothek für Animation. Volltext: Vault `80 System/Memory/Apps bauen – Compiler ohne Mac, Modelle, kein Caveman (08.11.).md`.
+- UI-Handwerk (Reel charles.unemployed, Ahmed 10.11.2026):
+  - Große Trefferfläche (Fitts): ganze Zeile oder Fläche ist zieh- und tippbar, nicht nur das kleine Bedienelement.
+  - Klare Hierarchie: der gewählte oder gezeigte Wert ist das Größte auf dem Bildschirm.
+  - Eine Akzentfarbe, nur für das eine Wichtige (Von Restorff).
+  - Objektkonstanz: Werte gleiten oder morphen statt hart zu wechseln, das Auge kann folgen.
+  - Einrasten: Ende einer Geste landet immer auf einem gültigen Wert.
+  - Tabellenziffern (`.monospacedDigit()`) für wechselnde Zahlen, das Layout springt nie.
+  - Nur das Delta animieren: nur die Ziffer oder der Teil, der sich ändert, bewegt sich.
+  - Trägheit: Wischen gleitet aus und bremst natürlich ab.
+  - Mehrkanal-Rückmeldung: Bild plus Haptik (plus leiser Ton, wo es passt) bei jedem Schritt.
+  - Affordance: Bedienelemente zeigen schon bei Hover oder Drücken, was gleich passiert.
+  - Körperliche Bilder für Wähler (Drehrad, Walze), dann braucht es keine Anleitung.
