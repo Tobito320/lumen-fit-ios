@@ -80,6 +80,7 @@ struct UebungsKarte: View {
                 Text(u.planUebung.anzeigeName)
                     .font(.headline).foregroundStyle(palette.text).lineLimit(3)
                 Text(untertitel(u)).font(.footnote).foregroundStyle(palette.text2)
+                if !kompakt { CrewBestwertZeile(uebung: u.planUebung.anzeigeName) }
             }
             Spacer(minLength: Abstand.s)
             if kompakt {

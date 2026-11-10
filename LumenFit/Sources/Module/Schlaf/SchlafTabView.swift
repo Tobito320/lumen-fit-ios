@@ -74,7 +74,6 @@ private struct SchlafTabInhalt: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Schlaf eintragen", systemImage: "plus") { eintragen = true }
             }
-            ToolbarItem(placement: .topBarTrailing) { AvatarKapsel() }
         }
         .sheet(isPresented: $eintragen) {
             SchlafEintragenView(tag: Datum.text(umgebung.uhr()), nacht: SchlafDaten.uebersicht(umgebung, band: band).letzte?.nacht) { version += 1 }

@@ -17,9 +17,9 @@ final class WillkommenZurueckTests: XCTestCase {
         let (_, neu, _) = try neuinstallation()
         XCTAssertTrue(neu.profil.hatProfil)
         XCTAssertTrue(neu.neuinstallationErkannt)
-        XCTAssertNil(neu.router.blatt)
+        XCTAssertNil(neu.router.pfade[.profil])
         ProfilModul.start(neu)
-        XCTAssertEqual(neu.router.blatt, .profil(.datensicherung), "die Datensicherung öffnet von selbst, dort steht die Willkommen-zurück-Karte")
+        XCTAssertEqual(neu.router.pfade[.profil], [.profil(.datensicherung)], "die Datensicherung öffnet von selbst, dort steht die Willkommen-zurück-Karte")
     }
 
     func testNormalerStartOeffnetNichts() throws {
@@ -31,28 +31,28 @@ final class WillkommenZurueckTests: XCTestCase {
         let zweite = ProfilTestWelt.umgebung(ordner: ordner, bund: bund)
         XCTAssertFalse(zweite.neuinstallationErkannt)
         ProfilModul.start(zweite)
-        XCTAssertNil(zweite.router.blatt)
+        XCTAssertNil(zweite.router.pfade[.profil])
 
         let leer = ProfilTestWelt.umgebung(ordner: try tempOrdner())
         ProfilModul.start(leer)
-        XCTAssertNil(leer.router.blatt, "ohne Profil zeigt die Wurzel das Onboarding, kein Blatt")
+        XCTAssertNil(leer.router.pfade[.profil], "ohne Profil zeigt die Wurzel das Onboarding, keine Seite")
     }
 
     func testStartIstIdempotentUndStoertKeinOffenesBlatt() throws {
         let (_, neu, _) = try neuinstallation()
         ProfilModul.start(neu)
         ProfilModul.start(neu)
-        XCTAssertEqual(neu.router.blatt, .profil(.datensicherung))
-        neu.router.blatt = .profil(.aussehen)
+        XCTAssertEqual(neu.router.pfade[.profil], [.profil(.datensicherung)], "zweimal gestartet, einmal geöffnet")
+        neu.router.pfade[.profil] = [.profil(.aussehen)]
         ProfilModul.oeffneWillkommenZurueck(neu)
-        XCTAssertEqual(neu.router.blatt, .profil(.aussehen), "ein schon offenes Blatt bleibt")
+        XCTAssertEqual(neu.router.pfade[.profil], [.profil(.aussehen)], "eine schon offene Profil-Seite bleibt")
     }
 
     func testBeantwortetIstDieKarteWeg() throws {
         let (_, neu, _) = try neuinstallation()
         neu.neuinstallationQuittieren()
         ProfilModul.oeffneWillkommenZurueck(neu)
-        XCTAssertNil(neu.router.blatt)
+        XCTAssertNil(neu.router.pfade[.profil])
     }
 
     func testSicherungEinspielenBeantwortetDieKarteUndBringtDieDatenZurueck() throws {

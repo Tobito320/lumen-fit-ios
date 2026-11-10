@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// Das Profil-Blatt (Idee 72), geöffnet von der Avatar-Kapsel auf jedem Tab. Kompakte Einstellungsliste: eine Zeile je Eintrag, Wert rechts.
-/// Alles liegt höchstens eine Ebene tief, ohne "Mehr"-Zwischenstufe; "Freunde und Partner" enthält den Code zum Zeigen und Scannen.
+/// Die Wurzel des Profil-Tabs (Idee 72, seit Aufteilung B ein Tab statt Blatt). Kompakte Einstellungsliste: eine Zeile je Eintrag, Wert rechts.
+/// Alles liegt höchstens eine Ebene tief, ohne "Mehr"-Zwischenstufe; oben die Übergangs-Zeilen Essen und Schlaf. Freunde und Partner (Code zum Zeigen und Scannen)
+/// liegen im Freunde-Tab.
 /// Lovea hat hier keinen Eintrag: der Import läuft einmal von selbst (`LoveaEinmalImport`), die Partner-Verbindung braucht keinen Schalter.
 struct ProfilBlattView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -10,9 +11,7 @@ struct ProfilBlattView: View {
 
     var body: some View {
         List {
-            ProfilAbschnitt {
-                link("Freunde und Partner", .profilFreunde, symbol: "person.2.fill") { VerbindungenView() }
-            }
+            ProfilUmzugZeilen()
             ProfilBereicheAbschnitt()
             ProfilAbschnitt {
                 link("Konto", .profilKonto, symbol: "person.crop.circle.fill", wert: umgebung.profil.aktiv?.name) { KontoView() }

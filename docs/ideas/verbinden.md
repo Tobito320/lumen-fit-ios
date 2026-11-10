@@ -131,3 +131,22 @@ Ein Agent, ein Tag, nur CI. Reihenfolge so, dass jedes Teil einzeln grün sein k
 **Danach (Vorrat, nicht heute):** Nr. 3 Rangliste, Nr. 8 Wochenziel, Nr. 4 und 23 (Respekt über Leser-Filter, ein Server-Deploy), Nr. 22 Ziel-Satz.
 
 Ungeprüft: Wie ruhig `GymStartView` mit 4 bis 6 Personen aussieht (Gerät), ob der 20-Sekunden-Upload bei schlechtem Netz stapelt (`partnerAusstehend` hält nur den letzten Stand, also nein), und ob `Konto/` einem anderen Modul gehört (SPEC Abschnitt 12 nicht gelesen).
+
+## Welle 3 (09.11.2026): Herausforderungen, Reaktionen, Crew-Seite
+
+Ahmed: "we want in lumen fit like friends challenging and a lot of stuff features for friends". Recherche (Hevy, Strong, Strava, Whoop, Fitbod,
+Liftoff, Apple Fitness, Peloton, Gravitus, Tonal), Quellen:
+- Hevy: Freunde per Benutzername, Einladungslink, WhatsApp; Feed mit Likes und Kommentaren; Rangliste je Übung nur unter Gefolgten nach schwerstem
+  Gewicht (https://www.hevyapp.com/features/gym-leaderboard/), Fairness bei rohen Gewichten ist ein bekanntes Problem.
+- Strava Gruppen-Challenges: Most Activity, Fastest Effort, Longest Single Activity und Group Goal ohne Rangliste, nur Teilnehmer sehen sie
+  (https://support.strava.com/en-us/articles/15401736-how-do-group-challenges-work-on-strava).
+- Apple Fitness Wettkampf: 7 Tage, Annahme nötig, Punkte je Prozent Ringe, höchstens 600 am Tag; Kritik: niedrige eigene Ziele gewinnen leichter
+  (https://support.apple.com/guide/watch/share-your-activity-apd68a69f5c7/watchos).
+- Fitbod Clubs: Wochen-Rangliste nach Gesamtgewicht und Workouts, Woche neu, Montags Gewinner (Hilfe-Auszug, unverified Details).
+- Peloton High Fives: Tipp auf die Person, höchstens einer je Minute an dieselbe Person.
+- Liftoff: Ränge und Streaks machen Spaß, Kritik: Rang hängt am Gewicht.
+
+Gebaut (Auftrag `tasks/auftraege/crew.md`): Crew-Seite als Hub, Herausforderungen (Duell, Gruppe, gemeinsames Ziel; Maß Tage, Sätze, Volumen,
+Rekorde oder Übung als Steigerung in Promille gegen den eigenen Stand, damit jedes Niveau fair mitspielt), feste Reaktionen (Respekt, Stark,
+Anfeuern, Stups einmal am Tag), Wochen-Rangliste aus den Zusammenfassungen, Freund-Seite mit Vergleich gemeinsamer Übungen, Link-Einladung 24 h,
+Crew-Bestwert in der Übung. Vorrat: Crew-Streak, gemeinsame Einheit per Code, Ränge, Plan übernehmen.

@@ -59,6 +59,8 @@ enum LoveaVertrag {
 /// Dateivertrag mit Lovea (SPEC 5.5); die Umsetzung `LoveaBruecke(ordner:)` gehört dem Grundgerüst, die Regeln dem Modul verbinden.
 protocol PartnerAustausch: Sendable {
     func partner(jetzt: Date) -> PartnerStand
+    /// Der Trainingspartner ohne die Datei von Lovea (Schalter "Lovea verbinden" aus): nur vom Server. Der Standard kennt keinen.
+    func partnerOhneLovea(jetzt: Date) -> PartnerStand
     func schreibe(zusammenfassung: ZusammenfassungDatei)
     func wuensche() -> [BandWunsch]
     func melde(erledigt ids: [String])
@@ -74,6 +76,7 @@ protocol PartnerAustausch: Sendable {
 }
 
 extension PartnerAustausch {
+    func partnerOhneLovea(jetzt: Date) -> PartnerStand { .nichtVerbunden }
     func loescheEigeneDateien() {}
     /// Die Zusammenfassung für den Lumen-Server (alle Bereiche, die eine Verbindung zeigt). Nur die Brücke mit Server tut etwas.
     func schreibe(serverStand: ZusammenfassungDatei) {}

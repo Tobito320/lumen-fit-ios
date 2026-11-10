@@ -30,7 +30,8 @@ final class ZyklusEntferntTests: XCTestCase {
         let router = Router()
         router.tab = .training
         XCTAssertTrue(router.oeffne(url: url))
-        XCTAssertEqual(router.blatt, .profil(.uebersicht))
+        XCTAssertEqual(router.tab, .profil)
+        XCTAssertEqual(router.pfade[.profil], [], "die Übersicht ist die Wurzel des Profil-Tabs")
     }
 
     func testZyklusOpsImLogBleibenUndStoerenDenStartNicht() throws {

@@ -203,6 +203,23 @@ enum VerbindungenLogik {
 
     nonisolated static func link(token: String) -> URL { RouteURL.url(fuer: .freund(daten: token)) }
 
+    // MARK: Trainingspartner (Auftrag 09.11.2026: ein Freund, unabhängig von Lovea)
+
+    /// Die Wahl auf diesem Gerät: Verbindungs-Id, `keinPartner` oder nichts (dann die Lovea-Person wie bisher).
+    nonisolated static let partnerSchluessel = "fit.crew.partner"
+    nonisolated static let keinPartner = "-"
+
+    nonisolated static var gewaehlterPartner: String? { UserDefaults.standard.string(forKey: partnerSchluessel) }
+
+    /// Der Trainingspartner: die gewählte Person, solange sie aktiv und nicht pausiert ist; ohne Wahl (oder wenn sie nicht mehr da ist) die Lovea-Person;
+    /// mit `keinPartner` niemand. Sein Stand liegt im bisherigen Partner-Platz (Heute, Training, Essen, Schlaf).
+    nonisolated static func partner(_ eintraege: [VerbindungEintrag], gewaehlt: String?) -> VerbindungEintrag? {
+        guard gewaehlt != keinPartner else { return nil }
+        let aktiv = eintraege.filter { $0.aktiv && !$0.ich.pause }
+        if let gewaehlt, let p = aktiv.first(where: { $0.id == gewaehlt }) { return p }
+        return aktiv.first(where: \.lovea)
+    }
+
     /// Die Freigaben für die Lovea-Datei und die Vorschau: was die Lovea-Verbindung zeigt; leer bei Pause oder ohne aktive Verbindung.
     nonisolated static func freigaben(fuer eintrag: VerbindungEintrag?) -> Set<FreigabeArt> {
         guard let eintrag, eintrag.aktiv, !eintrag.ich.pause else { return [] }

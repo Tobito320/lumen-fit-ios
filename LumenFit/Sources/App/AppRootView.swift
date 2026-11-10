@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Wurzel der App: ohne Profil das Onboarding, sonst die fünf Tabs. Es gibt nirgends einen Anmeldebildschirm.
-/// Setzt Thema, Erscheinung und Haptik aus den Einstellungen des aktiven Profils; Profil und Freunde öffnen als Blatt über den Tabs.
+/// Setzt Thema, Erscheinung und Haptik aus den Einstellungen des aktiven Profils; die Freundeskarte (Scan-Link) bestätigt ein Blatt über den Tabs.
 struct AppRootView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var speicherFehler = false
@@ -132,6 +132,8 @@ struct AppRootView: View {
 
 private struct TabsAnsicht: View {
     @Environment(AppUmgebung.self) private var umgebung
+    /// Für die Mini-Leiste: dieselbe Sitzung wie im Training-Tab (`von` gibt immer die gesetzte zurück).
+    @State private var sitzung: GymSitzung?
 
     var body: some View {
         @Bindable var router = umgebung.router
@@ -142,10 +144,16 @@ private struct TabsAnsicht: View {
                         RouteAnsicht.wurzel(tab)
                             .navigationDestination(for: Route.self) { RouteAnsicht(route: $0) }
                     }
+                    .safeAreaInset(edge: .bottom) { miniLeiste }
                 }
             }
         }
         .lumenTabLeiste()
+        // Die Sitzung entsteht hier, nicht im Körper (`von` setzt den Port); das laufende Training wird gleich geladen, damit die Mini-Leiste es auch ohne Besuch im Training kennt.
+        .task(id: umgebung.profil.aktiv?.id) {
+            sitzung = GymSitzung.von(umgebung)
+            sitzung?.ladeWennNoetig()
+        }
         .onChange(of: umgebung.konto.schlafSichtbar, initial: true) { _, neu in router.setzeSchlafSichtbar(neu) }
         .onChange(of: umgebung.daten?.einstellungen.werte ?? Einstellungen(), initial: true) { _, neu in router.setze(einstellungen: neu) }
         // Medaillen aus Gym und Heute zeigen ihren Toast auf jedem Tab (die Seiten im Fortschritt hängen ihn auch an, gezeigt wird er nur einmal).
@@ -159,5 +167,45 @@ private struct TabsAnsicht: View {
                 }
             }
         }
+    }
+}
+
+extension TabsAnsicht {
+    /// "Training läuft · 23:14 · Weiter" über der Tab-Leiste, solange ein Training läuft und der Tab nicht das Training ist.
+    @ViewBuilder
+    fileprivate var miniLeiste: some View {
+        if let sitzung, let start = sitzung.laufende?.start, LumenFitTab.zeigtMiniLeiste(auf: umgebung.router.tab, trainingLaeuft: sitzung.sessionId != nil) {
+            TrainingMiniLeiste(start: start) { umgebung.router.oeffne(.gym(.training)) }
+        }
+    }
+}
+
+private struct TrainingMiniLeiste: View {
+    let start: Date
+    let weiter: () -> Void
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        Button(action: weiter) {
+            HStack(spacing: Abstand.s) {
+                Image(systemName: "dumbbell.fill").accessibilityHidden(true)
+                Text("Training läuft").fontWeight(.semibold)
+                Text("·").accessibilityHidden(true)
+                Text(start, style: .timer).monospacedDigit()
+                Spacer(minLength: Abstand.s)
+                Text("Weiter").fontWeight(.semibold)
+                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).accessibilityHidden(true)
+            }
+            .font(.subheadline)
+            .foregroundStyle(palette.text)
+            .padding(.horizontal, Abstand.l)
+            .frame(minHeight: Abstand.tippflaeche)
+            .background(palette.flaeche, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, Abstand.l)
+        .padding(.bottom, Abstand.xs)
+        .accessibilityLabel("Training läuft")
+        .accessibilityHint("Öffnet das laufende Training")
     }
 }
