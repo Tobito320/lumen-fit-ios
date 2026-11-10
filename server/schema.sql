@@ -139,3 +139,39 @@ CREATE INDEX IF NOT EXISTS reaktionen_an ON reaktionen (an, zeit);
 CREATE INDEX IF NOT EXISTS reaktionen_zeit ON reaktionen (zeit);
 -- Crew: neue Herausforderungen je Ersteller in 24 Stunden zählen.
 CREATE INDEX IF NOT EXISTS herausforderungen_ersteller ON herausforderungen (ersteller, erstellt);
+-- Stats (Freunde und Alle): eine Zeile nur, solange "Freunde sehen mich" oder "Öffentlich in Alle" an ist; beides aus löscht sie.
+-- id: öffentliche Id für Alle (zufällig), nie die Konto-Id. Wochenzahlen gelten für die Woche ab montag (Berliner Zeit). rekorde: JSON {Übung: kg}.
+CREATE TABLE IF NOT EXISTS stats (
+  konto TEXT PRIMARY KEY,
+  id TEXT NOT NULL UNIQUE,
+  freunde INTEGER NOT NULL DEFAULT 0,
+  oeffentlich INTEGER NOT NULL DEFAULT 0,
+  spitzname TEXT,
+  spitzname_norm TEXT,
+  jahr INTEGER,
+  montag TEXT NOT NULL,
+  trainings INTEGER NOT NULL DEFAULT 0,
+  sets INTEGER NOT NULL DEFAULT 0,
+  rekorde_neu INTEGER NOT NULL DEFAULT 0,
+  serie INTEGER NOT NULL DEFAULT 0,
+  rekorde TEXT NOT NULL DEFAULT '{}',
+  aktualisiert TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS stats_spitzname ON stats (spitzname_norm) WHERE spitzname_norm IS NOT NULL;
+CREATE INDEX IF NOT EXISTS stats_oeffentlich ON stats (oeffentlich, montag);
+-- Stats "Alle": Meldungen und Blockaden (von, an: Konto-Ids). Ab 3 ungeprüften Meldungen für alle ausgeblendet; geprueft = 1 nach Freigabe in der Verwaltung.
+CREATE TABLE IF NOT EXISTS stats_meldungen (
+  von TEXT NOT NULL,
+  an TEXT NOT NULL,
+  zeit TEXT NOT NULL,
+  geprueft INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (von, an)
+);
+CREATE INDEX IF NOT EXISTS stats_meldungen_an ON stats_meldungen (an);
+CREATE TABLE IF NOT EXISTS stats_blockiert (
+  von TEXT NOT NULL,
+  an TEXT NOT NULL,
+  zeit TEXT NOT NULL,
+  PRIMARY KEY (von, an)
+);
+CREATE INDEX IF NOT EXISTS stats_blockiert_an ON stats_blockiert (an);
