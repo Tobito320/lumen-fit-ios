@@ -9,6 +9,8 @@ enum AppBereich: String, Codable, CaseIterable, Sendable { case gym, essen, schl
 
 /// Die Antwort auf die Frage nach der Nutzungsmeldung. Nur `.ja` erlaubt das Senden; "noch nicht gefragt" und "nein" senden nichts.
 enum NutzungAntwort: String, Codable, Sendable { case offen, ja, nein }
+/// Wie lange jemand schon trainiert (Einführung: "Wie lange trainierst du schon?"). Stats vergleicht damit "im 1. Jahr"; nil = unbekannt.
+enum TrainingsErfahrung: String, Codable, CaseIterable, Sendable { case geradeAngefangen, unterSechsMonate, bisZweiJahre, laenger }
 
 /// Alle Felder haben Standardwerte; `init(from:)` nutzt `decodeIfPresent`, damit neue Felder alte Dateien nie unlesbar machen.
 /// Ein unbekannter oder falsch getippter Wert (zum Beispiel ein Theme, das es später nicht mehr gibt) ergibt den Standard statt einer unlesbaren Datei.
@@ -38,6 +40,13 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var fastenAn = false
     /// Der einmalige Wechsel auf Schlicht ist gelaufen (W-003). Neue Profile starten schon schlicht; alte Dateien ohne das Feld bekommen ihn einmal.
     var schlichtGesetzt = true
+    /// Stats: "Freunde sehen mich" und "Öffentlich in Alle" (nur nach "Akzeptieren und mitmachen"). Standard privat: nichts geht zum Server.
+    var statsFreunde = false
+    var statsOeffentlich = false
+    /// Spitzname für Stats "Alle"; nil, solange keiner gewählt ist.
+    var statsSpitzname: String?
+    /// Antwort aus der Einführung; nil = unbekannt (dann zählt das erste Training in der App).
+    var trainingsErfahrung: TrainingsErfahrung?
 
     init() {}
 
@@ -94,6 +103,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn, schlichtGesetzt
+        case statsFreunde, statsOeffentlich, statsSpitzname, trainingsErfahrung
     }
 
     init(from decoder: Decoder) throws {
@@ -116,6 +126,10 @@ struct Einstellungen: Codable, Equatable, Sendable {
         schlafAn = (try? c.decodeIfPresent(Bool.self, forKey: .schlafAn)) ?? true
         fastenAn = (try? c.decodeIfPresent(Bool.self, forKey: .fastenAn)) ?? false
         schlichtGesetzt = (try? c.decodeIfPresent(Bool.self, forKey: .schlichtGesetzt)) ?? false
+        statsFreunde = (try? c.decodeIfPresent(Bool.self, forKey: .statsFreunde)) ?? false
+        statsOeffentlich = (try? c.decodeIfPresent(Bool.self, forKey: .statsOeffentlich)) ?? false
+        statsSpitzname = (try? c.decodeIfPresent(String.self, forKey: .statsSpitzname)) ?? nil
+        trainingsErfahrung = (try? c.decodeIfPresent(TrainingsErfahrung.self, forKey: .trainingsErfahrung)) ?? nil
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }
