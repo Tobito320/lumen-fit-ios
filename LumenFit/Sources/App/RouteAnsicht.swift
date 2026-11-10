@@ -14,6 +14,7 @@ struct RouteAnsicht: View {
         case .schlaf(let bereich): SchlafTabView(bereich: bereich).kartenTint(HabitFarbe.indigo.farbe)
         case .profil(let bereich): profil(bereich)
         case .verlauf: VerlaufView()
+        case .einsichten: HeuteEinsichtenSeite()
         case .gewichtEintragen: GewichtEintragenView()
         case .uebung(let id): UebungDetailView(id: id)
         case .freund(let daten):

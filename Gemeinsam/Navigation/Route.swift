@@ -15,6 +15,7 @@ enum Route: Hashable, Codable, Sendable {
     case schlaf(SchlafBereich)
     case profil(ProfilBereich)
     case verlauf
+    case einsichten                      // Einsichten und Hinweise des Tages (Zeile im Tab Fortschritt)
     case gewichtEintragen
     case uebung(id: String)
     case freund(daten: String?)          // Freundeskarte importieren (Nutzlast des Links) oder die Freunde-Seite öffnen

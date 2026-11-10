@@ -65,11 +65,12 @@ final class EinmalLoveaTests: XCTestCase {
         XCTAssertEqual(NutzungName.tab(.training), "tab.training")
         XCTAssertEqual(NutzungName.tab(.fortschritt), "tab.fortschritt")
         XCTAssertEqual(NutzungName.seite(.gym(.plaene)), "seite.gym.plaene")
+        XCTAssertEqual(NutzungName.seite(.einsichten), "seite.einsichten")
         XCTAssertEqual(NutzungName.seite(.uebung(id: "geheime-kennung")), "seite.uebung", "keine Kennung in der Meldung")
         XCTAssertEqual(NutzungName.blatt(.profil(.aussehen)), "blatt.profil")
         XCTAssertEqual(NutzungName.funktion(.mahlzeitGespeichert(tag: "2026-09-23")), "mahlzeit")
         XCTAssertNil(NutzungName.funktion(.vordergrund))
-        for route: Route in [.heute, .gym(.training), .essen(.scan), .schlaf(.verlauf), .profil(.lumi), .verlauf, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)] {
+        for route: Route in [.heute, .gym(.training), .essen(.scan), .schlaf(.verlauf), .profil(.lumi), .verlauf, .einsichten, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)] {
             XCTAssertTrue(NutzungStand.gueltig(NutzungName.seite(route)), "\(route)")
             XCTAssertTrue(NutzungStand.gueltig(NutzungName.blatt(route)), "\(route)")
         }

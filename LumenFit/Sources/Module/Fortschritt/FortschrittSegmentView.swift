@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Der Abschnitt "Mehr" unten auf der Seite Fortschritt (`FortschrittTabView`): alles, was das frühere Segment Fortschritt im Tab Gym erreichbar machte und
 /// nicht nach oben gewandert ist. Verlauf (Konstanz und Gewicht), Kraftkurve, Muskelkarte (Wochenleiste, Sätze je Körperteil, Erholung), nächstes Training,
-/// Rückblick (mit FitPassport) und Lumi. Messungen und Medaillen stehen jetzt in ihren eigenen Abschnitten, die Wochenziele hinter "Ziele" in der Leiste.
+/// Rückblick (mit FitPassport) und Lumi; oben "Einsichten und Hinweise" (Besitzer 10.11.2026, früher auf der Startseite). Messungen und Medaillen stehen
+/// jetzt in ihren eigenen Abschnitten, die Wochenziele hinter "Ziele" in der Leiste.
 /// Nur der Inhalt, ohne ScrollView, Hintergrund oder Leiste: die Seite darum bringt sie mit.
 struct FortschrittSegmentView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -10,6 +11,8 @@ struct FortschrittSegmentView: View {
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         ListenKarte {
+            FortschrittLinkZeile(titel: "Einsichten und Hinweise", detail: "Hinweise des Tages und was mir auffällt", symbol: "lightbulb.fill", route: .einsichten)
+            Haarlinie()
             FortschrittLinkZeile(titel: "Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
             Haarlinie()
             FortschrittLinkZeile(titel: "Kraftkurve", detail: "Bestes Gewicht, 1RM und Volumen je Übung", symbol: "chart.line.uptrend.xyaxis") { KraftKurveSeite() }
@@ -31,6 +34,8 @@ struct FortschrittLinkZeile<Ziel: View>: View {
     let detail: String
     let symbol: String
     let ziel: Ziel
+    /// Mit Route geht die Seite über den Pfad des Tabs (`RouteAnsicht`), so zählt die Nutzungsmeldung sie; ohne direkt `ziel`.
+    var route: Route?
     @Environment(\.palette) private var palette
 
     init(titel: String, detail: String, symbol: String, @ViewBuilder ziel: () -> Ziel) {
@@ -41,23 +46,33 @@ struct FortschrittLinkZeile<Ziel: View>: View {
     }
 
     var body: some View {
-        NavigationLink {
-            ziel
-        } label: {
-            HStack(spacing: Abstand.m) {
-                Image(systemName: symbol).frame(width: 28).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(titel).font(.headline)
-                    Text(detail).font(.footnote).foregroundStyle(palette.text2)
-                }
-                Spacer(minLength: Abstand.s)
-                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-            }
-            .foregroundStyle(palette.text)
-            .padding(.horizontal, Abstand.l)
-            .frame(minHeight: 56)
-            .contentShape(Rectangle())
+        if let route {
+            NavigationLink(value: route) { zeile }.buttonStyle(.plain)
+        } else {
+            NavigationLink { ziel } label: { zeile }.buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+    }
+
+    private var zeile: some View {
+        HStack(spacing: Abstand.m) {
+            Image(systemName: symbol).frame(width: 28).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titel).font(.headline)
+                Text(detail).font(.footnote).foregroundStyle(palette.text2)
+            }
+            Spacer(minLength: Abstand.s)
+            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+        }
+        .foregroundStyle(palette.text)
+        .padding(.horizontal, Abstand.l)
+        .frame(minHeight: 56)
+        .contentShape(Rectangle())
+    }
+}
+
+extension FortschrittLinkZeile where Ziel == EmptyView {
+    init(titel: String, detail: String, symbol: String, route: Route) {
+        self.init(titel: titel, detail: detail, symbol: symbol) { EmptyView() }
+        self.route = route
     }
 }

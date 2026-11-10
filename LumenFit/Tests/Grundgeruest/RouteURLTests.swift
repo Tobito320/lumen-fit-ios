@@ -3,7 +3,7 @@ import XCTest
 
 final class RouteURLTests: XCTestCase {
     private let alleRouten: [Route] = {
-        var liste: [Route] = [.heute, .verlauf, .gewichtEintragen,
+        var liste: [Route] = [.heute, .verlauf, .einsichten, .gewichtEintragen,
                               .uebung(id: "EIeI8Vf"), .uebung(id: "eigen/ä ö"), .freund(daten: nil), .freund(daten: "abc-_123xyz")]
         liste += [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
         liste += [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
@@ -30,6 +30,7 @@ final class RouteURLTests: XCTestCase {
         XCTAssertEqual(RouteURL.url(fuer: .schlaf(.werte)).absoluteString, "lumenfit://schlaf?bereich=werte")
         XCTAssertEqual(RouteURL.url(fuer: .profil(.datensicherung)).absoluteString, "lumenfit://profil?bereich=datensicherung")
         XCTAssertEqual(RouteURL.url(fuer: .gewichtEintragen).absoluteString, "lumenfit://gewicht")
+        XCTAssertEqual(RouteURL.url(fuer: .einsichten).absoluteString, "lumenfit://einsichten")
         XCTAssertEqual(RouteURL.url(fuer: .uebung(id: "abc")).absoluteString, "lumenfit://uebung?id=abc")
         XCTAssertNil(RouteURL.route(aus: URL(string: "lumenfit://coach?frage=a%20b")!), "der Coach ist weg: alte Links sind keine Route")
     }

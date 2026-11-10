@@ -145,6 +145,7 @@ enum NutzungName {
         case .schlaf(let b): "seite.schlaf.\(b.rawValue)"
         case .profil(let b): "seite.profil.\(b.rawValue)"
         case .verlauf: "seite.verlauf"
+        case .einsichten: "seite.einsichten"
         case .gewichtEintragen: "seite.gewichtEintragen"
         case .uebung: "seite.uebung"
         case .freund: "blatt.freund"

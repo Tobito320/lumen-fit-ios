@@ -29,6 +29,8 @@ enum RouteURL {
             if bereich != .uebersicht { eintraege.append(eintrag("bereich", bereich.rawValue)) }
         case .verlauf:
             komponenten.host = "verlauf"
+        case .einsichten:
+            komponenten.host = "einsichten"
         case .gewichtEintragen:
             komponenten.host = "gewicht"
         case .uebung(let id):
@@ -73,6 +75,8 @@ enum RouteURL {
             return .profil(abfrage["bereich"].flatMap { ProfilBereich(rawValue: $0) } ?? .uebersicht)
         case "verlauf":
             return .verlauf
+        case "einsichten":
+            return .einsichten
         case "gewicht":
             return .gewichtEintragen
         case "uebung":

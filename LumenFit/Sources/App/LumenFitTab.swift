@@ -31,7 +31,7 @@ enum LumenFitTab: String, CaseIterable, Hashable, Sendable, Identifiable {
         switch route {
         case .heute, .gewichtEintragen: .heute
         case .gym(.training), .gym(.plaene), .uebung: .training
-        case .gym(.fortschritt), .verlauf: .fortschritt
+        case .gym(.fortschritt), .verlauf, .einsichten: .fortschritt
         case .freund, .profil(.verbindungen): .freunde
         case .essen, .schlaf, .profil: .profil
         }
@@ -48,7 +48,7 @@ extension Route {
         case .gym, .uebung: .gym
         case .essen: .essen
         case .schlaf: .schlaf
-        case .heute, .profil, .verlauf, .gewichtEintragen, .freund: nil
+        case .heute, .profil, .verlauf, .einsichten, .gewichtEintragen, .freund: nil
         }
     }
 }

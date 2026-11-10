@@ -15,7 +15,7 @@ final class NutzungVertragTests: XCTestCase {
     private func unter(_ n: [String: Any], _ a: String, _ b: String) throws -> Set<String> { Set(try XCTUnwrap((n[a] as? [String: Any])?[b] as? [String])) }
 
     private func seiten() -> [String] {
-        let routen: [Route] = [.heute, .verlauf, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)]
+        let routen: [Route] = [.heute, .verlauf, .einsichten, .gewichtEintragen, .uebung(id: "x"), .freund(daten: nil)]
             + [GymBereich.training, .plaene, .fortschritt].map { Route.gym($0) }
             + [EssenBereich.heute, .scan, .favoriten].map { Route.essen($0) }
             + [SchlafBereich.letzteNacht, .verlauf, .werte].map { Route.schlaf($0) }
