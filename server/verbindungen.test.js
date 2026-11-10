@@ -57,14 +57,19 @@ const hochladen = async (env, k, name = KONTEN[k].name, extra) => assert.equal((
 const lovea = (env, id, person) => handleFetch(new Request(`https://x.test/admin/konto/${id}`, {
   method: "PATCH", headers: admin, body: JSON.stringify({ einstellungen: { loveaVerbinden: true }, lovea_person: person }) }), env);
 
-// "ich" besitzt den Code, "du" scannt, "ich" nimmt an. Liefert die Verbindungs-Id.
+// "ich" zeigt den QR-Code, "du" scannt: gleich verbunden. Liefert die Verbindungs-Id.
 async function verbinden(env, besitzer = "ich", scanner = "du") {
   const { json: e } = await ruf(env, besitzer, "POST", "/verbindungen/einladung");
   const a = await ruf(env, scanner, "POST", "/verbindungen/anfrage", { token: e.token });
   assert.equal(a.status, 201);
-  assert.equal((await ruf(env, besitzer, "POST", `/verbindungen/${a.json.id}/annehmen`)).status, 200);
+  assert.equal(a.json.status, "aktiv");
   return a.json.id;
 }
+// Link aus Build 18 (24 h): wird eine Anfrage, die der Besitzer annimmt oder ablehnt.
+const linkAnfrage = async (env, besitzer, scanner) => {
+  const { json: l } = await ruf(env, besitzer, "POST", "/freunde/einladung");
+  return ruf(env, scanner, "POST", "/verbindungen/anfrage", { token: l.token });
+};
 const meine = async (env, k) => (await ruf(env, k, "GET", "/verbindungen")).json.verbindungen;
 
 test("Einladung: Token mit mindestens 128 Bit, nur der Hash liegt in der Datenbank, läuft nach 10 Minuten ab", async () => {
@@ -83,16 +88,17 @@ test("Einladung: Token mit mindestens 128 Bit, nur der Hash liegt in der Datenba
   assert.equal(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM einladungen").get().n, 1, "ein neuer Code macht den alten ungültig");
 });
 
-test("Scannen: zeigt, wer es ist, gibt nichts frei; erst die Annahme öffnet Daten, Standard nur Schritte und Gym", async () => {
+test("Link aus Build 18: Ansehen zeigt, wer es ist, gibt nichts frei; erst die Annahme öffnet Daten, Standard nur Schritte und Gym", async () => {
   const env = await welt("ich", "du");
   await hochladen(env, "ich");
-  const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
-  const peek = await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: e.token });
+  const { json: l } = await ruf(env, "ich", "POST", "/freunde/einladung");
+  const peek = await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: l.token });
   assert.equal(peek.status, 200);
   assert.equal(peek.json.name, "Ich");
   assert.deepEqual(await meine(env, "du"), [], "Ansehen legt nichts an");
-  const a = await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: e.token });
+  const a = await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: l.token });
   assert.equal(a.status, 201);
+  assert.equal(a.json.status, "anfrage");
   const dein = (await meine(env, "du"))[0];
   assert.equal(dein.status, "anfrageAusgehend");
   assert.equal(dein.daten, undefined, "vor der Annahme keine Daten");
@@ -108,6 +114,100 @@ test("Scannen: zeigt, wer es ist, gibt nichts frei; erst die Annahme öffnet Dat
   assert.deepEqual(Object.keys(d.daten.heute).sort(), ["gymTageWoche", "habitsFertig", "schritte", "tag"].sort());
   assert.deepEqual(d.daten.heute.habitsFertig, ["gym"], "Wasser hängt an Essen");
   assert.deepEqual(d.daten.ereignisse.map((x) => x.id), ["e1"], "Schlaf-Ereignis nur mit Schlaf");
+});
+
+test("QR-Code: Scannen verbindet sofort, Standard nur Schritte und Gym; nur der Einladende sieht eingeladen", async () => {
+  const env = await welt("ich", "du");
+  await hochladen(env, "ich");
+  const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
+  assert.equal((await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: e.token })).json.name, "Ich");
+  const a = await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: e.token });
+  assert.deepEqual([a.status, a.json.status, a.json.name], [201, "aktiv", "Ich"]);
+  const d = (await meine(env, "du"))[0];
+  assert.deepEqual([d.status, d.eingeladen], ["aktiv", false]);
+  assert.deepEqual(d.siehst, ["schritte", "gym"]);
+  assert.equal(d.daten.heute.schritte, 4200);
+  const i = (await meine(env, "ich"))[0];
+  assert.deepEqual([i.status, i.eingeladen, i.name], ["aktiv", true, "Du"]);
+  assert.ok(Math.abs(Date.parse(i.erstellt) - Date.now()) < 5000);
+  assert.equal((await ruf(env, "ich", "POST", `/verbindungen/${a.json.id}/annehmen`)).status, 409, "nichts mehr anzunehmen");
+});
+
+const CODE_ANZEIGE = /^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{4}-[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{4}$/;
+const neuerCode = async (env, k) => (await ruf(env, k, "POST", "/freunde/einladung", { art: "code" })).json;
+
+test("Code: 8 Zeichen ohne Verwechsler, 24 Stunden, nur der Hash liegt in der Datenbank, keine Konto-Id in der Antwort", async () => {
+  const env = await welt("ich");
+  const r = await ruf(env, "ich", "POST", "/freunde/einladung", { art: "code" });
+  assert.equal(r.status, 201);
+  assert.match(r.json.code, CODE_ANZEIGE);
+  assert.equal(r.json.token, undefined, "kein Link-Token dazu");
+  assert.equal(r.json.sekunden, 86400);
+  assert.ok(!r.text.includes(KONTEN.ich.id));
+  const roh = r.json.code.replace("-", "");
+  const zeile = env.DB.roh.prepare("SELECT * FROM einladungen").get();
+  assert.equal(zeile.hash, createHash("sha256").update(`code:${roh}`).digest("hex"));
+  assert.ok(!JSON.stringify(zeile).includes(roh), "der Code selbst wird nie gespeichert");
+  assert.ok(Math.abs(zeile.laeuft_ab - (Date.now() + 86_400_000)) < 5000);
+  const viele = new Set();
+  for (let i = 0; i < 200; i++) { env.DB.roh.exec("DELETE FROM drossel"); viele.add((await neuerCode(env, "ich")).code); }
+  assert.equal(viele.size, 200);
+  assert.ok([...viele].every((c) => CODE_ANZEIGE.test(c)));
+  assert.ok(env.DB.roh.prepare("SELECT COUNT(*) AS n FROM einladungen WHERE konto = ? AND benutzt = 0").get(KONTEN.ich.id).n <= 3, "Codes und Links teilen sich die Kappe");
+});
+
+test("Code eintippen: Groß/Klein, Leerzeichen und Bindestrich egal, verbindet sofort, nur einmal nutzbar", async () => {
+  const env = await welt("ich", "du", "fremd");
+  await hochladen(env, "ich");
+  const { code } = await neuerCode(env, "ich");
+  const getippt = ` ${code.toLowerCase().replace("-", " ")} `;
+  const peek = await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: getippt });
+  assert.deepEqual([peek.status, peek.json.name], [200, "Ich"]);
+  assert.ok(!peek.text.includes(KONTEN.ich.id));
+  const a = await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: code.replace("-", "") });
+  assert.deepEqual([a.status, a.json.status], [201, "aktiv"]);
+  assert.deepEqual((await meine(env, "ich")).map((e) => [e.name, e.status, e.eingeladen]), [["Du", "aktiv", true]]);
+  assert.equal((await meine(env, "du"))[0].daten.heute.schritte, 4200);
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: code })).status, 404, "einmal nutzbar");
+  // Eigener Code, schon verbunden, abgelaufen.
+  const { code: c2 } = await neuerCode(env, "ich");
+  assert.equal((await ruf(env, "ich", "POST", "/verbindungen/anfrage", { token: c2 })).status, 400);
+  assert.equal((await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: c2 })).status, 409);
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/ansehen", { token: c2 })).status, 200, "nicht verbraucht");
+  env.DB.roh.prepare("UPDATE einladungen SET laeuft_ab = ?").run(Date.now() - 1);
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: c2 })).status, 404);
+  for (const schlecht of ["ABCD-EFG", "ABCD-EFGHI", "ABCD-EFG0", "ABCD-EFGI", "ABCD-EFGL", "ÄBCD-EFGH"]) {
+    assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/ansehen", { token: schlecht })).status, 404, schlecht);
+  }
+});
+
+test("Code raten: je Konto und Tag höchstens 20 Abrufe mit Code, dann 429 auch für den richtigen; andere Konten und QR-Codes frei", async () => {
+  const env = await welt("ich", "du", "fremd");
+  const { code } = await neuerCode(env, "ich");
+  const stati = [];
+  for (let i = 0; i < 21; i++) {
+    if (i % 9 === 0) env.DB.roh.exec("DELETE FROM drossel WHERE schluessel LIKE 'scan:%'"); // nur die Minuten-Drossel zurücksetzen
+    stati.push((await ruf(env, "du", "POST", "/verbindungen/ansehen", { token: i < 20 ? "ZZZZ-ZZZZ" : code })).status);
+  }
+  assert.deepEqual(stati.slice(0, 20), Array(20).fill(404));
+  assert.equal(stati[20], 429);
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/ansehen", { token: code })).status, 200, "andere Konten sind nicht betroffen");
+  env.DB.roh.exec("DELETE FROM drossel WHERE schluessel LIKE 'scan:%'");
+  const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
+  assert.equal((await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: e.token })).json.status, "aktiv", "QR-Codes zählen nicht zur Tageskappe");
+});
+
+test("Sofort verbunden nur bis 50 aktive Verbindungen je Seite; der Code bleibt dann gültig", async () => {
+  const env = await welt("ich", "du");
+  const t = new Date().toISOString();
+  for (let i = 0; i < 50; i++) {
+    env.DB.roh.prepare("INSERT INTO verbindungen (id, a, b, status, auto, a_einst, b_einst, erstellt, geaendert) VALUES (?, ?, ?, 'aktiv', 0, '{}', '{}', ?, ?)")
+      .run(String(i).padStart(32, "f"), KONTEN.ich.id, String(i).padStart(32, "e"), t, t);
+  }
+  const { code } = await neuerCode(env, "ich");
+  const r = await ruf(env, "du", "POST", "/verbindungen/anfrage", { token: code });
+  assert.equal(r.status, 429);
+  assert.equal(env.DB.roh.prepare("SELECT benutzt FROM einladungen").get().benutzt, 0);
 });
 
 test("Bereich aus heißt Feld fehlt; ausblenden, Pause und Mitteilungen gelten sofort", async () => {
@@ -262,18 +362,17 @@ test("Gesperrte Konten liefern nichts und ihre Codes gelten nicht", async () => 
   assert.ok(id);
 });
 
-test("Zu viele offene Anfragen an ein Konto werden abgewiesen", async () => {
+test("Zu viele offene Anfragen an ein Konto werden abgewiesen (Links aus Build 18)", async () => {
   const env = await welt("ich");
   for (let i = 0; i < 11; i++) {
     const k = { id: String(i).padStart(2, "0").repeat(16), geheimnis: "q".repeat(48), name: `K${i}` };
     await handleFetch(new Request("https://x.test/konto", { method: "POST", headers: { "X-App-Key": APP }, body: JSON.stringify({ ...k, version: "1" }) }), env);
-    env.DB.roh.exec("DELETE FROM drossel");
-    const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
-    const r = await handleFetch(new Request("https://x.test/verbindungen/anfrage", { method: "POST", headers: { "X-App-Key": APP, "X-Konto": k.id, "X-Geheimnis": k.geheimnis }, body: JSON.stringify({ token: e.token }) }), env);
+    env.DB.roh.exec("DELETE FROM drossel; DELETE FROM einladungen");
+    const { json: l } = await ruf(env, "ich", "POST", "/freunde/einladung");
+    const r = await handleFetch(new Request("https://x.test/verbindungen/anfrage", { method: "POST", headers: { "X-App-Key": APP, "X-Konto": k.id, "X-Geheimnis": k.geheimnis }, body: JSON.stringify({ token: l.token }) }), env);
     assert.equal(r.status, i < 10 ? 201 : 429);
   }
 });
-
 test("Einstellungen: ungültige Eingaben werden abgewiesen, Name wird bereinigt", async () => {
   const env = await welt("ich", "du");
   const id = await verbinden(env);

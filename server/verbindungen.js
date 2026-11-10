@@ -1,7 +1,7 @@
 // Verbindungen zwischen Konten (QR-Einladung) und die zwei Lovea-Konten (von selbst verbunden). Jede Auskunft über ein anderes Konto
 // läuft über eine Zeile in `verbindungen` mit Status "aktiv"; der Server filtert die Daten je Verbindung und Bereich, bevor er sie ausliefert.
 //
-// Zeile: a fragt an (hat gescannt), b besitzt den Code. Einstellungen je Seite (a_einst, b_einst):
+// Zeile: a fragt an (hat gescannt oder den Code getippt), b besitzt die Einladung. QR-Code und Code verbinden sofort, ein Link aus Build 18 wird eine Anfrage. Einstellungen je Seite (a_einst, b_einst):
 //   zeigt: Bereiche, die diese Seite der anderen zeigt (fehlt: nur Schritte und Gym)
 //   ausblenden: Bereiche, die diese Seite von der anderen nicht sehen will
 //   pause: nichts senden und nichts empfangen, bis es wieder aus ist
@@ -18,21 +18,34 @@ const MAX_AKTIV = 50;
 const MAX_ANFRAGEN = 10;
 // Abruf gedrosselt: je Konto höchstens so viele Einladungs-Wege (anlegen, ansehen, anfragen) je Minute.
 const DROSSEL_JE_MINUTE = 10;
+// Code zum Abtippen (24 h, statt Link): 8 Zeichen ohne Verwechsler (0 O 1 I L), knapp 40 Bit; je Konto und Tag höchstens so viele Abrufe mit Code.
+const CODE_ZEICHEN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const CODE_FORM = /^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{8}$/;
+const CODE_JE_TAG = 20;
+const TAG_MS = 24 * 3600 * 1000;
 
 const bytesHex = (n) => [...crypto.getRandomValues(new Uint8Array(n))].map((x) => x.toString(16).padStart(2, "0")).join("");
 function tokenNeu() {
   const b = crypto.getRandomValues(new Uint8Array(32)); // 256 Bit
   return btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-export { tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS }; // auch für die Link-Einladung in freunde.js
+function codeNeu() {
+  let s = "";
+  while (s.length < 8) for (const b of crypto.getRandomValues(new Uint8Array(16))) if (b < 248 && s.length < 8) s += CODE_ZEICHEN[b % 31]; // 248 = 8 * 31, ohne Schieflage
+  return s;
+}
+const codeNorm = (x) => (typeof x === "string" ? x.toUpperCase().replace(/[\s-]/g, "") : "");
+const codeHash = (code, h) => h.sha256(`code:${code}`);
+const istCode = (x) => !TOKEN_FORM.test(x ?? "") && CODE_FORM.test(codeNorm(x));
+export { tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS, codeNeu, codeHash }; // auch für die Link-Einladung in freunde.js
 
-async function drosseln(env, schluessel) {
-  const fenster = Math.floor(Date.now() / 60000);
+async function drosseln(env, schluessel, grenze = DROSSEL_JE_MINUTE, fensterMs = 60000) {
+  const fenster = Math.floor(Date.now() / fensterMs);
   await env.DB.prepare(
     "INSERT INTO drossel (schluessel, fenster, n) VALUES (?, ?, 1) ON CONFLICT(schluessel) DO UPDATE SET n = CASE WHEN fenster = excluded.fenster THEN n + 1 ELSE 1 END, fenster = excluded.fenster")
     .bind(schluessel, fenster).run();
   const z = await env.DB.prepare("SELECT n FROM drossel WHERE schluessel = ?").bind(schluessel).first();
-  return z.n <= DROSSEL_JE_MINUTE;
+  return z.n <= grenze;
 }
 
 const paar = (env, x, y) => env.DB.prepare("SELECT * FROM verbindungen WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)").bind(x, y, y, x).first();
@@ -109,6 +122,8 @@ async function eintrag(env, zeile, k, andereKonto, h) {
   const ich = einstellung(zeile, seite, h);
   const e = {
     id: zeile.id, name: andereKonto.name, auto: zeile.auto === 1, erstellt: zeile.erstellt,
+    // Die andere Person kam über meine Einladung (die App zeigt dann "jetzt mit dir verbunden").
+    eingeladen: zeile.auto !== 1 && seite === "b",
     // Die zwei Lovea-Konten: die App legt diese Person in den bisherigen Partner-Platz (Heute, Schlaf, Ansichten).
     lovea: !!(k.lovea_person && andereKonto.lovea_person && k.lovea_person !== andereKonto.lovea_person),
     status: zeile.status === "aktiv" ? "aktiv" : seite === "b" ? "anfrageEingehend" : "anfrageAusgehend",
@@ -146,12 +161,13 @@ async function liste(env, k, h) {
 
 // Token prüfen: Besitzer, wenn gültig (vorhanden, nicht benutzt, nicht abgelaufen, Besitzer nicht gesperrt), sonst null. Immer dieselbe Antwort für alle Fehlerfälle.
 async function einladungPruefen(env, token, h) {
-  if (typeof token !== "string" || !TOKEN_FORM.test(token)) return null;
-  const hash = await h.sha256(token);
+  const code = istCode(token);
+  if (!code && (typeof token !== "string" || !TOKEN_FORM.test(token))) return null;
+  const hash = code ? await codeHash(codeNorm(token), h) : await h.sha256(token);
   const z = await env.DB.prepare("SELECT * FROM einladungen WHERE hash = ? AND benutzt = 0 AND laeuft_ab > ?").bind(hash, Date.now()).first();
   if (!z) return null;
   const besitzer = await konto(env, z.konto);
-  return besitzer && !besitzer.gesperrt ? { hash, besitzer } : null;
+  return besitzer && !besitzer.gesperrt ? { hash, besitzer, code } : null;
 }
 
 const UNGUELTIG = (h) => h.nein(404, "Einladung ungültig oder abgelaufen");
@@ -173,6 +189,7 @@ async function einladungAnlegen(k, env, h) {
 async function ansehen(k, request, env, h) {
   if (!(await drosseln(env, `scan:${k.id}`))) return h.nein(429, "zu schnell");
   const b = await h.koerper(request);
+  if (istCode(b?.token) && !(await drosseln(env, `code:${k.id}`, CODE_JE_TAG, TAG_MS))) return h.nein(429, "zu viele Codes heute");
   const e = await einladungPruefen(env, b?.token, h);
   if (!e) return UNGUELTIG(h);
   if (e.besitzer.id === k.id) return h.nein(400, "Das ist dein eigener Code");
@@ -184,26 +201,38 @@ async function ansehen(k, request, env, h) {
 async function anfragen(k, request, env, h) {
   if (!(await drosseln(env, `scan:${k.id}`))) return h.nein(429, "zu schnell");
   const b = await h.koerper(request);
+  if (istCode(b?.token) && !(await drosseln(env, `code:${k.id}`, CODE_JE_TAG, TAG_MS))) return h.nein(429, "zu viele Codes heute");
   const e = await einladungPruefen(env, b?.token, h);
   if (!e) return UNGUELTIG(h);
   if (e.besitzer.id === k.id) return h.nein(400, "Das ist dein eigener Code");
   const alt = await paar(env, k.id, e.besitzer.id);
   if (alt && alt.status !== "entfernt") return h.nein(409, "Ihr seid schon verbunden");
-  const offen = await env.DB.prepare("SELECT COUNT(*) AS n FROM verbindungen WHERE b = ? AND status = 'anfrage'").bind(e.besitzer.id).first();
-  if (offen.n >= MAX_ANFRAGEN) return h.nein(429, "zu viele offene Anfragen");
+  // QR-Code (vor Ort gezeigt, der gemerkte des Besitzers) und Code (geschickt) sind seine Zustimmung: gleich verbunden. Ein Link aus Build 18 bleibt eine Anfrage.
+  const qr = await env.DB.prepare("SELECT 1 FROM konto_merker WHERE konto = ? AND schluessel = 'qr_einladung' AND wert = ?").bind(e.besitzer.id, e.hash).first();
+  const sofort = e.code || !!qr;
+  if (sofort) {
+    for (const id of [k.id, e.besitzer.id]) {
+      const n = await env.DB.prepare("SELECT COUNT(*) AS n FROM verbindungen WHERE (a = ? OR b = ?) AND status = 'aktiv'").bind(id, id).first();
+      if (n.n >= MAX_AKTIV) return h.nein(429, "zu viele Verbindungen");
+    }
+  } else {
+    const offen = await env.DB.prepare("SELECT COUNT(*) AS n FROM verbindungen WHERE b = ? AND status = 'anfrage'").bind(e.besitzer.id).first();
+    if (offen.n >= MAX_ANFRAGEN) return h.nein(429, "zu viele offene Anfragen");
+  }
   // Einmal nutzbar: nur wer die Zeile jetzt auf benutzt setzt, gewinnt.
   const r = await env.DB.prepare("UPDATE einladungen SET benutzt = 1 WHERE hash = ? AND benutzt = 0 AND laeuft_ab > ?").bind(e.hash, Date.now()).run();
   if ((r.meta?.changes ?? 0) !== 1) return UNGUELTIG(h);
   const t = jetztText();
+  const status = sofort ? "aktiv" : "anfrage";
   let id;
   if (alt) { // früher entfernt: dieselbe Zeile, frisch und mit Standard-Einstellungen
     id = alt.id;
-    await env.DB.prepare("UPDATE verbindungen SET a = ?, b = ?, status = 'anfrage', auto = 0, a_einst = '{}', b_einst = '{}', geaendert = ? WHERE id = ?").bind(k.id, e.besitzer.id, t, id).run();
+    await env.DB.prepare("UPDATE verbindungen SET a = ?, b = ?, status = ?, auto = 0, a_einst = '{}', b_einst = '{}', erstellt = ?, geaendert = ? WHERE id = ?").bind(k.id, e.besitzer.id, status, t, t, id).run();
   } else {
     id = bytesHex(16);
-    await env.DB.prepare("INSERT INTO verbindungen (id, a, b, status, auto, a_einst, b_einst, erstellt, geaendert) VALUES (?, ?, ?, 'anfrage', 0, '{}', '{}', ?, ?)").bind(id, k.id, e.besitzer.id, t, t).run();
+    await env.DB.prepare("INSERT INTO verbindungen (id, a, b, status, auto, a_einst, b_einst, erstellt, geaendert) VALUES (?, ?, ?, ?, 0, '{}', '{}', ?, ?)").bind(id, k.id, e.besitzer.id, status, t, t).run();
   }
-  return h.json({ id, name: e.besitzer.name }, 201);
+  return h.json({ id, name: e.besitzer.name, status }, 201);
 }
 
 const BOOL = ["pause", "mitteilungen", "favorit"];

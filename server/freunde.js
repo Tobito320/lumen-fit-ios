@@ -1,7 +1,7 @@
 // Crew: Herausforderungen, Reaktionen und Einladungs-Link zwischen verbundenen Konten (Auftrag tasks/auftraege/crew.md, Abschnitt Server).
 // Konto-Ids anderer Personen gehen nie hinaus: verbundene Personen erscheinen mit ihrer Verbindungs-Id, andere Teilnehmer einer
 // Herausforderung mit einer Teilnehmer-Id (SHA-256 aus Herausforderung und Konto, 16 Hex-Zeichen). Fremde und unbekannte Ids sind nicht zu unterscheiden (404).
-import { erlaubteBereiche, tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS } from "./verbindungen.js";
+import { erlaubteBereiche, tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS, codeNeu, codeHash } from "./verbindungen.js";
 
 const ID_FORM = /^[a-f0-9]{32}$/;
 const ARTEN = ["tage", "saetze", "volumen", "rekorde", "uebung"];
@@ -252,18 +252,21 @@ async function zuruecknehmen(k, request, env, h) {
   return h.json({ ok: true });
 }
 
-// Link-Einladung: dieselbe Tabelle und Token-Form wie der QR-Code, nur 24 Stunden gültig. Lang = laeuft_ab nach jetzt + 10 Minuten; einladungAnlegen löscht nur den gemerkten vorigen QR-Code.
-async function linkEinladung(k, env, h) {
+// Link-Einladung (Build 18) oder mit {"art":"code"} ein Code zum Abtippen (ab Build 19): dieselbe Tabelle wie der QR-Code, nur 24 Stunden gültig.
+// Lang = laeuft_ab nach jetzt + 10 Minuten; einladungAnlegen löscht nur den gemerkten vorigen QR-Code. Links und Codes teilen sich die Kappe.
+async function linkEinladung(k, request, env, h) {
   if (!(await drosseln(env, `link:${k.id}`, 10))) return h.nein(429, "zu schnell");
+  const code = (await h.koerper(request))?.art === "code" ? codeNeu() : null;
   const jetzt = Date.now();
   // Die zwei neuesten offenen Links bleiben, mit dem neuen sind es drei; dazu Abgelaufenes wie beim QR-Code.
   await env.DB.prepare(
     "DELETE FROM einladungen WHERE hash IN (SELECT hash FROM einladungen WHERE konto = ? AND benutzt = 0 AND laeuft_ab > ? ORDER BY laeuft_ab DESC LIMIT -1 OFFSET ?) OR laeuft_ab < ?")
     .bind(k.id, jetzt + EINLADUNG_MS, MAX_LINKS - 1, jetzt - 3600_000).run();
-  const token = tokenNeu();
+  const token = code ? null : tokenNeu();
   const laeuftAb = jetzt + LINK_MS;
-  await env.DB.prepare("INSERT INTO einladungen (hash, konto, laeuft_ab, benutzt) VALUES (?, ?, ?, 0)").bind(await h.sha256(token), k.id, laeuftAb).run();
-  return h.json({ token, laeuftAb: new Date(laeuftAb).toISOString(), sekunden: LINK_MS / 1000 }, 201);
+  await env.DB.prepare("INSERT INTO einladungen (hash, konto, laeuft_ab, benutzt) VALUES (?, ?, ?, 0)").bind(code ? await codeHash(code, h) : await h.sha256(token), k.id, laeuftAb).run();
+  const zeit = { laeuftAb: new Date(laeuftAb).toISOString(), sekunden: LINK_MS / 1000 };
+  return h.json(code ? { code: `${code.slice(0, 4)}-${code.slice(4)}`, ...zeit } : { token, ...zeit }, 201);
 }
 
 // Verwaltung, GET /admin/freunde (X-Admin-Key prüft index.js): je Konto nur Zahlen, dazu Verbindungen und Herausforderungen mit Konto-Ids.
@@ -330,7 +333,7 @@ export async function freunde(request, url, env, h) {
   if (teile[0] === "werte" && teile.length === 1 && m === "PUT") return werteMelden(k, request, env, h);
   if (teile[0] === "reaktionen" && teile.length === 1 && m === "POST") return reagieren(k, request, env, h);
   if (teile[0] === "reaktionen" && teile.length === 1 && m === "DELETE") return zuruecknehmen(k, request, env, h);
-  if (teile[0] === "einladung" && teile.length === 1 && m === "POST") return linkEinladung(k, env, h);
+  if (teile[0] === "einladung" && teile.length === 1 && m === "POST") return linkEinladung(k, request, env, h);
   return h.nein(404, "not found");
 }
 

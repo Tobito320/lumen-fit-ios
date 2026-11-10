@@ -36,12 +36,12 @@ async function welt(...namen) {
   }
   return env;
 }
-// Besitzer zeigt Code, Scanner fragt an, Besitzer nimmt an. Liefert die Verbindungs-Id.
+// Besitzer zeigt den QR-Code, Scanner scannt: gleich verbunden. Liefert die Verbindungs-Id.
 async function verbinden(env, besitzer, scanner) {
   const { json: e } = await ruf(env, besitzer, "POST", "/verbindungen/einladung");
   const a = await ruf(env, scanner, "POST", "/verbindungen/anfrage", { token: e.token });
   assert.equal(a.status, 201);
-  assert.equal((await ruf(env, besitzer, "POST", `/verbindungen/${a.json.id}/annehmen`)).status, 200);
+  assert.equal(a.json.status, "aktiv");
   return a.json.id;
 }
 const duell = (einladen, extra = {}) => ({ art: "saetze", modus: "gegen", tage: 7, einladen, ...extra });
@@ -487,9 +487,9 @@ test("Verwaltung /admin/freunde: nur mit Admin-Schlüssel, Zahlen und Ids je Kon
   assert.equal((await admin(env, "/admin/freunde", "falsch")).status, 401);
   assert.equal((await ruf(env, "ich", "GET", "/admin/freunde")).status, 401, "App-Schlüssel reicht nicht");
   const vd = await verbinden(env, "ich", "du");
-  // fremd fragt bei ich an, ich nimmt nicht an: offene Anfrage.
-  const { json: e } = await ruf(env, "ich", "POST", "/verbindungen/einladung");
-  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: e.token })).status, 201);
+  // fremd kommt über einen Link aus Build 18, ich nimmt nicht an: offene Anfrage (QR-Code und Code verbinden sofort).
+  const { json: l } = await ruf(env, "ich", "POST", "/freunde/einladung");
+  assert.equal((await ruf(env, "fremd", "POST", "/verbindungen/anfrage", { token: l.token })).json.status, "anfrage");
   assert.equal((await ruf(env, "ich", "POST", "/freunde/einladung")).status, 201);
   const x = (await erstellen(env, "ich", duell([vd], { art: "uebung", uebung: "Geheimübung" }))).json.id;
   assert.equal((await ruf(env, "ich", "PUT", "/freunde/werte", { werte: [{ id: x, wert: 7 }] })).status, 200);
