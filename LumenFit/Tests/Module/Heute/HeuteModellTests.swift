@@ -91,6 +91,18 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(leser.tagesAbfragen.count, 1, "Health wird beim Laden einmal gelesen")
     }
 
+    func testHealthMeldungRechnetNeuOhneHealthNochmalZuLesen() async throws {
+        let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 4_000)])
+        let m = HeuteModell(umgebung: try umgebung(leser: leser))
+        await m.lade()
+        XCTAssertEqual(leser.tagesAbfragen.count, 1)
+        await m.verarbeite(.healthAktualisiert)
+        XCTAssertEqual(leser.tagesAbfragen.count, 1, "die Meldung kommt erst nach dem Abruf (oder nach einem Eintrag von Hand): kein zweites Lesen")
+        XCTAssertEqual(m.stand?.schritte.schritte, 4_000)
+        await m.verarbeite(.vordergrund)
+        XCTAssertEqual(leser.tagesAbfragen.count, 2, "im Vordergrund liest Heute Health neu")
+    }
+
     func testSchritteKommenNurAusHealthNichtVomBand() async throws {
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 6_000, distanzMeter: 4_000)])
         let u = try umgebung(leser: leser)
