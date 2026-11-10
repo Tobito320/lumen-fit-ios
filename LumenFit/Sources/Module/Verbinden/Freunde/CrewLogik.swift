@@ -403,26 +403,8 @@ enum CrewLogik {
         return best?.wert
     }
 
-    /// "Crew-Bestwert: Beispiel Freund A 80 kg × 8"
+    /// "Bestwert bei Freunden: Beispiel Freund A 80 kg × 8"
     static func bestwertText(_ b: CrewBestwert) -> String {
         "Bestwert bei Freunden: \(b.name) \(TrainingLogik.kgText(b.kg)) kg × \(b.wdh)"
-    }
-
-    // MARK: Einstieg
-
-    /// Die Zeile unter "Crew" im Gym-Tab: "2 im Gym · Duell: du führst · 1 neu"; ohne alles ein Satz, was man hier tun kann.
-    static func einstiegText(imGym: Int, herausforderung: String?, neu: Int, personen: Int) -> String {
-        var teile: [String] = []
-        if imGym > 0 { teile.append("\(imGym) im Gym") }
-        if let herausforderung { teile.append(herausforderung) }
-        if neu > 0 { teile.append("\(neu) neu") }
-        if !teile.isEmpty { return teile.joined(separator: " · ") }
-        return personen == 0 ? "Freunde einladen und herausfordern" : "Herausfordern, vergleichen, anfeuern"
-    }
-
-    /// Die wichtigste laufende Herausforderung für den Einstieg: "Duell: du führst".
-    static func einstiegStand(_ antwort: CrewAntwort?, jetzt: Date) -> String? {
-        guard let h = antwort?.herausforderungen.first(where: { $0.dabei && !$0.abgebrochen && !vorbei($0, jetzt: jetzt) }) else { return nil }
-        return "\(art(h)): \(text(stand(h, jetzt: jetzt)))"
     }
 }

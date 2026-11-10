@@ -56,7 +56,6 @@ final class CrewDienstTests: XCTestCase {
         XCTAssertEqual(a.reaktionen.count, 3)
         XCTAssertTrue(a.reaktionen.allSatisfy { $0.name.hasPrefix("Beispiel Freund") })
         XCTAssertTrue(a.herausforderungen.allSatisfy { CrewLogik.istId($0.id) })
-        XCTAssertEqual(CrewLogik.einstiegStand(a, jetzt: CrewTestDaten.jetzt), "Duell: du führst")
         let umgebung = AppUmgebung.vorschau(fixtures: FixtureOrt.ordner)
         XCTAssertEqual(CrewDienst(umgebung: umgebung, demo: true).antwort?.herausforderungen.count, 2)
     }

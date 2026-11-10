@@ -7,7 +7,7 @@ Personen im Git, Gesundheitsdaten nur als Zusammenfassung und nur mit Freigabe. 
 ## Was es schon gibt (nicht neu bauen, nur nutzen)
 
 - Verbindungen per QR (`server/verbindungen.js`, App `Konto/KontoVerbindungen.swift`, `Module/Verbinden/Verbindungen*.swift`), je Person Freigaben.
-- Gym-Tab: Crew-Zeilen (`Module/Gym/GymCrewLogik.swift`, `GymCrewZeilen.swift` mit `GymCrewAbschnitt`, `GymCrewQuelle`), Mitlauf (`GymMitlaufLogik`),
+- Gym-Tab: Crew-Zeilen (`Module/Gym/GymCrewLogik.swift`, `GymCrewZeilen.swift` mit `GymCrewQuelle`), Mitlauf (`GymMitlaufLogik`),
   Rekord-Pinnwand (`GymRekordPinnwandLogik`, `GymRekordPinnwandView`), Einheit eines Partners (`GymPartnerEinheitView`), Demo-Crew (`GymCrewDemo`, `VerbindenDemo.crew`).
 - Zusammenfassung je Person (`ZusammenfassungDatei`, Server filtert je Verbindung): `heute.gymTage`, `gymZiel`, `gymTageWoche`, `verlauf.imGym`,
   `verlauf.trainings`, `verlauf.einheiten` (bis 30, Sätze in Zehntel-kg, nur mit gym + verlauf), `verlauf.serieWochen`.
@@ -128,10 +128,8 @@ Typnamen mit Vorsilbe `Crew` (Ziel weit eindeutig, `bash scripts/typnamen-doppel
 - Ansichten: `FreundeTabView.swift` (Wurzel des Tabs Freunde, Aufteilung B vom 10.11.: Für dich, Trainingspartner mit eurer Woche, Rangliste,
   Herausforderungen, Rekorde, Freunde mit Status und Einladen; kein Feed; ohne Freunde steht das Einladen oben; kein eigener NavigationStack), `CrewFreundSeite.swift`, `CrewHerausforderungBlatt.swift` (Erstellen: Art Duell / Gruppe / Gemeinsam,
   Maß, Übung aus den eigenen Übungen, Dauer, Personen, Ziel mit Vorschlag, Hinweis "Alle in dieser Herausforderung sehen deinen Namen und deinen
-  Wert."), `CrewHerausforderungSeite.swift` (Stand mit Balken, Tage übrig, Annehmen, Ablehnen, Verlassen), `CrewEinstieg.swift` (Zeile im Gym-Tab:
-  "Crew", darunter "2 im Gym · Duell: du führst · 1 neu", Chevron, öffnet die Crew-Seite per `NavigationLink`; auch ohne Personen sichtbar mit
-  "Freunde einladen und herausfordern"), `CrewBestwertZeile.swift` (eine Zeile für die Übung im Training, nichts ohne Wert).
-- Einhängen (kleinste Diffs): `GymCrewAbschnitt` (in `Module/Gym/GymCrewZeilen.swift`) zeigt oben `CrewEinstieg`, auch ohne Crew-Zeilen.
+  Wert."), `CrewHerausforderungSeite.swift` (Stand mit Balken, Tage übrig, Annehmen, Ablehnen, Verlassen), `CrewBestwertZeile.swift` (eine Zeile für die Übung im Training, nichts ohne Wert).
+- Einhängen (kleinste Diffs): die Zeile "Crew" im Gym-Tab (`CrewEinstieg`, `GymCrewAbschnitt`) ist seit dem Tab Freunde weg (10.11.).
   Crew-Zeilen werden antippbar (Freund-Seite), `GymCrewZeilen(grenze:)` zeigt im Tab Freunde alle. `GymRekordPinnwandView` bekommt den
   Respekt-Knopf je Zeile. `CrewBestwertZeile` in `UebungsKarte.kopf` (unter dem Untertitel, beim Umsortieren aus). Den Tab hängt lumenfit ein
   (`LumenFitTab`, Router, `RouteAnsicht`, `AppRootView`); Startseite ohne Freunde (Ahmed 10.11.).
