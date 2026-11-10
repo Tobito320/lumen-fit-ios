@@ -91,7 +91,7 @@ private struct FortAbzeichenZelle: View {
     /// Farben des Entwurfs (Bronze, Silber, Gold) und ein kühles Grau-Violett für Platin; kein Blau.
     static func farben(_ s: FortMedaillenStufe) -> (ring: Color, hell: Color, dunkel: Color, symbol: Color) {
         switch s {
-        case .bronze: (LumenFarben.farbe(0xD08A45), LumenFarben.farbe(0xF0B47A), LumenFarben.farbe(0xB5712F), .white)
+        case .bronze: (LumenFarben.farbe(0xD08A45), LumenFarben.farbe(0xF0B47A), LumenFarben.farbe(0xB5712F), LumenFarben.farbe(0x4A2A0C))
         case .silber: (LumenFarben.farbe(0xAEB9C4), LumenFarben.farbe(0xF2F5F8), LumenFarben.farbe(0x9BA7B4), LumenFarben.farbe(0x33404D))
         case .gold: (LumenFarben.farbe(0xF2C200), LumenFarben.farbe(0xFFE680), LumenFarben.farbe(0xE6A800), LumenFarben.farbe(0x5A3E00))
         case .platin: (LumenFarben.farbe(0xB8B4CC), LumenFarben.farbe(0xF4F2FA), LumenFarben.farbe(0xA9A4C2), LumenFarben.farbe(0x3A3550))

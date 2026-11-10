@@ -142,3 +142,25 @@ struct FortSaeulen: View {
         .frame(height: hoehe + 24, alignment: .bottom)
     }
 }
+
+/// Merkt sich das letzte Ergebnis einer Rechnung und rechnet nur neu, wenn sich die Eingabe ändert (Regel: keine Rechnungen bei jedem Aufbau).
+/// Kein `@Observable`: die Ansicht beobachtet die Stores selbst und hält den Merker in `@State`.
+@MainActor final class FortMerker<Eingabe: Equatable, Ergebnis> {
+    private var eingabe: Eingabe?
+    private var ergebnis: Ergebnis?
+
+    func wert(_ e: Eingabe, rechne: () -> Ergebnis) -> Ergebnis {
+        if e == eingabe, let ergebnis { return ergebnis }
+        let neu = rechne()
+        eingabe = e
+        ergebnis = neu
+        return neu
+    }
+}
+
+/// Eingabe für Rechnungen über die Einheiten: Einheiten, Plan und der Tag.
+struct FortTrainingEingabe: Equatable {
+    let sessions: [GymSession]
+    let plan: TrainingsPlan
+    let heute: String
+}

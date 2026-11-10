@@ -19,7 +19,7 @@ struct WieGehtsKarte: View {
                        schnitt: vergleich.einheitenSchnitt, schnittText: FortschrittLogik.zahl(vergleich.einheitenSchnitt))
                 kachel("Volumen", wert: FortschrittLogik.volumenText(vergleich.volumen), ist: vergleich.volumen,
                        schnitt: vergleich.volumenSchnitt, schnittText: FortschrittLogik.volumenText(vergleich.volumenSchnitt))
-                kachel("Sätze", wert: FortschrittLogik.zahl(Double(vergleich.saetze)), ist: Double(vergleich.saetze),
+                kachel("Sets", wert: FortschrittLogik.zahl(Double(vergleich.saetze)), ist: Double(vergleich.saetze),
                        schnitt: vergleich.saetzeSchnitt, schnittText: FortschrittLogik.zahl(vergleich.saetzeSchnitt))
             }
             if let satz {

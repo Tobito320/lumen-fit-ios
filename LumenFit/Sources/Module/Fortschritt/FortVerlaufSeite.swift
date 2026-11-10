@@ -6,6 +6,7 @@ import SwiftUI
 struct FortVerlaufSeite: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var nachtragen = false
+    @State private var merker = FortMerker<FortTrainingEingabe, TrainingsWochenVergleich>()
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
@@ -13,6 +14,10 @@ struct FortVerlaufSeite: View {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 KalenderKarte()
                 if q.hatTraining {
+                    // Früher "Wie geht's dir" oben im Tab: diese Woche gegen den Schnitt der 4 Wochen davor (Einheiten, Volumen, Sets).
+                    WieGehtsKarte(vergleich: merker.wert(FortTrainingEingabe(sessions: q.sessions, plan: q.plan, heute: q.heute)) {
+                        FortschrittLogik.vergleich(q.sessions, plan: q.plan, heute: q.heute, jetzt: q.jetzt)
+                    }, satz: nil, letzte: nil)
                     FortKopf("Einheiten je Woche")
                     EinheitenKarte(sessions: q.sessions, heute: q.heute, jetzt: q.jetzt)
                 }

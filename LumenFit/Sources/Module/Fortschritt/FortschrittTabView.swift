@@ -36,20 +36,6 @@ private struct FortTabEingabe: Equatable {
     var zeitraum: FortZeitraum
 }
 
-/// Merkt sich den letzten Stand; kein `@Observable`, die Ansicht beobachtet die Stores selbst.
-@MainActor private final class FortTabSpeicher {
-    var eingabe: FortTabEingabe?
-    var stand: FortTabStand?
-
-    func stand(_ e: FortTabEingabe, rechne: () -> FortTabStand) -> FortTabStand {
-        if e == eingabe, let stand { return stand }
-        let neu = rechne()
-        eingabe = e
-        stand = neu
-        return neu
-    }
-}
-
 /// Die Wurzel des Tabs Fortschritt im neuen Design (Entwurf, Besitzer 10.11.2026: "krass und gut, aber visuell schöner und kompakter"):
 /// Übersicht (Monat | Woche), Gewichte (Top 3, "Alle"), Letztes Training, Kalender und Verlauf, dann die Liste der Unterseiten.
 /// Ohne Training steht oben ein Leerzustand mit Knopf; die Liste bleibt. Der Tab setzt den `NavigationStack`.
@@ -57,13 +43,13 @@ struct FortschrittTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var zeitraum = FortZeitraum.monat
-    @State private var speicher = FortTabSpeicher()
+    @State private var speicher = FortMerker<FortTabEingabe, FortTabStand>()
     @State private var energie: Int?
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         let zeitraum = zeitraum
-        let s = speicher.stand(FortTabEingabe(sessions: q.sessions, plan: q.plan, gewicht: q.gewicht, heute: q.heute, zeitraum: zeitraum)) {
+        let s = speicher.wert(FortTabEingabe(sessions: q.sessions, plan: q.plan, gewicht: q.gewicht, heute: q.heute, zeitraum: zeitraum)) {
             Self.rechne(q, zeitraum: zeitraum)
         }
         ScrollView {

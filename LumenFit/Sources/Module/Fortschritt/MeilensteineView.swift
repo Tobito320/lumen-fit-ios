@@ -7,14 +7,17 @@ import SwiftUI
 struct MeilensteineView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @State private var merker = FortMerker<FortTrainingEingabe, (level: FortLevel, woche: StatsZahlen)>()
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
+        let punkte = merker.wert(FortTrainingEingabe(sessions: q.sessions, plan: .leer, heute: q.heute)) {
+            (FortErfolgeLogik.level(StatsPunkte.gesamt(q.sessions)), StatsPunkte.zahlen(q.sessions, jetzt: q.jetzt))
+        }
         let einstellungen = umgebung.bereicheWirksam
         let abschnitte = MedaillenAnsicht.abschnitte(zeigt: { einstellungen.zeigt($0) }, erreicht: q.erreichteIds, ohneZiel: MeilensteinPruefung.ohneZiel(essenZielDa: q.essenZielDa))
         let zaehlung = MedaillenAnsicht.zaehlung(abschnitte, erreicht: q.erreichteIds)
-        let level = FortErfolgeLogik.level(StatsPunkte.gesamt(q.sessions))
-        let woche = StatsPunkte.zahlen(q.sessions, jetzt: q.jetzt)
+        let level = punkte.level, woche = punkte.woche
         let pfad = LumiPfad.stand(erreicht: q.stufenZahl, serieWochen: q.serieWochen)
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
@@ -113,7 +116,7 @@ struct FortLevelKarte: View {
                             .padding(4)
                             .background(i == level.index ? palette.akzentFlaeche.opacity(0.3) : .clear, in: .circle)
                         Text(FortErfolgeLogik.name(i)).font(.caption2.weight(i == level.index ? .bold : .medium))
-                            .foregroundStyle(i == level.index ? palette.text : i < level.index ? palette.text2 : palette.text2.opacity(0.7))
+                            .foregroundStyle(i == level.index ? palette.text : palette.text2)
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity)

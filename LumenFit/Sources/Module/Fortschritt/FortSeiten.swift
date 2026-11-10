@@ -5,14 +5,18 @@ import SwiftUI
 struct FortGewichteSeite: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
+    @State private var merker = FortMerker<FortTrainingEingabe, [GewichtZeile]>()
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
+        let zeilen = merker.wert(FortTrainingEingabe(sessions: q.sessions, plan: q.plan, heute: q.heute)) {
+            FortschrittLogik.gewichte(q.sessions, plan: q.plan, heute: q.heute)
+        }
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 Text("Schwerstes Set je Woche, letzte 8 Wochen. Tippen für Kurve und Rekorde.").font(.subheadline).foregroundStyle(palette.text2)
                     .padding(.horizontal, Abstand.xs)
-                GewichteListe(zeilen: FortschrittLogik.gewichte(q.sessions, plan: q.plan, heute: q.heute))
+                GewichteListe(zeilen: zeilen)
                 ListenKarte {
                     FortListenZeile("Kraftkurve", wert: String(localized: "Gewicht, 1RM, Volumen"), symbol: "chart.line.uptrend.xyaxis", farbe: Bereichsfarbe.splits) {
                         KraftKurveSeite()
@@ -33,10 +37,13 @@ struct FortAusblickSeite: View {
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.palette) private var palette
     @State private var gewaehlt: String?
+    @State private var merker = FortMerker<FortTrainingEingabe, [FortAusblick]>()
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
-        let liste = FortAusblickLogik.hauptuebungen(FortschrittLogik.gewichte(q.sessions, plan: q.plan, heute: q.heute))
+        let liste = merker.wert(FortTrainingEingabe(sessions: q.sessions, plan: q.plan, heute: q.heute)) {
+            FortAusblickLogik.hauptuebungen(FortschrittLogik.gewichte(q.sessions, plan: q.plan, heute: q.heute))
+        }
         let aktiv = liste.first { $0.id == gewaehlt } ?? liste.first
         ScrollView {
             VStack(alignment: .leading, spacing: Abstand.l) {
