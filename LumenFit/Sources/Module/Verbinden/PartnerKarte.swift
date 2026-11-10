@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Die Karte des Trainingspartners (Idee 82, ab 09.11.2026 ein frei gewählter Freund statt fest der Lovea-Person): Heute, Schlaf, Essen und Gym betten sie
-/// ein, im Training mit "Eure Woche". Sie zeigt nur, was die Person freigibt und die Datei enthält.
+/// Die Karte des Trainingspartners (Idee 82, ab 09.11.2026 ein frei gewählter Freund statt fest der Lovea-Person): der Tab Freunde zeigt sie als "Heute"
+/// (nur mit Lovea, bis Build 20), Schlaf und Essen betten sie ein, Gym mit "Eure Woche". Sie zeigt nur, was die Person freigibt und die Datei enthält.
 /// Nicht verbunden, veraltet, falsche Version, nichts freigegeben: gar nichts, nicht einmal einen Platzhalter oder eine Fehlermeldung.
 struct PartnerKarte: View {
     let bereich: PartnerBereich
@@ -61,7 +61,7 @@ struct PartnerKarte: View {
     private func kopf(_ name: String) -> some View {
         let inhalt = HStack {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Trainingspartner")
+                Text(bereich == .heute ? "Heute" : "Trainingspartner")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(palette.text2)
                 Text(name)
