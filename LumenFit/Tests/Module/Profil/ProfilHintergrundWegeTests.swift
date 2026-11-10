@@ -26,9 +26,10 @@ final class ProfilHintergrundWegeTests: XCTestCase {
         f.weiter()
         f.name = name
         f.weiter()
-        f.weiter()
-        f.weiter()
+        f.weiter()                 // Einladung ohne Code
+        f.ueberspringe()           // die acht Fragen
         f.antworteNutzung(.nein)   // die Frage nach der Nutzungsmeldung steht vor Health
+        precondition(f.karte == .health)
     }
 
     func testOnboardingLegtImHintergrundDasProfilOhnePasswortAn() async throws {

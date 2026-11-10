@@ -147,7 +147,7 @@ final class ProfilOnboardingFluss {
 
     /// Wie `abschliessen`, aber abseits des Hauptthreads (die Oberfläche hängt nicht). Die Oberfläche nutzt diese.
     @discardableResult
-    func abschliessenImHintergrund(in umgebung: AppUmgebung, planUebernehmen: Bool) async -> Bool {
+    func abschliessenImHintergrund(in umgebung: AppUmgebung, planUebernehmen: Bool = false) async -> Bool {
         let ergebnis: Result<Profil, Error>
         do { ergebnis = .success(try await umgebung.profil.anlegenImHintergrund(name: name, passwort: "")) } catch { ergebnis = .failure(error) }
         return beende(ergebnis, in: umgebung, planUebernehmen: planUebernehmen)
