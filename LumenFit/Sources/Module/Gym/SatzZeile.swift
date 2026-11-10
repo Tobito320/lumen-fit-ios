@@ -135,7 +135,7 @@ struct SatzZeile: View {
     }
 
     /// Feld wie im Entwurf (`.inp`): Tipp öffnet das Zahlenfeld, Halten bietet mehr/weniger, VoiceOver verstellt mit Wischen.
-    private func feld(_ titel: String, wert: String?, tippen: @escaping () -> Void, plus: @escaping () -> Void, minus: @escaping () -> Void) -> some View {
+    private func feld(_ titel: LocalizedStringKey, wert: String?, tippen: @escaping () -> Void, plus: @escaping () -> Void, minus: @escaping () -> Void) -> some View {
         Button(action: tippen) {
             Text(wert ?? "–")
                 .font(.body.weight(.semibold)).fontDesign(.rounded).monospacedDigit()
@@ -154,7 +154,7 @@ struct SatzZeile: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(titel)
-        .accessibilityValue(wert ?? "leer")
+        .accessibilityValue(wert.map { Text(verbatim: $0) } ?? Text("leer"))
         .accessibilityHint("Tippen zum Eintippen")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { tippen() }
@@ -183,7 +183,7 @@ struct SatzZeile: View {
         Button { sitzung.haken(uebung, satz) } label: {
             Image(systemName: "checkmark")
                 .font(.body.weight(.bold))
-                .foregroundStyle(s.ok == true ? Color.white : palette.text2)
+                .foregroundStyle(s.ok == true ? palette.grund : palette.text2) // grün ist dunkel Lime, hell Dunkelgrün: Grund hält beides
                 .frame(width: 32, height: 32)
                 .background(s.ok == true ? gruen : palette.grund, in: .rect(cornerRadius: Rundung.klein, style: .continuous))
                 .frame(width: LaufSpalten.haken, height: Abstand.tippflaeche)
