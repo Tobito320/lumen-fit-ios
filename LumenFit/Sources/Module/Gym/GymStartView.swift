@@ -60,7 +60,7 @@ struct GymStartView: View {
             if let knopf = stand.knopf {
                 startKnopf(knopf, heuteGemacht: heuteGemacht, tag: kurzMoeglich && kurz ? stand.tag : nil, training: training)
             }
-            if stand.knopf == .starten { pillen(stand, kurzMoeglich: kurzMoeglich) }
+            if stand.knopf == .starten { pillen(stand, kurzMoeglich: kurzMoeglich, training: training) }
             tagZeile(datum: datum, heute: heute, stand: stand, training: training, kurz: kurzMoeglich && kurz)
             if let hinweis = stand.testHinweis { testwoche(hinweis, training: training) }
             unterseiten(training, heute: heute)
@@ -143,23 +143,57 @@ struct GymStartView: View {
             sitzung.starte(planTag: training.heutigerTag()?.id)
             return
         }
-        let weg = GymTabLogik.kurzWeg(kurzTag)
-        sitzung.starte(planTag: kurzTag.id)
-        for i in sitzung.liste.indices.reversed() where weg.contains(sitzung.liste[i].planUebung.id) { sitzung.auslassen(i) }
+        sitzung.starteKurz(kurzTag, weg: GymTabLogik.kurzWeg(kurzTag))
         kurz = false
     }
 
-    private func pillen(_ stand: GymStartStand, kurzMoeglich: Bool) -> some View {
-        HStack(spacing: Abstand.s) {
-            Spacer(minLength: 0)
-            if kurzMoeglich, let tag = stand.tag {
-                let minuten = GymTabLogik.rund(ZeitSchaetzung.minuten(GymTabLogik.kurzversion(tag)))
-                GymPillenKnopf(text: String(localized: "Kurz · \(minuten) min"), symbol: "clock", an: kurz) { kurz.toggle() }
-                    .accessibilityHint("Startet nur die ersten Übungen des Tages")
+    private func pillen(_ stand: GymStartStand, kurzMoeglich: Bool, training: TrainingStore) -> some View {
+        // Drei Pillen passen bei großer Schrift nicht in eine Zeile: dann "Anderer Tag" darunter.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Abstand.s) {
+                startPillen(stand, kurzMoeglich: kurzMoeglich)
+                andererTag(training, heute: stand.tag)
             }
-            GymPillenKnopf(text: String(localized: "Ohne Plan"), symbol: "play.fill") { sitzung.starteFrei() }
-                .accessibilityHint("Freies Training, die Übungen wählst du unterwegs")
-            Spacer(minLength: 0)
+            .fixedSize()
+            VStack(spacing: Abstand.s) {
+                HStack(spacing: Abstand.s) { startPillen(stand, kurzMoeglich: kurzMoeglich) }
+                andererTag(training, heute: stand.tag)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func startPillen(_ stand: GymStartStand, kurzMoeglich: Bool) -> some View {
+        if kurzMoeglich, let tag = stand.tag {
+            let minuten = GymTabLogik.rund(ZeitSchaetzung.minuten(GymTabLogik.kurzversion(tag)))
+            GymPillenKnopf(text: String(localized: "Kurz · \(minuten) min"), symbol: "clock", an: kurz) { kurz.toggle() }
+                .accessibilityHint("Startet nur die ersten Übungen des Tages")
+        }
+        GymPillenKnopf(text: String(localized: "Ohne Plan"), symbol: "play.fill") { sitzung.starteFrei() }
+            .accessibilityHint("Freies Training, die Übungen wählst du unterwegs")
+    }
+
+    /// Früher "Anderer Tag": jeden anderen Tag des Plans heute starten, auch Tage ohne festen Wochentag (die zeigt die Woche nicht).
+    @ViewBuilder
+    private func andererTag(_ training: TrainingStore, heute: TrainingsTag?) -> some View {
+        let andere = training.plan.tage.filter { $0.id != heute?.id }
+        if !andere.isEmpty {
+            Menu {
+                ForEach(andere) { t in
+                    Button(Self.name(t)) { sitzung.starte(planTag: t.id) }
+                }
+            } label: {
+                Label("Anderer Tag", systemImage: "arrow.left.arrow.right")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(palette.text)
+                    .padding(.horizontal, Abstand.m)
+                    .padding(.vertical, Abstand.s)
+                    .background(palette.flaeche, in: .capsule)
+                    .overlay(Capsule().stroke(palette.haar, lineWidth: 1))
+                    .frame(minHeight: Abstand.tippflaeche)
+            }
+            .accessibilityHint("Einen anderen Tag des Plans heute starten")
         }
     }
 

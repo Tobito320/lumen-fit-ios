@@ -54,7 +54,8 @@ struct GymTagSeite: View {
                     }
                 }
             }
-            if !laeuft {
+            // Nicht, solange etwas läuft oder sich fortsetzen lässt: der Tab bietet dann "Weiter" oder "Fortsetzen", sonst entstünde eine zweite Einheit.
+            if !laeuft, training.fortsetzbare() == nil {
                 if istHeute || tag.id == heuteTag?.id {
                     Button {
                         sitzung.starte(planTag: tag.id)

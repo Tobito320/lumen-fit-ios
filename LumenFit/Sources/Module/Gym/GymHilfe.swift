@@ -113,7 +113,9 @@ struct GymPlanWahlBlatt: View {
 
     var body: some View {
         let geschlecht = umgebung.daten?.ziele.koerper.geschlecht
-        let empfohlen = SplitLogik.treffer(SplitLogik.fuer(geschlecht), art: "fuerdich", tage: nil, suche: "")
+        let eigene = SplitLogik.treffer(SplitLogik.fuer(geschlecht), art: "fuerdich", tage: nil, suche: "")
+        // Nicht jede Gruppe hat Empfehlungen (`istEigen`): dann alle Splits der Gruppe.
+        let empfohlen = eigene.isEmpty ? SplitLogik.fuer(geschlecht) : eigene
         let aktuell = sitzung.training?.plan.splitName
         NavigationStack {
             ScrollView {

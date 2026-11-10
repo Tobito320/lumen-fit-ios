@@ -117,9 +117,13 @@ struct UebungDetailView: View {
                     soGehts(u)
                     varianten(u)
                 case .verlauf:
-                    schwerstes(tage)
-                    uebersicht(tage)
-                    historie(tage)
+                    if tage.isEmpty {
+                        LeerZustand(stimmung: .bereit, satz: String(localized: "Noch kein Verlauf. Nach dem ersten Training mit dieser Übung steht hier jeder Satz."))
+                    } else {
+                        schwerstes(tage)
+                        uebersicht(tage)
+                        historie(tage)
+                    }
                 case .rekorde: rekorde(tage)
                 }
             }
