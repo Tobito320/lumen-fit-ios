@@ -1,9 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Plan, Hinweise (nur bei Bedarf), Einsichten, Energie-Bank,
-/// Schritte, der Wochenstreifen, Gewohnheiten und Gewicht, jede Karte einmal und ohne "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
-/// Ohne Health zeigt er statt der Health-Karten einen Leerzustand mit "Health erlauben"; Plan, Gewohnheiten und Gewicht gehen auch ohne.
+/// Die Startseite (Aufteilung B, Bild `home-*.png`): oben Plan für heute mit Start, dann die Woche (ohne Freunde und Partner), Gewohnheiten, Gewicht,
+/// das letzte Training zum Nachlesen und unten die Ringplatte mit Lumi. Tagesform, Energie-Bank, Einsichten, Hinweise und die Schritte-Karte zeigt sie nicht mehr
+/// (Code und Detailseiten bleiben, Schritte stehen im Profil). Ohne Health zeigt sie statt der Ringplatte einen Leerzustand mit "Health erlauben".
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var modell: HeuteModell?
@@ -23,7 +23,7 @@ struct HeuteTabView: View {
                 inhalt(stand, modell)
             }
         }
-        .navigationTitle("Heute")
+        .navigationTitle("Startseite")
         .navigationBarTitleDisplayMode(.automatic)
         .lumenHintergrund()
         .sheet(item: $blatt) { blatt in
@@ -75,19 +75,22 @@ struct HeuteTabView: View {
 
     @ViewBuilder
     private func heuteInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
+        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
+        habitsKarte(s, m)
+        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
+        if s.bereiche.gymAn, let letzte = letzteEinheit { LetzteEinheitKarte(einheit: letzte) }
         if s.hatGesundheit {
             Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
-        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
-        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
-        if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-        if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
-        if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
-        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
-        habitsKarte(s, m)
-        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
+    }
+
+    /// Das letzte beendete Training mit Daten; nil ohne.
+    private var letzteEinheit: LetzteEinheit? {
+        guard let training = umgebung.daten?.training else { return nil }
+        return LetzteEinheitLogik.bauen(sessions: training.sessions) { training.tag(id: $0) }
     }
 
     /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen

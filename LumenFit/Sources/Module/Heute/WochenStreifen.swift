@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Montag bis Sonntag mit kleinen Bögen je Tag (Idee 20): außen Schritte, Mitte Gym, innen Schlaf (nur die gewählten Bereiche). Ein Tipp öffnet den Tag.
+/// Montag bis Sonntag mit kleinen Bögen je Tag (Idee 20): außen Schritte, Mitte Gym, innen Schlaf (nur die gewählten Bereiche). Ein Tipp öffnet den Tag. Ohne Partner-Punkte: die gibt es nur in der Woche des Training-Tabs.
 struct WochenStreifen: View {
     let woche: [HeuteWochenTag]
     var bereiche = Einstellungen()
@@ -25,7 +25,6 @@ struct WochenStreifen: View {
                                     .font(.caption.weight(tag.istHeute ? .bold : .medium))
                                     .foregroundStyle(tag.istHeute ? palette.text : palette.text2)
                                 Capsule().fill(tag.istHeute ? palette.text : Color.clear).frame(width: 14, height: 2)
-                                if bereiche.gymAn { WochenPersonenPunkte(tag: tag.tag, ichGym: tag.gym > 0) }
                             }
                             .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                             .opacity(tag.zukunft ? 0.45 : 1)

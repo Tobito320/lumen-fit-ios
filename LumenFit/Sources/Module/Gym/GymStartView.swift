@@ -1,8 +1,8 @@
 // Quelle: Lovea Health/GymNeu/GymStartView.swift (neu im Lumen-Design)
 import SwiftUI
 
-/// Die Startseite des Trainings (Idee 27 und 29): Wochenleiste, der Plantag mit Zeitschätzung und Start, "Heute Beine statt Push",
-/// Verlegen, Cardio ohne Training, die letzten Einheiten und das Studio.
+/// Die Startseite des Trainings (Idee 27 und 29, Bild `training-*.png`): großer Start, "Ohne Plan starten", die Woche mit Partner-Punkten, der Plantag mit
+/// Zeitschätzung, "Heute Beine statt Push" und seinen Übungen, dann die Zeilen Plan, Kalender und Übungen, die letzten Einheiten und "Mehr" (Verlegen, Cardio, Nachtragen).
 struct GymStartView: View {
     let sitzung: GymSitzung
     @Environment(AppUmgebung.self) private var umgebung
@@ -51,29 +51,61 @@ struct GymStartView: View {
         let stand = GymStartStand.bauen(sessions: training.sessions, plan: training.plan, gewaehlt: datum, jetzt: jetzt)
         let anderer = datum == heute ? andererTag.flatMap { training.tag(id: $0) } : nil
         return VStack(alignment: .leading, spacing: Abstand.l) {
-            // Der große Start ganz oben, dann Woche und Tag, Letzte Einheiten; alles Seltene unter "Mehr".
+            // Der große Start ganz oben, dann Woche und Tag mit Übungen, die Zeilen, Letzte Einheiten; alles Seltene unter "Mehr".
             if let knopf = stand.knopf { startKnopf(knopf, training: training).frame(maxWidth: .infinity) }
+            if stand.knopf == .starten { ohnePlanKnopf }
             wochenleiste(stand)
             tagesKarte(stand, training: training, anderer: anderer)
+            if let tag = anderer ?? stand.tag, !tag.uebungen.isEmpty { uebungsListe(tag) }
             if stand.vergessen, let s = training.vergessene(jetzt: jetzt) { vergessenKarte(s, training: training) }
+            unterseiten
             letzte(training, jetzt: jetzt)
-            planZeile
             mehrBereich(stand, training: training)
         }
     }
 
-    // MARK: Plan
+    // MARK: Übungen des Tages und Unterseiten
 
-    /// Der Plan ist eine Unterseite des Trainings (Task 7 ordnet die Zeilen Plan, Kalender, Übungen neu).
-    private var planZeile: some View {
-        NavigationLink(value: Route.gym(.plaene)) {
+    /// Die Übungen des gewählten Plantags in Planreihenfolge; Katalog-Übungen öffnen ihre Seite mit Bild, Rekorden und Verlauf.
+    private func uebungsListe(_ tag: TrainingsTag) -> some View {
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            GymAbschnitt(titel: "Übungen")
             ListenKarte {
-                GymZeile(titel: "Plan", untertitel: "Tage, Übungen und Split-Bibliothek") {
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+                ForEach(Array(tag.uebungen.enumerated()), id: \.element.id) { i, u in
+                    if i > 0 { Haarlinie() }
+                    if u.katalog != nil {
+                        NavigationLink { UebungDetailView(id: u.uebung) } label: { GymZeile(titel: u.anzeigeName, untertitel: TrainingLogik.saetzeText(u)) { pfeil } }
+                            .buttonStyle(.plain)
+                    } else {
+                        GymZeile(titel: u.anzeigeName, untertitel: TrainingLogik.saetzeText(u))
+                    }
                 }
             }
         }
-        .buttonStyle(.plain)
+    }
+
+    private var pfeil: some View {
+        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
+    }
+
+    /// Plan, Kalender und Übungen sind Unterseiten des Trainings.
+    private var unterseiten: some View {
+        ListenKarte {
+            NavigationLink(value: Route.gym(.plaene)) {
+                GymZeile(titel: "Plan", untertitel: "Tage, Übungen und Split-Bibliothek") { pfeil }
+            }
+            .buttonStyle(.plain)
+            Haarlinie()
+            NavigationLink { KalenderView() } label: {
+                GymZeile(titel: "Kalender", untertitel: "Trainings, geplante Tage und Partner") { pfeil }
+            }
+            .buttonStyle(.plain)
+            Haarlinie()
+            NavigationLink { UebungsSucheView(titel: "Übungen") } label: {
+                GymZeile(titel: "Übungen", untertitel: "\(UebungsKatalog.alle.count) Übungen mit Bild, Rekorden und Verlauf") { pfeil }
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     // MARK: Mehr
@@ -139,6 +171,8 @@ struct GymStartView: View {
                             Image(systemName: t.gemacht ? "checkmark.circle.fill" : t.geplant != nil ? "circle" : "minus")
                                 .foregroundStyle(t.gemacht ? gruen : palette.text2)
                                 .accessibilityHidden(true)
+                            // Punkt, wenn der Partner an diesem Tag trainiert hat (nur mit Verbindung).
+                            WochenPersonenPunkte(tag: t.datum, ichGym: false)
                         }
                         .foregroundStyle(palette.text)
                         .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche + 8)
@@ -198,11 +232,19 @@ struct GymStartView: View {
         Button {
             if knopf == .weiter { sitzung.ladeWennNoetig() } else { heuteStarten(training) }
         } label: {
-            Label(knopf.titel, systemImage: knopf.symbolName).font(.headline).frame(minHeight: Abstand.tippflaeche)
+            Label(knopf == .starten ? "Training starten" : knopf.titel, systemImage: knopf.symbolName)
+                .font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
         }
         .buttonStyle(.borderedProminent)
         .tint(.white)
         .foregroundStyle(.black)
+    }
+
+    /// Ein freies Training ohne Plantag (derselbe Weg wie "Freies Training" im Menü von "Anderer Tag").
+    private var ohnePlanKnopf: some View {
+        Button("Ohne Plan starten") { sitzung.starte(planTag: nil) }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
     }
 
     /// "Heute Beine statt Push": einen anderen Tag des Plans oder ein freies Training wählen.
