@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Aussehen: Erscheinung (System, Hell, Dunkel) und Haptik. Es gibt nur ein Theme (Auftrag 09.11.); die Wahl wirkt sofort über `EinstellungenStore`,
+/// Aussehen (unter Mehr Einstellungen): Erscheinung System, Hell oder Dunkel zum Antippen (Standard System) und Haptik. Es gibt nur ein Theme (Auftrag 09.11.); die Wahl wirkt sofort über `EinstellungenStore`,
 /// `AppRootView` setzt die Erscheinung aus den Einstellungen.
 struct AussehenView: View {
     @Environment(AppUmgebung.self) private var umgebung
@@ -14,7 +14,8 @@ struct AussehenView: View {
                     set: { neu in umgebung.daten?.einstellungen.aendere { $0.erscheinung = neu } })) {
                     ForEach(Erscheinung.allCases, id: \.self) { Text($0.anzeigeName).tag($0) }
                 }
-                .pickerStyle(.menu)
+                .pickerStyle(.inline)
+                .labelsHidden()
             }
             ProfilAbschnitt {
                 Toggle(isOn: Binding(get: { gespeichert.haptik },

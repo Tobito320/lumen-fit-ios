@@ -430,6 +430,43 @@ final class AlteDateienLadenTests: XCTestCase {
         XCTAssertNil(fremd.lumi, "ein unbekannter Zustand (neuerer Build) kostet nur dieses Feld")
         XCTAssertEqual(fremd.lumiStufe, 2)
     }
+
+    // Profil und Einführung (10.11.2026)
+    /// Alte Datei ohne die Antworten der Einführung: nichts gefragt, Gewicht und Schritte zählen weiter, Creatin aus. Unbekannte Werte geben den Standard,
+    /// der Rest der Datei bleibt; gespeicherte Antworten überstehen das erneute Laden.
+    func testEinstellungenOhneEinfuehrungsAntwortenLadenMitStandard() throws {
+        let ordner = try tempOrdner()
+        try Data(#"{"thema":"schlicht","haptik":false,"trainingsOrte":["mond"],"trainingsErfahrung":"ewig"}"#.utf8)
+            .write(to: ordner.appendingPathComponent("einstellungen.json"))
+        let store = EinstellungenStore(ordner: ordner)
+        XCTAssertFalse(store.werte.haptik, "der Rest bleibt")
+        XCTAssertNil(store.werte.trainingsErfahrung)
+        XCTAssertEqual(store.werte.trainingsOrte, [])
+        XCTAssertEqual(store.werte.trainingsZiele, [])
+        XCTAssertNil(store.werte.trainingsMinuten)
+        XCTAssertEqual(store.werte.fokusMuskeln, [])
+        XCTAssertTrue(store.werte.gewichtMitzaehlen && store.werte.schritteMitzaehlen)
+        XCTAssertFalse(store.werte.creatinMitzaehlen)
+
+        store.aendere {
+            $0.trainingsErfahrung = .bisZweiJahre
+            $0.trainingsZiele = [.staerker]
+            $0.trainingsOrte = [.calisthenics]
+            $0.trainingsMinuten = 75
+            $0.fokusMuskeln = ["ruecken"]
+            $0.schritteMitzaehlen = false
+            $0.creatinMitzaehlen = true
+        }
+        let wieder = EinstellungenStore(ordner: ordner).werte
+        XCTAssertEqual(wieder.trainingsErfahrung, .bisZweiJahre)
+        XCTAssertEqual(wieder.trainingsZiele, [.staerker])
+        XCTAssertEqual(wieder.trainingsOrte, [.calisthenics])
+        XCTAssertEqual(wieder.trainingsMinuten, 75)
+        XCTAssertEqual(wieder.fokusMuskeln, ["ruecken"])
+        XCTAssertFalse(wieder.schritteMitzaehlen)
+        XCTAssertTrue(wieder.creatinMitzaehlen)
+        XCTAssertFalse(wieder.haptik)
+    }
 }
 
 private extension NamenAenderung {

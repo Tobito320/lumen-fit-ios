@@ -7,8 +7,16 @@ enum GewichtsEinheit: String, Codable, Sendable { case kg, lb }
 /// Die wählbaren Bereiche. Heute bleibt immer.
 enum AppBereich: String, Codable, CaseIterable, Sendable { case gym, essen, schlaf }
 
+// Profil und Einführung (10.11.2026): Antworten der Einführung, änderbar unter Präferenzen. TrainingsErfahrung wortgleich wie im Zweig `stats`.
+/// Was jemandem wichtig ist (mehrere).
+enum TrainingsZiel: String, Codable, CaseIterable, Sendable { case muskeln, staerker, abnehmen, fitter }
+/// Wo jemand trainiert (mehrere).
+enum TrainingsOrt: String, Codable, CaseIterable, Sendable { case studio, zuhause, calisthenics }
+
 /// Die Antwort auf die Frage nach der Nutzungsmeldung. Nur `.ja` erlaubt das Senden; "noch nicht gefragt" und "nein" senden nichts.
 enum NutzungAntwort: String, Codable, Sendable { case offen, ja, nein }
+/// Wie lange jemand schon trainiert (Einführung: "Wie lange trainierst du schon?"). Stats vergleicht damit "im 1. Jahr"; nil = unbekannt.
+enum TrainingsErfahrung: String, Codable, CaseIterable, Sendable { case geradeAngefangen, unterSechsMonate, bisZweiJahre, laenger }
 
 /// Alle Felder haben Standardwerte; `init(from:)` nutzt `decodeIfPresent`, damit neue Felder alte Dateien nie unlesbar machen.
 /// Ein unbekannter oder falsch getippter Wert (zum Beispiel ein Theme, das es später nicht mehr gibt) ergibt den Standard statt einer unlesbaren Datei.
@@ -38,6 +46,19 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var fastenAn = false
     /// Der einmalige Wechsel auf Schlicht ist gelaufen (W-003). Neue Profile starten schon schlicht; alte Dateien ohne das Feld bekommen ihn einmal.
     var schlichtGesetzt = true
+    // Profil und Einführung (10.11.2026): alles neu, nil oder leer heißt "nicht gefragt"; Bestandsprofile behalten ihr Bild.
+    /// Antwort aus der Einführung; nil = unbekannt (dann zählt das erste Training in der App).
+    var trainingsErfahrung: TrainingsErfahrung?
+    var trainingsZiele: [TrainingsZiel] = []
+    var trainingsOrte: [TrainingsOrt] = []
+    /// Minuten je Training (30 bis 120); nil = nicht gefragt.
+    var trainingsMinuten: Int?
+    /// Fokus-Muskeln als `MuskelGruppe.rawValue`, höchstens zwei; leer = ausgewogen.
+    var fokusMuskeln: [String] = []
+    /// "Mitzählen" unter Präferenzen: was auf Heute erscheint. Gewicht und Schritte an wie bisher, Creatin erst auf Wunsch.
+    var gewichtMitzaehlen = true
+    var schritteMitzaehlen = true
+    var creatinMitzaehlen = false
 
     init() {}
 
@@ -94,6 +115,8 @@ struct Einstellungen: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn, schlichtGesetzt
+        // Profil und Einführung
+        case trainingsErfahrung, trainingsZiele, trainingsOrte, trainingsMinuten, fokusMuskeln, gewichtMitzaehlen, schritteMitzaehlen, creatinMitzaehlen
     }
 
     init(from decoder: Decoder) throws {
@@ -116,6 +139,15 @@ struct Einstellungen: Codable, Equatable, Sendable {
         schlafAn = (try? c.decodeIfPresent(Bool.self, forKey: .schlafAn)) ?? true
         fastenAn = (try? c.decodeIfPresent(Bool.self, forKey: .fastenAn)) ?? false
         schlichtGesetzt = (try? c.decodeIfPresent(Bool.self, forKey: .schlichtGesetzt)) ?? false
+        // Profil und Einführung
+        trainingsErfahrung = (try? c.decodeIfPresent(TrainingsErfahrung.self, forKey: .trainingsErfahrung)) ?? nil
+        trainingsZiele = (try? c.decodeIfPresent([TrainingsZiel].self, forKey: .trainingsZiele)) ?? []
+        trainingsOrte = (try? c.decodeIfPresent([TrainingsOrt].self, forKey: .trainingsOrte)) ?? []
+        trainingsMinuten = (try? c.decodeIfPresent(Int.self, forKey: .trainingsMinuten)) ?? nil
+        fokusMuskeln = (try? c.decodeIfPresent([String].self, forKey: .fokusMuskeln)) ?? []
+        gewichtMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .gewichtMitzaehlen)) ?? true
+        schritteMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .schritteMitzaehlen)) ?? true
+        creatinMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .creatinMitzaehlen)) ?? false
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }

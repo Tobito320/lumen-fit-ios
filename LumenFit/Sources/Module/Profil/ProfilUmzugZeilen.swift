@@ -23,7 +23,7 @@ enum ProfilUmzugLogik {
     }
 }
 
-/// Die zwei Zeilen oben im Profil, über Konto. Ein Tipp legt die Seite auf den Profil-Stapel (`Route`, wie ein Link von außen).
+/// Die zwei Zeilen im Profil unter den Kacheln ("Bis zum Umzug"). Ein Tipp legt die Seite auf den Profil-Stapel (`Route`, wie ein Link von außen).
 struct ProfilUmzugZeilen: View {
     @Environment(AppUmgebung.self) private var umgebung
 
@@ -31,7 +31,7 @@ struct ProfilUmzugZeilen: View {
         let zeilen = ProfilUmzugLogik.zeilen(essenAn: umgebung.bereicheWirksam.essenAn, schlafSichtbar: umgebung.konto.schlafSichtbar,
                                              loveaErlaubt: umgebung.konto.loveaErlaubt)
         if !zeilen.isEmpty {
-            ProfilAbschnitt {
+            ProfilAbschnitt(String(localized: "Bis zum Umzug")) {
                 ForEach(zeilen) { zeile in
                     NavigationLink(value: zeile.route) {
                         ProfilListenZeile(zeile.titel, symbol: zeile.symbol, wert: zeile.untertitel.isEmpty ? nil : zeile.untertitel)

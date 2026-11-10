@@ -38,23 +38,3 @@ enum ProfilBereiche {
         return true
     }
 }
-
-/// Drei Schalter oben im Profil-Blatt. Der letzte eingeschaltete ist gesperrt.
-struct ProfilBereicheAbschnitt: View {
-    @Environment(AppUmgebung.self) private var umgebung
-
-    var body: some View {
-        let werte = umgebung.daten?.einstellungen.werte ?? Einstellungen()
-        let waehlbar = ProfilBereiche.waehlbar(schlafSichtbar: umgebung.konto.schlafSichtbar)
-        let nurEiner = waehlbar.filter { werte.zeigt($0) }.count == 1
-        ProfilAbschnitt("Bereiche", fuss: ProfilBereiche.erklaerung) {
-            ForEach(waehlbar, id: \.self) { bereich in
-                Toggle(isOn: Binding(get: { werte.zeigt(bereich) },
-                                     set: { ProfilBereiche.schalte(bereich, an: $0, in: umgebung) })) {
-                    ProfilListenZeile(ProfilBereiche.titel(bereich), symbol: ProfilBereiche.symbol(bereich))
-                }
-                .disabled(nurEiner && werte.zeigt(bereich))
-            }
-        }
-    }
-}

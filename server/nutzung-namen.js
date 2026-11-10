@@ -234,7 +234,12 @@ export const NAMEN = {
     "profil_freunde",
     "profil_daten",
     "profil_ueber",
-    "profil_mehr"
+    "profil_mehr",
+    "profil_einladen",
+    "profil_uebungen",
+    "profil_splits",
+    "profil_sprache",
+    "profil_mitteilungen"
   ],
   "stand": [
     "theme_schlicht",

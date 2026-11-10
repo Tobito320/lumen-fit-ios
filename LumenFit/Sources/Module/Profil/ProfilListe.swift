@@ -42,16 +42,19 @@ struct ProfilAbschnitt<Inhalt: View>: View {
 }
 
 /// Eine Einstellungszeile: Symbol und Titel links, Wert rechts, eine Zeile, lieber kleiner als abgeschnitten.
+/// Mit `farbe` steht das Symbol weiß im farbigen Quadrat (`SymbolQuadrat`, neues Design).
 struct ProfilListenZeile: View {
     let titel: String
     var symbol: String?
     var wert: String?
+    var farbe: Color?
     @Environment(\.palette) private var palette
 
-    init(_ titel: String, symbol: String? = nil, wert: String? = nil) {
+    init(_ titel: String, symbol: String? = nil, wert: String? = nil, farbe: Color? = nil) {
         self.titel = titel
         self.symbol = symbol
         self.wert = wert
+        self.farbe = farbe
     }
 
     var body: some View {
@@ -61,7 +64,9 @@ struct ProfilListenZeile: View {
             }
         } label: {
             Group {
-                if let symbol {
+                if let symbol, let farbe {
+                    Label { Text(titel) } icon: { SymbolQuadrat(symbol: symbol, farbe: farbe) }
+                } else if let symbol {
                     Label(titel, systemImage: symbol)
                 } else {
                     Text(titel)

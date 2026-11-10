@@ -69,6 +69,12 @@ enum NutzungEintrag: String, CaseIterable, Sendable {
     case profilDaten = "profil_daten"
     case profilUeber = "profil_ueber"
     case profilMehr = "profil_mehr"
+    // Profil und Einführung (10.11.2026)
+    case profilEinladen = "profil_einladen"
+    case profilUebungen = "profil_uebungen"
+    case profilSplits = "profil_splits"
+    case profilSprache = "profil_sprache"
+    case profilMitteilungen = "profil_mitteilungen"
 }
 
 /// Welche Aufrufe des Lumen-Servers gemessen werden, unter festem Namen. Alles andere (auch `/nutzung` selbst) wird nicht gemessen.
