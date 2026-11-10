@@ -7,10 +7,10 @@ enum SchlafQuelle: String, Codable, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .uhr: "Uhr"
-        case .handy: "Handy"
-        case .band: "Band"
-        case .eingetragen: "Eingetragen"
+        case .uhr: String(localized: "Uhr")
+        case .handy: String(localized: "Handy")
+        case .band: String(localized: "Band")
+        case .eingetragen: String(localized: "Eingetragen")
         }
     }
 
