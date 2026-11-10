@@ -102,8 +102,8 @@ struct WidgetRahmen<Inhalt: View>: View {
 /// Ruhiger Leerzustand: Lumi (nur in Vollfarbe), ein Satz, was zu tun ist.
 struct WidgetLeerAnsicht: View {
     let farben: WidgetFarben
-    var titel = "Noch keine Werte"
-    var text = "Öffne Lumen Fit einmal, dann erscheinen sie hier."
+    var titel = String(localized: "Noch keine Werte")
+    var text = String(localized: "Öffne Lumen Fit einmal, dann erscheinen sie hier.")
 
     var body: some View {
         VStack(spacing: 6) {

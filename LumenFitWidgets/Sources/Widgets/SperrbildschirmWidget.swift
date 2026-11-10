@@ -46,7 +46,7 @@ struct SperrbildschirmAnsicht: View {
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .accessibilityLabel("Schritte")
-        .accessibilityValue(schritte.map { "\(WidgetAnzeige.zahlText($0)) von \(WidgetAnzeige.zahlText(boegen?.schritteZiel ?? 0))" } ?? "keine Werte von heute")
+        .accessibilityValue(schritte.map { String(localized: "\(WidgetAnzeige.zahlText($0)) von \(WidgetAnzeige.zahlText(boegen?.schritteZiel ?? 0))") } ?? String(localized: "keine Werte von heute"))
     }
 
     // MARK: Rechteckig: Schlaf und Erholung
@@ -57,7 +57,7 @@ struct SperrbildschirmAnsicht: View {
             Label("Schlaf", systemImage: "moon.zzz.fill")
                 .font(.caption.weight(.semibold))
                 .widgetAccentable()
-            Text(z.schlaf ?? "Keine Daten").font(.headline).lineLimit(1)
+            Text(z.schlaf ?? String(localized: "Keine Daten")).font(.headline).lineLimit(1)
             Gauge(value: z.anteil) { EmptyView() }
                 .gaugeStyle(.accessoryLinearCapacity)
             if let erholung = z.erholung {
@@ -66,7 +66,7 @@ struct SperrbildschirmAnsicht: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(["Schlaf", z.schlaf, z.erholung.map { "Erholung \($0)" }].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityLabel([String(localized: "Schlaf"), z.schlaf, z.erholung.map { String(localized: "Erholung \($0)") }].compactMap { $0 }.joined(separator: ", "))
     }
 
     // MARK: Zeile: Gym-Serie

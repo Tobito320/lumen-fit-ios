@@ -42,7 +42,7 @@ enum SpotlightIndex {
         return katalog.compactMap { u in
             let k = kennung(.uebung(id: u.id))
             guard gesehen.insert(k).inserted else { return nil }
-            return SpotlightEintrag(kennung: k, titel: u.name, beschreibung: "Übung · \(u.muskel) · \(u.geraet)",
+            return SpotlightEintrag(kennung: k, titel: u.name, beschreibung: String(localized: "Übung · \(u.muskel) · \(u.geraet)"),
                                     stichworte: [u.name, u.en, u.koerper, u.geraet, "Übung", "Lumen Fit"])
         }
     }
@@ -51,7 +51,7 @@ enum SpotlightIndex {
     static func plaene(_ plan: TrainingsPlan) -> [SpotlightEintrag] {
         plan.tage.map { tag in
             SpotlightEintrag(kennung: kennung(.gym(.plaene), zusatz: ("tag", tag.id)), titel: tag.name,
-                             beschreibung: "Trainingstag · \(TrainingLogik.wochentageText(tag.wochentage)) · \(tag.uebungen.count) Übungen",
+                             beschreibung: String(localized: "Trainingstag · \(TrainingLogik.wochentageText(tag.wochentage)) · \(tag.uebungen.count) Übungen"),
                              stichworte: [tag.name, "Plan", "Training", "Lumen Fit"])
         }
     }
@@ -62,7 +62,7 @@ enum SpotlightIndex {
         return liste.prefix(hoechstensFavoriten).compactMap { l in
             guard gesehen.insert(l.id).inserted else { return nil }
             return SpotlightEintrag(kennung: kennung(.essen(.favoriten), zusatz: ("id", l.id)), titel: l.name,
-                                    beschreibung: ["Favorit", l.marke].compactMap { $0 }.joined(separator: " · "),
+                                    beschreibung: [String(localized: "Favorit"), l.marke].compactMap { $0 }.joined(separator: " · "),
                                     stichworte: [l.name, "Favorit", "Essen", "Lumen Fit"])
         }
     }

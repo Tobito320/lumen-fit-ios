@@ -74,6 +74,6 @@ struct PlanSerieAnsicht: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(["Nächstes Training", plan.titel, plan.wann, serie].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityLabel([String(localized: "Nächstes Training"), plan.titel, plan.wann, serie].compactMap { $0 }.joined(separator: ", "))
     }
 }

@@ -21,7 +21,7 @@ struct EssenRestAnsicht: View {
             if let rest = WidgetAnzeige.essenRest(eintrag.snapshot, jetzt: eintrag.date) {
                 inhalt(rest, farben)
             } else {
-                WidgetLeerAnsicht(farben: farben, titel: "Noch kein Essen", text: "Tippe, um dein erstes Essen zu scannen.")
+                WidgetLeerAnsicht(farben: farben, titel: String(localized: "Noch kein Essen"), text: String(localized: "Tippe, um dein erstes Essen zu scannen."))
             }
         }
     }
@@ -49,6 +49,6 @@ struct EssenRestAnsicht: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Essen heute: \(WidgetAnzeige.zahlText(abs(rest.kcal))) Kilokalorien \(uebrig ? "übrig" : "drüber"), \(rest.protein) Gramm Protein offen. Tippen öffnet den Scan.")
+        .accessibilityLabel("Essen heute: \(WidgetAnzeige.zahlText(abs(rest.kcal))) Kilokalorien \(uebrig ? String(localized: "übrig") : String(localized: "drüber")), \(rest.protein) Gramm Protein offen. Tippen öffnet den Scan.")
     }
 }

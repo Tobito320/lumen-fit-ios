@@ -101,7 +101,7 @@ private struct EssenLiveMahlzeitZelle: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(mahlzeit.name), \(kcal) Kilokalorien" + (naechste ? ", als Nächstes" : ""))
+        .accessibilityLabel(String(localized: "\(mahlzeit.name), \(kcal) Kilokalorien") + (naechste ? String(localized: ", als Nächstes") : ""))
     }
 }
 
@@ -146,7 +146,7 @@ private struct EssenLiveSperrbildschirm: View {
                     .frame(width: 56, height: 56)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(EssenLiveLogik.kcalText(stand)).font(.headline.monospacedDigit()).foregroundStyle(farben.text).lineLimit(1).minimumScaleFactor(0.8)
-                    Text(veraltet ? "Neuer Tag: öffne Lumen Fit" : EssenLiveLogik.restText(stand)).font(.caption).foregroundStyle(farben.text2).lineLimit(1)
+                    Text(veraltet ? String(localized: "Neuer Tag: öffne Lumen Fit") : EssenLiveLogik.restText(stand)).font(.caption).foregroundStyle(farben.text2).lineLimit(1)
                     EssenLiveProtein(stand: stand, farben: farben)
                 }
             }

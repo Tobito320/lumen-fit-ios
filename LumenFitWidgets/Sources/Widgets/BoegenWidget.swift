@@ -94,7 +94,7 @@ struct SchritteDuellTeil: View {
         VStack(alignment: .leading, spacing: 8) {
             if let partner, let sein = partner.schritte {
                 Label("Schritte-Duell", systemImage: "figure.walk").font(.caption.weight(.semibold)).foregroundStyle(farben.text2).lineLimit(1).widgetAccentable()
-                zeile("Du", boegen?.schritte, boegen?.schritteZiel, farben.bewegen)
+                zeile(String(localized: "Du"), boegen?.schritte, boegen?.schritteZiel, farben.bewegen)
                 zeile(partner.name, sein, partner.schritteZiel, farben.text2)
             } else {
                 let werte = WidgetAnzeige.boegen(eintrag.snapshot, jetzt: eintrag.date)
@@ -131,7 +131,8 @@ struct SchritteDuellTeil: View {
 
     private var sprechtext: String {
         if let partner, let sein = partner.schritte {
-            return "Schritte: du \(boegen?.schritte.map(WidgetAnzeige.zahlText) ?? "keine Daten"), \(partner.name) \(WidgetAnzeige.zahlText(sein))"
+            let meine = boegen?.schritte.map(WidgetAnzeige.zahlText) ?? String(localized: "keine Daten")
+            return String(localized: "Schritte: du \(meine), \(partner.name) \(WidgetAnzeige.zahlText(sein))")
         }
         return WidgetAnzeige.sprechtext(eintrag.snapshot, jetzt: eintrag.date)
     }

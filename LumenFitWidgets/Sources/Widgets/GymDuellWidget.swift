@@ -28,7 +28,7 @@ struct GymDuellAnsicht: View {
                 WidgetLeerAnsicht(farben: farben)
             } else {
                 HStack(spacing: 12) {
-                    spalte(name: "Du", symbol: "person.fill", tage: meine, ziel: ziel, eigene: true, farben)
+                    spalte(name: String(localized: "Du"), symbol: "person.fill", tage: meine, ziel: ziel, eigene: true, farben)
                     Rectangle().fill(farben.text2.opacity(0.25)).frame(width: 1).accessibilityHidden(true)
                     partnerSpalte(farben)
                 }
@@ -42,10 +42,10 @@ struct GymDuellAnsicht: View {
             if let tage = WidgetAnzeige.partnerGymWoche(partner, jetzt: eintrag.date) {
                 spalte(name: partner.name, symbol: "person.fill", tage: tage, ziel: max(partner.gymZiel ?? ziel, 1), eigene: false, farben)
             } else {
-                leer(partner.name, "Teilt kein Gym", farben)
+                leer(partner.name, String(localized: "Teilt kein Gym"), farben)
             }
         } else {
-            leer("Partner", "Noch nicht verbunden", farben)
+            leer(String(localized: "Partner"), String(localized: "Noch nicht verbunden"), farben)
         }
     }
 
