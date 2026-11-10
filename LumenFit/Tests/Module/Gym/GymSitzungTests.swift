@@ -24,6 +24,23 @@ final class GymSitzungTests: XCTestCase {
         XCTAssertEqual(a.daten.training.sessions.count, 1)
     }
 
+    /// "Ohne Plan starten" und "Freies Training" rufen `starteFrei()`: auch an einem Plantag kein Tag und keine Übungen. `starte(planTag: nil)` (Kurzbefehl) nimmt den Tag von heute.
+    func testStarteFreiNimmtNichtDenTagVonHeute() throws {
+        let frei = try aufbau()
+        XCTAssertEqual(frei.daten.training.heutigerTag()?.id, "push", "Voraussetzung: heute steht Push im Plan")
+        frei.sitzung.starteFrei()
+        XCTAssertNotNil(frei.sitzung.sessionId)
+        XCTAssertNotNil(frei.daten.training.laufende())
+        XCTAssertNil(frei.sitzung.laufende?.tag)
+        XCTAssertNil(frei.sitzung.tag)
+        XCTAssertEqual(frei.sitzung.liste.count, 0)
+
+        let heute = try aufbau()
+        heute.sitzung.starte(planTag: nil)
+        XCTAssertEqual(heute.sitzung.laufende?.tag, "push")
+        XCTAssertEqual(heute.sitzung.liste.map(\.id), ["a", "b"])
+    }
+
     func testDerHakenStartetDiePauseVonSelbstMitDerZeitDerUebung() throws {
         let a = try aufbau()
         a.sitzung.starte(planTag: "push")

@@ -242,7 +242,7 @@ struct GymStartView: View {
 
     /// Ein freies Training ohne Plantag (derselbe Weg wie "Freies Training" im Menü von "Anderer Tag").
     private var ohnePlanKnopf: some View {
-        Button("Ohne Plan starten") { sitzung.starte(planTag: nil) }
+        Button("Ohne Plan starten") { sitzung.starteFrei() }
             .font(.subheadline.weight(.semibold))
             .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
     }
@@ -254,7 +254,7 @@ struct GymStartView: View {
                 Button(t.name.isEmpty ? "Training" : t.name) { andererTag = t.id }
             }
             if andererTag != nil { Button("Zurück zum Plan") { andererTag = nil } }
-            Button("Freies Training") { sitzung.starte(planTag: nil) }
+            Button("Freies Training") { sitzung.starteFrei() }
         } label: {
             Label("Anderer Tag", systemImage: "arrow.left.arrow.right").font(.subheadline.weight(.semibold)).frame(minHeight: Abstand.tippflaeche)
         }
