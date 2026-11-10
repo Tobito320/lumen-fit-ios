@@ -171,7 +171,7 @@ final class MeilensteinPruefungTests: XCTestCase {
 
     func testToastTextEineMedailleMehrereUndNeueStufe() {
         XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz"], neueStufe: nil)?.titel, "Neue Medaille: Erster Satz")
-        XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz"], neueStufe: nil)?.stimmung, .stolz)
+        XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz"], neueStufe: nil)?.stimmung, .ziel)
         XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz", "gym-10", "wiegen-erste"], neueStufe: nil)?.titel, "3 neue Medaillen")
         XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz"], neueStufe: 2)?.titel, "Lumi ist jetzt Stufe 2")
         XCTAssertEqual(MeilensteinWaechter.toastInhalt(["erster-satz"], neueStufe: 2)?.zeile, "Neue Medaille: Erster Satz")

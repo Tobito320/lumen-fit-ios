@@ -68,7 +68,7 @@ struct KontoView: View {
                                     knopf: festlegen ? "Passwort festlegen" : "Passwort ändern",
                                     neuTitel: festlegen ? "Passwort" : "Neues Passwort", ohneAlt: festlegen) { alt, neu in
                     let ok = await umgebung.profil.aenderePasswortImHintergrund(alt: alt, neu: neu)
-                    if ok { toast = ToastInhalt(titel: festlegen ? "Passwort festgelegt" : "Passwort geändert", zeile: nil, stimmung: .stolz) }
+                    if ok { toast = ToastInhalt(titel: festlegen ? "Passwort festgelegt" : "Passwort geändert", zeile: nil, stimmung: .ziel) }
                     return ok
                 }
             case .wechseln(let ziel):
@@ -137,7 +137,7 @@ struct KontoView: View {
         case .geaendert:
             fokus = false
             name = aktiv?.name ?? name
-            toast = ToastInhalt(titel: "Name geändert", zeile: nil, stimmung: .stolz)
+            toast = ToastInhalt(titel: "Name geändert", zeile: nil, stimmung: .ziel)
         case .ungueltig(let f): meldung = NamenRegel.text(f)
         case .gesperrt: meldung = "Dein Name ist gerade gesperrt."
         case .unveraendert: break

@@ -177,7 +177,7 @@ private struct ToastModifier: ViewModifier {
                     HStack(spacing: Abstand.m) {
                         // Freude (Rekord, Medaille): Lumi hüpft zweimal, im Stromsparmodus einmal, bei "Bewegung reduzieren" gar nicht.
                         LumiView(stimmung: toast.stimmung, groesse: 36)
-                            .modifier(LumiHuepfer(anzahl: toast.stimmung == .stolz ? BewegungsRegel.huepfer(reduziert: reduziert, stromsparmodus: stromsparmodus) : 0))
+                            .modifier(LumiHuepfer(anzahl: LumiPose.fuer(toast.stimmung).feiert ? BewegungsRegel.huepfer(reduziert: reduziert, stromsparmodus: stromsparmodus) : 0))
                         VStack(alignment: .leading, spacing: 0) {
                             Text(toast.titel).font(.headline)
                             if let zeile = toast.zeile { Text(zeile).font(.subheadline).foregroundStyle(palette.text2) }

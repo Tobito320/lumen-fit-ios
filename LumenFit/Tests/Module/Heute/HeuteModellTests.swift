@@ -342,7 +342,7 @@ final class HeuteModellTests: XCTestCase {
         daten.habits.setzeGym(datum: heute, an: true)
         m.berechne()
         XCTAssertEqual(m.stand?.plan.art, .erledigt)
-        XCTAssertEqual(m.stand?.stimmung, .stolz)
+        XCTAssertEqual(m.stand?.stimmung, .ziel)
     }
 
     // MARK: Mitternacht und Sommerzeit

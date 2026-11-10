@@ -16,7 +16,7 @@ struct TrainingLiveWidget: Widget {
             let stand = kontext.state.stand
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    LumiView(stimmung: .bereit, groesse: 28)
+                    LumiView(stimmung: stand.lumi, groesse: 28)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(stand.start, style: .timer)
@@ -31,14 +31,14 @@ struct TrainingLiveWidget: Widget {
                     TrainingInselUnten(stand: stand)
                 }
             } compactLeading: {
-                LumiView(stimmung: .bereit, groesse: 22)
+                LumiView(stimmung: stand.lumi, groesse: 22)
             } compactTrailing: {
                 Text(stand.start, style: .timer)
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: 56, alignment: .trailing)   // wie Lovea; breiter wird die Insel nicht
             } minimal: {
-                LumiView(stimmung: .bereit, groesse: 22)
+                LumiView(stimmung: stand.lumi, groesse: 22)
             }
             .widgetURL(RouteURL.url(fuer: .gym(.training)))
         }
@@ -137,7 +137,7 @@ private struct TrainingSperrbildschirm: View {
         let farben = trainingFarben(systemDunkel: schema == .dark, kontrastHoch: kontrast == .increased)
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                LumiView(stimmung: .bereit, groesse: 24)
+                LumiView(stimmung: stand.lumi, groesse: 24)
                 Text(planName ?? stand.planName ?? "Training")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(farben.text2)

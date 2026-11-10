@@ -19,6 +19,9 @@ struct TrainingLiveStand: Codable, Hashable, Sendable {
 }
 
 extension TrainingLiveStand {
+    /// Lumi in der Live Activity: in der Satzpause trinkt er, sonst feuert er an.
+    var lumi: LumiStimmung { pauseEnde == nil ? .anfeuern : .pause }
+
     /// "60 kg × 8"; ohne Gewicht "8 Wdh."; nil ohne Wiederholungen (Cardio, alter Stand).
     var satzZeile: String? {
         guard let wdh else { return nil }

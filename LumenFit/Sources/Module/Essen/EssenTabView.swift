@@ -107,7 +107,7 @@ struct EssenTabView: View {
             VStack(spacing: Abstand.xl) {
                 EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
                 VStack(spacing: Abstand.xl) {
-                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .stolz) }
+                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .ziel) }
                     ForEach(essen.anpassung.sichtbar.filter { $0 != "koerper" }, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
                         LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
@@ -122,7 +122,7 @@ struct EssenTabView: View {
                     if fastenSichtbar(essen) { EssenFastenKarte(essen: essen) }
                     favoritenAbschnitt(essen)
                     EssenZielKarte(daten: daten, jetzt: jetzt) {
-                        toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .stolz)
+                        toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .ziel)
                     }
                 }
                 .id(tag)
@@ -331,12 +331,12 @@ struct EssenTabView: View {
         essen.rezeptSichern(rezept)
         essen.favoritSetzen(ErnaehrungLogik.alsLebensmittel(rezept), an: true)
         gerichtQuelle = nil
-        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .stolz)
+        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .ziel)
     }
 
     private func blattSchliessen(gespeichert: Bool) {
         blatt = nil
         vorgewaehlt = nil
-        if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .stolz) }
+        if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .ziel) }
     }
 }

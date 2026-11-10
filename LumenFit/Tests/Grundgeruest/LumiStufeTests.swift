@@ -15,7 +15,8 @@ final class LumiStufeTests: XCTestCase {
         XCTAssertEqual(LumiStufe.schwellen.first, 0)
     }
 
-    func testFuenfStimmungen() {
-        XCTAssertEqual(Set(LumiStimmung.allCases.map(\.rawValue)), ["bereit", "muede", "stolz", "schlaeft", "denkt"])
+    func testVierzehnZustaende() {
+        XCTAssertEqual(Set(LumiStimmung.allCases.map(\.rawValue)), ["bereit", "muede", "stolz", "schlaeft", "denkt", "willkommen", "anfeuern", "pause", "ziel",
+                                                                     "serie", "erschoepft", "ruhetag", "muskelkater", "vermisst"])
     }
 }

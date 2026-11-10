@@ -64,7 +64,7 @@ struct EssenMahlzeitSeite: View {
         .sheet(isPresented: $neuOffen) {
             EssenHinzufuegenView(mahlzeit: mahlzeit, tag: tag, start: .suche, vorgewaehlt: nil) { gespeichert in
                 neuOffen = false
-                if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .stolz) }
+                if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .ziel) }
             }
         }
         .alert("Als Gericht speichern", isPresented: $gerichtAlert) {
@@ -155,7 +155,7 @@ struct EssenMahlzeitSeite: View {
         let rezept = Rezept(id: UUID().uuidString, name: name.isEmpty ? essen.mahlzeitName(mahlzeit) : name, portionen: 1, zutaten: zutaten, art: .mahlzeit)
         essen.rezeptSichern(rezept)
         essen.favoritSetzen(ErnaehrungLogik.alsLebensmittel(rezept), an: true)
-        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .stolz)
+        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .ziel)
     }
 }
 
