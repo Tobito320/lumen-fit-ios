@@ -27,35 +27,35 @@ enum Mikro: String, CaseIterable, Codable, Sendable, Identifiable {
 
     var name: String {
         switch self {
-        case .vitaminA: "Vitamin A"
-        case .vitaminD: "Vitamin D"
-        case .vitaminE: "Vitamin E"
-        case .vitaminK: "Vitamin K"
-        case .vitaminC: "Vitamin C"
-        case .vitaminB1: "Vitamin B1 (Thiamin)"
-        case .vitaminB2: "Vitamin B2 (Riboflavin)"
-        case .niacin: "Vitamin B3 (Niacin)"
-        case .pantothensaeure: "Vitamin B5 (Pantothensäure)"
-        case .vitaminB6: "Vitamin B6"
-        case .folat: "Folat (B9)"
-        case .vitaminB12: "Vitamin B12"
-        case .kalium: "Kalium"
-        case .calcium: "Calcium"
-        case .magnesium: "Magnesium"
-        case .phosphor: "Phosphor"
-        case .eisen: "Eisen"
-        case .zink: "Zink"
-        case .kupfer: "Kupfer"
-        case .mangan: "Mangan"
-        case .selen: "Selen"
-        case .natrium: "Natrium"
-        case .jod: "Jod"
-        case .wasser: "Wasser"
-        case .cholesterin: "Cholesterin"
-        case .einfachUngesaettigt: "Einfach ungesättigte Fettsäuren"
-        case .mehrfachUngesaettigt: "Mehrfach ungesättigte Fettsäuren"
-        case .koffein: "Koffein"
-        case .alkohol: "Alkohol"
+        case .vitaminA: String(localized: "Vitamin A")
+        case .vitaminD: String(localized: "Vitamin D")
+        case .vitaminE: String(localized: "Vitamin E")
+        case .vitaminK: String(localized: "Vitamin K")
+        case .vitaminC: String(localized: "Vitamin C")
+        case .vitaminB1: String(localized: "Vitamin B1 (Thiamin)")
+        case .vitaminB2: String(localized: "Vitamin B2 (Riboflavin)")
+        case .niacin: String(localized: "Vitamin B3 (Niacin)")
+        case .pantothensaeure: String(localized: "Vitamin B5 (Pantothensäure)")
+        case .vitaminB6: String(localized: "Vitamin B6")
+        case .folat: String(localized: "Folat (B9)")
+        case .vitaminB12: String(localized: "Vitamin B12")
+        case .kalium: String(localized: "Kalium")
+        case .calcium: String(localized: "Calcium")
+        case .magnesium: String(localized: "Magnesium")
+        case .phosphor: String(localized: "Phosphor")
+        case .eisen: String(localized: "Eisen")
+        case .zink: String(localized: "Zink")
+        case .kupfer: String(localized: "Kupfer")
+        case .mangan: String(localized: "Mangan")
+        case .selen: String(localized: "Selen")
+        case .natrium: String(localized: "Natrium")
+        case .jod: String(localized: "Jod")
+        case .wasser: String(localized: "Wasser")
+        case .cholesterin: String(localized: "Cholesterin")
+        case .einfachUngesaettigt: String(localized: "Einfach ungesättigte Fettsäuren")
+        case .mehrfachUngesaettigt: String(localized: "Mehrfach ungesättigte Fettsäuren")
+        case .koffein: String(localized: "Koffein")
+        case .alkohol: String(localized: "Alkohol")
         }
     }
 

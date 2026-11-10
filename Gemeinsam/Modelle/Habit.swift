@@ -81,7 +81,7 @@ enum GewichtText {
         let vorzeichen = zehntel > 0 ? "+" : zehntel < 0 ? "-" : ""
         let teile = tag.split(separator: "-")
         let datum = teile.count == 3 ? "\(teile[2]).\(teile[1])." : tag
-        return "\(vorzeichen)\(feld(abs(zehntel))) kg seit \(datum)"
+        return String(localized: "\(vorzeichen)\(feld(abs(zehntel))) kg seit \(datum)")
     }
 
     /// "78,4" oder "78.4" -> 784. Leer, Text, negativ, unendlich -> nil.
@@ -102,14 +102,14 @@ enum HabitFarbe: String, CaseIterable, Sendable {
     /// Name für VoiceOver.
     var anzeigename: String {
         switch self {
-        case .mint: "Mint"
-        case .amber: "Bernstein"
-        case .indigo: "Indigo"
-        case .rose: "Rosa"
-        case .himmel: "Himmelblau"
-        case .limette: "Limette"
-        case .koralle: "Koralle"
-        case .grau: "Grau"
+        case .mint: String(localized: "Mint")
+        case .amber: String(localized: "Bernstein")
+        case .indigo: String(localized: "Indigo")
+        case .rose: String(localized: "Rosa")
+        case .himmel: String(localized: "Himmelblau")
+        case .limette: String(localized: "Limette")
+        case .koralle: String(localized: "Koralle")
+        case .grau: String(localized: "Grau")
         }
     }
 }

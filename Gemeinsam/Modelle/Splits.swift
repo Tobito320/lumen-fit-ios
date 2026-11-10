@@ -51,8 +51,8 @@ enum SplitKatalog {
 
 enum SplitLogik {
     static let tageWahl = [2, 3, 4, 5, 6]
-    static let ziele: [(id: String, text: String)] = [("muskeln", "Muskeln aufbauen"), ("kraft", "Stärker werden"), ("definieren", "Definieren"), ("fit", "Fit bleiben")]
-    static let geraete: [(id: String, text: String)] = [("studio", "Ganzes Studio"), ("kurzhantel", "Nur Kurzhanteln"), ("zuhause", "Zuhause ohne Geräte")]
+    static let ziele: [(id: String, text: String)] = [("muskeln", String(localized: "Muskeln aufbauen")), ("kraft", String(localized: "Stärker werden")), ("definieren", String(localized: "Definieren")), ("fit", String(localized: "Fit bleiben"))]
+    static let geraete: [(id: String, text: String)] = [("studio", String(localized: "Ganzes Studio")), ("kurzhantel", String(localized: "Nur Kurzhanteln")), ("zuhause", String(localized: "Zuhause ohne Geräte"))]
 
     /// Weiblich sieht die Gruppe "w", alle anderen und unbekannt die Gruppe "m" (so war es in Lovea für die Standardperson).
     static func gruppe(_ geschlecht: Geschlecht?) -> String { geschlecht == .weiblich ? "w" : "m" }
@@ -63,7 +63,7 @@ enum SplitLogik {
     }
 
     /// Kurzfilter über der Liste: "Für dich" = die empfohlenen Splits (ids `m-empf…`), sonst ein Ziel.
-    static let artWahl: [(id: String, text: String)] = [("fuerdich", "Für dich"), (kurzArt, "45 Minuten"), ("muskeln", "Aufbauen"), ("kraft", "Kraft"), ("definieren", "Definieren"), ("fit", "Fit")]
+    static let artWahl: [(id: String, text: String)] = [("fuerdich", String(localized: "Für dich")), (kurzArt, String(localized: "45 Minuten")), ("muskeln", String(localized: "Aufbauen")), ("kraft", String(localized: "Kraft")), ("definieren", String(localized: "Definieren")), ("fit", String(localized: "Fit"))]
 
     /// Die empfohlenen Splits (ids `m-empf01` …).
     static func istEigen(_ v: SplitVorlage) -> Bool { v.id.hasPrefix("m-empf") }
@@ -76,7 +76,7 @@ enum SplitLogik {
     static func suchtext(_ v: SplitVorlage) -> String {
         let uebungen = v.einheiten.flatMap(\.uebungen).compactMap { UebungsKatalog.nachId[$0.uebung] }.flatMap { [$0.name, $0.muskel, $0.koerper] }
         let ziel = ziele.first { $0.id == v.ziel }?.text ?? v.ziel
-        return ([v.name, levelText(v), ziel, "\(v.tage) Tage"] + v.einheiten.map(\.name) + uebungen).joined(separator: " ")
+        return ([v.name, levelText(v), ziel, String(localized: "\(v.tage) Tage")] + v.einheiten.map(\.name) + uebungen).joined(separator: " ")
     }
 
     /// Bibliothek: Art ("fuerdich" oder ein Ziel), Tage, dann muss jedes Wort der Suche vorkommen
@@ -94,14 +94,14 @@ enum SplitLogik {
     /// "Einsteiger", "Einsteigerin", "Mittel", "Fortgeschritten".
     static func levelText(_ v: SplitVorlage) -> String {
         switch v.level {
-        case "einsteiger": return v.gruppe == "w" ? "Einsteigerin" : "Einsteiger"
-        case "fortgeschritten": return "Fortgeschritten"
-        default: return "Mittel"
+        case "einsteiger": return v.gruppe == "w" ? String(localized: "Einsteigerin") : String(localized: "Einsteiger")
+        case "fortgeschritten": return String(localized: "Fortgeschritten")
+        default: return String(localized: "Mittel")
         }
     }
 
     /// "6 Tage · Fortgeschritten".
-    static func unterzeile(_ v: SplitVorlage) -> String { "\(v.tage) Tage · \(levelText(v))" }
+    static func unterzeile(_ v: SplitVorlage) -> String { String(localized: "\(v.tage) Tage · \(levelText(v))") }
 
     /// Mo bis So: an welchen Tagen der Split trainiert.
     static func wochenbild(_ v: SplitVorlage) -> [Bool] {
@@ -146,19 +146,19 @@ enum GymStartLogik {
     /// "noch nicht", "nicht im Gym", "geplant: Push", "Ruhetag".
     static func status(_ sessions: [GymSession], datum: String, heute: String, geplant: String?, jetzt: Date) -> String {
         if let s = sessions.first(where: { Datum.text($0.start) == datum }) {
-            guard let ende = s.ende else { return TrainingLogik.laufend(s, jetzt: jetzt) ? "gerade im Gym" : "war im Gym" }
+            guard let ende = s.ende else { return TrainingLogik.laufend(s, jetzt: jetzt) ? String(localized: "gerade im Gym") : String(localized: "war im Gym") }
             let saetze = s.laeufe.reduce(0) { $0 + ($1.saetze?.count ?? 0) }
             let dauer = TrainingLogik.dauerText(ende.timeIntervalSince(s.start))
-            return saetze > 0 ? "\(dauer) · \(saetze) \(saetze == 1 ? "Satz" : "Sätze")" : dauer
+            return saetze > 0 ? (saetze == 1 ? String(localized: "\(dauer) · 1 Satz") : String(localized: "\(dauer) · \(saetze) Sätze")) : dauer
         }
-        if datum > heute { return geplant.map { "geplant: \($0)" } ?? "Ruhetag" }
-        return datum == heute ? "noch nicht" : "nicht im Gym"
+        if datum > heute { return geplant.map { String(localized: "geplant: \($0)") } ?? String(localized: "Ruhetag") }
+        return datum == heute ? String(localized: "noch nicht") : String(localized: "nicht im Gym")
     }
 
     /// "Heute · Push", "Mittwoch · Ruhetag".
     static func titel(datum: String, heute: String, tag: TrainingsTag?) -> String {
-        let wann = datum == heute ? "Heute" : TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
-        guard let tag else { return "\(wann) · Ruhetag" }
-        return "\(wann) · \(tag.name.isEmpty ? "Training" : tag.name)"
+        let wann = datum == heute ? String(localized: "Heute") : TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
+        guard let tag else { return String(localized: "\(wann) · Ruhetag") }
+        return tag.name.isEmpty ? String(localized: "\(wann) · Training") : "\(wann) · \(tag.name)"
     }
 }

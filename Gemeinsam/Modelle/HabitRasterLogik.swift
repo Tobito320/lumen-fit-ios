@@ -54,8 +54,8 @@ enum HabitRaster {
 
     /// "1 Tag", "5 Tage"; bei "x pro Woche" Wochen.
     static func serieText(_ habit: Habit, _ n: Int) -> String {
-        if case .proWoche = habit.haeufigkeit { return n == 1 ? "1 Woche" : "\(n) Wochen" }
-        return n == 1 ? "1 Tag" : "\(n) Tage"
+        if case .proWoche = habit.haeufigkeit { return n == 1 ? String(localized: "1 Woche") : String(localized: "\(n) Wochen") }
+        return n == 1 ? String(localized: "1 Tag") : String(localized: "\(n) Tage")
     }
 
     /// 0,4 -> "40 %".

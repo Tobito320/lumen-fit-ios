@@ -193,7 +193,7 @@ enum TrainingLogik {
     /// Longer counts as unusual: the checkout asks, an open session stops counting as "im Gym",
     /// and the card offers "Auschecken vergessen?".
     static let langNach: TimeInterval = 3 * 3600
-    static let wochentagName = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+    static let wochentagName = [String(localized: "Montag"), String(localized: "Dienstag"), String(localized: "Mittwoch"), String(localized: "Donnerstag"), String(localized: "Freitag"), String(localized: "Samstag"), String(localized: "Sonntag")]
 
     /// All sessions of one person, newest start first. Deleted ones and ones without check-in are left out.
     static func sessions(_ eintraege: [GymEintrag]) -> [GymSession] {
@@ -394,8 +394,8 @@ enum TrainingLogik {
     static func saetzeText(_ u: PlanUebung) -> String {
         if let minuten = u.minuten { return "\(minuten) min" }
         let s = u.saetze
-        guard let erster = s.first else { return "keine Sätze" }
-        var teile = [Set(s.map(\.wdh)).count == 1 ? "\(s.count) × \(erster.wdh)" : "\(s.count) Sätze"]
+        guard let erster = s.first else { return String(localized: "keine Sätze") }
+        var teile = [Set(s.map(\.wdh)).count == 1 ? "\(s.count) × \(erster.wdh)" : String(localized: "\(s.count) Sätze")]
         let kg = s.compactMap(\.kg)
         if let leicht = kg.min(), let schwer = kg.max() {
             teile.append(leicht == schwer ? "\(kgText(leicht)) kg" : "\(kgText(leicht))–\(kgText(schwer)) kg")
@@ -407,7 +407,7 @@ enum TrainingLogik {
     /// "Mo, Mi, Fr", "kein Tag".
     static func wochentageText(_ tage: [Int]) -> String {
         let gueltig = Set(tage).filter { (1...7).contains($0) }.sorted()
-        return gueltig.isEmpty ? "kein Tag" : gueltig.map { HabitLogik.wochentagKuerzel[$0 - 1] }.joined(separator: ", ")
+        return gueltig.isEmpty ? String(localized: "kein Tag") : gueltig.map { HabitLogik.wochentagKuerzel[$0 - 1] }.joined(separator: ", ")
     }
 
     /// "heute" or "gestern" (the forgotten-checkout hint only lives that long).

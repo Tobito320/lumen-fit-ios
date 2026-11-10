@@ -9,16 +9,16 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .schritte: "Schritte"
-        case .gym: "Gym"
-        case .schlaf: "Schlaf"
-        case .essen: "Essen"
-        case .plan: "Trainingsplan"
-        case .verlauf: "Training und Verlauf"
-        case .tagebuch: "Tagebuch"
-        case .koerper: "Körperwerte"
-        case .stimmung: "Stimmung"
-        case .gewohnheiten: "Gewohnheiten"
+        case .schritte: String(localized: "Schritte")
+        case .gym: String(localized: "Gym")
+        case .schlaf: String(localized: "Schlaf")
+        case .essen: String(localized: "Essen")
+        case .plan: String(localized: "Trainingsplan")
+        case .verlauf: String(localized: "Training und Verlauf")
+        case .tagebuch: String(localized: "Tagebuch")
+        case .koerper: String(localized: "Körperwerte")
+        case .stimmung: String(localized: "Stimmung")
+        case .gewohnheiten: String(localized: "Gewohnheiten")
         }
     }
 
@@ -43,16 +43,16 @@ enum VerbindungBereich: String, CaseIterable, Sendable {
 
     private static func text(_ art: FreigabeArt) -> String {
         switch art {
-        case .schritte: "Schritte heute und an jedem Tag dieser Woche."
-        case .gym: "An wie vielen Tagen du diese Woche trainiert hast, ob du im Gym bist und wenn du einen Rekord schaffst."
-        case .schlaf: "Wie lange du diese Woche geschlafen hast, deine Energie heute und wenn du gut geschlafen hast."
-        case .essen: "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast."
-        case .plan: "Name deines Plans, Trainingstage und Namen der Übungen. Keine Gewichte."
-        case .verlauf: "Ob du im Gym bist und deine letzten zehn Trainings. Zusammen mit Gym auch Sätze und Gewichte."
-        case .tagebuch: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien, Makros. Keine Fotos."
-        case .koerper: "Gewicht und Körpermaße mit dem Verlauf der letzten Monate."
-        case .stimmung: "Deine Antwort auf den Morgen-Check von heute."
-        case .gewohnheiten: "Alle Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind."
+        case .schritte: String(localized: "Schritte heute und an jedem Tag dieser Woche.")
+        case .gym: String(localized: "An wie vielen Tagen du diese Woche trainiert hast, ob du im Gym bist und wenn du einen Rekord schaffst.")
+        case .schlaf: String(localized: "Wie lange du diese Woche geschlafen hast, deine Energie heute und wenn du gut geschlafen hast.")
+        case .essen: String(localized: "Nur deine Kalorien von heute und ob du dein Wasserziel erreicht hast.")
+        case .plan: String(localized: "Name deines Plans, Trainingstage und Namen der Übungen. Keine Gewichte.")
+        case .verlauf: String(localized: "Ob du im Gym bist und deine letzten zehn Trainings. Zusammen mit Gym auch Sätze und Gewichte.")
+        case .tagebuch: String(localized: "Was du in den letzten sieben Tagen gegessen hast: Namen, Kalorien, Makros. Keine Fotos.")
+        case .koerper: String(localized: "Gewicht und Körpermaße mit dem Verlauf der letzten Monate.")
+        case .stimmung: String(localized: "Deine Antwort auf den Morgen-Check von heute.")
+        case .gewohnheiten: String(localized: "Alle Gewohnheiten mit Serie, Quote der letzten 30 Tage und ob sie heute erledigt sind.")
         }
     }
 }
@@ -315,10 +315,10 @@ enum VerbindungenLogik {
         guard eintrag.aktiv, !eintrag.ich.pause, case .verbunden(let d) = eintrag.stand(jetzt: jetzt), d.heute.tag == Datum.text(jetzt) else { return nil }
         var teile: [String] = []
         if d.freigaben.contains(.schritte), let s = d.heute.schritte {
-            teile.append("\(s.formatted(.number.locale(Locale(identifier: "de_DE")))) Schritte")
+            teile.append(String(localized: "\(s.formatted(.number.locale(Locale(identifier: "de_DE")))) Schritte"))
         }
         if d.freigaben.contains(.gym), let g = d.heute.gymTageWoche {
-            if let z = d.heute.gymZiel, z > 0 { teile.append("Gym \(g) von \(z)") } else { teile.append(g == 1 ? "Gym 1 Tag" : "Gym \(g) Tage") }
+            if let z = d.heute.gymZiel, z > 0 { teile.append(String(localized: "Gym \(g) von \(z)")) } else { teile.append(g == 1 ? String(localized: "Gym 1 Tag") : String(localized: "Gym \(g) Tage")) }
         }
         return teile.isEmpty ? nil : teile.joined(separator: " · ")
     }
@@ -360,12 +360,12 @@ enum VerbindungenLogik {
 
     /// "Gerade eben", "vor 5 Minuten", "vor 3 Stunden", "gestern" (sonst Datum): wann die Person zuletzt Daten geschickt hat.
     nonisolated static func zuletztText(_ zeit: Date?, jetzt: Date) -> String {
-        guard let zeit else { return "Noch keine Daten" }
+        guard let zeit else { return String(localized: "Noch keine Daten") }
         let s = jetzt.timeIntervalSince(zeit)
-        if s < 90 { return "Gerade eben aktualisiert" }
-        if s < 3600 { let m = Int(s / 60); return m == 1 ? "Vor 1 Minute aktualisiert" : "Vor \(m) Minuten aktualisiert" }
-        if s < 86_400 { let h = Int(s / 3600); return h == 1 ? "Vor 1 Stunde aktualisiert" : "Vor \(h) Stunden aktualisiert" }
+        if s < 90 { return String(localized: "Gerade eben aktualisiert") }
+        if s < 3600 { let m = Int(s / 60); return m == 1 ? String(localized: "Vor 1 Minute aktualisiert") : String(localized: "Vor \(m) Minuten aktualisiert") }
+        if s < 86_400 { let h = Int(s / 3600); return h == 1 ? String(localized: "Vor 1 Stunde aktualisiert") : String(localized: "Vor \(h) Stunden aktualisiert") }
         let t = Int(s / 86_400)
-        return t == 1 ? "Gestern aktualisiert" : "Vor \(t) Tagen aktualisiert"
+        return t == 1 ? String(localized: "Gestern aktualisiert") : String(localized: "Vor \(t) Tagen aktualisiert")
     }
 }

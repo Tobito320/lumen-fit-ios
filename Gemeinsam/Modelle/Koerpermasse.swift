@@ -26,14 +26,14 @@ enum MessArt: String, CaseIterable, Identifiable, Sendable {
 
     var titel: String {
         switch self {
-        case .gewicht: "Gewicht"
-        case .koerperfett: "Körperfett"
-        case .taille: "Taille"
-        case .huefte: "Hüfte"
-        case .brust: "Brust"
-        case .schulter: "Schulter"
-        case .bizeps: "Oberarm"
-        case .oberschenkel: "Oberschenkel"
+        case .gewicht: String(localized: "Gewicht")
+        case .koerperfett: String(localized: "Körperfett")
+        case .taille: String(localized: "Taille")
+        case .huefte: String(localized: "Hüfte")
+        case .brust: String(localized: "Brust")
+        case .schulter: String(localized: "Schulter")
+        case .bizeps: String(localized: "Oberarm")
+        case .oberschenkel: String(localized: "Oberschenkel")
         }
     }
 

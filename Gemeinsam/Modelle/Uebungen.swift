@@ -57,7 +57,7 @@ enum UebungsKatalog {
     ]
     /// Filterwert "kein Gerätefilter" (nil heißt Standard: `standardGeraete`).
     static let alleGeraete = "Alle Geräte"
-    static let standardTitel = "Hanteln & Maschinen"
+    static let standardTitel = String(localized: "Hanteln & Maschinen")
 
     /// nil = Standard, `alleGeraete` = alles, sonst genau dieses Gerät.
     static func passtGeraet(_ u: Uebung, wahl: String?) -> Bool {

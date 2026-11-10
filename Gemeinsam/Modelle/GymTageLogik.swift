@@ -37,9 +37,9 @@ enum GymTageLogik {
     /// Satz über der Einheit im Rückblick, wenn sie keine Sätze hat. nil mit Daten und solange sie läuft.
     static func leerHinweis(_ s: GymSession, eigene: Bool, jetzt: Date) -> String? {
         guard !hatDaten(s), !TrainingLogik.laufend(s, jetzt: jetzt) else { return nil }
-        let kein = "Keine Sätze gespeichert."
+        let kein = String(localized: "Keine Sätze gespeichert.")
         guard eigene else { return kein }
-        if s.ende == nil { return kein + " Die Einheit ist nicht ausgecheckt. Trag unter Zeiten das Ende ein, dann lassen sich Sätze nachtragen." }
-        return kein + " Mit Übung hinzufügen oder Sätze bearbeiten trägst du sie nach."
+        if s.ende == nil { return String(localized: "Keine Sätze gespeichert. Die Einheit ist nicht ausgecheckt. Trag unter Zeiten das Ende ein, dann lassen sich Sätze nachtragen.") }
+        return String(localized: "Keine Sätze gespeichert. Mit Übung hinzufügen oder Sätze bearbeiten trägst du sie nach.")
     }
 }

@@ -130,10 +130,10 @@ enum Mahlzeit: String, Codable, Sendable, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .fruehstueck: "Frühstück"
-        case .mittag: "Mittagessen"
-        case .abend: "Abendessen"
-        case .snack: "Snacks"
+        case .fruehstueck: String(localized: "Frühstück")
+        case .mittag: String(localized: "Mittagessen")
+        case .abend: String(localized: "Abendessen")
+        case .snack: String(localized: "Snacks")
         }
     }
 
@@ -320,13 +320,13 @@ enum KoerperArt: String, Codable, Sendable, CaseIterable, Identifiable {
 
     var name: String {
         switch self {
-        case .koerperfett: "Körperfett"
-        case .taille: "Taille"
-        case .huefte: "Hüfte"
-        case .brust: "Brust"
-        case .schulter: "Schulter"
-        case .oberarm: "Oberarm"
-        case .oberschenkel: "Oberschenkel"
+        case .koerperfett: String(localized: "Körperfett")
+        case .taille: String(localized: "Taille")
+        case .huefte: String(localized: "Hüfte")
+        case .brust: String(localized: "Brust")
+        case .schulter: String(localized: "Schulter")
+        case .oberarm: String(localized: "Oberarm")
+        case .oberschenkel: String(localized: "Oberschenkel")
         }
     }
 
@@ -526,18 +526,18 @@ struct ErnaehrungFaltung: Sendable {
 
 enum ErnaehrungLogik {
     static let aktivitaeten: [(name: String, text: String, faktor: Double)] = [
-        ("Kaum aktiv", "Bürojob, kaum Bewegung", 1.2),
-        ("Leicht aktiv", "1 bis 3 mal Sport pro Woche", 1.375),
-        ("Aktiv", "3 bis 5 mal Sport pro Woche", 1.55),
-        ("Sehr aktiv", "6 bis 7 mal Sport pro Woche", 1.725),
-        ("Extrem aktiv", "Körperlicher Job und täglich Sport", 1.9),
+        (String(localized: "Kaum aktiv"), String(localized: "Bürojob, kaum Bewegung"), 1.2),
+        (String(localized: "Leicht aktiv"), String(localized: "1 bis 3 mal Sport pro Woche"), 1.375),
+        (String(localized: "Aktiv"), String(localized: "3 bis 5 mal Sport pro Woche"), 1.55),
+        (String(localized: "Sehr aktiv"), String(localized: "6 bis 7 mal Sport pro Woche"), 1.725),
+        (String(localized: "Extrem aktiv"), String(localized: "Körperlicher Job und täglich Sport"), 1.9),
     ]
 
     /// Anteile Protein, Kohlenhydrate, Fett an den Kalorien. "Proteinreich" rechnet 2 g Protein pro kg.
     static let makroProfile: [(name: String, protein: Double, kohlenhydrate: Double, fett: Double)] = [
-        ("Ausgewogen", 0.20, 0.50, 0.30),
-        ("Proteinreich", 0.30, 0.40, 0.30),
-        ("Low Carb", 0.30, 0.25, 0.45),
+        (String(localized: "Ausgewogen"), 0.20, 0.50, 0.30),
+        (String(localized: "Proteinreich"), 0.30, 0.40, 0.30),
+        (String(localized: "Low Carb"), 0.30, 0.25, 0.45),
     ]
 
     /// Gramm oder Milliliter, die eine Menge in dieser Einheit bedeutet.
@@ -603,8 +603,8 @@ enum ErnaehrungLogik {
         case .ml: return "ml"
         case .portion:
             if let name = l.portionName, !name.isEmpty { return name }
-            return menge == 1 ? "Portion" : "Portionen"
-        case .packung: return menge == 1 ? "Packung" : "Packungen"
+            return menge == 1 ? String(localized: "Portion") : String(localized: "Portionen")
+        case .packung: return menge == 1 ? String(localized: "Packung") : String(localized: "Packungen")
         }
     }
 

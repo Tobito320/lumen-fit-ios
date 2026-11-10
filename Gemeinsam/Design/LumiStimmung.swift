@@ -4,60 +4,60 @@ extension LumiStimmung {
     /// Für den Satz neben Lumi und für VoiceOver ("Lumi ist müde").
     var beschreibung: String {
         switch self {
-        case .bereit: "Lumi ist bereit"
-        case .muede: "Lumi ist müde"
-        case .stolz: "Lumi freut sich über den Rekord"
-        case .schlaeft: "Lumi schläft"
-        case .denkt: "Lumi denkt nach"
-        case .willkommen: "Lumi winkt dir zu"
-        case .anfeuern: "Lumi feuert dich an"
-        case .pause: "Lumi macht Pause"
-        case .ziel: "Lumi jubelt"
-        case .serie: "Lumi hält die Serie"
-        case .erschoepft: "Lumi ist erschöpft"
-        case .ruhetag: "Lumi hat Ruhetag"
-        case .muskelkater: "Lumi hat Muskelkater"
-        case .vermisst: "Lumi vermisst dich"
+        case .bereit: String(localized: "Lumi ist bereit")
+        case .muede: String(localized: "Lumi ist müde")
+        case .stolz: String(localized: "Lumi freut sich über den Rekord")
+        case .schlaeft: String(localized: "Lumi schläft")
+        case .denkt: String(localized: "Lumi denkt nach")
+        case .willkommen: String(localized: "Lumi winkt dir zu")
+        case .anfeuern: String(localized: "Lumi feuert dich an")
+        case .pause: String(localized: "Lumi macht Pause")
+        case .ziel: String(localized: "Lumi jubelt")
+        case .serie: String(localized: "Lumi hält die Serie")
+        case .erschoepft: String(localized: "Lumi ist erschöpft")
+        case .ruhetag: String(localized: "Lumi hat Ruhetag")
+        case .muskelkater: String(localized: "Lumi hat Muskelkater")
+        case .vermisst: String(localized: "Lumi vermisst dich")
         }
     }
 
     /// Kurzer Titel (Profil > Lumi), wie im Lumi-Set.
     var titel: String {
         switch self {
-        case .bereit: "Bereit"
-        case .muede: "Schlecht geschlafen"
-        case .stolz: "Neuer Rekord"
-        case .schlaeft: "Schläft"
-        case .denkt: "Denkt nach"
-        case .willkommen: "Willkommen"
-        case .anfeuern: "Training läuft"
-        case .pause: "Pause zwischen Sätzen"
-        case .ziel: "Ziel erreicht"
-        case .serie: "Serie gehalten"
-        case .erschoepft: "Erschöpft"
-        case .ruhetag: "Ruhetag"
-        case .muskelkater: "Muskelkater"
-        case .vermisst: "Lange nicht da"
+        case .bereit: String(localized: "Bereit")
+        case .muede: String(localized: "Schlecht geschlafen")
+        case .stolz: String(localized: "Neuer Rekord")
+        case .schlaeft: String(localized: "Schläft")
+        case .denkt: String(localized: "Denkt nach")
+        case .willkommen: String(localized: "Willkommen")
+        case .anfeuern: String(localized: "Training läuft")
+        case .pause: String(localized: "Pause zwischen Sätzen")
+        case .ziel: String(localized: "Ziel erreicht")
+        case .serie: String(localized: "Serie gehalten")
+        case .erschoepft: String(localized: "Erschöpft")
+        case .ruhetag: String(localized: "Ruhetag")
+        case .muskelkater: String(localized: "Muskelkater")
+        case .vermisst: String(localized: "Lange nicht da")
         }
     }
 
     /// Lumis eigener Satz zum Zustand (Lumi-Set, Feld `satz`).
     var satz: String {
         switch self {
-        case .bereit: "Heute holen wir uns das."
-        case .muede: "Kurze Nacht. Heute lieber leichter."
-        case .stolz: "Neuer Rekord! Das bist du."
-        case .schlaeft: "Schlaf ist auch Training."
-        case .denkt: "Moment, ich schau mir deine Woche an."
-        case .willkommen: "Hi, ich bin Lumi. Wir fangen klein an."
-        case .anfeuern: "Noch eine Wiederholung. Du schaffst das."
-        case .pause: "Atmen, trinken, gleich geht's weiter."
-        case .ziel: "Ziel geschafft. Genau so."
-        case .serie: "Woche für Woche. Die Serie hält."
-        case .erschoepft: "Puh. Das war viel. Ruh dich gut aus."
-        case .ruhetag: "Ruhetag. Muskeln wachsen jetzt."
-        case .muskelkater: "Autsch. Leichte Bewegung hilft."
-        case .vermisst: "Ich hab dich vermisst. Nur 20 Minuten?"
+        case .bereit: String(localized: "Heute holen wir uns das.")
+        case .muede: String(localized: "Kurze Nacht. Heute lieber leichter.")
+        case .stolz: String(localized: "Neuer Rekord! Das bist du.")
+        case .schlaeft: String(localized: "Schlaf ist auch Training.")
+        case .denkt: String(localized: "Moment, ich schau mir deine Woche an.")
+        case .willkommen: String(localized: "Hi, ich bin Lumi. Wir fangen klein an.")
+        case .anfeuern: String(localized: "Noch eine Wiederholung. Du schaffst das.")
+        case .pause: String(localized: "Atmen, trinken, gleich geht's weiter.")
+        case .ziel: String(localized: "Ziel geschafft. Genau so.")
+        case .serie: String(localized: "Woche für Woche. Die Serie hält.")
+        case .erschoepft: String(localized: "Puh. Das war viel. Ruh dich gut aus.")
+        case .ruhetag: String(localized: "Ruhetag. Muskeln wachsen jetzt.")
+        case .muskelkater: String(localized: "Autsch. Leichte Bewegung hilft.")
+        case .vermisst: String(localized: "Ich hab dich vermisst. Nur 20 Minuten?")
         }
     }
 

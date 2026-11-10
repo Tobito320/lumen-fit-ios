@@ -3,13 +3,13 @@ import SwiftUI
 extension ThemaID {
     var anzeigeName: String {
         switch self {
-        case .schlicht: "Schlicht"
-        case .monochrom: "Monochrom"
-        case .graphit: "Graphit"
-        case .stahl: "Stahl"
-        case .glut: "Glut"
-        case .wald: "Wald"
-        case .lovea: "Lovea"
+        case .schlicht: String(localized: "Schlicht")
+        case .monochrom: String(localized: "Monochrom")
+        case .graphit: String(localized: "Graphit")
+        case .stahl: String(localized: "Stahl")
+        case .glut: String(localized: "Glut")
+        case .wald: String(localized: "Wald")
+        case .lovea: String(localized: "Lovea")
         }
     }
 }
@@ -17,9 +17,9 @@ extension ThemaID {
 extension Erscheinung {
     var anzeigeName: String {
         switch self {
-        case .system: "System"
-        case .hell: "Hell"
-        case .dunkel: "Dunkel"
+        case .system: String(localized: "System")
+        case .hell: String(localized: "Hell")
+        case .dunkel: String(localized: "Dunkel")
         }
     }
 }

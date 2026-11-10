@@ -13,8 +13,8 @@ enum SchnellzugriffAktion: String, AppEnum, Sendable, CaseIterable {
 
     var titel: String {
         switch self {
-        case .training: "Training starten"
-        case .scan: "Essen scannen"
+        case .training: String(localized: "Training starten")
+        case .scan: String(localized: "Essen scannen")
         }
     }
 

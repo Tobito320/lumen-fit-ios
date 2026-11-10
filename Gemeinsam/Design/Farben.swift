@@ -15,9 +15,9 @@ enum Datenbereich: String, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .bewegen: "Bewegen"
-        case .trainieren: "Trainieren"
-        case .erholen: "Erholen"
+        case .bewegen: String(localized: "Bewegen")
+        case .trainieren: String(localized: "Trainieren")
+        case .erholen: String(localized: "Erholen")
         }
     }
 }

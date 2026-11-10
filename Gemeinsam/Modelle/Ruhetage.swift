@@ -101,17 +101,17 @@ enum RuhetagLogik {
         guard !plan.tage.isEmpty else { return [] }
         let offen = (1...7).filter { art(plan, $0) == .offen }
         if !offen.isEmpty {
-            return [PlanHinweis(id: "offen", text: "Noch nicht geplant: \(TrainingLogik.wochentageText(offen)). Tipp auf den Tag und leg Training oder Ruhetag fest.")]
+            return [PlanHinweis(id: "offen", text: String(localized: "Noch nicht geplant: \(TrainingLogik.wochentageText(offen)). Tipp auf den Tag und leg Training oder Ruhetag fest."))]
         }
         let ruhe = (1...7).filter { art(plan, $0) == .ruhe }.count
         if ruhe == 0 {
-            return [PlanHinweis(id: "zuWenig", text: "Kein Ruhetag in der Woche. 1 bis 3 Ruhetage geben deinen Muskeln Zeit, stärker zu werden.")]
+            return [PlanHinweis(id: "zuWenig", text: String(localized: "Kein Ruhetag in der Woche. 1 bis 3 Ruhetage geben deinen Muskeln Zeit, stärker zu werden."))]
         }
         if 7 - ruhe < 3 {
-            return [PlanHinweis(id: "zuViel", text: "\(ruhe) Ruhetage sind viel. Mit 3 bis 4 Trainingstagen kommt jede Muskelgruppe 2-mal pro Woche dran, das bringt am meisten.")]
+            return [PlanHinweis(id: "zuViel", text: String(localized: "\(ruhe) Ruhetage sind viel. Mit 3 bis 4 Trainingstagen kommt jede Muskelgruppe 2-mal pro Woche dran, das bringt am meisten."))]
         }
         guard let tausch = besterTausch(plan, schwerpunkt: schwerpunkt) else { return [] }
-        let text = "\(problem(plan, schwerpunkt: schwerpunkt)) Vorschlag: \(tauschText(plan, tausch.a, tausch.b))."
+        let text = String(localized: "\(problem(plan, schwerpunkt: schwerpunkt)) Vorschlag: \(tauschText(plan, tausch.a, tausch.b)).")
         return [PlanHinweis(id: "verteilung", text: text, tausch: [tausch.a, tausch.b])]
     }
 
@@ -136,22 +136,22 @@ enum RuhetagLogik {
             guard case .training(let a) = art(plan, w), case .training(let b) = art(plan, n) else { continue }
             let gleich = schwerpunkt(a).intersection(schwerpunkt(b)).sorted()
             if !gleich.isEmpty {
-                return "\(gleich.joined(separator: " und ")) kommt am \(TrainingLogik.wochentagName[w - 1]) und gleich wieder am \(TrainingLogik.wochentagName[n - 1]) dran, dazwischen braucht der Muskel Erholung."
+                return String(localized: "\(gleich.formatted(.list(type: .and))) kommt am \(TrainingLogik.wochentagName[w - 1]) und gleich wieder am \(TrainingLogik.wochentagName[n - 1]) dran, dazwischen braucht der Muskel Erholung.")
             }
         }
-        return "\(laengsteSerie(plan)) Trainingstage am Stück ohne Pause."
+        return String(localized: "\(laengsteSerie(plan)) Trainingstage am Stück ohne Pause.")
     }
 
     /// "Ruhetag auf Dienstag, Beine auf Mittwoch".
     static func tauschText(_ plan: TrainingsPlan, _ a: Int, _ b: Int) -> String {
-        "\(name(art(plan, b))) auf \(TrainingLogik.wochentagName[a - 1]), \(name(art(plan, a))) auf \(TrainingLogik.wochentagName[b - 1])"
+        String(localized: "\(name(art(plan, b))) auf \(TrainingLogik.wochentagName[a - 1]), \(name(art(plan, a))) auf \(TrainingLogik.wochentagName[b - 1])")
     }
 
     private static func name(_ art: TagArt) -> String {
         switch art {
-        case .training(let t): return t.name.isEmpty ? "Training" : t.name
-        case .ruhe: return "Ruhetag"
-        case .offen: return "offen"
+        case .training(let t): return t.name.isEmpty ? String(localized: "Training") : t.name
+        case .ruhe: return String(localized: "Ruhetag")
+        case .offen: return String(localized: "offen")
         }
     }
 }
