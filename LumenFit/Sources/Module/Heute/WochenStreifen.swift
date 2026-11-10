@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// Montag bis Sonntag mit kleinen Bögen je Tag (Idee 20): außen Schritte, Mitte Gym, innen Schlaf (nur die gewählten Bereiche). Ein Tipp öffnet den Tag. Ohne Partner-Punkte: die gibt es nur in der Woche des Training-Tabs.
+/// Seit dem neuen Design (10.11.2026) nur noch auf Heute, wenn Gym aus ist (sonst trägt die Plan-Karte die Woche).
 struct WochenStreifen: View {
     let woche: [HeuteWochenTag]
     var bereiche = Einstellungen()
@@ -42,29 +43,76 @@ struct WochenStreifen: View {
     }
 }
 
-/// Ein Tag der Woche im Detail (Blatt): Schritte, Gym, Schlaf, Wasser und Gewicht dieses Tages.
+/// Das Tag-Blatt (neues Design 10.11.2026, Lückenliste 2.1): öffnet sich aus der Woche der Plan-Karte (und aus dem Kalender in Fortschritt).
+/// Oben die Tagwahl, die vorher auf der Startseite stand (Tag davor/danach, Kalender, "Zurück zu heute", waagerecht wischen), darunter der Tag:
+/// Ringplatte des Tages, Schritte/Gym/Schlaf/Wasser/Gewicht, Gewohnheiten zum Nachtragen (mit Verwaltung), Gewicht und Stimmung.
+/// Eigenes `HeuteModell` auf den gewählten Tag, damit Haken für genau diesen Tag gelten.
 struct HeuteTagView: View {
     let tag: String
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
     @Environment(\.dismiss) private var dismiss
+    @State private var modell: HeuteModell?
+    @State private var kalender = false
+    @State private var verwalten = false
+    @State private var habitSeite: String?
+    @State private var gewechselt = 0
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Abstand.l) {
-                    if let daten = umgebung.daten {
-                        HeuteTagZeilen(tag: tag, daten: daten)
-                        StimmungTagKarte(tag: tag)
-                    }
+                if let modell, let s = modell.stand {
+                    inhalt(s, modell)
                 }
-                .padding(Abstand.l)
             }
-            .navigationTitle(Datum.anzeige(tag))
+            .navigationTitle(modell?.stand.map { Datum.anzeige($0.tag) } ?? Datum.anzeige(tag))
             .navigationBarTitleDisplayMode(.inline)
             .lumenHintergrund()
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Fertig") { dismiss() } } }
+            .navigationDestination(item: $habitSeite) { HabitDetailView(habitId: $0) }
+            .sheet(isPresented: $verwalten) { HabitVerwaltungView() }
+            .sheet(isPresented: $kalender) {
+                if let s = modell?.stand { HeuteKalenderBlatt(tag: s.tag, heute: heute) { waehle($0) } }
+            }
         }
+        .haptik(.auswahl, bei: gewechselt)
+        .task {
+            let m = modell ?? HeuteModell(umgebung: umgebung)
+            if modell == nil { m.waehleTag(tag) }
+            modell = m
+            await m.beobachte()
+        }
+    }
+
+    private var heute: String { Datum.text(umgebung.uhr()) }
+
+    private func inhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        VStack(alignment: .leading, spacing: Abstand.l) {
+            HeuteTagLeiste(tag: s.tag, heute: heute, blaettere: { waehle(HeuteTagWahl.schritt(s.tag, tage: $0, heute: heute)) },
+                           kalender: { kalender = true }, zuHeute: { waehle(heute) })
+            if s.hatTagesdaten {
+                if s.hatGesundheit { Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1) }
+                if let daten = umgebung.daten { HeuteTagZeilen(tag: s.tag, daten: daten) }
+            } else {
+                LeerZustand(stimmung: .schlaeft, satz: String(localized: "Keine Daten für diesen Tag."))
+            }
+            HabitsKarte(habits: s.habits, tag: s.tag, tippe: { m.tippe($0) }, weniger: { m.weniger($0) }, oeffne: { habitSeite = $0.habit.id },
+                        verwalte: { verwalten = true })
+            if s.hatTagesdaten, s.gewicht.aktuellKg != nil { GewichtKarte(gewicht: s.gewicht) }
+            StimmungTagKarte(tag: s.tag)
+        }
+        .padding(Abstand.l)
+        .id(s.tag)
+        .transition(.opacity)
+        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { geste in
+            guard let schritt = HeuteTagWahl.wischSchritt(breite: geste.translation.width, hoehe: geste.translation.height) else { return }
+            waehle(HeuteTagWahl.schritt(s.tag, tage: schritt, heute: heute))
+        })
+    }
+
+    private func waehle(_ neu: String) {
+        guard let m = modell, m.stand?.tag != HeuteTagWahl.begrenze(neu, heute: heute) else { return }
+        gewechselt += 1
+        withAnimation(.easeInOut(duration: 0.2)) { m.waehleTag(neu) }
     }
 }
 

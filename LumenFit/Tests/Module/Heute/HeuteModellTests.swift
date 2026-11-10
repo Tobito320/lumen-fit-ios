@@ -265,7 +265,7 @@ final class HeuteModellTests: XCTestCase {
 
     // MARK: Gewicht
 
-    func testGewichtSpeichernSchreibtImmerLokalUndNurAufWunschNachHealth() async throws {
+    func testGewichtSpeichernSchreibtLokalUndImmerNachHealth() async throws {
         let spur = HeuteSpurSchreiber()
         let u = try umgebung(schreiber: spur)
         let m = HeuteModell(umgebung: u)
@@ -274,12 +274,11 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertTrue(erstes)
         XCTAssertEqual(m.stand?.gewicht.aktuellKg ?? 0, 78.4, accuracy: 0.0001)
         XCTAssertEqual(m.stand?.gewicht.heuteEingetragen, true)
-        XCTAssertEqual(spur.gewichte, [], "Standard: nichts nach Health")
+        XCTAssertEqual(spur.gewichte, [78.4], "immer nach Health, ohne Schalter")
 
-        u.daten?.einstellungen.aendere { $0.healthSchreiben = true }
         let zweites = await m.speichereGewicht(zehntel: 781)
         XCTAssertTrue(zweites)
-        XCTAssertEqual(spur.gewichte, [78.1])
+        XCTAssertEqual(spur.gewichte, [78.4, 78.1])
     }
 
     func testGewichtAusserhalbDesBereichsWirdAbgelehnt() async throws {
@@ -303,7 +302,20 @@ final class HeuteModellTests: XCTestCase {
         let g = try XCTUnwrap(m.stand?.gewicht)
         XCTAssertEqual(g.zielKg, 75)
         XCTAssertEqual(g.punkte.map(\.tag), ["2026-09-10", "2026-09-20"])
-        XCTAssertEqual(g.aenderung, "-1,0 kg seit 10.09.")
+        XCTAssertEqual(g.aenderung, "−1,0 kg zur Vorwoche")
+        XCTAssertEqual(m.stand?.planWoche.count, 7)
+        XCTAssertEqual(m.stand?.planWoche.firstIndex(where: \.istHeute), 3)
+    }
+
+    func testGewichtszielAusDemBlattWirktAufKarteUndZiele() throws {
+        let u = try umgebung()
+        let m = HeuteModell(umgebung: u)
+        m.berechne()
+        m.setzeGewichtsziel(80)
+        XCTAssertEqual(m.stand?.gewicht.zielKg, 80)
+        XCTAssertEqual(u.daten?.ziele.ziele.gewichtKg, 80)
+        m.setzeGewichtsziel(nil)
+        XCTAssertNil(m.stand?.gewicht.zielKg)
         XCTAssertEqual(g.startZehntel, 790)
         XCTAssertFalse(g.heuteEingetragen)
     }

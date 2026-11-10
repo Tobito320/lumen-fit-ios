@@ -71,6 +71,10 @@ struct HeutePlan: Equatable, Sendable {
     var tipp: String
     /// Knopf-Text; nil = kein Knopf.
     var knopf: String? = nil
+    /// Geschätzte Dauer in Minuten (auf 5 gerundet); 0 = unbekannt.
+    var minuten = 0
+    /// Das Ziel als Wort ("Muskelaufbau"); nil = nicht zeigen.
+    var zielWort: String? = nil
 }
 
 enum HeutePlanLogik {

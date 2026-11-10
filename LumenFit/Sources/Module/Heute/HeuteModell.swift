@@ -102,7 +102,8 @@ final class HeuteModell {
         berechne()
     }
 
-    /// Speichert das Gewicht (Zehntel-kg) für `tag`; auf Wunsch (Einstellung `healthSchreiben`) auch nach Health. false, wenn der Wert nicht passt.
+    /// Speichert das Gewicht (Zehntel-kg) für `tag` und immer auch nach Health (Besitzer 10.11.2026: "speichert immer automatisch", kein Schalter mehr;
+    /// `healthSchreiben` gilt weiter für Trainings). false, wenn der Wert nicht passt.
     @discardableResult
     func speichereGewicht(zehntel: Int, tag: String? = nil) async -> Bool {
         guard let daten = umgebung.daten, HeuteQuellen.gewichtBereich.contains(zehntel) else { return false }
@@ -110,12 +111,19 @@ final class HeuteModell {
         let datum = tag ?? Datum.text(jetzt)
         daten.habits.setze(Habit.gewicht.id, datum: datum, wert: zehntel)
         umgebung.ereignisse.senden(.gewichtGespeichert(tag: datum))
-        if daten.einstellungen.werte.healthSchreiben {
-            let zeit = datum == Datum.text(jetzt) ? jetzt : Datum.datum(datum).addingTimeInterval(12 * 3600)
-            _ = await umgebung.healthSchreiber.speichere(gewichtKg: Double(zehntel) / 10, am: zeit)
-        }
+        let zeit = datum == Datum.text(jetzt) ? jetzt : Datum.datum(datum).addingTimeInterval(12 * 3600)
+        _ = await umgebung.healthSchreiber.speichere(gewichtKg: Double(zehntel) / 10, am: zeit)
         berechne()
         return true
+    }
+
+    /// Setzt das Gewichtsziel (kg, nil = keins), dieselbe Einstellung wie Präferenzen > Ziele.
+    func setzeGewichtsziel(_ kg: Double?) {
+        guard let daten = umgebung.daten else { return }
+        var ziele = daten.ziele.ziele
+        ziele.gewichtKg = kg
+        daten.ziele.setze(ziele)
+        berechne()
     }
 
     /// Nimmt den eigenen Gewichts-Eintrag eines Tages weg (0 = kein Eintrag). Messungen aus Health bleiben.
@@ -194,7 +202,9 @@ final class HeuteModell {
 
         // Plan
         let locker = Morgensatz.schwer(stimmungsWert) || score.stufe == .schonen
-        let plan = HeutePlanLogik.vorschlag(plan: daten.training.plan, heute: heute, trainiert: trainiert, locker: locker, gymInFolge: folge)
+        var plan = HeutePlanLogik.vorschlag(plan: daten.training.plan, heute: heute, trainiert: trainiert, locker: locker, gymInFolge: folge)
+        if let id = plan.tagID, let tag = daten.training.plan.tage.first(where: { $0.id == id }) { plan.minuten = HeuteKartenLogik.minuten(tag) }
+        plan.zielWort = HeuteKartenLogik.zielWort(ziele.art)
 
         // Bögen
         let schritteHeute = tage[heute]?.schritte ?? 0
@@ -255,7 +265,8 @@ final class HeuteModell {
         let ab = Datum.addTage(heute, -89)
         let startFeld = GewichtLogik.startFeld(gw, tag: heute)
         let gewicht = HeuteGewicht(aktuellKg: GewichtLogik.berechnet(gw).map { Double($0) / 10 },
-                                   aenderung: GewichtLogik.aenderung(gw).map { GewichtText.aenderung($0.zehntel, seit: $0.seit) },
+                                   aenderung: HeuteKartenLogik.aenderungZurVorwoche(gw).map(HeuteKartenLogik.vorwocheText)
+                                       ?? GewichtLogik.aenderung(gw).map { GewichtText.aenderung($0.zehntel, seit: $0.seit) },
                                    zielKg: ziele.gewichtKg,
                                    punkte: MessLogik.punkte(gw).filter { $0.tag >= ab }.map { HeuteGewichtPunkt(tag: $0.tag, kg: Double($0.zehntel) / 10) },
                                    heuteEingetragen: gw[heute] != nil,
@@ -300,6 +311,10 @@ final class HeuteModell {
         let stimmungAnzeige: LumiStimmung = istHeute ? zustand : (voll ? .ziel : .denkt)
         let satzAnzeige = istHeute ? (zustand == satz.stimmung ? satz.satz : zustand.satz)
                                    : (voll ? "An diesem Tag waren alle Bögen voll." : "So sah dieser Tag aus.")
+        // Bei Bereit und Ruhetag spricht Lumi über den Fortschritt (größtes Plus einer Übung), sonst bleibt der Satz des Zustands.
+        let fortschritt: String? = istHeute && bereiche.gymAn && (zustand == .bereit || zustand == .ruhetag)
+            ? HeuteKartenLogik.fortschrittsSatz(FortschrittLogik.gewichte(sessions, plan: daten.training.plan, heute: heute), ruhetag: zustand == .ruhetag)
+            : nil
 
         stand = HeuteStand(tag: heute, stunde: stunde, hatGesundheit: !tage.isEmpty || !gesundheit.naechte.isEmpty,
                            healthGeprueft: gesundheit.letzteAktualisierung != nil || gesundheit.zugriff == .nichtVerfuegbar, boegen: boegen, boegenSatz: boegenSatz,
@@ -310,7 +325,11 @@ final class HeuteModell {
                            hinweise: hinweise,
                            woche: WochenStreifenLogik.woche(heute: heute, schritte: tage.mapValues { $0.schritte }, schlafMinuten: schlafWoche,
                                                             gymTage: gymTage, schritteZiel: ziele.schritte, schlafZiel: ziele.schlafMinuten),
-                           einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten, bereiche: bereiche)
+                           einsichten: einsichten, istHeute: istHeute, hatTagesdaten: hatTagesdaten, bereiche: bereiche,
+                           lumiSatz: fortschritt ?? satzAnzeige,
+                           planWoche: HeuteKartenLogik.planWoche(heute: heute, plan: daten.training.plan, gymTage: gymTage),
+                           serieWochen: MeilensteinPruefung.serieWochen(tage: gymTage, heute: heute),
+                           einheitHeute: trainiert ? GymTageLogik.einheit(am: heute, in: sessions)?.id : nil)
     }
 
     /// Die Lage für `LumiLogik`: Rekord, Dauer und Anstrengung (RPE) nur aus den Einheiten von heute; der Rekord wird nur gesucht, wenn heute trainiert wurde.
