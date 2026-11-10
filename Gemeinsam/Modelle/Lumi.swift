@@ -33,7 +33,7 @@ struct BandSchlafOp: Codable, Hashable, Sendable {
     var phasen: [SchlafAbschnitt]
 }
 
-/// Op `fit.band.tag` (schreibt das Modul verbinden); je Tag zählt das Maximum aus Health und Band, nie die Summe.
+/// Op `fit.band.tag` (schreibt das Modul verbinden). Zählt seit 10.11.2026 nicht mehr für die Schritte (nur Apple Health); die Ops bleiben gespeichert.
 struct BandTagOp: Codable, Hashable, Sendable {
     var tag: String
     var schritte: Int

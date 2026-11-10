@@ -1,7 +1,8 @@
 import Foundation
 import Observation
 
-/// Der Gesundheitsstand für alle Tabs: Tageswerte, Nächte, Vitalwerte und Gewicht aus Health (über den Port), mit dem Band zusammen.
+/// Der Gesundheitsstand für alle Tabs: Tageswerte, Nächte, Vitalwerte und Gewicht aus Health (über den Port). Schritte und Strecke nur aus Health
+/// (Besitzer 10.11.2026), Einträge von Hand nur an Tagen ohne Health-Schritte; Nächte mit Hand und Band (`naechte`).
 /// Der erste Aufruf von `aktualisiere` holt 60 Tage (Idee 8: der erste Tag ist schon voll), spätere nur die letzten Tage.
 @MainActor @Observable
 final class GesundheitsStand {
@@ -17,7 +18,7 @@ final class GesundheitsStand {
 
     @ObservationIgnored private let leser: any HealthLeser
     @ObservationIgnored private let uhr: Uhr
-    @ObservationIgnored private let band: @MainActor () -> [BandTagOp]
+    @ObservationIgnored private let hand: @MainActor () -> [String: Int]
     @ObservationIgnored private let importVerlauf: @MainActor () -> ImportVerlaufStand
     @ObservationIgnored private let eigeneNaechte: @MainActor () -> SchlafEigeneQuellen
     @ObservationIgnored private var erstGeholt = false
@@ -30,10 +31,11 @@ final class GesundheitsStand {
     /// was schon erlaubt ist, und zeigt nie still beim Start das Health-Blatt (09.11.2026: Rechte erst bei der Nutzung).
     @ObservationIgnored private let darfFragen: @MainActor () -> Bool
 
-    /// `band` liefert die Tage der Ops `fit.band.tag` des aktiven Profils (`AppUmgebung` verdrahtet es); je Tag gilt das Maximum, nie die Summe.
+    /// `hand` liefert die Schritte von Hand je Tag (Ops `fit.schritte.hand` des aktiven Profils, `AppUmgebung` verdrahtet es). Die Band-Ops `fit.band.tag`
+    /// zählen seit 10.11.2026 nicht mehr für die Schritte (die Daten bleiben gespeichert).
     /// `importVerlauf` liefert den Stand der importierten Lovea-Ops (Schritte, Schlaf); er füllt nur, was Health nicht hat (`ImportVerlaufLogik`).
     /// `eigeneNaechte` liefert die Nächte von Hand und vom Band des aktiven Profils (`AppUmgebung` verdrahtet es); ohne sie gilt nur Health.
-    init(leser: any HealthLeser, uhr: @escaping Uhr, band: @escaping @MainActor () -> [BandTagOp] = { [] },
+    init(leser: any HealthLeser, uhr: @escaping Uhr, hand: @escaping @MainActor () -> [String: Int] = { [:] },
          importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() },
          eigeneNaechte: @escaping @MainActor () -> SchlafEigeneQuellen = { SchlafEigeneQuellen() },
          typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) },
@@ -43,13 +45,13 @@ final class GesundheitsStand {
         self.eigeneNaechte = eigeneNaechte
         self.leser = leser
         self.uhr = uhr
-        self.band = band
+        self.hand = hand
         self.importVerlauf = importVerlauf
     }
 
-    /// Tageswerte je Tag: Health, mit dem Band je Tag das Maximum bei Schritten und Distanz.
+    /// Tageswerte je Tag: Health; Schritte von Hand nur an Tagen ohne Health-Schritte (`SchritteHandLogik.zusammen`).
     var tage: [String: TagesWerte] {
-        ImportVerlaufLogik.tage(bandUndHealth, stand: importVerlauf())
+        ImportVerlaufLogik.tage(SchritteHandLogik.zusammen(health: healthTage, hand: hand()), stand: importVerlauf())
     }
 
     /// Nächte je Aufwachtag, wie sie überall gelten (Heute, Wochenstreifen, Widget, Lovea-Brücke, Freundeskarte, Medaillen, Upload):
@@ -75,17 +77,6 @@ final class GesundheitsStand {
 
     /// Schritte je Tag nur aus Health, ohne Band (Schlaf-Beleg: beide Quellen getrennt sehen).
     var schritteAusHealth: [String: Int] { healthTage.mapValues(\.schritte) }
-
-    private var bandUndHealth: [String: TagesWerte] {
-        var ergebnis = healthTage
-        for b in band() {
-            var t = ergebnis[b.tag] ?? TagesWerte(tag: b.tag)
-            t.schritte = HealthLogik.schritteTag(health: ergebnis[b.tag]?.schritte, band: b.schritte) ?? t.schritte
-            t.distanzMeter = max(t.distanzMeter, Double(b.meter))
-            ergebnis[b.tag] = t
-        }
-        return ergebnis
-    }
 
     /// Läuft schon ein Abruf (Heute, Schlaf und der Hintergrund-Abruf rufen bei derselben Health-Meldung), warten alle auf diesen einen statt je zehn Abfragen zu starten.
     @ObservationIgnored private var laufend: Task<Void, Never>?

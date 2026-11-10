@@ -77,7 +77,7 @@ final class AppUmgebung {
         let profile = ProfilStore(schluesselbund: schluesselbund, ereignisse: kanal, runden: passwortRunden, uhr: uhr)
         self.profil = profile
         let anker = UmgebungsAnker()
-        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, band: { anker.bandTage() }, importVerlauf: { anker.importVerlauf() },
+        self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, hand: { anker.handSchritte() }, importVerlauf: { anker.importVerlauf() },
                                          eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() }, darfFragen: { anker.healthErlaubt() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
@@ -217,8 +217,8 @@ final class AppUmgebung {
     }
 }
 
-/// Reicht `AppUmgebung` an `GesundheitsStand` weiter, ohne dass dieser sie kennt (der Stand wird vor ihr fertig). Die Band-Tage kommen aus dem
-/// Raum des aktiven Profils (Ops `fit.band.tag`, die letzte Op je Tag gewinnt).
+/// Reicht `AppUmgebung` an `GesundheitsStand` weiter, ohne dass dieser sie kennt (der Stand wird vor ihr fertig). Die Schritte von Hand kommen aus dem
+/// Raum des aktiven Profils (Ops `fit.schritte.hand`, die letzte Op je Tag gewinnt); Band-Ops zählen seit 10.11.2026 nicht für die Schritte.
 @MainActor private final class UmgebungsAnker {
     weak var umgebung: AppUmgebung?
 
@@ -233,7 +233,7 @@ final class AppUmgebung {
     /// mit JSON-Decode auf dem Hauptakteur. Gleicher Raum mit gleicher Op-Anzahl gibt dasselbe Ergebnis (Ops werden nur angehängt).
     private struct Merkschluessel: Equatable { let raum: ObjectIdentifier; let profil: ProfilID; let anzahl: Int }
     private var naechteGemerkt: (schluessel: Merkschluessel, wert: SchlafEigeneQuellen)?
-    private var bandGemerkt: (schluessel: Merkschluessel, wert: [BandTagOp])?
+    private var handGemerkt: (schluessel: Merkschluessel, wert: [String: Int])?
 
     private func schluessel(_ raum: LokalerRaum) -> Merkschluessel { Merkschluessel(raum: ObjectIdentifier(raum), profil: raum.profil, anzahl: raum.anzahl) }
 
@@ -245,13 +245,11 @@ final class AppUmgebung {
         return wert
     }
 
-    func bandTage() -> [BandTagOp] {
-        guard let raum = umgebung?.daten?.raum else { return [] }
-        if let g = bandGemerkt, g.schluessel == schluessel(raum) { return g.wert }
-        var tage: [String: BandTagOp] = [:]
-        for op in raum.ops(arten: ["fit.band.tag"]) { if let t = op.daten(BandTagOp.self) { tage[t.tag] = t } }
-        let wert = SchritteHandLogik.zusammen(band: tage, hand: SchritteHandLogik.tage(ops: raum.ops(arten: [SchritteHandLogik.art])))
-        bandGemerkt = (schluessel(raum), wert)
+    func handSchritte() -> [String: Int] {
+        guard let raum = umgebung?.daten?.raum else { return [:] }
+        if let g = handGemerkt, g.schluessel == schluessel(raum) { return g.wert }
+        let wert = SchritteHandLogik.tage(ops: raum.ops(arten: [SchritteHandLogik.art]))
+        handGemerkt = (schluessel(raum), wert)
         return wert
     }
 }

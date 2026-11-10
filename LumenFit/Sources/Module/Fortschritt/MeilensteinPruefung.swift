@@ -16,7 +16,7 @@ struct MeilensteinDaten: Sendable {
     var essenTage: Set<String> = []
     /// Tage mit mindestens einem Frühstück-Eintrag.
     var fruehstueckTage = 0
-    /// Tag zu Schritten (Health und Band).
+    /// Tag zu Schritten (Apple Health, von Hand nur ohne Health).
     var schritte: [String: Int] = [:]
     var schrittZiel = 10_000
     /// Tag zu Kalorien und Protein samt dem Ziel dieses Tages (flexible Tage ändern es).

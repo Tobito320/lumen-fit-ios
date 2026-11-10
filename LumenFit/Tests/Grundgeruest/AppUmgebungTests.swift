@@ -123,30 +123,35 @@ final class AppUmgebungTests: XCTestCase {
         XCTAssertEqual(String(decoding: antwort.0, as: UTF8.self), #"{"ok":true}"#)
     }
 
-    func testBandTageAusDemRaumFliessenInDenGesundheitsStand() async throws {
+    func testBandOpsZaehlenNichtSchritteKommenAusHealth() async throws {
+        // Besitzer 10.11.2026: Schritte nur aus Apple Health; vorher galt je Tag das Maximum aus Band und Health (hier 8000).
         let uhr = TestUhr()
-        let u = umgebung(ordner: try tempOrdner(), uhr: uhr)
-        _ = try u.profil.anlegen(name: "Beispiel", passwort: "abcd")
         let heute = Datum.text(uhr.lesen)
+        let u = umgebung(ordner: try tempOrdner(), leser: FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 5000, distanzMeter: 3600)]), uhr: uhr)
+        _ = try u.profil.anlegen(name: "Beispiel", passwort: "abcd")
         let raum = try XCTUnwrap(u.daten?.raum)
-        raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 7000, meter: 5200))
         raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 8000, meter: 6100))
-        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 8000, "die letzte Op je Tag gewinnt")
-        XCTAssertEqual(u.gesundheit.tage[heute]?.distanzMeter, 6100)
+        await u.gesundheit.aktualisiere()
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 5000, "Health 5000, Band 8000: Health gilt")
+        XCTAssertEqual(u.gesundheit.tage[heute]?.distanzMeter, 3600)
+        XCTAssertEqual(raum.ops(arten: ["fit.band.tag"]).count, 1, "die Band-Daten bleiben gespeichert")
     }
 
-    func testGemerkteBandTageFolgenNeuenOpsUndDemProfilwechsel() async throws {
+    func testGemerkteHandTageFolgenNeuenOpsUndDemProfilwechsel() async throws {
+        // Vorher mit Band-Ops; die zählen seit 10.11.2026 nicht mehr, der Merker gilt jetzt für die Einträge von Hand (ohne Health).
         let uhr = TestUhr()
         let u = umgebung(ordner: try tempOrdner(), uhr: uhr)
         let a = try u.profil.anlegen(name: "Eins", passwort: "abcd")
         let heute = Datum.text(uhr.lesen)
-        u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 7000, meter: 5200))
+        u.daten?.raum.senden(SchritteHandLogik.art, SchritteHandD(tag: heute, anzahl: 7000))
         XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 7000)
         XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 7000, "zweiter Zugriff aus dem Merker")
-        u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 9000, meter: 6000))
+        u.daten?.raum.senden(SchritteHandLogik.art, SchritteHandD(tag: heute, anzahl: 9000))
         XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 9000, "eine neue Op macht das Gemerkte ungültig")
+        u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 12_000, meter: 9000))
+        XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 9000, "Band-Ops zählen nicht")
         _ = try u.profil.anlegen(name: "Zwei", passwort: "efgh")
-        XCTAssertNotEqual(u.gesundheit.tage[heute]?.schritte, 9000, "anderes Profil sieht die Band-Tage des ersten nicht")
+        XCTAssertNotEqual(u.gesundheit.tage[heute]?.schritte, 9000, "anderes Profil sieht die Einträge des ersten nicht")
         XCTAssertTrue(u.profil.wechsle(zu: a.id, passwort: "abcd"))
         XCTAssertEqual(u.gesundheit.tage[heute]?.schritte, 9000)
     }

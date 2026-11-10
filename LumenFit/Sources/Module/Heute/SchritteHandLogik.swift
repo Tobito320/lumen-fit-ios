@@ -7,8 +7,8 @@ struct SchritteHandD: Codable, Equatable, Sendable {
     var anzahl: Int
 }
 
-/// Schritte von Hand. Die letzte Op je Tag gilt; mit Health und Band zählt je Tag der größte Wert (nie die Summe, alle zählen dieselben Schritte).
-/// `AppUmgebung` reicht das Ergebnis als Band-Tage an den `GesundheitsStand`.
+/// Schritte von Hand. Die letzte Op je Tag gilt. Seit 10.11.2026 (Besitzer: Schritte nur aus Apple Health) zählt ein Eintrag nur an einem Tag,
+/// an dem Health keine Schritte hat. `AppUmgebung` reicht die Hand-Tage an den `GesundheitsStand`.
 enum SchritteHandLogik {
     nonisolated static let art = "fit.schritte.hand"
     /// Obergrenze gegen Tippfehler.
@@ -27,17 +27,14 @@ enum SchritteHandLogik {
         return ergebnis
     }
 
-    /// Band-Tage plus Hand-Tage: je Tag der größere Schrittwert, die Meter bleiben die des Bands.
-    static func zusammen(band: [String: BandTagOp], hand: [String: Int]) -> [BandTagOp] {
-        var ergebnis = band
-        for (tag, anzahl) in hand {
-            if var b = ergebnis[tag] {
-                b.schritte = max(b.schritte, anzahl)
-                ergebnis[tag] = b
-            } else {
-                ergebnis[tag] = BandTagOp(tag: tag, schritte: anzahl, meter: 0)
-            }
+    /// Health-Tage plus Hand-Tage: Schritte und Strecke kommen aus Health; ein Eintrag von Hand füllt nur Tage, an denen Health keine Schritte hat.
+    static func zusammen(health: [String: TagesWerte], hand: [String: Int]) -> [String: TagesWerte] {
+        var ergebnis = health
+        for (tag, anzahl) in hand where anzahl > 0 && (health[tag]?.schritte ?? 0) == 0 {
+            var t = health[tag] ?? TagesWerte(tag: tag)
+            t.schritte = anzahl
+            ergebnis[tag] = t
         }
-        return Array(ergebnis.values)
+        return ergebnis
     }
 }

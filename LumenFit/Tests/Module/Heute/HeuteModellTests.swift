@@ -91,14 +91,14 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(leser.tagesAbfragen.count, 1, "Health wird beim Laden einmal gelesen")
     }
 
-    func testSchritteKommenAlsMaximumAusHealthUndBand() async throws {
-        let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 6_000)])
+    func testSchritteKommenNurAusHealthNichtVomBand() async throws {
+        let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 6_000, distanzMeter: 4_000)])
         let u = try umgebung(leser: leser)
         u.daten?.raum.senden("fit.band.tag", BandTagOp(tag: heute, schritte: 7_500, meter: 5_000))
         let m = HeuteModell(umgebung: u)
         await m.lade()
-        XCTAssertEqual(m.stand?.schritte.schritte, 7_500, "das Maximum, nie die Summe")
-        XCTAssertEqual(m.stand?.schritte.distanzKm ?? 0, 5.0, accuracy: 0.0001)
+        XCTAssertEqual(m.stand?.schritte.schritte, 6_000, "Besitzer 10.11.2026: nur Apple Health zählt (vorher das Maximum mit dem Band, 7500)")
+        XCTAssertEqual(m.stand?.schritte.distanzKm ?? 0, 4.0, accuracy: 0.0001)
     }
 
     func testNurMitIPhoneRechnetDerScoreMitSchlafUndSagtWasFehlt() async throws {

@@ -25,14 +25,17 @@ final class SchritteHandTests: XCTestCase {
         XCTAssertTrue(SchritteHandLogik.tage(ops: [kaputt]).isEmpty)
     }
 
-    func testZusammenNimmtDenGroesserenWertUndBehaeltMeter() {
-        let band = ["2026-10-29": BandTagOp(tag: "2026-10-29", schritte: 9_000, meter: 6_000), "2026-10-28": BandTagOp(tag: "2026-10-28", schritte: 2_000, meter: 1_400)]
-        let z = Dictionary(uniqueKeysWithValues: SchritteHandLogik.zusammen(band: band, hand: ["2026-10-29": 4_000, "2026-10-28": 5_000, "2026-10-27": 700]).map { ($0.tag, $0) })
-        XCTAssertEqual(z["2026-10-29"]?.schritte, 9_000)
-        XCTAssertEqual(z["2026-10-29"]?.meter, 6_000)
-        XCTAssertEqual(z["2026-10-28"]?.schritte, 5_000)
-        XCTAssertEqual(z["2026-10-28"]?.meter, 1_400)
-        XCTAssertEqual(z["2026-10-27"]?.schritte, 700)
+    func testZusammenHandZaehltNurOhneHealthSchritte() {
+        // Besitzer 10.11.2026: Schritte nur aus Apple Health; vorher galt je Tag das Maximum aus Band, Hand und Health.
+        let health = ["2026-10-29": TagesWerte(tag: "2026-10-29", schritte: 4_000, distanzMeter: 3_000),
+                      "2026-10-28": TagesWerte(tag: "2026-10-28", schritte: 0, etagen: 2)]
+        let z = SchritteHandLogik.zusammen(health: health, hand: ["2026-10-29": 6_000, "2026-10-28": 5_000, "2026-10-27": 3_000, "2026-10-26": 0])
+        XCTAssertEqual(z["2026-10-29"]?.schritte, 4_000, "Health 4000 und Hand 6000: Health gilt")
+        XCTAssertEqual(z["2026-10-29"]?.distanzMeter, 3_000, "Strecke nur aus Health")
+        XCTAssertEqual(z["2026-10-28"]?.schritte, 5_000, "Health ohne Schritte: Hand gilt")
+        XCTAssertEqual(z["2026-10-28"]?.etagen, 2, "die übrigen Health-Werte bleiben")
+        XCTAssertEqual(z["2026-10-27"]?.schritte, 3_000, "kein Health-Tag: Hand gilt")
+        XCTAssertNil(z["2026-10-26"], "Hand 0 legt keinen Tag an")
         XCTAssertEqual(z.count, 3)
     }
 }

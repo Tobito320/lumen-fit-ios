@@ -299,7 +299,7 @@ final class BandDienstImplTests: XCTestCase {
 
     // MARK: Ops
 
-    func testBandOpsLandenImRaumUndGesundheitsStandNimmtDasMaximum() async throws {
+    func testBandOpsLandenImRaumUndZaehlenNichtFuerDieSchritte() async throws {
         let ordner = try tempOrdner()
         let raum = LokalerRaum(ordner: ordner, profil: TestDaten.profilID, uhr: { VerbindenTest.jetzt })
         let senke = BandSenke.raum { raum }
@@ -310,10 +310,10 @@ final class BandDienstImplTests: XCTestCase {
         XCTAssertEqual(bisher["2026-10-29"]?.schritte, 15_000)
         XCTAssertEqual(bisher.count, 2)
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: "2026-10-29", schritte: 10_000, distanzMeter: 7_000)])
-        let stand = GesundheitsStand(leser: leser, uhr: { VerbindenTest.jetzt }, band: { Array((senke.bisher() ?? [:]).values) })
+        let stand = GesundheitsStand(leser: leser, uhr: { VerbindenTest.jetzt })
         await stand.aktualisiere()
-        XCTAssertEqual(stand.tage["2026-10-29"]?.schritte, 15_000, "das Maximum aus Health und Band, nie die Summe")
-        XCTAssertEqual(stand.tage["2026-10-28"]?.schritte, 500)
+        XCTAssertEqual(stand.tage["2026-10-29"]?.schritte, 10_000, "Besitzer 10.11.2026: nur Apple Health zählt (vorher das Maximum mit dem Band, 15000)")
+        XCTAssertNil(stand.tage["2026-10-28"], "ein Tag nur vom Band ist kein Schritte-Tag mehr")
     }
 
     func testBandSchlafOpWirdGeschriebenUndGelesen() async throws {

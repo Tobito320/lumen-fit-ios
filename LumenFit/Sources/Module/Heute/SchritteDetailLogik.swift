@@ -1,7 +1,7 @@
 import Foundation
 
 /// Alles, was das Schritte-Detail (Idee 18) für einen Zeitraum zeigt. Reine Logik auf `SchritteLogik`; die Tageswerte kommen aus `GesundheitsStand.tage`
-/// (je Tag das Maximum aus Health und Band, nie die Summe).
+/// (aus Apple Health, von Hand nur an Tagen ohne Health-Schritte).
 struct SchritteDetailStand: Equatable, Sendable {
     var zeitraum: SchritteZeitraum
     var titel: String

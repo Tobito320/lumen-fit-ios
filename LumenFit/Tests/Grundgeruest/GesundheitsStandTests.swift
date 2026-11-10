@@ -96,16 +96,17 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.tage.count, 5)
     }
 
-    func testBandUndHealthZaehlenDasMaximumNieDieSumme() async {
-        let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 10_000, distanzMeter: 7000), TagesWerte(tag: Datum.addTage(heute, -1), schritte: 3000)])
+    func testSchritteNurAusHealthHandNurAnTagenOhneHealth() async {
+        // Besitzer 10.11.2026: Schritte und Strecke nur aus Apple Health; vorher galt je Tag das Maximum mit Band und Hand.
         let gestern = Datum.addTage(heute, -1)
-        let band = [BandTagOp(tag: heute, schritte: 15_000, meter: 11_000), BandTagOp(tag: gestern, schritte: 2000, meter: 1500), BandTagOp(tag: Datum.addTage(heute, -2), schritte: 4000, meter: 3000)]
-        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr, band: { band })
+        let vorgestern = Datum.addTage(heute, -2)
+        let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 4000, distanzMeter: 2800), TagesWerte(tag: gestern, schritte: 0)])
+        let stand = GesundheitsStand(leser: leser, uhr: uhr.uhr, hand: { [heute: 6000, gestern: 2500, vorgestern: 3000] })
         await stand.aktualisiere()
-        XCTAssertEqual(stand.tage[heute]?.schritte, 15_000, "Band größer: Band gilt")
-        XCTAssertEqual(stand.tage[heute]?.distanzMeter, 11_000)
-        XCTAssertEqual(stand.tage[gestern]?.schritte, 3000, "Health größer: Health gilt")
-        XCTAssertEqual(stand.tage[Datum.addTage(heute, -2)]?.schritte, 4000, "Tag nur vom Band")
+        XCTAssertEqual(stand.tage[heute]?.schritte, 4000, "Health 4000, Hand 6000: Health gilt (nicht mehr das Maximum)")
+        XCTAssertEqual(stand.tage[heute]?.distanzMeter, 2800, "Strecke nur aus Health")
+        XCTAssertEqual(stand.tage[gestern]?.schritte, 2500, "Health ohne Schritte: Hand gilt")
+        XCTAssertEqual(stand.tage[vorgestern]?.schritte, 3000, "Health nil, Hand 3000: Hand gilt")
     }
 
     // MARK: Schlaf: Hand, Band, Health

@@ -26,7 +26,7 @@ struct BandTag: Codable, Equatable, Sendable {
 
 /// Die Tage, die der Tracker zuletzt geliefert hat (heute und die Tage davor), mit Stand der letzten
 /// vollständigen Abfrage. Nur im Speicher: dauerhaft sind die Ops `fit.band.tag` (`BandTagOp`, eine je Tag), die
-/// `GesundheitsStand` je Tag mit dem Maximum aus Health und Band verrechnet. Die Viertelstunden (`BandTag.zeilen`) sind nötig,
+/// seit 10.11.2026 nicht mehr in die Schritte des `GesundheitsStand` eingehen (nur Apple Health). Die Viertelstunden (`BandTag.zeilen`) sind nötig,
 /// damit eine neue Abfrage einen Tag nie verkleinert und nie doppelt zählt.
 struct BandTage: Codable, Equatable, Sendable {
     /// So viele Tage bleiben im Speicher. Der Tracker kennt selbst nur wenige Tage zurück.

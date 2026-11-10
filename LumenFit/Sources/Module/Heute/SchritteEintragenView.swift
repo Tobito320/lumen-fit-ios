@@ -1,7 +1,7 @@
 // Quelle: Lovea Health/HealthTab.swift (SchritteEintragenBlatt)
 import SwiftUI
 
-/// Schritte für einen Tag von Hand, wenn kein Tracker zählt. Gilt mit Health und Band je Tag der größte Wert (Op `fit.schritte.hand`).
+/// Schritte für einen Tag von Hand, wenn kein Tracker zählt. Zählt nur an Tagen, an denen Health keine Schritte hat (Op `fit.schritte.hand`).
 struct SchritteEintragenView: View {
     let gespeichert: () -> Void
     @Environment(AppUmgebung.self) private var umgebung
@@ -25,7 +25,7 @@ struct SchritteEintragenView: View {
                     .focused($fokus)
                     .frame(minHeight: Abstand.tippflaeche)
                     .onAppear { fokus = true }
-                Section { Text("Zählt Health oder das Band an diesem Tag mehr, gilt der größere Wert.").font(.footnote) }
+                Section { Text("Hat Apple Health an diesem Tag Schritte, gelten die von Health.").font(.footnote) }
             }
             .scrollContentBackground(.hidden)
             .lumenHintergrund()

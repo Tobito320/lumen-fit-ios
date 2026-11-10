@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 /// Verbindung zum iSo-Tech-Tracker (H59MAX). Hält die Tage, die der Tracker geliefert hat (`BandTage`, im Speicher), und schreibt sie als Ops
-/// `fit.band.tag` in den Raum des Profils (`BandSenke`): `GesundheitsStand` nimmt je Tag das Maximum aus Health und Band. Der Tracker schreibt
+/// `fit.band.tag` in den Raum des Profils (`BandSenke`); für die Schritte zählt seit 10.11.2026 nur Apple Health. Der Tracker schreibt
 /// absichtlich nichts in Apple Health, sonst zählt Health dieselben Schritte doppelt.
 ///
 /// Wann abgefragt wird: bei jeder Verbindung (auch wenn iOS die App dafür im Hintergrund weckt), beim Start, beim Öffnen der App und danach im
