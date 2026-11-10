@@ -2,8 +2,9 @@ import SwiftUI
 import UIKit
 
 /// Die Startseite (Aufteilung B, Bild `home-*.png`): oben Plan für heute mit Start, dann die Woche (ohne Freunde und Partner), Gewohnheiten, Gewicht,
-/// das letzte Training zum Nachlesen und unten die Ringplatte mit Lumi. Tagesform, Energie-Bank, Einsichten, Hinweise und die Schritte-Karte zeigt sie nicht mehr
-/// (Code und Detailseiten bleiben, Schritte stehen im Profil). Ohne Health zeigt sie statt der Ringplatte einen Leerzustand mit "Health erlauben".
+/// das letzte Training zum Nachlesen und unten die Ringplatte mit Lumi, die Zeile "Energie und Tagesform" und die Schritte-Karte (Besitzer 10.11.2026:
+/// Schritte als große Karte aus Apple Health, Energie als Zeile). Einsichten und Hinweise stehen als Zeile im Tab Fortschritt.
+/// Ohne Health zeigt sie statt der Ringplatte einen Leerzustand mit "Health erlauben".
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var modell: HeuteModell?
@@ -86,6 +87,7 @@ struct HeuteTabView: View {
                 Button { blatt = .energie } label: { ProfilListenZeile("Energie und Tagesform", symbol: "bolt.heart.fill") }
                     .buttonStyle(.plain)
             }
+            SchritteKarte(schritte: s.schritte) { blatt = .schritte }
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }

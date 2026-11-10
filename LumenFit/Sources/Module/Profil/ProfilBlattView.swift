@@ -23,10 +23,6 @@ struct ProfilBlattView: View {
                 if umgebung.bereicheWirksam.gymAn {
                     Button { trainingBlatt = true } label: { ProfilListenZeile("Training", symbol: "dumbbell.fill") }
                 }
-                // Die Schritte-Karte ist nicht mehr auf der Startseite; hier bleibt die Seite mit Tag, Woche und Monat erreichbar (nur mit Health-Daten).
-                if let schritte = schritteHeute {
-                    NavigationLink { SchritteDetailView(eingebettet: true) } label: { ProfilListenZeile("Schritte heute", symbol: "figure.walk", wert: schritte) }
-                }
                 link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
                 // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
                 if umgebung.konto.schlafSichtbar { link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() } }
@@ -51,13 +47,6 @@ struct ProfilBlattView: View {
         #else
         return .top
         #endif
-    }
-
-    /// Die Schritte von heute als Text; nil, solange Health und Band noch keinen Tag geliefert haben.
-    private var schritteHeute: String? {
-        let tage = umgebung.gesundheit.tage
-        guard !tage.isEmpty else { return nil }
-        return HeuteQuellen.zahl(tage[Datum.text(umgebung.uhr())]?.schritte ?? 0)
     }
 
     private var sicherungKurz: String {
