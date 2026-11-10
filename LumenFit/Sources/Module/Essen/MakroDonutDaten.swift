@@ -8,9 +8,9 @@ enum MakroArt: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .protein: "Protein"
-        case .kohlenhydrate: "Kohlenhydrate"
-        case .fett: "Fett"
+        case .protein: String(localized: "Protein")
+        case .kohlenhydrate: String(localized: "Kohlenhydrate")
+        case .fett: String(localized: "Fett")
         }
     }
 
@@ -40,9 +40,9 @@ enum MakroMuster: String, Sendable {
 
     var name: String {
         switch self {
-        case .streifen: "Streifen"
-        case .punkte: "Punkte"
-        case .flaeche: "Fläche"
+        case .streifen: String(localized: "Streifen")
+        case .punkte: String(localized: "Punkte")
+        case .flaeche: String(localized: "Fläche")
         }
     }
 }
@@ -57,7 +57,7 @@ struct MakroSegment: Identifiable, Equatable, Sendable {
     var id: String { art.id }
 
     var grammText: String { "\(Int(gramm.rounded())) g" }
-    var beschriftung: String { "\(art.name): \(grammText), \(prozent) % der Energie" }
+    var beschriftung: String { String(localized: "\(art.name): \(grammText), \(prozent) % der Energie") }
 }
 
 /// Alles, was der Donut anzeigt, ohne Oberfläche (damit testbar): Anteile an der Energie aus Protein, Kohlenhydraten und Fett.
@@ -90,7 +90,7 @@ struct MakroDonutDaten: Equatable, Sendable {
 
     /// Ein Satz für VoiceOver und die Kernzeile.
     var beschreibung: String {
-        if istLeer { return "Noch nichts gegessen" }
+        if istLeer { return String(localized: "Noch nichts gegessen") }
         return segmente.map(\.beschriftung).joined(separator: "; ")
     }
 }

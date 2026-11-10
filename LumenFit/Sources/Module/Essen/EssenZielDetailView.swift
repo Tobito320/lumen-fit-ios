@@ -44,9 +44,9 @@ enum EssenZielDetailLogik {
 
     /// Ausgeschriebene Tage für VoiceOver: "Montag, Samstag" oder "kein Tag".
     static func tageText(_ maske: Int) -> String {
-        let namen = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+        let namen = [String(localized: "Montag"), String(localized: "Dienstag"), String(localized: "Mittwoch"), String(localized: "Donnerstag"), String(localized: "Freitag"), String(localized: "Samstag"), String(localized: "Sonntag")]
         let an = (0..<7).filter { maske & (1 << $0) != 0 }.map { namen[$0] }
-        return an.isEmpty ? "kein Tag" : an.joined(separator: ", ")
+        return an.isEmpty ? String(localized: "kein Tag") : an.joined(separator: ", ")
     }
 }
 
@@ -76,7 +76,7 @@ struct EssenZielDetailView: View {
             if essen != nil {
                 formular
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an, dann rechne ich dir deine Ziele.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege zuerst ein Profil an, dann rechne ich dir deine Ziele."))
             }
         }
         .navigationTitle("Ziele")
@@ -210,10 +210,10 @@ struct EssenZielDetailView: View {
         Section {
             Toggle("Eigene Werte", isOn: $eigeneWerte)
             if eigeneWerte {
-                eigenesFeld("Kalorien", einheit: "kcal", wert: $z.kcal)
-                eigenesFeld("Protein", einheit: "g", wert: $z.protein)
-                eigenesFeld("Kohlenhydrate", einheit: "g", wert: $z.kohlenhydrate)
-                eigenesFeld("Fett", einheit: "g", wert: $z.fett)
+                eigenesFeld(String(localized: "Kalorien"), einheit: "kcal", wert: $z.kcal)
+                eigenesFeld(String(localized: "Protein"), einheit: "g", wert: $z.protein)
+                eigenesFeld(String(localized: "Kohlenhydrate"), einheit: "g", wert: $z.kohlenhydrate)
+                eigenesFeld(String(localized: "Fett"), einheit: "g", wert: $z.fett)
             }
         }
     }

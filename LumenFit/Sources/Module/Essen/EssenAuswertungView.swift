@@ -43,7 +43,7 @@ struct EssenAuswertungView: View {
         return VStack(alignment: .leading, spacing: Abstand.l) {
             zeitraumWahl
             if eintraege.isEmpty && !hatMesswerte(essen, tage) {
-                LeerZustand(stimmung: .bereit, satz: "In diesem Zeitraum ist noch nichts eingetragen. Sobald du isst oder dich wiegst, rechne ich es dir vor.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "In diesem Zeitraum ist noch nichts eingetragen. Sobald du isst oder dich wiegst, rechne ich es dir vor."))
             }
             if !eintraege.isEmpty {
                 kalorienKarte(buckets: buckets, summen: summen, ziele: ziele, wachstum: wachstum)
@@ -100,18 +100,18 @@ struct EssenAuswertungView: View {
         let imZiel = AnalyseLogik.tageImZiel(Array(werte.values), ziel: Double(ziele.kcal))
         let gruppierung = zeitraum.gruppierung
         let beschreibung = EssenReiheBeschreibung(
-            titel: "Kalorien im Zeitraum \(zeitraum.name)",
-            zusammenfassung: "Durchschnitt \(Int(schnitt.rounded())) Kilokalorien, Ziel \(ziele.kcal)",
-            xTitel: "Zeit", yTitel: "Kilokalorien", einheit: "kcal",
+            titel: String(localized: "Kalorien im Zeitraum \(zeitraum.name)"),
+            zusammenfassung: String(localized: "Durchschnitt \(String(Int(schnitt.rounded()))) Kilokalorien, Ziel \(String(ziele.kcal))"),
+            xTitel: String(localized: "Zeit"), yTitel: String(localized: "Kilokalorien"), einheit: "kcal",
             kategorien: buckets.map { AnalyseLogik.label($0, gruppierung) },
             werte: buckets.map { AnalyseLogik.bucketSchnitt($0, werte) },
             ziel: Double(ziele.kcal))
-        return DiagrammKarte(aussage: "Kalorien", kernzeile: EssenAuswertungLogik.kalorienKernzeile(schnitt: schnitt, imZiel: imZiel, tageMitEintraegen: werte.count)) {
+        return DiagrammKarte(aussage: String(localized: "Kalorien"), kernzeile: EssenAuswertungLogik.kalorienKernzeile(schnitt: schnitt, imZiel: imZiel, tageMitEintraegen: werte.count)) {
             EssenKalorienDiagramm(buckets: buckets, gruppierung: gruppierung, werte: werte, ziel: ziele.kcal, wachstum: wachstum, beschreibung: beschreibung)
             HStack {
-                EssenKennzahlSpalte(wert: "\(Int(schnitt.rounded())) kcal", titel: "Schnitt")
+                EssenKennzahlSpalte(wert: "\(Int(schnitt.rounded())) kcal", titel: String(localized: "Schnitt"))
                 Spacer()
-                EssenKennzahlSpalte(wert: "\(imZiel) von \(werte.count)", titel: "Tage im Ziel")
+                EssenKennzahlSpalte(wert: String(localized: "\(imZiel) von \(werte.count)"), titel: String(localized: "Tage im Ziel"))
             }
         }
     }
@@ -122,12 +122,12 @@ struct EssenAuswertungView: View {
         let schnitte = EssenAuswertungLogik.makroSchnitte(summen, ziele: ziele)
         let hatEnergie = schnitte.contains { $0.energie > 0 }
         let beschreibung = EssenReiheBeschreibung(
-            titel: "Makros im Schnitt",
-            zusammenfassung: schnitte.map { "\($0.name) \(Int((EssenAuswertungLogik.energieAnteil($0, in: schnitte) * 100).rounded())) Prozent der Energie" }.joined(separator: ", "),
-            xTitel: "Makro", yTitel: "Anteil an der Energie", einheit: "Prozent",
+            titel: String(localized: "Makros im Schnitt"),
+            zusammenfassung: schnitte.map { String(localized: "\($0.name) \(Int((EssenAuswertungLogik.energieAnteil($0, in: schnitte) * 100).rounded())) Prozent der Energie") }.joined(separator: ", "),
+            xTitel: String(localized: "Makro"), yTitel: String(localized: "Anteil an der Energie"), einheit: String(localized: "Prozent"),
             kategorien: schnitte.map(\.name),
             werte: schnitte.map { EssenAuswertungLogik.energieAnteil($0, in: schnitte) * 100 })
-        return DiagrammKarte(aussage: "Makros im Schnitt", kernzeile: "Anteil an der Energie und Gramm je Tag gegen dein Ziel") {
+        return DiagrammKarte(aussage: String(localized: "Makros im Schnitt"), kernzeile: String(localized: "Anteil an der Energie und Gramm je Tag gegen dein Ziel")) {
             HStack(alignment: .center, spacing: Abstand.l) {
                 if hatEnergie { EssenMakroSektor(schnitte: schnitte, sichtbar: gezeichnet || bewegungAus, beschreibung: beschreibung) }
                 VStack(alignment: .leading, spacing: Abstand.m) {
@@ -162,8 +162,8 @@ struct EssenAuswertungView: View {
                 Text("Noch keine Nährwertangaben in diesem Zeitraum.").font(.subheadline).foregroundStyle(palette.text2)
             } else {
                 VStack(alignment: .leading, spacing: Abstand.s) { ForEach(grund) { naehrstoffZeile($0) } }
-                if !vitamine.isEmpty { abschnitt("Vitamine", vitamine) }
-                if !mineralstoffe.isEmpty { abschnitt("Mineralstoffe", mineralstoffe) }
+                if !vitamine.isEmpty { abschnitt(String(localized: "Vitamine"), vitamine) }
+                if !mineralstoffe.isEmpty { abschnitt(String(localized: "Mineralstoffe"), mineralstoffe) }
                 Text("Nur Lebensmittel mit Angaben dazu zählen in den Schnitt.").font(.footnote).foregroundStyle(palette.text2)
             }
         }
@@ -190,7 +190,7 @@ struct EssenAuswertungView: View {
             if let prozent = zeile.prozent { EssenBalken(anteil: prozent / 100, hoehe: 4) }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(zeile.prozent.map { "\(zeile.name): \(zeile.menge), \(Int($0.rounded())) Prozent der Referenz" } ?? "\(zeile.name): \(zeile.menge)")
+        .accessibilityLabel(zeile.prozent.map { String(localized: "\(zeile.name): \(zeile.menge), \(String(Int($0.rounded()))) Prozent der Referenz") } ?? "\(zeile.name): \(zeile.menge)")
     }
 
     // MARK: - Gewicht und Körperwerte
@@ -202,18 +202,18 @@ struct EssenAuswertungView: View {
             if let erstes = reihe.first, let letztes = reihe.last {
                 let diff = EssenAuswertungLogik.gewichtVeraenderungZehntel(reihe)
                 let beschreibung = EssenReiheBeschreibung(
-                    titel: "Gewicht", zusammenfassung: EssenAuswertungLogik.gewichtKernzeile(reihe),
-                    xTitel: "Tag", yTitel: "Kilogramm", einheit: "kg",
+                    titel: String(localized: "Gewicht"), zusammenfassung: EssenAuswertungLogik.gewichtKernzeile(reihe),
+                    xTitel: String(localized: "Tag"), yTitel: String(localized: "Kilogramm"), einheit: "kg",
                     kategorien: reihe.map { Self.tagKurz($0.tag) }, werte: reihe.map { $0.wert },
                     von: max(0, (reihe.map(\.wert).min() ?? 0).rounded(.down) - 1))
-                DiagrammKarte(aussage: "Gewicht", kernzeile: EssenAuswertungLogik.gewichtKernzeile(reihe)) {
+                DiagrammKarte(aussage: String(localized: "Gewicht"), kernzeile: EssenAuswertungLogik.gewichtKernzeile(reihe)) {
                     EssenMessLinie(reihe: reihe, einheit: "kg", hoehe: 140, achsenWerte: 5, wachstum: wachstum, beschreibung: beschreibung)
                     HStack {
-                        EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(erstes.wert)) kg", titel: "Start")
+                        EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(erstes.wert)) kg", titel: String(localized: "Start"))
                         Spacer()
-                        EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(letztes.wert)) kg", titel: "Aktuell")
+                        EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(letztes.wert)) kg", titel: String(localized: "Aktuell"))
                         Spacer()
-                        EssenKennzahlSpalte(wert: "\(diff > 0 ? "+" : "")\(ErnaehrungLogik.zahl(Double(diff) / 10)) kg", titel: "Veränderung")
+                        EssenKennzahlSpalte(wert: "\(diff > 0 ? "+" : "")\(ErnaehrungLogik.zahl(Double(diff) / 10)) kg", titel: String(localized: "Veränderung"))
                     }
                 }
             }
@@ -225,9 +225,9 @@ struct EssenAuswertungView: View {
         ForEach(KoerperArt.allCases) { art in
             let reihe = EssenAuswertungLogik.koerperReihe(tage: tage) { essen.koerperwert(art, bis: $0) }
             if let letztes = reihe.last {
-                let kern = "Zuletzt \(ErnaehrungLogik.zahl(letztes.wert)) \(art.einheit)"
+                let kern = String(localized: "Zuletzt \(ErnaehrungLogik.zahl(letztes.wert)) \(art.einheit)")
                 let beschreibung = EssenReiheBeschreibung(
-                    titel: art.name, zusammenfassung: kern, xTitel: "Tag", yTitel: art.einheit == "%" ? "Prozent" : "Zentimeter",
+                    titel: art.name, zusammenfassung: kern, xTitel: String(localized: "Tag"), yTitel: art.einheit == "%" ? String(localized: "Prozent") : String(localized: "Zentimeter"),
                     einheit: art.einheit, kategorien: reihe.map { Self.tagKurz($0.tag) }, werte: reihe.map { $0.wert },
                     von: max(0, (reihe.map(\.wert).min() ?? 0).rounded(.down) - 1))
                 DiagrammKarte(aussage: art.name, kernzeile: kern) {
@@ -253,7 +253,8 @@ struct EssenAuswertungView: View {
             HStack {
                 Text("Meiste Kalorien").font(.headline).foregroundStyle(palette.text)
                 Spacer(minLength: Abstand.s)
-                Label("\(serie) \(serie == 1 ? "Tag" : "Tage") in Folge", systemImage: "flame.fill")
+                Label(serie == 1 ? String(localized: "1 Tag in Folge") : String(localized: "\(serie) Tage in Folge"), systemImage: "flame.fill")
+
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(palette.text)
                     .contentTransition(.numericText(value: Double(serie)))

@@ -6,7 +6,7 @@ struct EssenKiSchritte: View {
     @Environment(\.palette) private var palette
     @Environment(\.bewegungAus) private var bewegungAus
 
-    private nonisolated static let texte = ["Bild wird gesendet", "Essen wird erkannt", "Kalorien werden geschätzt"]
+    private nonisolated static let texte = [String(localized: "Bild wird gesendet"), String(localized: "Essen wird erkannt"), String(localized: "Kalorien werden geschätzt")]
 
     var body: some View {
         TimelineView(.periodic(from: seit, by: 1)) { zeit in

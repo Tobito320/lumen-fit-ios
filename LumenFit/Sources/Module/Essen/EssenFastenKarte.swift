@@ -91,7 +91,7 @@ struct EssenFastenKarte: View {
         if !beendete.isEmpty {
             Haarlinie()
             let serie = FastenLogik.serie(essen.fastenEintraege)
-            Text(serie > 0 ? "Verlauf, \(serie) \(serie == 1 ? "Tag" : "Tage") in Folge geschafft" : "Verlauf")
+            Text(serie == 0 ? "Verlauf" : serie == 1 ? "Verlauf, 1 Tag in Folge geschafft" : "Verlauf, \(serie) Tage in Folge geschafft")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
             ForEach(beendete) { e in
                 let stunden = FastenLogik.dauerStunden(e) ?? 0

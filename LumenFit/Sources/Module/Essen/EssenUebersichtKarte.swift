@@ -18,14 +18,14 @@ struct EssenUebersichtKarte: View {
             karte {
                 VStack(spacing: Abstand.l) {
                     HStack(alignment: .center, spacing: 0) {
-                        kennzahl(Double(gegessen), "Gegessen")
+                        kennzahl(Double(gegessen), String(localized: "Gegessen"))
                         bogen
-                        kennzahl(Double(verbrannt ?? 0), "Verbrannt")
+                        kennzahl(Double(verbrannt ?? 0), String(localized: "Verbrannt"))
                     }
                     HStack(alignment: .top, spacing: Abstand.l) {
-                        makro("Kohlenhydrate", ist: summe.kohlenhydrate, ziel: ziele.kohlenhydrate)
-                        makro("Eiweiß", ist: summe.protein, ziel: ziele.protein)
-                        makro("Fett", ist: summe.fett, ziel: ziele.fett)
+                        makro(String(localized: "Kohlenhydrate"), ist: summe.kohlenhydrate, ziel: ziele.kohlenhydrate)
+                        makro(String(localized: "Eiweiß"), ist: summe.protein, ziel: ziele.protein)
+                        makro(String(localized: "Fett"), ist: summe.fett, ziel: ziele.fett)
                     }
                 }
             }

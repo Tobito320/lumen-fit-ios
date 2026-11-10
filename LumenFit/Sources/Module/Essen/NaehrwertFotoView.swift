@@ -27,7 +27,7 @@ struct NaehrwertFotoView: View {
             VStack(spacing: Abstand.l) {
                 LeerZustand(stimmung: zustand == .liest ? .denkt : .bereit, satz: satz)
                 if zustand == .nichtGelesen {
-                    FehlerKarte(titel: "Ich konnte keine Zahlen lesen", hilfe: "Halte die Tabelle gerade und gut beleuchtet ins Bild, so dass Energie und Nährwerte scharf sind. Oder tippe die Werte von Hand ein.")
+                    FehlerKarte(titel: String(localized: "Ich konnte keine Zahlen lesen"), hilfe: String(localized: "Halte die Tabelle gerade und gut beleuchtet ins Bild, so dass Energie und Nährwerte scharf sind. Oder tippe die Werte von Hand ein."))
                 }
                 if zustand == .liest {
                     ProgressView("Ich lese die Tabelle …")
@@ -70,9 +70,9 @@ struct NaehrwertFotoView: View {
 
     private var satz: String {
         switch zustand {
-        case .bereit: "Fotografiere die Nährwerttabelle auf der Packung. Ich lese die Zahlen, du prüfst sie."
-        case .liest: "Einen Moment."
-        case .nichtGelesen: "Das hat nicht geklappt."
+        case .bereit: String(localized: "Fotografiere die Nährwerttabelle auf der Packung. Ich lese die Zahlen, du prüfst sie.")
+        case .liest: String(localized: "Einen Moment.")
+        case .nichtGelesen: String(localized: "Das hat nicht geklappt.")
         }
     }
 

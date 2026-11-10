@@ -16,11 +16,11 @@ enum EssenNutriScoreLogik {
 
     static func beschreibung(_ note: String) -> String {
         switch note {
-        case "a": "Nutri-Score A, sehr günstige Nährwerte"
-        case "b": "Nutri-Score B, günstige Nährwerte"
-        case "c": "Nutri-Score C, mittlere Nährwerte"
-        case "d": "Nutri-Score D, eher ungünstige Nährwerte"
-        default: "Nutri-Score E, ungünstige Nährwerte"
+        case "a": String(localized: "Nutri-Score A, sehr günstige Nährwerte")
+        case "b": String(localized: "Nutri-Score B, günstige Nährwerte")
+        case "c": String(localized: "Nutri-Score C, mittlere Nährwerte")
+        case "d": String(localized: "Nutri-Score D, eher ungünstige Nährwerte")
+        default: String(localized: "Nutri-Score E, ungünstige Nährwerte")
         }
     }
 }

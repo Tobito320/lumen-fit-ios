@@ -35,8 +35,8 @@ struct EssenZielAnsicht: View {
     }
 
     private func hinweis(_ code: String?) -> String? {
-        if code != nil { return "Diesen Code kennt Open Food Facts nicht. Trag die Werte von der Packung ein oder fotografiere die Nährwerttabelle." }
-        return vorlage == nil ? nil : "Prüfe die Zahlen, bevor du speicherst. Name und Marke fehlen noch."
+        if code != nil { return String(localized: "Diesen Code kennt Open Food Facts nicht. Trag die Werte von der Packung ein oder fotografiere die Nährwerttabelle.") }
+        return vorlage == nil ? nil : String(localized: "Prüfe die Zahlen, bevor du speicherst. Name und Marke fehlen noch.")
     }
 }
 
@@ -75,7 +75,7 @@ struct ScanView: View {
                 if kannScannen {
                     kamera
                 } else {
-                    LeerZustand(stimmung: .bereit, satz: "Die Kamera ist nicht verfügbar. Tippe den Code von der Packung ein, dann suche ich ihn.")
+                    LeerZustand(stimmung: .bereit, satz: String(localized: "Die Kamera ist nicht verfügbar. Tippe den Code von der Packung ein, dann suche ich ihn."))
                     Button("Zu den Einstellungen") { einstellungenOeffnen() }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
                 }
                 meldung
@@ -152,14 +152,14 @@ struct ScanView: View {
         case .bereit: EmptyView()
         case .sucht: ProgressView("Ich suche den Code …")
         case .offline(let c):
-            FehlerKarte(titel: "Kein Netz", hilfe: "Der Code \(c) steht noch nicht auf deinem Gerät. Versuche es mit Netz noch einmal oder trag das Lebensmittel von Hand ein.")
+            FehlerKarte(titel: String(localized: "Kein Netz"), hilfe: String(localized: "Der Code \(c) steht noch nicht auf deinem Gerät. Versuche es mit Netz noch einmal oder trag das Lebensmittel von Hand ein."))
             Button("Von Hand eintragen") { pfad = [.eigenes(barcode: c)] }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
             nochEinmal
         case .limit(_, let s):
-            FehlerKarte(titel: "Kurz warten", hilfe: "Open Food Facts erlaubt nur 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder.")
+            FehlerKarte(titel: String(localized: "Kurz warten"), hilfe: String(localized: "Open Food Facts erlaubt nur 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder."))
             nochEinmal
         case .fehler(let c):
-            FehlerKarte(titel: "Open Food Facts antwortet gerade nicht", hilfe: "Das liegt nicht an dir. Versuche es gleich noch einmal oder trag den Code \(c) von Hand ein.")
+            FehlerKarte(titel: String(localized: "Open Food Facts antwortet gerade nicht"), hilfe: String(localized: "Das liegt nicht an dir. Versuche es gleich noch einmal oder trag den Code \(c) von Hand ein."))
             Button("Von Hand eintragen") { pfad = [.eigenes(barcode: c)] }.buttonStyle(.bordered).frame(minHeight: Abstand.tippflaeche)
             nochEinmal
         }

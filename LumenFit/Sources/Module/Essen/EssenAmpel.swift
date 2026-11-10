@@ -25,15 +25,15 @@ enum EssenAmpel {
     // MARK: Halal
 
     /// E-Nummern (nur die Ziffern) mit Namen. Rot: sicher tierisch/verboten. Gelb: tierisch oder pflanzlich, Herkunft offen.
-    private static let eRot: [String: String] = ["441": "Gelatine"]
+    private static let eRot: [String: String] = ["441": String(localized: "Gelatine")]
     private static let eGelb: [String: String] = [
-        "120": "Karmin", "422": "Glycerin", "470": "Fettsäuresalze", "471": "Mono-/Diglyceride", "472": "Fettsäureester",
-        "473": "Zuckerester", "474": "Zuckerglyceride", "475": "Polyglycerinester", "476": "Polyglycerin-Polyricinoleat",
-        "477": "Propylenglycolester", "478": "Lactylierte Fettsäureester", "479": "Sojaöl-Ester", "481": "Natriumlactylat",
-        "482": "Calciumlactylat", "483": "Stearyltartrat", "491": "Sorbitanester", "492": "Sorbitanester",
-        "493": "Sorbitanester", "494": "Sorbitanester", "495": "Sorbitanester", "542": "Knochenphosphat",
-        "570": "Stearinsäure", "572": "Magnesiumstearat", "631": "Inosinat", "635": "Ribonucleotide",
-        "904": "Schellack", "913": "Lanolin", "920": "L-Cystein",
+        "120": String(localized: "Karmin"), "422": String(localized: "Glycerin"), "470": String(localized: "Fettsäuresalze"), "471": String(localized: "Mono-/Diglyceride"), "472": String(localized: "Fettsäureester"),
+        "473": String(localized: "Zuckerester"), "474": String(localized: "Zuckerglyceride"), "475": String(localized: "Polyglycerinester"), "476": String(localized: "Polyglycerin-Polyricinoleat"),
+        "477": String(localized: "Propylenglycolester"), "478": String(localized: "Lactylierte Fettsäureester"), "479": String(localized: "Sojaöl-Ester"), "481": String(localized: "Natriumlactylat"),
+        "482": String(localized: "Calciumlactylat"), "483": String(localized: "Stearyltartrat"), "491": String(localized: "Sorbitanester"), "492": String(localized: "Sorbitanester"),
+        "493": String(localized: "Sorbitanester"), "494": String(localized: "Sorbitanester"), "495": String(localized: "Sorbitanester"), "542": String(localized: "Knochenphosphat"),
+        "570": String(localized: "Stearinsäure"), "572": String(localized: "Magnesiumstearat"), "631": String(localized: "Inosinat"), "635": String(localized: "Ribonucleotide"),
+        "904": String(localized: "Schellack"), "913": String(localized: "Lanolin"), "920": String(localized: "L-Cystein"),
     ]
 
     /// Ganzes Wort im Text (nach Kleinschreibung, ohne Umlaute, ß = ss).
@@ -100,14 +100,14 @@ enum EssenAmpel {
         let text = zutaten?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let hatSiegel = (siegel ?? []).contains { $0.lowercased().contains("halal") }
         if text.isEmpty {
-            return hatSiegel ? AmpelUrteil(stufe: .gruen, grund: "Halal-Siegel, Zutaten fehlen")
-                             : AmpelUrteil(stufe: .gelb, grund: "Keine Zutaten bekannt, kein Halal-Siegel", unklar: true)
+            return hatSiegel ? AmpelUrteil(stufe: .gruen, grund: String(localized: "Halal-Siegel, Zutaten fehlen"))
+                             : AmpelUrteil(stufe: .gelb, grund: String(localized: "Keine Zutaten bekannt, kein Halal-Siegel"), unklar: true)
         }
         let funde = halalFunde(text)
-        if !funde.rot.isEmpty { return AmpelUrteil(stufe: .rot, grund: "Enthält " + funde.rot.prefix(2).joined(separator: ", ")) }
-        if hatSiegel { return AmpelUrteil(stufe: .gruen, grund: "Halal-Siegel") }
-        if !funde.gelb.isEmpty { return AmpelUrteil(stufe: .gelb, grund: "Prüfen: " + funde.gelb.prefix(2).joined(separator: ", ") + ", kein Siegel") }
-        return AmpelUrteil(stufe: .gruen, grund: "Nichts Auffälliges in den Zutaten")
+        if !funde.rot.isEmpty { return AmpelUrteil(stufe: .rot, grund: String(localized: "Enthält \(funde.rot.prefix(2).joined(separator: ", "))")) }
+        if hatSiegel { return AmpelUrteil(stufe: .gruen, grund: String(localized: "Halal-Siegel")) }
+        if !funde.gelb.isEmpty { return AmpelUrteil(stufe: .gelb, grund: String(localized: "Prüfen: \(funde.gelb.prefix(2).joined(separator: ", ")), kein Siegel")) }
+        return AmpelUrteil(stufe: .gruen, grund: String(localized: "Nichts Auffälliges in den Zutaten"))
     }
 
     static func halal(_ l: Lebensmittel) -> AmpelUrteil { halal(zutaten: l.zutaten, siegel: l.siegel) }
@@ -124,14 +124,14 @@ enum EssenAmpel {
         let einheit = l.fluessig ? "ml" : "g"
         if let z = l.pro100.zucker {
             let wert = ErnaehrungLogik.zahl(z)
-            if z <= 0.5 { return AmpelUrteil(stufe: .gruen, grund: "Zuckerfrei, \(wert) g pro 100 \(einheit)") }
-            if z <= (l.fluessig ? 2.5 : 5) { return AmpelUrteil(stufe: .gelb, grund: "Wenig Zucker, \(wert) g pro 100 \(einheit)") }
-            return AmpelUrteil(stufe: .rot, grund: "\(wert) g Zucker pro 100 \(einheit)")
+            if z <= 0.5 { return AmpelUrteil(stufe: .gruen, grund: String(localized: "Zuckerfrei, \(wert) g pro 100 \(einheit)")) }
+            if z <= (l.fluessig ? 2.5 : 5) { return AmpelUrteil(stufe: .gelb, grund: String(localized: "Wenig Zucker, \(wert) g pro 100 \(einheit)")) }
+            return AmpelUrteil(stufe: .rot, grund: String(localized: "\(wert) g Zucker pro 100 \(einheit)"))
         }
         if let text = l.zutaten, woerter(text).contains(where: { zuckerWoerter.contains($0) }) {
-            return AmpelUrteil(stufe: .gelb, grund: "Zucker in den Zutaten, Menge fehlt", unklar: true)
+            return AmpelUrteil(stufe: .gelb, grund: String(localized: "Zucker in den Zutaten, Menge fehlt"), unklar: true)
         }
-        return AmpelUrteil(stufe: .gelb, grund: "Zuckerwert fehlt", unklar: true)
+        return AmpelUrteil(stufe: .gelb, grund: String(localized: "Zuckerwert fehlt"), unklar: true)
     }
 }
 
@@ -161,20 +161,20 @@ struct EssenAmpelAnzeige: Equatable, Sendable {
     let grund: String
 
     static func halal(_ u: AmpelUrteil) -> EssenAmpelAnzeige {
-        if u.unklar { return EssenAmpelAnzeige(symbol: "questionmark.circle.fill", text: "Halal: unklar", grund: u.grund) }
+        if u.unklar { return EssenAmpelAnzeige(symbol: "questionmark.circle.fill", text: String(localized: "Halal: unklar"), grund: u.grund) }
         switch u.stufe {
-        case .gruen: return EssenAmpelAnzeige(symbol: "checkmark.circle.fill", text: "Halal: unauffällig", grund: u.grund)
-        case .gelb: return EssenAmpelAnzeige(symbol: "exclamationmark.triangle.fill", text: "Halal: prüfen", grund: u.grund)
-        case .rot: return EssenAmpelAnzeige(symbol: "xmark.circle.fill", text: "Halal: nicht geeignet", grund: u.grund)
+        case .gruen: return EssenAmpelAnzeige(symbol: "checkmark.circle.fill", text: String(localized: "Halal: unauffällig"), grund: u.grund)
+        case .gelb: return EssenAmpelAnzeige(symbol: "exclamationmark.triangle.fill", text: String(localized: "Halal: prüfen"), grund: u.grund)
+        case .rot: return EssenAmpelAnzeige(symbol: "xmark.circle.fill", text: String(localized: "Halal: nicht geeignet"), grund: u.grund)
         }
     }
 
     static func zucker(_ u: AmpelUrteil) -> EssenAmpelAnzeige {
-        if u.unklar { return EssenAmpelAnzeige(symbol: "questionmark.circle.fill", text: "Zucker: unklar", grund: u.grund) }
+        if u.unklar { return EssenAmpelAnzeige(symbol: "questionmark.circle.fill", text: String(localized: "Zucker: unklar"), grund: u.grund) }
         switch u.stufe {
-        case .gruen: return EssenAmpelAnzeige(symbol: "checkmark.circle.fill", text: "Zuckerfrei", grund: u.grund)
-        case .gelb: return EssenAmpelAnzeige(symbol: "exclamationmark.triangle.fill", text: "Wenig Zucker", grund: u.grund)
-        case .rot: return EssenAmpelAnzeige(symbol: "xmark.circle.fill", text: "Viel Zucker", grund: u.grund)
+        case .gruen: return EssenAmpelAnzeige(symbol: "checkmark.circle.fill", text: String(localized: "Zuckerfrei"), grund: u.grund)
+        case .gelb: return EssenAmpelAnzeige(symbol: "exclamationmark.triangle.fill", text: String(localized: "Wenig Zucker"), grund: u.grund)
+        case .rot: return EssenAmpelAnzeige(symbol: "xmark.circle.fill", text: String(localized: "Viel Zucker"), grund: u.grund)
         }
     }
 }

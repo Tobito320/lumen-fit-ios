@@ -11,16 +11,16 @@ struct EssenPortionsBeispiel: Identifiable, Equatable, Sendable {
     var id: String { name }
 
     static let alle: [EssenPortionsBeispiel] = [
-        EssenPortionsBeispiel(name: "Gemüse", gramm: 150, kcal: 45, symbol: "carrot.fill", hand: "2 Hände voll"),
-        EssenPortionsBeispiel(name: "Obst", gramm: 125, kcal: 65, symbol: "leaf.fill", hand: "1 Hand voll"),
-        EssenPortionsBeispiel(name: "Kartoffeln", gramm: 200, kcal: 150, symbol: "circle.grid.2x2.fill", hand: "2 Fäuste"),
-        EssenPortionsBeispiel(name: "Nudeln, gekocht", gramm: 180, kcal: 270, symbol: "fork.knife", hand: "2 Hände voll"),
-        EssenPortionsBeispiel(name: "Reis, gekocht", gramm: 150, kcal: 195, symbol: "takeoutbag.and.cup.and.straw.fill", hand: "2 Hände voll"),
-        EssenPortionsBeispiel(name: "Brot", gramm: 50, kcal: 120, symbol: "square.fill", hand: "1 Scheibe, Handfläche"),
-        EssenPortionsBeispiel(name: "Fleisch und Fisch", gramm: 120, kcal: 180, symbol: "fish.fill", hand: "1 Handfläche"),
-        EssenPortionsBeispiel(name: "Käse", gramm: 30, kcal: 110, symbol: "triangle.fill", hand: "2 Finger"),
-        EssenPortionsBeispiel(name: "Nüsse", gramm: 25, kcal: 160, symbol: "circle.hexagongrid.fill", hand: "1 Handmulde"),
-        EssenPortionsBeispiel(name: "Öl und Butter", gramm: 10, kcal: 90, symbol: "drop.fill", hand: "1 Daumenspitze"),
+        EssenPortionsBeispiel(name: String(localized: "Gemüse"), gramm: 150, kcal: 45, symbol: "carrot.fill", hand: String(localized: "2 Hände voll")),
+        EssenPortionsBeispiel(name: String(localized: "Obst"), gramm: 125, kcal: 65, symbol: "leaf.fill", hand: String(localized: "1 Hand voll")),
+        EssenPortionsBeispiel(name: String(localized: "Kartoffeln"), gramm: 200, kcal: 150, symbol: "circle.grid.2x2.fill", hand: String(localized: "2 Fäuste")),
+        EssenPortionsBeispiel(name: String(localized: "Nudeln, gekocht"), gramm: 180, kcal: 270, symbol: "fork.knife", hand: String(localized: "2 Hände voll")),
+        EssenPortionsBeispiel(name: String(localized: "Reis, gekocht"), gramm: 150, kcal: 195, symbol: "takeoutbag.and.cup.and.straw.fill", hand: String(localized: "2 Hände voll")),
+        EssenPortionsBeispiel(name: String(localized: "Brot"), gramm: 50, kcal: 120, symbol: "square.fill", hand: String(localized: "1 Scheibe, Handfläche")),
+        EssenPortionsBeispiel(name: String(localized: "Fleisch und Fisch"), gramm: 120, kcal: 180, symbol: "fish.fill", hand: String(localized: "1 Handfläche")),
+        EssenPortionsBeispiel(name: String(localized: "Käse"), gramm: 30, kcal: 110, symbol: "triangle.fill", hand: String(localized: "2 Finger")),
+        EssenPortionsBeispiel(name: String(localized: "Nüsse"), gramm: 25, kcal: 160, symbol: "circle.hexagongrid.fill", hand: String(localized: "1 Handmulde")),
+        EssenPortionsBeispiel(name: String(localized: "Öl und Butter"), gramm: 10, kcal: 90, symbol: "drop.fill", hand: String(localized: "1 Daumenspitze")),
     ]
 }
 

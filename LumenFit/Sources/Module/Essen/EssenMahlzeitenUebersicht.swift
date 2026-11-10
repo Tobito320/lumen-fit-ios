@@ -95,7 +95,7 @@ struct EssenMahlzeitenUebersicht: View {
         if let e = essen?.eintraege(tag).first(where: { $0.id == id }) {
             EssenDetailView(lebensmittel: e.lebensmittel, mahlzeit: e.mahlzeit, tag: e.datum, bearbeiten: e) { _ in offen = nil }
         } else {
-            LeerZustand(stimmung: .bereit, satz: "Dieser Eintrag ist gelöscht.")
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Dieser Eintrag ist gelöscht."))
         }
     }
 }

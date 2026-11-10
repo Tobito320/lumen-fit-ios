@@ -38,12 +38,12 @@ struct EssenSchnellEintragenBlatt: View {
             Form {
                 Section {
                     TextField("Name (freiwillig)", text: $name).accessibilityLabel("Name, freiwillig")
-                    EssenZahlFeld(titel: "Kalorien", einheit: "kcal", text: $kcal)
+                    EssenZahlFeld(titel: String(localized: "Kalorien"), einheit: "kcal", text: $kcal)
                 }
                 Section("Freiwillig") {
-                    EssenZahlFeld(titel: "Eiweiß", einheit: "g", text: $protein)
-                    EssenZahlFeld(titel: "Kohlenhydrate", einheit: "g", text: $kohlenhydrate)
-                    EssenZahlFeld(titel: "Fett", einheit: "g", text: $fett)
+                    EssenZahlFeld(titel: String(localized: "Eiweiß"), einheit: "g", text: $protein)
+                    EssenZahlFeld(titel: String(localized: "Kohlenhydrate"), einheit: "g", text: $kohlenhydrate)
+                    EssenZahlFeld(titel: String(localized: "Fett"), einheit: "g", text: $fett)
                 }
             }
             .scrollContentBackground(.hidden)

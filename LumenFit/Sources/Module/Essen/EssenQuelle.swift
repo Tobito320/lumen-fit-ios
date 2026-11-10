@@ -5,9 +5,9 @@ enum EssenQuelle {
     static func name(_ l: Lebensmittel) -> String {
         if l.quelle == "bls" || l.id.hasPrefix("bls-") { return "BLS" }
         if l.quelle == "off" || l.id.hasPrefix("off-") { return "Open Food Facts" }
-        if l.istRezept { return "dein Rezept" }
-        return "von dir eingetragen"
+        if l.istRezept { return String(localized: "dein Rezept") }
+        return String(localized: "von dir eingetragen")
     }
 
-    static func zeile(_ l: Lebensmittel) -> String { "Quelle: \(name(l))" }
+    static func zeile(_ l: Lebensmittel) -> String { String(localized: "Quelle: \(name(l))") }
 }

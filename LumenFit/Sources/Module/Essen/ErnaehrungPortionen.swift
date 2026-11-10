@@ -43,8 +43,8 @@ enum MengenOption: Hashable {
     func anzeige(_ l: Lebensmittel) -> String {
         switch self {
         case .portion(let p): "\(p.name) (\(ErnaehrungLogik.zahl(p.gramm)) \(l.basisEinheit.rawValue))"
-        case .gramm: "Gramm"
-        case .milliliter: "Milliliter"
+        case .gramm: String(localized: "Gramm")
+        case .milliliter: String(localized: "Milliliter")
         }
     }
 }

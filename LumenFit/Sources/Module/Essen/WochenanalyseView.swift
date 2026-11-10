@@ -4,19 +4,19 @@ import SwiftUI
 
 /// Kurzer Wochentag für die Achse: "Mo" bis "So".
 enum EssenTagText {
-    static func kurz(_ tag: String) -> String { ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][min(max(Datum.wochentag(tag), 1), 7) - 1] }
+    static func kurz(_ tag: String) -> String { [String(localized: "Mo"), String(localized: "Di"), String(localized: "Mi"), String(localized: "Do"), String(localized: "Fr"), String(localized: "Sa"), String(localized: "So")][min(max(Datum.wochentag(tag), 1), 7) - 1] }
 }
 
 struct EssenProteinBeschreibung: AXChartDescriptorRepresentable {
     let analyse: Wochenanalyse
 
     func makeChartDescriptor() -> AXChartDescriptor {
-        let x = AXCategoricalDataAxisDescriptor(title: "Tag", categoryOrder: analyse.tage.map { EssenTagText.kurz($0.tag) })
+        let x = AXCategoricalDataAxisDescriptor(title: String(localized: "Tag"), categoryOrder: analyse.tage.map { EssenTagText.kurz($0.tag) })
         let hoechster = max(1, analyse.tage.map(\.protein).max() ?? 1, Double(analyse.proteinZiel))
-        let y = AXNumericDataAxisDescriptor(title: "Protein in Gramm", range: 0...hoechster, gridlinePositions: [Double(analyse.proteinZiel)]) { wert in "\(Int(wert.rounded())) Gramm" }
-        let reihe = AXDataSeriesDescriptor(name: "Protein je Tag", isContinuous: false,
+        let y = AXNumericDataAxisDescriptor(title: String(localized: "Protein in Gramm"), range: 0...hoechster, gridlinePositions: [Double(analyse.proteinZiel)]) { wert in String(localized: "\(String(Int(wert.rounded()))) Gramm") }
+        let reihe = AXDataSeriesDescriptor(name: String(localized: "Protein je Tag"), isContinuous: false,
                                            dataPoints: analyse.tage.map { AXDataPoint(x: EssenTagText.kurz($0.tag), y: $0.hatEintraege ? $0.protein : nil) })
-        return AXChartDescriptor(title: "Protein je Tag", summary: analyse.klartext.first, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
+        return AXChartDescriptor(title: String(localized: "Protein je Tag"), summary: analyse.klartext.first, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
     }
 
     func updateChartDescriptor(_ descriptor: AXChartDescriptor) {}
@@ -68,7 +68,7 @@ struct WochenanalyseView: View {
                 let analyse = WochenanalyseLogik.berechne(bis: bis, eintraege: { essen.eintraege($0) }, ziele: { essen.ernaehrungsZiele(tag: $0) })
                 VStack(spacing: Abstand.l) {
                     if analyse.istLeer {
-                        LeerZustand(stimmung: .bereit, satz: "In den letzten sieben Tagen ist noch nichts eingetragen. Sobald du isst, rechne ich dir die Woche vor.")
+                        LeerZustand(stimmung: .bereit, satz: String(localized: "In den letzten sieben Tagen ist noch nichts eingetragen. Sobald du isst, rechne ich dir die Woche vor."))
                     } else {
                         DiagrammKarte(aussage: proteinAussage(analyse), kernzeile: analyse.klartext.first ?? "") {
                             EssenProteinDiagramm(analyse: analyse)
@@ -87,8 +87,8 @@ struct WochenanalyseView: View {
 
     private func proteinAussage(_ a: Wochenanalyse) -> String {
         let ziel = a.proteinZiel
-        guard let schnitt = a.proteinSchnitt else { return "Protein je Tag" }
-        return Int(schnitt.rounded()) >= ziel ? "Protein: Ziel im Schnitt erreicht" : "Protein: im Schnitt \(ziel - Int(schnitt.rounded())) g unter dem Ziel"
+        guard let schnitt = a.proteinSchnitt else { return String(localized: "Protein je Tag") }
+        return Int(schnitt.rounded()) >= ziel ? String(localized: "Protein: Ziel im Schnitt erreicht") : String(localized: "Protein: im Schnitt \(ziel - Int(schnitt.rounded())) g unter dem Ziel")
     }
 
     private func klartextKarte(_ a: Wochenanalyse) -> some View {

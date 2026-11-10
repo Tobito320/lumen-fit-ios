@@ -51,11 +51,11 @@ private struct EssenKiAnalyseKarte: View {
 
     private var zustand: (text: String, symbol: String) {
         switch auftrag.status {
-        case .laeuft: ("Wird geschätzt", "hourglass")
+        case .laeuft: (String(localized: "Wird geschätzt"), "hourglass")
         case .fertig:
-            if let a = auftrag.analyse, EssenKiFotoLogik.keinEssen(a) { ("Kein Essen erkannt", "fork.knife") } else { ("Bereit zum Prüfen", "checkmark.circle") }
-        case .fehler: (EssenKiAuftragLogik.anzeige(auftrag)?.titel ?? "Fehlgeschlagen", "exclamationmark.triangle")
-        case .unterbrochen: ("Unterbrochen", "pause.circle")
+            if let a = auftrag.analyse, EssenKiFotoLogik.keinEssen(a) { (String(localized: "Kein Essen erkannt"), "fork.knife") } else { (String(localized: "Bereit zum Prüfen"), "checkmark.circle") }
+        case .fehler: (EssenKiAuftragLogik.anzeige(auftrag)?.titel ?? String(localized: "Fehlgeschlagen"), "exclamationmark.triangle")
+        case .unterbrochen: (String(localized: "Unterbrochen"), "pause.circle")
         }
     }
 
