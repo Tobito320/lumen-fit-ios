@@ -1,74 +1,48 @@
 import SwiftUI
 
-/// Das Segment "Fortschritt" im Tab Gym (Ideen 31 bis 34): Wochenleiste, nächstes Training, Kraftkurve, Sätze je Muskel (Balken), danach die Körperkarte (Felder, Erholungs-Silhouette)
-/// und die Wege zu Verlauf, Messungen, Rückblick, Meilensteinen und Lumi. Ein Tipp auf Silhouette, Legende oder Feld öffnet das Blatt der Muskelgruppe;
-/// "Ziele" in der Leiste öffnet die Befragung. Die Seite bringt ihren eigenen Hintergrund und kein Navigationstitel mit, der Tab Gym setzt ihn.
+/// Der Abschnitt "Mehr" unten auf der Seite Fortschritt (`FortschrittTabView`): alles, was das frühere Segment Fortschritt im Tab Gym erreichbar machte und
+/// nicht nach oben gewandert ist. Verlauf (Konstanz und Gewicht), Kraftkurve, Muskelkarte (Wochenleiste, Sätze je Körperteil, Erholung), nächstes Training,
+/// Rückblick (mit FitPassport) und Lumi. Messungen und Medaillen stehen jetzt in ihren eigenen Abschnitten, die Wochenziele hinter "Ziele" in der Leiste.
+/// Nur der Inhalt, ohne ScrollView, Hintergrund oder Leiste: die Seite darum bringt sie mit.
 struct FortschrittSegmentView: View {
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
-    @State private var auswahl: KoerperAuswahl?
-    @State private var befragung = false
-    @State private var tipp = 0
 
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
-        let koerper = q.koerper
-        ScrollView {
-            VStack(spacing: Abstand.l) {
-                KoerperWochenLeiste(woche: koerper.streifen)
-                if q.hatTraining {
-                    NaechstesTrainingKarte(erholung: koerper.erholung, plantag: q.plantagHeute) { umgebung.router.oeffne(.gym(.training)) }
-                    KraftKurveKarte(sessions: q.sessions, heute: q.heute)
-                    SaetzeProMuskelKarte(zeilen: SaetzeProMuskel.zeilen(q.sessions, heute: q.heute, ziele: koerper.ziele))
-                } else {
-                    LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
-                        umgebung.router.oeffne(.gym(.training))
-                    }
-                    .lumenKartenFlaeche()
-                }
-                if !q.zieleGesetzt { ZielFestlegenKarte { befragung = true } }
-                SaetzeFelderKarte(daten: koerper) { waehle($0, nil) }
-                if q.hatTraining { SilhouetteKarte(daten: koerper, beiGruppe: waehle) }
-                links(stufe: q.stufe, medaillen: q.medaillen.count)
-            }
-            .padding(.horizontal, Abstand.l)
-            .padding(.vertical, Abstand.m)
-        }
-        .lumenHintergrund()
-        .fortschrittToast()
-        .onAppear { FortschrittModul.waechter.pruefeAlles() }
-        .haptik(.auswahl, bei: tipp)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Ziele", systemImage: "slider.horizontal.3") { befragung = true }
-            }
-        }
-        .sheet(item: $auswahl) { a in KoerperBlattView(gruppe: a.gruppe, teil: a.teil) }
-        .sheet(isPresented: $befragung) { ZieleBefragungView().presentationDetents([.large]) }
-    }
-
-    private func waehle(_ gruppe: MuskelGruppe, _ teil: MuskelTeil?) {
-        tipp += 1
-        auswahl = KoerperAuswahl(gruppe: gruppe, teil: teil)
-    }
-
-    private func links(stufe: Int, medaillen: Int) -> some View {
         ListenKarte {
-            zeile("Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
+            FortschrittLinkZeile(titel: "Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
             Haarlinie()
-            zeile("Messungen", detail: "Gewicht, Umfänge, Körperfett", symbol: "ruler") { PartnerKoerperWeiche { MessungenView() } }
+            FortschrittLinkZeile(titel: "Kraftkurve", detail: "Bestes Gewicht, 1RM und Volumen je Übung", symbol: "chart.line.uptrend.xyaxis") { KraftKurveSeite() }
             Haarlinie()
-            zeile("Rückblick", detail: "Woche und Monat teilen", symbol: "calendar") { RueckblickView() }
+            FortschrittLinkZeile(titel: "Muskelkarte", detail: "Sätze und Erholung je Körperteil", symbol: "figure.arms.open") { MuskelkartenSeite() }
             Haarlinie()
-            zeile("Meilensteine", detail: "\(medaillen) von \(MeilensteinKatalog.anzahl) Medaillen", symbol: "medal.fill") { MeilensteineView() }
+            FortschrittLinkZeile(titel: "Nächstes Training", detail: "Was heute passt", symbol: "figure.strengthtraining.traditional") { NaechstesTrainingSeite() }
             Haarlinie()
-            zeile("Lumi", detail: "Stufe \(stufe) von \(LumiStufe.schwellen.count)", symbol: "sparkles") { LumiSeiteView() }
+            FortschrittLinkZeile(titel: "Rückblick", detail: "Woche und Monat teilen, FitPassport", symbol: "calendar") { RueckblickView() }
+            Haarlinie()
+            FortschrittLinkZeile(titel: "Lumi", detail: "Stufe \(q.stufe) von \(LumiStufe.schwellen.count)", symbol: "sparkles") { LumiSeiteView() }
         }
     }
+}
 
-    private func zeile<Ziel: View>(_ titel: String, detail: String, symbol: String, @ViewBuilder ziel: () -> Ziel) -> some View {
+/// Eine Zeile mit Symbol, Titel, Erklärung und Pfeil, die eine Seite öffnet. Mindestens 56 pt hoch.
+struct FortschrittLinkZeile<Ziel: View>: View {
+    let titel: String
+    let detail: String
+    let symbol: String
+    let ziel: Ziel
+    @Environment(\.palette) private var palette
+
+    init(titel: String, detail: String, symbol: String, @ViewBuilder ziel: () -> Ziel) {
+        self.titel = titel
+        self.detail = detail
+        self.symbol = symbol
+        self.ziel = ziel()
+    }
+
+    var body: some View {
         NavigationLink {
-            ziel()
+            ziel
         } label: {
             HStack(spacing: Abstand.m) {
                 Image(systemName: symbol).frame(width: 28).accessibilityHidden(true)
