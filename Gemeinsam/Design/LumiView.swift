@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Lumi: ein goldener Tropfen mit Locke, Stirnband, großen Augen, Ärmchen und Füßchen, in 14 Zuständen (Lumi-Set vom 10.11.2026,
+/// Lumi: ein goldener Tropfen mit Locke, großen Augen, Ärmchen und Füßchen, in 14 Zuständen (Lumi-Set vom 10.11.2026,
 /// Vault `Lumen Fit/lumi/`, viewBox 100 x 104). `LumiPose` beschreibt den Zustand, `LumiZeichner` zeichnet ihn in einem `Canvas`.
 /// Bewegung nur bei Ereignissen: beim Wechsel des Zustands blendet Lumi über, Freude-Zustände springen dabei leicht.
 /// Reduce Motion: nur Überblendung; Stromsparmodus: gar keine Bewegung. Keine Dauerbewegung.
@@ -91,7 +91,11 @@ enum LumiZeichner {
         if pose.wangen {
             for x in [27.0, 73.0] { k.fill(oval(x, 68.5, 5.6, 3.3), with: .color(farbe(rosa, 0.55))) }
         }
-        if pose.band { stirnband(gedreht(k, 50, 48, pose.bandGrad)) }
+        if pose.band {
+            var b = k
+            b.clip(to: koerperPfad)
+            stirnband(b)
+        }
         for t in pose.gesicht { teil(t, c, k) }
 
         for t in auswahl(pose.vorn) { teil(t, c, kontext) }
@@ -108,11 +112,9 @@ enum LumiZeichner {
     // MARK: Teile
 
     private nonisolated static func stirnband(_ k: GraphicsContext) {
-        k.fill(SVGPfad.pfad("M21 47 q-8 -1 -12 4 q6 2 11 0z M21 50 q-6 4 -7 10 q5 -1 8 -7z"), with: .color(farbe(blau)))
-        let band = SVGPfad.pfad("M19 45.5c18-9 44-9 62 0l-1.5 7.5c-18-8-41-8-59 0z")
-        k.fill(band, with: .color(.white))
-        k.stroke(band, with: .color(farbe(0xC9D6EA)), lineWidth: 0.8)
-        k.stroke(SVGPfad.pfad("M19.8 49.3c18-8.5 43-8.5 60.6 0"), with: .color(farbe(blau)), lineWidth: 2.6)
+        k.fill(SVGPfad.pfad("M8 46.5 C28 36.5 72 36.5 92 46.5 L92 53.5 C72 43.5 28 43.5 8 53.5Z"), with: .color(.white))
+        k.stroke(SVGPfad.pfad("M8 50 C28 40 72 40 92 50"), with: .color(farbe(blau)), lineWidth: 2.4)
+        k.stroke(SVGPfad.pfad("M8 53.5 C28 43.5 72 43.5 92 53.5"), with: .color(.black.opacity(0.12)), lineWidth: 1.2)
     }
 
     private nonisolated static func teil(_ t: LumiTeil, _ c: LumiStimmung.Farbsatz, _ k: GraphicsContext) {

@@ -48,8 +48,8 @@ struct LumiPose: Sendable, Equatable {
     var gesicht: [LumiTeil]
     var vorn: [LumiTeil] = []
     var wangen = false
-    var band = true
-    var bandGrad: Double = 0
+    /// Stirnband nur im laufenden Training (anfeuern, pause).
+    var band = false
     /// Deckkraft des Hofs (der Hof selbst erscheint ab Stufe 3 oder bei `feiert`).
     var hof: Double = 1
     /// Körper leicht gestaucht (erschöpft).
@@ -70,10 +70,10 @@ struct LumiPose: Sendable, Equatable {
         case .anfeuern:
             LumiPose(hinten: [.arm(x: 17, y: 70, rx: 6, ry: 8.5, grad: 25)], gesicht: [.augen(), .brauen(.fest), .mund(.rufen)],
                      vorn: [.arm(x: 84, y: 40, rx: 5.5, ry: 10, grad: -12), .faust(x: 86, y: 28),
-                            .schwung("M94 22 l5 -2"), .schwung("M95 30 l5 0"), .schwung("M77 18 l-3 -4")])
+                            .schwung("M94 22 l5 -2"), .schwung("M95 30 l5 0"), .schwung("M77 18 l-3 -4")], band: true)
         case .pause:
             LumiPose(hinten: [.arm(x: 17, y: 70, rx: 6, ry: 8.5, grad: 25)], gesicht: [.zu(x: 38), .zu(x: 62), .o()],
-                     vorn: [.flasche(x: 85, y: 58, grad: 15), .arm(x: 80, y: 66, rx: 6, ry: 8.5, grad: -20)])
+                     vorn: [.flasche(x: 85, y: 58, grad: 15), .arm(x: 80, y: 66, rx: 6, ry: 8.5, grad: -20)], band: true)
         case .stolz:
             LumiPose(hinten: [.langhantel(y: 8)], gesicht: [.froh(x: 38), .froh(x: 62), .mund(.lachen)],
                      vorn: [.arm(x: 18, y: 24, rx: 5.5, ry: 11, grad: 18), .arm(x: 82, y: 24, rx: 5.5, ry: 11, grad: -18),
@@ -91,18 +91,18 @@ struct LumiPose: Sendable, Equatable {
             LumiPose(hinten: [.arm(x: 16, y: 76, rx: 6, ry: 8, grad: 10), .arm(x: 84, y: 76, rx: 6, ry: 8, grad: -10)],
                      gesicht: [.halb(x: 38, blick: -1), .halb(x: 62, blick: -1), .mund(.hecheln)],
                      vorn: [.tropfen(x: 16, y: 40, s: 1), .tropfen(x: 85, y: 34, s: 1.15), .tropfen(x: 90, y: 50, s: 0.8)],
-                     bandGrad: 6, hof: 0.5, gestaucht: true)
+                     hof: 0.5, gestaucht: true)
         case .muede:
             LumiPose(hinten: [.arm(x: 18, y: 72, rx: 6, ry: 8, grad: 20), .arm(x: 82, y: 72, rx: 6, ry: 8, grad: -20)],
                      gesicht: [.halb(x: 38), .halb(x: 62), .augenringe, .mund(.gaehnen)],
-                     vorn: [.zz(x: 78, y: 14, s: 1), .zz(x: 90, y: 6, s: 0.65)], bandGrad: -7, hof: 0.5)
+                     vorn: [.zz(x: 78, y: 14, s: 1), .zz(x: 90, y: 6, s: 0.65)], hof: 0.5)
         case .schlaeft:
             LumiPose(hinten: [.arm(x: 18, y: 72, rx: 6, ry: 8, grad: 20), .arm(x: 82, y: 72, rx: 6, ry: 8, grad: -20)],
                      gesicht: [.zu(x: 38, dy: 2), .zu(x: 62, dy: 2), .o(dy: 2)],
-                     vorn: [.zz(x: 76, y: 18, s: 1), .zz(x: 88, y: 8, s: 0.65)], bandGrad: -4, hof: 0.4)
+                     vorn: [.zz(x: 76, y: 18, s: 1), .zz(x: 88, y: 8, s: 0.65)], hof: 0.4)
         case .ruhetag:
             LumiPose(hinten: [.arm(x: 17, y: 70, rx: 6, ry: 8.5, grad: 25)], gesicht: [.zu(x: 38, dy: -1), .zu(x: 62, dy: -1), .mund(.zufrieden)],
-                     vorn: [.tasse(x: 80, y: 70), .arm(x: 74, y: 76, rx: 5.5, ry: 8, grad: -60)], wangen: true, band: false)
+                     vorn: [.tasse(x: 80, y: 70), .arm(x: 74, y: 76, rx: 5.5, ry: 8, grad: -60)], wangen: true)
         case .muskelkater:
             LumiPose(hinten: [.arm(x: 84, y: 70, rx: 6, ry: 8.5, grad: -20)], gesicht: [.kneifen(x: 38), .auge(x: 62), .brauen(.traurig), .mund(.zaehne)],
                      vorn: [.pflaster(x: 68, y: 38, grad: 20), .arm(x: 28, y: 78, rx: 5.5, ry: 9, grad: 70), .blitz(x: 88, y: 50), .blitz(x: 84, y: 22)])
