@@ -111,6 +111,8 @@ struct EnergieDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     kopf
+                    // Der Verlauf über den Tag stand vorher nur auf der Karte der Startseite; die Karte ist jetzt eine Zeile, also hier.
+                    EnergieVerlaufDiagramm(energie: energie)
                     if !energie.klartext.gruende.isEmpty { gruende }
                     if let empfehlung = energie.klartext.empfehlung {
                         VStack(alignment: .leading, spacing: Abstand.xs) {
