@@ -106,6 +106,7 @@ jobs:
             -scheme LumenFit \
             -derivedDataPath derived \
             -destination "platform=iOS Simulator,id=$IPHONE_ID" \
+            -testLanguage de -testRegion DE \
             CODE_SIGNING_ALLOWED=NO SWIFT_TREAT_WARNINGS_AS_ERRORS=NO 2>&1 | tee iphone.log
           # grep ohne Treffer endet mit 1: ohne `|| true` ließe pipefail den Schritt bei 0 Warnungen rot werden
           COUNT=$({ grep "warning:" iphone.log || true; } | sort -u | wc -l | tr -d ' ')
