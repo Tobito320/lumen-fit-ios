@@ -16,7 +16,7 @@ struct CardioEintrag: Codable, Identifiable, Equatable {
     var stufen: Int?
     var stufe: Int?
 
-    var titel: String { geraet == "stairmaster" ? "Stairmaster" : "Laufband" }
+    var titel: String { geraet == "stairmaster" ? String(localized: "Stairmaster") : String(localized: "Laufband") }
     var symbol: String { geraet == "stairmaster" ? "figure.stair.stepper" : "figure.walk.treadmill" }
 
     /// ponytail: estimate, ~1.300 steps per walked km, one step per stair. Real counts would need

@@ -344,7 +344,7 @@ final class TrackerModell {
         Task { [weak self] in
             try? await Task.sleep(for: Self.pulsMessenWarten)
             guard let self, case .misst(let seit) = self.pulsMessung, seit == start else { return }
-            self.pulsMessung = .fehler("Keine Messung erhalten. Sitzt der Tracker eng am Arm?")
+            self.pulsMessung = .fehler(String(localized: "Keine Messung erhalten. Sitzt der Tracker eng am Arm?"))
         }
     }
 
@@ -364,14 +364,14 @@ final class TrackerModell {
 
     var statusText: String {
         switch zustand {
-        case .getrennt: return gekoppelt ? "Getrennt" : "Nicht verbunden"
-        case .sucht: return "Sucht den Tracker"
-        case .nichtGefunden: return "Nicht gefunden"
-        case .wartet: return "Wartet auf den Tracker"
-        case .verbunden: return abfrageLaeuft ? "Verbunden, liest" : "Verbunden"
-        case .bluetoothAus: return "Bluetooth ist aus"
-        case .nichtErlaubt: return "Bluetooth nicht erlaubt"
-        case .nichtVerfuegbar: return "Bluetooth nicht verfügbar"
+        case .getrennt: return gekoppelt ? String(localized: "Getrennt") : String(localized: "Nicht verbunden")
+        case .sucht: return String(localized: "Sucht den Tracker")
+        case .nichtGefunden: return String(localized: "Nicht gefunden")
+        case .wartet: return String(localized: "Wartet auf den Tracker")
+        case .verbunden: return abfrageLaeuft ? String(localized: "Verbunden, liest") : String(localized: "Verbunden")
+        case .bluetoothAus: return String(localized: "Bluetooth ist aus")
+        case .nichtErlaubt: return String(localized: "Bluetooth nicht erlaubt")
+        case .nichtVerfuegbar: return String(localized: "Bluetooth nicht verfügbar")
         case .fehler(let text): return text
         }
     }
@@ -541,8 +541,8 @@ final class TrackerModell {
         switch fehler {
         case 0 where wert > 0: pulsMessung = .fertig(wert: wert, um: uhr())
         case 0, 2: break // das Band misst noch (Fehler 2: vorübergehend ohne Wert)
-        case 1: pulsMessung = .fehler("Der Tracker sitzt nicht richtig am Arm.")
-        default: pulsMessung = .fehler("Der Tracker meldet Fehler \(fehler).")
+        case 1: pulsMessung = .fehler(String(localized: "Der Tracker sitzt nicht richtig am Arm."))
+        default: pulsMessung = .fehler(String(localized: "Der Tracker meldet Fehler \(fehler)."))
         }
     }
 
@@ -714,7 +714,7 @@ final class TrackerModell {
         if schrittAntwort { bandTage.stand = uhr() }
         if !erwartet.isEmpty {
             let bestaetigt: Bool = erwartet.allSatisfy { stimmt($0) }
-            aenderungsHinweis = bestaetigt ? nil : "Der Tracker hat die Änderung nicht bestätigt. Angezeigt ist, was er meldet."
+            aenderungsHinweis = bestaetigt ? nil : String(localized: "Der Tracker hat die Änderung nicht bestätigt. Angezeigt ist, was er meldet.")
             erwartet = []
         }
         bandTage.kuerzen(heute: Datum.text(uhr()))
@@ -743,7 +743,7 @@ final class TrackerModell {
         schlafSammler = nil
         schlafNr += 1
         if !erwartet.isEmpty {
-            aenderungsHinweis = "Verbindung abgebrochen, die Änderung ist nicht bestätigt."
+            aenderungsHinweis = String(localized: "Verbindung abgebrochen, die Änderung ist nicht bestätigt.")
             erwartet = []
         }
         bandMelden()

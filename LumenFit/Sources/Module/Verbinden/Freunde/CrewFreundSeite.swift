@@ -17,11 +17,11 @@ struct CrewFreundSeite: View {
             if let eintrag {
                 inhalt(eintrag)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Diese Person ist nicht mehr verbunden.")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Person ist nicht mehr verbunden."))
             }
         }
         .lumenHintergrund()
-        .navigationTitle(eintrag.map(CrewLogik.name) ?? "Freund")
+        .navigationTitle(eintrag.map(CrewLogik.name) ?? String(localized: "Freund"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $herausfordern) { CrewHerausforderungBlatt(vorauswahl: id) }
         .modifier(CrewFehlerAnzeige(extra: .constant(nil)))
@@ -47,7 +47,7 @@ struct CrewFreundSeite: View {
                 knoepfe(e)
                 if let d = e.daten {
                     VStack(alignment: .leading, spacing: Abstand.s) {
-                        kopf("Eure Woche")
+                        kopf(String(localized: "Eure Woche"))
                         ListenKarte { CrewWocheZusammen(name: CrewLogik.name(e), datei: d).padding(Abstand.l) }
                     }
                 }
@@ -58,7 +58,7 @@ struct CrewFreundSeite: View {
                 vergleich(e)
                 ListenKarte {
                     NavigationLink { VerbindungPersonView(id: e.id) } label: {
-                        GymZeile(titel: "Einstellungen der Verbindung", untertitel: "Was du zeigst, Pause, Name, Entfernen") {
+                        GymZeile(titel: String(localized: "Einstellungen der Verbindung"), untertitel: String(localized: "Was du zeigst, Pause, Name, Entfernen")) {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                         }
                     }
@@ -98,19 +98,19 @@ struct CrewFreundSeite: View {
         let w = CrewLogik.woche(e.daten, jetzt: jetzt)
         let serie = e.daten.flatMap { $0.freigaben.contains(.verlauf) ? $0.heute.verlauf?.serieWochen : nil }
         return VStack(alignment: .leading, spacing: Abstand.s) {
-            kopf("Diese Woche")
+            kopf(String(localized: "Diese Woche"))
             ListenKarte {
                 ForEach(Array(CrewMass.rangliste.enumerated()), id: \.element) { i, m in
                     if i > 0 { Haarlinie() }
                     GymZeile(titel: m.titel) {
-                        Text(w?.wert(m).map { CrewLogik.wertText($0, m) } ?? "nicht geteilt")
+                        Text(w?.wert(m).map { CrewLogik.wertText($0, m) } ?? String(localized: "nicht geteilt"))
                             .font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
                     }
                     .accessibilityElement(children: .combine)
                 }
                 Haarlinie()
-                GymZeile(titel: "Serie") {
-                    Text(serie.map { $0 == 1 ? "1 Woche" : "\($0) Wochen" } ?? "nicht geteilt")
+                GymZeile(titel: String(localized: "Serie")) {
+                    Text(serie.map { $0 == 1 ? String(localized: "1 Woche") : String(localized: "\($0) Wochen") } ?? String(localized: "nicht geteilt"))
                         .font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
                 }
                 .accessibilityElement(children: .combine)
@@ -124,10 +124,10 @@ struct CrewFreundSeite: View {
     private func live(_ e: VerbindungEintrag, _ d: ZusammenfassungDatei, imGym: Bool, heute: String) -> some View {
         if imGym, let einheit = GymPartnerLogik.einheit(am: heute, in: d) {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Läuft gerade")
+                kopf(String(localized: "Läuft gerade"))
                 ListenKarte {
                     NavigationLink { GymPartnerEinheitView(name: CrewLogik.name(e), einheit: einheit) } label: {
-                        GymZeile(titel: einheit.name ?? "Training", untertitel: "\(einheit.uebungen.count) Übungen · \(GymPartnerLogik.saetzeZahl(einheit)) Sätze") {
+                        GymZeile(titel: einheit.name ?? String(localized: "Training"), untertitel: String(localized: "\(einheit.uebungen.count) Übungen · \(GymPartnerLogik.saetzeZahl(einheit)) Sätze")) {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                         }
                     }
@@ -143,7 +143,7 @@ struct CrewFreundSeite: View {
         let liste = Array(GymRekordPinnwandLogik.rekorde(d, name: CrewLogik.name(e), jetzt: jetzt).sorted { $0.tag > $1.tag }.prefix(5))
         if !liste.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Rekorde")
+                kopf(String(localized: "Rekorde"))
                 ListenKarte {
                     ForEach(Array(liste.enumerated()), id: \.element) { i, r in
                         if i > 0 { Haarlinie() }
@@ -159,7 +159,7 @@ struct CrewFreundSeite: View {
         let liste = Array(GymPartnerLogik.einheiten(d).prefix(5))
         if !liste.isEmpty {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Letzte Trainings")
+                kopf(String(localized: "Letzte Trainings"))
                 ListenKarte {
                     ForEach(Array(liste.enumerated()), id: \.element) { i, t in
                         if i > 0 { Haarlinie() }
@@ -191,11 +191,11 @@ struct CrewFreundSeite: View {
         if !liste.isEmpty {
             let name = CrewLogik.name(e)
             VStack(alignment: .leading, spacing: Abstand.s) {
-                kopf("Vergleich: bestes geschätztes 1RM")
+                kopf(String(localized: "Vergleich: bestes geschätztes 1RM"))
                 ListenKarte {
                     ForEach(Array(liste.enumerated()), id: \.element.id) { i, v in
                         if i > 0 { Haarlinie() }
-                        GymZeile(titel: v.uebung, untertitel: "Du \(TrainingLogik.kgText(v.ich.rounded())) kg · \(name) \(TrainingLogik.kgText(v.person.rounded())) kg") {
+                        GymZeile(titel: v.uebung, untertitel: String(localized: "Du \(TrainingLogik.kgText(v.ich.rounded())) kg · \(name) \(TrainingLogik.kgText(v.person.rounded())) kg")) {
                             Image(systemName: v.ich >= v.person ? "arrow.up.circle.fill" : "arrow.down.circle")
                                 .foregroundStyle(v.ich >= v.person ? palette.akzent : palette.text2)
                                 .accessibilityHidden(true)

@@ -26,8 +26,8 @@ struct EssenTagesKopf: View {
             .buttonStyle(.plain)
             .accessibilityHint("Anderen Tag wählen")
             Spacer(minLength: Abstand.s)
-            tagKnopf("chevron.left", "Vorheriger Tag", vorher)
-            tagKnopf("chevron.right", "Nächster Tag", nachher)
+            tagKnopf("chevron.left", String(localized: "Vorheriger Tag"), vorher)
+            tagKnopf("chevron.right", String(localized: "Nächster Tag"), nachher)
         }
     }
 

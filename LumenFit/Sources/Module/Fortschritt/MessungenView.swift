@@ -36,7 +36,7 @@ struct MessungenView: View {
         }
         .sheet(isPresented: $erfassen) {
             MessungBlatt { gespeichert in
-                toast = ToastInhalt(titel: "Gespeichert", zeile: gespeichert.map { "\($0.art.titel) \($0.art.text($0.zehntel))" }.joined(separator: " · "), stimmung: .bereit)
+                toast = ToastInhalt(titel: String(localized: "Gespeichert"), zeile: gespeichert.map { "\($0.art.titel) \($0.art.text($0.zehntel))" }.joined(separator: " · "), stimmung: .bereit)
             }
         }
     }
@@ -62,7 +62,7 @@ struct MessungenView: View {
                     if art == .gewicht { prognose() }
                     historie(punkte)
                 } else {
-                    LeerZustand(stimmung: .bereit, satz: "Noch kein Wert für \(art.titel). Ein Wert, dann zeichnet Lumi die Kurve.", handlung: "Messung erfassen") { erfassen = true }
+                    LeerZustand(stimmung: .bereit, satz: String(localized: "Noch kein Wert für \(art.titel). Ein Wert, dann zeichnet Lumi die Kurve."), handlung: String(localized: "Messung erfassen")) { erfassen = true }
                         .lumenKartenFlaeche()
                 }
             }
@@ -151,8 +151,8 @@ struct MessungenView: View {
         .frame(height: 180)
         .animation(reduceMotion ? nil : Feder.weich, value: art)
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "\(art.titel) über die Zeit", zusammenfassung: "\(art.titel): \(art.text(punkte.last?.zehntel ?? 0)), \(punkte.count) Messungen",
-            xTitel: "Tag", yTitel: art.titel, einheit: art.einheit, stetig: true,
+            titel: String(localized: "\(art.titel) über die Zeit"), zusammenfassung: String(localized: "\(art.titel): \(art.text(punkte.last?.zehntel ?? 0)), \(punkte.count) Messungen"),
+            xTitel: String(localized: "Tag"), yTitel: art.titel, einheit: art.einheit, stetig: true,
             punkte: punkte.map { .init(x: KoerperLogik.tagMonat($0.tag), y: Double($0.zehntel) / 10) }))
     }
 

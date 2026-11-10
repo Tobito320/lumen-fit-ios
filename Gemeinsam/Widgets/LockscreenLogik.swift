@@ -14,9 +14,9 @@ enum LockscreenLogik {
     /// "in 12 Tagen", "morgen", "heute".
     static func countdownText(tage: Int) -> String {
         switch tage {
-        case 0: return "heute"
-        case 1: return "morgen"
-        default: return "in \(tage) Tagen"
+        case 0: return String(localized: "heute")
+        case 1: return String(localized: "morgen")
+        default: return String(localized: "in \(tage) Tagen")
         }
     }
 

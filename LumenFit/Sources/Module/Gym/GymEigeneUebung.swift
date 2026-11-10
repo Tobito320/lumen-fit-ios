@@ -25,12 +25,12 @@ enum GymEigeneFehler: Error, Equatable, Sendable {
 
     var text: String {
         switch self {
-        case .nameLeer: "Gib der Übung einen Namen."
-        case .nameZuLang: "Der Name ist zu lang (höchstens \(GymEigeneLogik.maxName) Zeichen)."
-        case .muskelFehlt: "Wähle Körperteil und Muskel."
-        case .geraetFehlt: "Wähle ein Gerät."
-        case .dubletteKatalog: "Diese Übung gibt es schon im Katalog."
-        case .dubletteEigene: "Diese Übung hast du schon angelegt."
+        case .nameLeer: String(localized: "Gib der Übung einen Namen.")
+        case .nameZuLang: String(localized: "Der Name ist zu lang (höchstens \(GymEigeneLogik.maxName) Zeichen).")
+        case .muskelFehlt: String(localized: "Wähle Körperteil und Muskel.")
+        case .geraetFehlt: String(localized: "Wähle ein Gerät.")
+        case .dubletteKatalog: String(localized: "Diese Übung gibt es schon im Katalog.")
+        case .dubletteEigene: String(localized: "Diese Übung hast du schon angelegt.")
         }
     }
 }
@@ -54,7 +54,7 @@ enum GymEigeneLogik {
 
     /// Cardio zählt Minuten statt Sätze.
     static func einheitText(koerper: String) -> String {
-        koerper == "Cardio" ? "Minuten" : "Gewicht und Wiederholungen"
+        koerper == "Cardio" ? String(localized: "Minuten") : String(localized: "Gewicht und Wiederholungen")
     }
 
     /// Die Muskeln zur Auswahl für ein Körperteil; Cardio hat nur den einen.

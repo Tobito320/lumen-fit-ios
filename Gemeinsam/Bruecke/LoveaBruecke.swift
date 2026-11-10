@@ -72,16 +72,16 @@ struct LoveaBruecke: PartnerAustausch {
             heute.gymZiel = stand.zielGymWoche?[kennung]
         }
         if let m = stand.schlafMinutenHeute?[kennung] { freigaben.append(.schlaf); heute.schlafMinuten = m; heute.schlafZiel = stand.zielSchlafMinuten?[kennung] }
-        let name = kennung.prefix(1).uppercased() + kennung.dropFirst()
+        let name: String = kennung.prefix(1).uppercased() + kennung.dropFirst()
         var ereignisse: [PartnerEreignis] = []
         if stand.gymLetzte7?[kennung]?.contains(where: { $0.datum == tag && $0.erledigt }) == true {
-            ereignisse.append(PartnerEreignis(id: "gymEnde-\(tag)", art: .gymEnde, zeit: geschrieben, text: "\(name) war im Gym"))
+            ereignisse.append(PartnerEreignis(id: "gymEnde-\(tag)", art: .gymEnde, zeit: geschrieben, text: String(localized: "\(name) war im Gym")))
         }
         if let s = heute.schritte, let ziel = stand.zielSchritte?[kennung], ziel > 0, s >= ziel {
-            ereignisse.append(PartnerEreignis(id: "ziel-\(tag)", art: .ziel, zeit: geschrieben, text: "\(name) hat das Schrittziel erreicht"))
+            ereignisse.append(PartnerEreignis(id: "ziel-\(tag)", art: .ziel, zeit: geschrieben, text: String(localized: "\(name) hat das Schrittziel erreicht")))
         }
         if let m = heute.schlafMinuten, let ziel = stand.zielSchlafMinuten?[kennung], ziel > 0, m >= ziel {
-            ereignisse.append(PartnerEreignis(id: "schlafGut-\(tag)", art: .schlafGut, zeit: geschrieben, text: "\(name) hat gut geschlafen"))
+            ereignisse.append(PartnerEreignis(id: "schlafGut-\(tag)", art: .schlafGut, zeit: geschrieben, text: String(localized: "\(name) hat gut geschlafen")))
         }
         return ZusammenfassungDatei(version: LoveaVertrag.version, geschrieben: geschrieben, profilName: name,
                                     freigaben: freigaben, heute: heute, ereignisse: ereignisse)

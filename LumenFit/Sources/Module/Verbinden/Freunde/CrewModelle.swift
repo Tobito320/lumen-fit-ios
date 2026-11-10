@@ -8,21 +8,21 @@ enum CrewMass: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var titel: String {
         switch self {
-        case .tage: "Gym-Tage"
-        case .saetze: "Sätze"
-        case .volumen: "Volumen"
-        case .rekorde: "Rekorde"
-        case .uebung: "Steigerung in einer Übung"
+        case .tage: String(localized: "Gym-Tage")
+        case .saetze: String(localized: "Sätze")
+        case .volumen: String(localized: "Volumen")
+        case .rekorde: String(localized: "Rekorde")
+        case .uebung: String(localized: "Steigerung in einer Übung")
         }
     }
 
     /// Hinter der Zahl: "4 Tage", "120 Sätze", "8.400 kg", "2 Rekorde", "35 ‰".
     var einheit: String {
         switch self {
-        case .tage: "Tage"
-        case .saetze: "Sätze"
+        case .tage: String(localized: "Tage")
+        case .saetze: String(localized: "Sätze")
         case .volumen: "kg"
-        case .rekorde: "Rekorde"
+        case .rekorde: String(localized: "Rekorde")
         case .uebung: "‰"
         }
     }
@@ -49,10 +49,10 @@ enum CrewReaktionArt: String, Codable, CaseIterable, Sendable {
 
     var titel: String {
         switch self {
-        case .respekt: "Respekt"
-        case .stark: "Stark"
-        case .anfeuern: "Anfeuern"
-        case .stups: "Gym heute?"
+        case .respekt: String(localized: "Respekt")
+        case .stark: String(localized: "Stark")
+        case .anfeuern: String(localized: "Anfeuern")
+        case .stups: String(localized: "Gym heute?")
         }
     }
 

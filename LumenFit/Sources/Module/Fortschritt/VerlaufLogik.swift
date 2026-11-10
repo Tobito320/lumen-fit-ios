@@ -106,9 +106,9 @@ enum VerlaufLogik {
     /// The line under the day in the hint.
     static func grund(_ art: TagOhneSaetze.Art) -> String {
         switch art {
-        case .nurHaken: "Gym abgehakt, keine Einheit gespeichert."
-        case .keinSatz: "Kein Satz abgehakt. Aufwärmsätze zählen nicht."
-        case .eigeneUebung: "Nur eigene Übungen. Sie haben keine Muskelgruppe."
+        case .nurHaken: String(localized: "Gym abgehakt, keine Einheit gespeichert.")
+        case .keinSatz: String(localized: "Kein Satz abgehakt. Aufwärmsätze zählen nicht.")
+        case .eigeneUebung: String(localized: "Nur eigene Übungen. Sie haben keine Muskelgruppe.")
         }
     }
 
@@ -164,7 +164,7 @@ enum VerlaufLogik {
 
     /// "62,5 × 8", or "8 Wdh" without weight.
     static func satzText(_ s: PlanSatz) -> String {
-        guard let kg = s.kg, kg > 0 else { return "\(s.wdh) Wdh" }
+        guard let kg = s.kg, kg > 0 else { return String(localized: "\(s.wdh) Wdh") }
         return "\(zahl(kg)) × \(s.wdh)"
     }
 
@@ -173,7 +173,7 @@ enum VerlaufLogik {
         d.formatted(.number.precision(.fractionLength(0...1)).locale(deutsch))
     }
 
-    static func saetzeText(_ d: Double) -> String { "\(zahl(d)) \(d == 1 ? "Satz" : "Sätze")" }
+    static func saetzeText(_ d: Double) -> String { "\(zahl(d)) \(d == 1 ? String(localized: "Satz") : String(localized: "Sätze"))" }
 
     /// "3× · 9 Sätze"
     static func kurz(_ z: Zaehler) -> String { "\(z.einheiten)× · \(saetzeText(z.saetze))" }

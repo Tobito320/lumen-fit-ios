@@ -110,7 +110,7 @@ enum WochenLogik {
     /// "Testwoche: Push Pull Legs, ab Montag wieder Upper Lower", solange die laufende Woche getestet wird.
     static func testHinweis(_ plan: TrainingsPlan, heute: String) -> String? {
         guard let test = abweichung(plan, woche: heute)?.test else { return nil }
-        return "Testwoche: \(test.split), ab Montag wieder \(plan.splitName ?? "dein Plan")"
+        return String(localized: "Testwoche: \(test.split), ab Montag wieder \(plan.splitName ?? String(localized: "dein Plan"))")
     }
 
     /// True, wenn in der laufenden Woche Tage verlegt sind.
@@ -134,8 +134,8 @@ enum WochenLogik {
             let dort = TrainingLogik.tag(jetzt, datum: ziel)
             guard dort?.id != tag.id, dort == nil || datum >= heute else { return nil }
             let name = TrainingLogik.wochentagName[i]
-            guard let dort else { return Ziel(datum: ziel, text: "\(name) · frei") }
-            return Ziel(datum: ziel, text: "\(name) · tauscht mit \(dort.name.isEmpty ? "Training" : dort.name)")
+            guard let dort else { return Ziel(datum: ziel, text: String(localized: "\(name) · frei")) }
+            return Ziel(datum: ziel, text: String(localized: "\(name) · tauscht mit \(dort.name.isEmpty ? String(localized: "Training") : dort.name)"))
         }
     }
 

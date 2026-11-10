@@ -10,19 +10,19 @@ enum FreundeText {
 
     /// "61.400 Schritte, 4 Gym-Tage, Schlaf 7 h 20 min": für VoiceOver und Teilen.
     static func zusammenfassung(_ karte: FreundKarte) -> String {
-        var teile = ["\(karte.schritte.formatted()) Schritte", karte.gymTage == 1 ? "1 Gym-Tag" : "\(karte.gymTage) Gym-Tage"]
-        if let schlaf = karte.schlafSchnittMinuten { teile.append("Schlaf im Schnitt \(PartnerAnzeige.schlafText(schlaf))") }
+        var teile = [String(localized: "\(karte.schritte.formatted()) Schritte"), karte.gymTage == 1 ? String(localized: "1 Gym-Tag") : String(localized: "\(karte.gymTage) Gym-Tage")]
+        if let schlaf = karte.schlafSchnittMinuten { teile.append(String(localized: "Schlaf im Schnitt \(PartnerAnzeige.schlafText(schlaf))")) }
         return teile.joined(separator: ", ")
     }
 
     /// Was beim Lesen einer Karte schiefging und was jetzt hilft.
     static func fehler(_ fehler: FreundeKarteCodec.Fehler) -> (titel: String, hilfe: String) {
         switch fehler {
-        case .leer: ("Nichts zu lesen", "Kopiere den ganzen Link der Karte und versuche es noch einmal.")
-        case .format: ("Das ist keine Lumen-Fit-Karte", "Bitte deinen Freund, die Karte noch einmal zu schicken.")
-        case .pruefsumme: ("Die Karte ist beschädigt", "Der Link ist abgeschnitten oder verändert. Bitte deinen Freund, ihn noch einmal zu schicken.")
-        case .version: ("Die Karte ist von einer neueren Version", "Aktualisiere Lumen Fit und öffne die Karte noch einmal.")
-        case .werte: ("Die Werte auf der Karte sind nicht möglich", "Bitte deinen Freund, die Karte neu zu erstellen.")
+        case .leer: (String(localized: "Nichts zu lesen"), String(localized: "Kopiere den ganzen Link der Karte und versuche es noch einmal."))
+        case .format: (String(localized: "Das ist keine Lumen-Fit-Karte"), String(localized: "Bitte deinen Freund, die Karte noch einmal zu schicken."))
+        case .pruefsumme: (String(localized: "Die Karte ist beschädigt"), String(localized: "Der Link ist abgeschnitten oder verändert. Bitte deinen Freund, ihn noch einmal zu schicken."))
+        case .version: (String(localized: "Die Karte ist von einer neueren Version"), String(localized: "Aktualisiere Lumen Fit und öffne die Karte noch einmal."))
+        case .werte: (String(localized: "Die Werte auf der Karte sind nicht möglich"), String(localized: "Bitte deinen Freund, die Karte neu zu erstellen."))
         }
     }
 }
@@ -44,9 +44,9 @@ struct FreundeKartenBild: View {
                 Text("Woche ab \(FreundeText.woche(karte.woche))").font(.subheadline)
             }
             HStack(alignment: .top, spacing: Abstand.xl) {
-                wert(karte.schritte.formatted(), "Schritte")
-                wert("\(karte.gymTage)", "Gym-Tage")
-                if let schlaf = karte.schlafSchnittMinuten { wert(PartnerAnzeige.schlafText(schlaf), "Schlaf Ø") }
+                wert(karte.schritte.formatted(), String(localized: "Schritte"))
+                wert("\(karte.gymTage)", String(localized: "Gym-Tage"))
+                if let schlaf = karte.schlafSchnittMinuten { wert(PartnerAnzeige.schlafText(schlaf), String(localized: "Schlaf Ø")) }
             }
             if let qr {
                 Image(uiImage: qr)

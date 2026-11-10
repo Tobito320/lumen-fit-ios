@@ -109,7 +109,7 @@ struct ProfilPasswortBlatt: View {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 Text(erklaerung).font(.body).foregroundStyle(palette.text2)
                 VStack(spacing: Abstand.m) {
-                    if !ohneAlt { feld("Passwort", text: $passwort).focused($fokus) }
+                    if !ohneAlt { feld(String(localized: "Passwort"), text: $passwort).focused($fokus) }
                     if let neuTitel {
                         feld(neuTitel, text: $neu)
                         if !neu.isEmpty, neu.count < Passwort.mindestLaenge {

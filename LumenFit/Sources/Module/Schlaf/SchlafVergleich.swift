@@ -116,14 +116,14 @@ enum SchlafVergleich {
     /// Ein Satz für die Karte (und VoiceOver), warum dieser Wert gilt.
     static func satz(_ urteil: SchlafUrteil) -> String {
         switch urteil.grund {
-        case .nurHealth: "Kein Band für diese Nacht. Es zählt Health."
-        case .nurBand: "Keine Health-Daten für diese Nacht. Es zählt das Band."
-        case .zuWenig(let n): "Abgleich ab \(mindestNaechte) Nächten mit Band und Health, bisher \(n). Bis dahin zählt Health."
+        case .nurHealth: String(localized: "Kein Band für diese Nacht. Es zählt Health.")
+        case .nurBand: String(localized: "Keine Health-Daten für diese Nacht. Es zählt das Band.")
+        case .zuWenig(let n): String(localized: "Abgleich ab \(mindestNaechte) Nächten mit Band und Health, bisher \(n). Bis dahin zählt Health.")
         case .ausreisser:
             urteil.quelle == .band
-                ? "Health meldet weniger als eine Nacht, das Band deutlich mehr (Uhr nicht getragen?). Es zählt das Band."
-                : "Diese Nacht weicht ungewöhnlich stark ab. Es zählt Health."
-        case .gemischt(let p): "Gemischt: \(100 - p) % Health, \(p) % Band, das Band um seine übliche Abweichung korrigiert."
+                ? String(localized: "Health meldet weniger als eine Nacht, das Band deutlich mehr (Uhr nicht getragen?). Es zählt das Band.")
+                : String(localized: "Diese Nacht weicht ungewöhnlich stark ab. Es zählt Health.")
+        case .gemischt(let p): String(localized: "Gemischt: \(100 - p) % Health, \(p) % Band, das Band um seine übliche Abweichung korrigiert.")
         }
     }
 

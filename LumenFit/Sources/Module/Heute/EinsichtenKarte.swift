@@ -95,7 +95,7 @@ struct EinsichtenKarte: View {
             }
             Text(e.text).font(.footnote).foregroundStyle(palette.text2)
             ProgressView(value: min(1, max(0, e.fortschritt ?? 0))).tint(palette.text2)
-                .accessibilityLabel("Fortschritt").accessibilityValue(((e.fortschritt ?? 0) * 100).formatted(.number.precision(.fractionLength(0))) + " Prozent")
+                .accessibilityLabel("Fortschritt").accessibilityValue(String(localized: "\(((e.fortschritt ?? 0) * 100).formatted(.number.precision(.fractionLength(0)))) Prozent"))
         }
         .padding(Abstand.l)
         .frame(maxWidth: .infinity, alignment: .leading)

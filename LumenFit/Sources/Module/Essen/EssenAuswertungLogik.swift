@@ -37,11 +37,11 @@ enum EssenAuswertungLogik {
     /// Kohlenhydrate, Eiweiß, Fett im Schnitt über die Tage mit Einträgen.
     static func makroSchnitte(_ summen: [String: Naehrwerte], ziele: ErnaehrungsZiele) -> [EssenMakroSchnitt] {
         [
-            EssenMakroSchnitt(name: "Kohlenhydrate", gramm: AnalyseLogik.schnitt(summen.mapValues(\.kohlenhydrate)),
+            EssenMakroSchnitt(name: String(localized: "Kohlenhydrate"), gramm: AnalyseLogik.schnitt(summen.mapValues(\.kohlenhydrate)),
                               ziel: ziele.kohlenhydrate, kcalJeGramm: 4, deckkraft: 0.85),
-            EssenMakroSchnitt(name: "Eiweiß", gramm: AnalyseLogik.schnitt(summen.mapValues(\.protein)),
+            EssenMakroSchnitt(name: String(localized: "Eiweiß"), gramm: AnalyseLogik.schnitt(summen.mapValues(\.protein)),
                               ziel: ziele.protein, kcalJeGramm: 4, deckkraft: 0.55),
-            EssenMakroSchnitt(name: "Fett", gramm: AnalyseLogik.schnitt(summen.mapValues(\.fett)),
+            EssenMakroSchnitt(name: String(localized: "Fett"), gramm: AnalyseLogik.schnitt(summen.mapValues(\.fett)),
                               ziel: ziele.fett, kcalJeGramm: 9, deckkraft: 0.3),
         ]
     }
@@ -62,10 +62,10 @@ enum EssenAuswertungLogik {
     /// Ballaststoffe, Zucker, Salz, gesättigte Fettsäuren: nur Felder, zu denen es Angaben gibt.
     static func grundZeilen(_ summen: [String: Naehrwerte]) -> [NaehrstoffZeile] {
         let felder: [(name: String, zugriff: (Naehrwerte) -> Double?)] = [
-            ("Ballaststoffe", { $0.ballaststoffe }),
-            ("Zucker", { $0.zucker }),
-            ("Salz", { $0.salz }),
-            ("Gesättigte Fettsäuren", { $0.gesFett }),
+            (String(localized: "Ballaststoffe"), { $0.ballaststoffe }),
+            (String(localized: "Zucker"), { $0.zucker }),
+            (String(localized: "Salz"), { $0.salz }),
+            (String(localized: "Gesättigte Fettsäuren"), { $0.gesFett }),
         ]
         return felder.compactMap { feld in
             guard let schnitt = schnittOptional(summen, feld.zugriff) else { return nil }
@@ -117,8 +117,8 @@ enum EssenAuswertungLogik {
 
     /// Satz über der Kalorien-Grafik: "Im Schnitt 1 850 kcal, 4 von 6 Tagen im Ziel".
     static func kalorienKernzeile(schnitt: Double, imZiel: Int, tageMitEintraegen: Int) -> String {
-        guard tageMitEintraegen > 0 else { return "Noch keine Einträge in diesem Zeitraum" }
-        return "Im Schnitt \(Int(schnitt.rounded())) kcal, \(imZiel) von \(tageMitEintraegen) Tagen im Ziel"
+        guard tageMitEintraegen > 0 else { return String(localized: "Noch keine Einträge in diesem Zeitraum") }
+        return String(localized: "Im Schnitt \(String(Int(schnitt.rounded()))) kcal, \(imZiel) von \(tageMitEintraegen) Tagen im Ziel")
     }
 
     /// Satz über der Gewichts-Grafik: "78,4 kg, +0,6 kg seit Beginn".
@@ -126,6 +126,7 @@ enum EssenAuswertungLogik {
         guard let letztes = reihe.last else { return "" }
         let diff = gewichtVeraenderungZehntel(reihe)
         let vorzeichen = diff > 0 ? "+" : diff < 0 ? "-" : ""
-        return "\(ErnaehrungLogik.zahl(letztes.wert)) kg, \(vorzeichen)\(ErnaehrungLogik.zahl(Double(abs(diff)) / 10)) kg im Zeitraum"
+        return String(localized: "\(ErnaehrungLogik.zahl(letztes.wert)) kg, \(vorzeichen)\(ErnaehrungLogik.zahl(Double(abs(diff)) / 10)) kg im Zeitraum")
+
     }
 }

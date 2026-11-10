@@ -46,33 +46,36 @@ struct Wochenanalyse: Equatable, Sendable {
 
     /// Die Zeilen der Ansicht, eine Aussage je Zeile.
     var klartext: [String] {
-        if istLeer { return ["In den letzten sieben Tagen ist noch nichts eingetragen."] }
+        if istLeer { return [String(localized: "In den letzten sieben Tagen ist noch nichts eingetragen.")] }
         var zeilen: [String] = []
         if let p = proteinSchnitt {
-            zeilen.append("Protein: im Schnitt \(Int(p.rounded())) g am Tag, Ziel \(proteinZiel) g. Erreicht an \(tageImProteinZiel) von \(tageMitEintraegen) Tagen mit Einträgen.")
+            zeilen.append(String(localized: "Protein: im Schnitt \(Int(p.rounded())) g am Tag, Ziel \(proteinZiel) g. Erreicht an \(tageImProteinZiel) von \(tageMitEintraegen) Tagen mit Einträgen."))
         }
         if let z = zuckerSchnitt {
-            var satz = "Zucker: im Schnitt \(Int(z.rounded())) g am Tag"
-            if let r = zuckerRichtwert { satz += ", Richtwert der WHO rund \(Int(r.rounded())) g (10 % der Energie, bei freiem Zucker)" }
-            zeilen.append(satz + ".")
+            if let r = zuckerRichtwert {
+                zeilen.append(String(localized: "Zucker: im Schnitt \(Int(z.rounded())) g am Tag, Richtwert der WHO rund \(Int(r.rounded())) g (10 % der Energie, bei freiem Zucker)."))
+            } else {
+                zeilen.append(String(localized: "Zucker: im Schnitt \(Int(z.rounded())) g am Tag."))
+            }
         } else {
-            zeilen.append("Zucker: den Lebensmitteln fehlen Angaben.")
+            zeilen.append(String(localized: "Zucker: den Lebensmitteln fehlen Angaben."))
         }
         if let b = ballaststoffSchnitt {
             let rest = Self.ballaststoffRichtwert - b
             zeilen.append(rest > 0
-                ? "Ballaststoffe: im Schnitt \(Int(b.rounded())) g am Tag, die DGE empfiehlt mindestens 30 g."
-                : "Ballaststoffe: im Schnitt \(Int(b.rounded())) g am Tag, das reicht (DGE: mindestens 30 g).")
+                ? String(localized: "Ballaststoffe: im Schnitt \(Int(b.rounded())) g am Tag, die DGE empfiehlt mindestens 30 g.")
+                : String(localized: "Ballaststoffe: im Schnitt \(Int(b.rounded())) g am Tag, das reicht (DGE: mindestens 30 g)."))
         } else {
-            zeilen.append("Ballaststoffe: den Lebensmitteln fehlen Angaben.")
+            zeilen.append(String(localized: "Ballaststoffe: den Lebensmitteln fehlen Angaben."))
         }
         if !mikroAngaben {
-            zeilen.append("Vitamine und Mineralstoffe: den Lebensmitteln fehlen Angaben, deshalb sage ich dazu nichts.")
+            zeilen.append(String(localized: "Vitamine und Mineralstoffe: den Lebensmitteln fehlen Angaben, deshalb sage ich dazu nichts."))
         } else if luecken.isEmpty {
-            zeilen.append("Vitamine und Mineralstoffe: bei allen Werten mit Angaben liegst du über der Hälfte der Tagesreferenz.")
+            zeilen.append(String(localized: "Vitamine und Mineralstoffe: bei allen Werten mit Angaben liegst du über der Hälfte der Tagesreferenz."))
         } else {
             let namen = luecken.map { FoodRating.kurzName($0.mikro) }.joined(separator: ", ")
-            zeilen.append("Wenig drin: \(namen), im Schnitt unter der Hälfte der EU-Tagesreferenz. Es zählen nur Lebensmittel mit Angaben.")
+            zeilen.append(String(localized: "Wenig drin: \(namen), im Schnitt unter der Hälfte der EU-Tagesreferenz. Es zählen nur Lebensmittel mit Angaben."))
+
         }
         return zeilen
     }

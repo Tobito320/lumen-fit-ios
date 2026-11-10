@@ -24,7 +24,7 @@ struct EssenKoerperwerteBlatt: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.l) {
                     karte {
-                        EssenZahlFeld(titel: "Gewicht", einheit: "kg", text: $gewicht)
+                        EssenZahlFeld(titel: String(localized: "Gewicht"), einheit: "kg", text: $gewicht)
                         Text("Am besten einmal pro Woche, am selben Tag und zur gleichen Uhrzeit.")
                             .font(.footnote).foregroundStyle(palette.text2)
                     }
@@ -83,7 +83,7 @@ struct EssenKoerperwerteBlatt: View {
     /// Ausgefüllte Felder außerhalb des plausiblen Bereichs (`MessArt.erlaubt`); leere Felder bleiben unberührt.
     private var ungueltig: [String] {
         var namen: [String] = []
-        if !gewicht.trimmingCharacters(in: .whitespaces).isEmpty, !Koerpermasse.gewichtZehntel.contains(GewichtText.zehntel(gewicht) ?? 0) { namen.append("Gewicht") }
+        if !gewicht.trimmingCharacters(in: .whitespaces).isEmpty, !Koerpermasse.gewichtZehntel.contains(GewichtText.zehntel(gewicht) ?? 0) { namen.append(String(localized: "Gewicht")) }
         for art in KoerperArt.allCases {
             let roh = (werte[art] ?? "").trimmingCharacters(in: .whitespaces)
             guard !roh.isEmpty else { continue }

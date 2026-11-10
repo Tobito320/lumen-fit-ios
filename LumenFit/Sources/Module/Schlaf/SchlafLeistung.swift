@@ -29,12 +29,12 @@ enum SchlafLeistung {
     /// Ein Satz zur Kernzeile: mehr oder weniger Leistung nach langen Nächten; unter 2 kurzen und 2 langen Nächten nur die Zahl der Einheiten.
     static func kernzeile(_ punkte: [SchlafPunkt]) -> String {
         let kurz = punkte.filter { $0.stunden < 6 }.map(\.leistung), gut = punkte.filter { $0.stunden >= 7 }.map(\.leistung)
-        guard kurz.count >= 2, gut.count >= 2 else { return "\(punkte.count) Einheiten mit Schlafdaten" }
+        guard kurz.count >= 2, gut.count >= 2 else { return String(localized: "\(punkte.count) Einheiten mit Schlafdaten") }
         let mittelGut: Double = gut.reduce(0, +) / Double(gut.count)
         let mittelKurz: Double = kurz.reduce(0, +) / Double(kurz.count)
         let unterschied = Int((mittelGut - mittelKurz).rounded())
-        if abs(unterschied) < 2 { return "Kein Unterschied zwischen kurzen und langen Nächten" }
-        return unterschied > 0 ? "Nach langen Nächten im Schnitt \(unterschied) Prozentpunkte mehr Leistung" : "Nach kurzen Nächten im Schnitt \(-unterschied) Prozentpunkte mehr Leistung"
+        if abs(unterschied) < 2 { return String(localized: "Kein Unterschied zwischen kurzen und langen Nächten") }
+        return unterschied > 0 ? String(localized: "Nach langen Nächten im Schnitt \(unterschied) Prozentpunkte mehr Leistung") : String(localized: "Nach kurzen Nächten im Schnitt \(-unterschied) Prozentpunkte mehr Leistung")
     }
 }
 
@@ -44,7 +44,7 @@ struct SchlafLeistungKarte: View {
     @Environment(\.palette) private var palette
 
     var body: some View {
-        DiagrammKarte(aussage: "Schlaf und Training", kernzeile: SchlafLeistung.kernzeile(punkte)) {
+        DiagrammKarte(aussage: String(localized: "Schlaf und Training"), kernzeile: SchlafLeistung.kernzeile(punkte)) {
             Chart {
                 ForEach(punkte) { p in
                     PointMark(x: .value("Schlaf in Stunden", p.stunden), y: .value("Leistung in Prozent", p.leistung))
@@ -68,9 +68,9 @@ private struct SchlafLeistungBeschreibung: AXChartDescriptorRepresentable {
     let zusammenfassung: String
 
     func makeChartDescriptor() -> AXChartDescriptor {
-        let x = AXNumericDataAxisDescriptor(title: "Schlaf", range: 3...10, gridlinePositions: []) { String(format: "%.1f Stunden", $0).replacingOccurrences(of: ".", with: ",") }
-        let y = AXNumericDataAxisDescriptor(title: "Leistung", range: 40...105, gridlinePositions: []) { "\(Int($0.rounded())) Prozent" }
-        let serie = AXDataSeriesDescriptor(name: "Einheiten", isContinuous: false, dataPoints: punkte.map { AXDataPoint(x: $0.stunden, y: $0.leistung) })
-        return AXChartDescriptor(title: "Schlaf gegen Leistung", summary: zusammenfassung, xAxis: x, yAxis: y, additionalAxes: [], series: [serie])
+        let x = AXNumericDataAxisDescriptor(title: String(localized: "Schlaf"), range: 3...10, gridlinePositions: []) { String(localized: "\(SchlafFormat.zahl($0, stellen: 1)) Stunden") }
+        let y = AXNumericDataAxisDescriptor(title: String(localized: "Leistung"), range: 40...105, gridlinePositions: []) { String(localized: "\(Int($0.rounded())) Prozent") }
+        let serie = AXDataSeriesDescriptor(name: String(localized: "Einheiten"), isContinuous: false, dataPoints: punkte.map { AXDataPoint(x: $0.stunden, y: $0.leistung) })
+        return AXChartDescriptor(title: String(localized: "Schlaf gegen Leistung"), summary: zusammenfassung, xAxis: x, yAxis: y, additionalAxes: [], series: [serie])
     }
 }

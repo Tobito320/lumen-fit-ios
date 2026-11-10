@@ -167,18 +167,18 @@ extension KontoDienst {
         return EigenerCode(code: a.code, laeuftAb: ende)
     }
 
-    private static let keinNetz = "Das hat nicht geklappt. Prüfe die Verbindung und versuche es nochmal."
+    private static let keinNetz = String(localized: "Das hat nicht geklappt. Prüfe die Verbindung und versuche es nochmal.")
 
     private func einladungSenden(_ pfad: String, _ token: String, ok: (Data) -> EinladungErgebnis) async -> EinladungErgebnis {
-        guard let eingabe = VerbindungenLogik.istToken(token) ? token : VerbindungenLogik.code(aus: token) else { return .fehler("Das ist kein Code von Lumen Fit.") }
+        guard let eingabe = VerbindungenLogik.istToken(token) ? token : VerbindungenLogik.code(aus: token) else { return .fehler(String(localized: "Das ist kein Code von Lumen Fit.")) }
         guard let k = await kennungBereit(), let body = try? JSONSerialization.data(withJSONObject: ["token": eingabe]),
               let r = await sendeMitKonto(pfad, methode: "POST", body: body, kennung: k) else { return .fehler(Self.keinNetz) }
         switch r.status {
         case 200, 201: return ok(r.daten)
-        case 400: return .fehler("Das ist dein eigener Code.")
-        case 404: return .fehler("Der Code ist abgelaufen oder schon benutzt. Bitte um einen neuen.")
-        case 409: return .fehler("Ihr seid schon verbunden oder die Anfrage ist schon offen.")
-        case 429: return .fehler("Zu viele Versuche. Versuche es später nochmal.")
+        case 400: return .fehler(String(localized: "Das ist dein eigener Code."))
+        case 404: return .fehler(String(localized: "Der Code ist abgelaufen oder schon benutzt. Bitte um einen neuen."))
+        case 409: return .fehler(String(localized: "Ihr seid schon verbunden oder die Anfrage ist schon offen."))
+        case 429: return .fehler(String(localized: "Zu viele Versuche. Versuche es später nochmal."))
         default: return .fehler(Self.keinNetz)
         }
     }

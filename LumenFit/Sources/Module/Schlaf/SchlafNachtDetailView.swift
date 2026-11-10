@@ -29,12 +29,12 @@ struct SchlafNachtDetailView: View {
     @ViewBuilder
     private var diagramm: some View {
         if nacht.hatPhasen {
-            DiagrammKarte(aussage: "Die Nacht in Phasen", kernzeile: "\(SchlafFormat.dauer(nacht.nacht.schlafMinuten)) geschlafen") {
+            DiagrammKarte(aussage: String(localized: "Die Nacht in Phasen"), kernzeile: String(localized: "\(SchlafFormat.dauer(nacht.nacht.schlafMinuten)) geschlafen")) {
                 SchlafNachtDiagramm(nacht: nacht.nacht)
                 PhasenBalken(nacht: nacht.nacht).padding(.top, Abstand.s)
             }
         } else {
-            DiagrammKarte(aussage: "Die Nacht als Zeitbalken", kernzeile: "\(SchlafFormat.dauer(nacht.nacht.schlafMinuten)) geschlafen") {
+            DiagrammKarte(aussage: String(localized: "Die Nacht als Zeitbalken"), kernzeile: String(localized: "\(SchlafFormat.dauer(nacht.nacht.schlafMinuten)) geschlafen")) {
                 PhasenBalken(nacht: nacht.nacht)
             }
         }
@@ -69,7 +69,7 @@ struct SchlafNachtDetailView: View {
         }
     }
 
-    private func zeile(_ titel: String, _ wert: String) -> some View {
+    private func zeile(_ titel: LocalizedStringKey, _ wert: String) -> some View {
         HStack {
             Text(titel).font(.body).foregroundStyle(palette.text)
             Spacer(minLength: Abstand.s)

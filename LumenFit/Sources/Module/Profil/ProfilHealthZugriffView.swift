@@ -12,12 +12,12 @@ struct ProfilHealthZugriffView: View {
     var body: some View {
         let einstellungen = umgebung.daten?.einstellungen.werte ?? Einstellungen()
         List {
-            ProfilAbschnitt(fuss: "Health verrät nicht, ob Lesen gesperrt ist; du siehst nur, ob Daten ankommen.") {
+            ProfilAbschnitt(fuss: String(localized: "Health verrät nicht, ob Lesen gesperrt ist; du siehst nur, ob Daten ankommen.")) {
                 NavigationLink { ProfilHealthTypenView(befund: befund, typen: einstellungen.healthTypen) } label: {
-                    ProfilListenZeile("Was Lumen Fit liest", symbol: "heart.text.square.fill", wert: lesenWert(einstellungen))
+                    ProfilListenZeile(String(localized: "Was Lumen Fit liest"), symbol: "heart.text.square.fill", wert: lesenWert(einstellungen))
                 }
             }
-            ProfilAbschnitt(fuss: "Weg: \(ProfilHealthProbe.wegText).") {
+            ProfilAbschnitt(fuss: String(localized: "Weg: \(ProfilHealthProbe.wegText).")) {
                 if !einstellungen.healthGefragt {
                     Button {
                         Task {
@@ -35,10 +35,10 @@ struct ProfilHealthZugriffView: View {
                     Label("Einstellungen öffnen", systemImage: "gearshape")
                 }
             }
-            ProfilAbschnitt(fuss: "Beim ersten Speichern fragt iOS nach dem Schreiben.") {
+            ProfilAbschnitt(fuss: String(localized: "Beim ersten Speichern fragt iOS nach dem Schreiben.")) {
                 Toggle(isOn: Binding(get: { einstellungen.healthSchreiben },
                                      set: { an in umgebung.daten?.einstellungen.aendere { $0.healthSchreiben = an } })) {
-                    ProfilListenZeile("Training und Gewicht speichern")
+                    ProfilListenZeile(String(localized: "Training und Gewicht speichern"))
                 }
             }
         }

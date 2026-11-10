@@ -31,9 +31,9 @@ struct EssenZielKarte: View {
 
     private var artText: String {
         switch art {
-        case .aufbauen: "Aufbauen"
-        case .halten: "Halten"
-        case .abnehmen: "Abnehmen"
+        case .aufbauen: String(localized: "Aufbauen")
+        case .halten: String(localized: "Halten")
+        case .abnehmen: String(localized: "Abnehmen")
         }
     }
 
@@ -42,7 +42,10 @@ struct EssenZielKarte: View {
         let aktuell = essen.ernaehrungsZiele
         VStack(alignment: .leading, spacing: Abstand.m) {
             Text("Ziele aus deinen Körperdaten").font(.headline).foregroundStyle(palette.text)
-            Text("Jetzt: \(aktuell.kcal) kcal und \(aktuell.protein) g Protein am Tag" + (aktuell.eingerichtet ? "" : " (geschätzt)"))
+            Text(aktuell.eingerichtet
+                 ? String(localized: "Jetzt: \(String(aktuell.kcal)) kcal und \(aktuell.protein) g Protein am Tag")
+                 : String(localized: "Jetzt: \(String(aktuell.kcal)) kcal und \(aktuell.protein) g Protein am Tag (geschätzt)"))
+
                 .font(.subheadline).foregroundStyle(palette.text2)
             if let ziele = v.ziele {
                 vorschlagsBereich(v, ziele)
@@ -74,7 +77,7 @@ struct EssenZielKarte: View {
         let kcal = kcalEigen ?? ziele.kcal
         let protein = proteinEigen ?? ziele.protein
         return VStack(alignment: .leading, spacing: Abstand.m) {
-            Pille(text: "Dein Ziel: \(artText)", symbolName: "target")
+            Pille(text: String(localized: "Dein Ziel: \(artText)"), symbolName: "target")
             Menu {
                 Picker("Aktivität", selection: $aktivitaet) {
                     ForEach(ErnaehrungLogik.aktivitaeten.indices, id: \.self) { Text(ErnaehrungLogik.aktivitaeten[$0].name).tag($0) }

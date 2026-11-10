@@ -77,9 +77,9 @@ struct SchritteDetailView: View {
     // MARK: Bogen
 
     private func bogenZeile(_ stand: SchritteDetailStand, aktuell: String, heute: String) -> some View {
-        let titel = zeitraum == .tag && aktuell == heute ? "Heute" : stand.titel
+        let titel = zeitraum == .tag && aktuell == heute ? String(localized: "Heute") : stand.titel
         return HStack(spacing: 0) {
-            pfeil("chevron.left", um: -1, label: "Früher", aktuell: aktuell, heute: heute)
+            pfeil("chevron.left", um: -1, label: String(localized: "Früher"), aktuell: aktuell, heute: heute)
             SchritteBogen(titel: titel, anzahl: stand.summe, ziel: stand.periodenZiel)
                 .frame(maxWidth: .infinity)
                 .contentShape(Rectangle())
@@ -87,7 +87,7 @@ struct SchritteDetailView: View {
                     guard abs(wert.translation.width) > abs(wert.translation.height) * 1.5, abs(wert.translation.width) > 50 else { return }
                     wechseln(um: wert.translation.width < 0 ? 1 : -1, aktuell: aktuell, heute: heute)
                 })
-            pfeil("chevron.right", um: 1, label: "Später", aktuell: aktuell, heute: heute)
+            pfeil("chevron.right", um: 1, label: String(localized: "Später"), aktuell: aktuell, heute: heute)
         }
     }
 
@@ -127,8 +127,8 @@ struct SchritteDetailView: View {
             HStack(spacing: Abstand.m) {
                 chip(s.kcal > 0 ? HeuteQuellen.zahl(s.kcal) : nil, "kcal")
                 chip(s.distanzKm > 0 ? s.distanzKm.formatted(HeuteFormat.kilo()) : nil, "km")
-                chip(s.aktivMinuten > 0 ? SchritteBogenLogik.stundenText(s.aktivMinuten) : nil, "h aktiv")
-                chip(s.etagen > 0 ? HeuteQuellen.zahl(s.etagen) : nil, "Etagen")
+                chip(s.aktivMinuten > 0 ? SchritteBogenLogik.stundenText(s.aktivMinuten) : nil, String(localized: "h aktiv"))
+                chip(s.etagen > 0 ? HeuteQuellen.zahl(s.etagen) : nil, String(localized: "Etagen"))
             }
         }
         .scrollIndicators(.hidden)
@@ -145,7 +145,7 @@ struct SchritteDetailView: View {
         .lumenKartenFlaeche()
         .animation(bewegungAus ? nil : Feder.weich, value: wert)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(einheit == "h aktiv" ? "Aktive Zeit" : einheit): \(wert.map { "\($0) \(einheit)" } ?? "keine Daten")")
+        .accessibilityLabel("\(einheit == String(localized: "h aktiv") ? String(localized: "Aktive Zeit") : einheit): \(wert.map { "\($0) \(einheit)" } ?? String(localized: "keine Daten"))")
     }
 
     // MARK: Verlauf
@@ -161,8 +161,8 @@ struct SchritteDetailView: View {
 
     private func diagramm(_ s: SchritteDetailStand, aktuell: String, heute: String) -> some View {
         let gewaehlt: String? = zeitraum == .tag ? aktuell : nil
-        return DiagrammKarte(aussage: s.zielTage > 0 ? "\(s.zielTage) \(s.zielTage == 1 ? "Tag" : "Tage") über dem Ziel" : "Noch kein Tag über dem Ziel",
-                             kernzeile: s.schnitt.map { "Im Schnitt \(HeuteQuellen.zahl($0)) Schritte am Tag" } ?? "Keine Werte") {
+        return DiagrammKarte(aussage: s.zielTage > 0 ? String(localized: "\(s.zielTage) \(s.zielTage == 1 ? String(localized: "Tag") : String(localized: "Tage")) über dem Ziel") : String(localized: "Noch kein Tag über dem Ziel"),
+                             kernzeile: s.schnitt.map { String(localized: "Im Schnitt \(HeuteQuellen.zahl($0)) Schritte am Tag") } ?? String(localized: "Keine Werte")) {
             Chart {
                 ForEach(s.punkte) { p in
                     BarMark(x: .value("Tag", Datum.datum(p.tag), unit: .day), y: .value("Schritte", p.schritte)).cornerRadius(3)
@@ -190,17 +190,17 @@ struct SchritteDetailView: View {
             .environment(\.locale, Locale(identifier: "de_DE"))
             .frame(height: 190)
             .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
-                titel: "Schritte \(s.titel)", zusammenfassung: s.schnitt.map { "Im Schnitt \(HeuteQuellen.zahl($0)) Schritte am Tag, Ziel \(HeuteQuellen.zahl(s.ziel))" } ?? "Keine Werte",
-                xTitel: "Tag", yTitel: "Schritte", einheit: "Schritte",
+                titel: String(localized: "Schritte \(s.titel)"), zusammenfassung: s.schnitt.map { String(localized: "Im Schnitt \(HeuteQuellen.zahl($0)) Schritte am Tag, Ziel \(HeuteQuellen.zahl(s.ziel))") } ?? String(localized: "Keine Werte"),
+                xTitel: String(localized: "Tag"), yTitel: String(localized: "Schritte"), einheit: String(localized: "Schritte"),
                 punkte: s.punkte.map { HeuteDiagrammPunkt(name: SchritteDetailLogik.kurz($0.tag), wert: Double($0.schritte)) }))
         }
     }
 
     private func kennzahlen(_ s: SchritteDetailStand) -> some View {
         ListenKarte {
-            kennzahl("Schnitt pro Tag", s.schnitt.map { "\(HeuteQuellen.zahl($0)) Schritte" } ?? "–")
+            kennzahl(String(localized: "Schnitt pro Tag"), s.schnitt.map { String(localized: "\(HeuteQuellen.zahl($0)) Schritte") } ?? "–")
             Haarlinie()
-            kennzahl("Tage mit Schritten", "\(s.tageMitDaten)")
+            kennzahl(String(localized: "Tage mit Schritten"), "\(s.tageMitDaten)")
         }
     }
 

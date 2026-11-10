@@ -65,16 +65,16 @@ enum TagesformArt: String, CaseIterable, Sendable {
 
     var titel: String {
         switch self {
-        case .schlaf: "Schlaf"
-        case .rhythmus: "Bettzeit"
+        case .schlaf: String(localized: "Schlaf")
+        case .rhythmus: String(localized: "Bettzeit")
         case .hrv: "HRV"
-        case .ruhepuls: "Ruhepuls"
-        case .erholung: "Muskeln"
-        case .last: "Training"
-        case .kalorien: "Kalorien"
-        case .eiweiss: "Eiweiß"
-        case .schritte: "Schritte"
-        case .wasser: "Wasser"
+        case .ruhepuls: String(localized: "Ruhepuls")
+        case .erholung: String(localized: "Muskeln")
+        case .last: String(localized: "Training")
+        case .kalorien: String(localized: "Kalorien")
+        case .eiweiss: String(localized: "Eiweiß")
+        case .schritte: String(localized: "Schritte")
+        case .wasser: String(localized: "Wasser")
         }
     }
 
@@ -82,7 +82,7 @@ enum TagesformArt: String, CaseIterable, Sendable {
         switch self {
         case .kalorien: "kcal"
         case .eiweiss: "g"
-        case .wasser: "Gläser"
+        case .wasser: String(localized: "Gläser")
         default: ""
         }
     }
@@ -134,16 +134,16 @@ enum TagesformArt: String, CaseIterable, Sendable {
     /// damit klar ist, woran es liegt.
     var braucht: String {
         switch self {
-        case .schlaf: "die letzte Nacht, eingetragen oder aus Apple Health"
-        case .rhythmus: "Bettzeiten von vier der letzten sieben Nächte"
-        case .hrv: "ein Wert von heute aus Apple Health und fünf Tage zum Vergleichen (das Band liefert ihn noch nicht)"
-        case .ruhepuls: "ein Wert von heute aus Apple Health und fünf Tage zum Vergleichen (das Band liefert ihn noch nicht)"
-        case .erholung: "ein Training in den letzten vier Wochen"
-        case .last: "Sätze aus den vier Wochen vor heute"
-        case .kalorien: "ein Essens-Tagebuch vom Vortag mit mindestens 40 % deines Kalorienziels"
-        case .eiweiss: "ein Essens-Tagebuch vom Vortag mit mindestens 40 % deines Kalorienziels"
-        case .schritte: "Daten vom iPhone oder vom Band"
-        case .wasser: "ein Eintrag in den letzten acht Tagen"
+        case .schlaf: String(localized: "die letzte Nacht, eingetragen oder aus Apple Health")
+        case .rhythmus: String(localized: "Bettzeiten von vier der letzten sieben Nächte")
+        case .hrv: String(localized: "ein Wert von heute aus Apple Health und fünf Tage zum Vergleichen (das Band liefert ihn noch nicht)")
+        case .ruhepuls: String(localized: "ein Wert von heute aus Apple Health und fünf Tage zum Vergleichen (das Band liefert ihn noch nicht)")
+        case .erholung: String(localized: "ein Training in den letzten vier Wochen")
+        case .last: String(localized: "Sätze aus den vier Wochen vor heute")
+        case .kalorien: String(localized: "ein Essens-Tagebuch vom Vortag mit mindestens 40 % deines Kalorienziels")
+        case .eiweiss: String(localized: "ein Essens-Tagebuch vom Vortag mit mindestens 40 % deines Kalorienziels")
+        case .schritte: String(localized: "Daten vom iPhone oder vom Band")
+        case .wasser: String(localized: "ein Eintrag in den letzten acht Tagen")
         }
     }
 
@@ -306,9 +306,9 @@ enum TagesformRechnung {
 
     static func schlafHinweis(quelle: String?, abweichung: Int?) -> String? {
         guard let quelle else { return nil }
-        var text = "Quelle: \(quelle)"
+        var text = String(localized: "Quelle: \(quelle)")
         if weichtAb(quelle: quelle, abweichung: abweichung), let a = abweichung {
-            text += ". Uhr und Schätzung weichen \(abs(a)) min ab"
+            text += String(localized: ". Uhr und Schätzung weichen \(abs(a)) min ab")
         }
         return text
     }
@@ -320,7 +320,7 @@ enum TagesformRechnung {
     }
 
     static func datenlage(_ deckung: Double) -> String {
-        deckung >= gutDeckung ? "gut" : (deckung >= mittelDeckung ? "mittel" : "dünn")
+        deckung >= gutDeckung ? String(localized: "gut") : (deckung >= mittelDeckung ? String(localized: "mittel") : String(localized: "dünn"))
     }
 
     // MARK: Rechnen
@@ -356,16 +356,16 @@ enum TagesformRechnung {
             TagesformFaktor(art: $0.art, wert: $0.wert, gewicht: 0, einfluss: 0, kurz: $0.kurz, detail: $0.detail)
         }
         guard summe > 0, deckung >= mindestDeckung else {
-            return TagesformErgebnis(akku: nil, urteil: "Zu wenig Daten", faktoren: ohneGewicht, gruende: [], kappe: nil,
+            return TagesformErgebnis(akku: nil, urteil: String(localized: "Zu wenig Daten"), faktoren: ohneGewicht, gruende: [], kappe: nil,
                                      deckung: deckung, fehlend: fehlend,
-                                     satz: "Trag deinen Schlaf ein oder erlaube Apple Health, dann rechnet Lumen Fit deine Tagesform.")
+                                     satz: String(localized: "Trag deinen Schlaf ein oder erlaube Apple Health, dann rechnet Lumen Fit deine Tagesform."))
         }
         // Schlaf ist Pflicht: er ist die Obergrenze der Zahl. Ohne ihn hebt ein voller Tag (oder Wasser) die Zahl über das,
         // was die Nacht hergibt (der gemeldete Fehler), und die Karte würde "Voll geladen" zeigen, obwohl die Uhr noch nicht synchron ist.
         guard !fehlend.contains(.schlaf) else {
-            return TagesformErgebnis(akku: nil, urteil: "Schlaf fehlt", faktoren: ohneGewicht, gruende: [], kappe: nil,
+            return TagesformErgebnis(akku: nil, urteil: String(localized: "Schlaf fehlt"), faktoren: ohneGewicht, gruende: [], kappe: nil,
                                      deckung: deckung, fehlend: fehlend,
-                                     satz: "Ohne Schlafwert gibt es keine Tagesform. Trag deinen Schlaf ein oder erlaube Apple Health.")
+                                     satz: String(localized: "Ohne Schlafwert gibt es keine Tagesform. Trag deinen Schlaf ein oder erlaube Apple Health."))
         }
 
         let kandidaten: [TagesformKappe?] = [schlafKappe(e), warnKappe(faktoren)]
@@ -391,14 +391,14 @@ enum TagesformRechnung {
     /// ersetzt den Grund, den sie schon nennt.
     static func satz(gruende: [TagesformFaktor], kappe: TagesformKappe?, deckung: Double) -> String {
         var zeilen: [String] = []
-        if let kappe { zeilen.append("Bremst: \(kappe.text)") }
+        if let kappe { zeilen.append(String(localized: "Bremst: \(kappe.text)")) }
         let uebrige: [TagesformFaktor] = gruende.filter { $0.art != kappe?.art }
         let platz = max(0, hoechstGruende - zeilen.count)
         for g in uebrige.prefix(platz) {
-            zeilen.append((g.einfluss < 0 ? "Bremst: " : "Hilft: ") + g.kurz)
+            zeilen.append(g.einfluss < 0 ? String(localized: "Bremst: \(g.kurz)") : String(localized: "Hilft: \(g.kurz)"))
         }
-        if zeilen.isEmpty { zeilen.append("Alles im normalen Bereich.") }
-        if deckung < mittelDeckung { zeilen.append("Wenig Daten, die Zahl ist grob.") }
+        if zeilen.isEmpty { zeilen.append(String(localized: "Alles im normalen Bereich.")) }
+        if deckung < mittelDeckung { zeilen.append(String(localized: "Wenig Daten, die Zahl ist grob.")) }
         return zeilen.joined(separator: "\n")
     }
 
@@ -410,15 +410,15 @@ enum TagesformRechnung {
         let erste: Int? = e.schlaf.first.flatMap { $0 }
         guard let letzte = erste, e.schlafZiel > 0 else { return nil }
         let g = TagesformLogik.schlafGrenze(schlafMinuten: letzte, schlafZiel: e.schlafZiel)
-        let unsicher: String = e.schlafSicherheit < schlafUnsicherUnter ? " (unsicher)" : ""
-        return TagesformKappe(grenze: g, text: "Schlaf \(stunden(letzte))\(unsicher) deckelt dich bei \(g) %", art: .schlaf)
+        let unsicher: String = e.schlafSicherheit < schlafUnsicherUnter ? String(localized: " (unsicher)") : ""
+        return TagesformKappe(grenze: g, text: String(localized: "Schlaf \(stunden(letzte))\(unsicher) deckelt dich bei \(g) %"), art: .schlaf)
     }
 
     private static func warnKappe(_ faktoren: [TagesformFaktor]) -> TagesformKappe? {
         let hrv = faktoren.first(where: { $0.art == .hrv })
         let puls = faktoren.first(where: { $0.art == .ruhepuls })
         guard let h = hrv, let r = puls, h.wert <= warnWert, r.wert <= warnWert else { return nil }
-        return TagesformKappe(grenze: warnGrenze, text: "HRV tief und Ruhepuls hoch, höchstens \(warnGrenze) %")
+        return TagesformKappe(grenze: warnGrenze, text: String(localized: "HRV tief und Ruhepuls hoch, höchstens \(warnGrenze) %"))
     }
 
     // MARK: Faktoren
@@ -449,31 +449,31 @@ enum TagesformRechnung {
         }
         let davor: [Int] = e.schlaf.dropFirst().prefix(2).compactMap { $0 }
         var wert = nacht(Double(letzte))
-        var detail: [String] = ["Letzte Nacht \(stunden(letzte)) von \(stunden(e.schlafZiel)) Ziel"]
+        var detail: [String] = [String(localized: "Letzte Nacht \(stunden(letzte)) von \(stunden(e.schlafZiel)) Ziel")]
         if !davor.isEmpty {
             let schnittDavor = Double(davor.reduce(0, +)) / Double(davor.count)
             wert = letzteNachtAnteil * wert + (1 - letzteNachtAnteil) * nacht(schnittDavor)
-            let nachtWort = davor.count == 1 ? "Nacht" : "Nächte"
-            detail.append("die \(nachtWort) davor im Mittel \(stunden(Int(schnittDavor.rounded())))")
+            let nachtWort = davor.count == 1 ? String(localized: "Nacht") : String(localized: "Nächte")
+            detail.append(String(localized: "die \(nachtWort) davor im Mittel \(stunden(Int(schnittDavor.rounded())))"))
         }
         if let hinweis = e.schlafHinweis { detail.append(hinweis) }
 
         let uebliche: [Int] = e.schlaf.dropFirst().compactMap { $0 }
-        var kurz = "Schlaf \(stunden(letzte))"
+        var kurz = String(localized: "Schlaf \(stunden(letzte))")
         if Double(letzte) >= 0.95 * ziel {
-            kurz += ", Ziel erreicht"
+            kurz += String(localized: ", Ziel erreicht")
         } else if uebliche.count >= 3 {
             let schnitt = uebliche.reduce(0, +) / uebliche.count
             if letzte < schnitt - 20 {
-                kurz += ", unter deinem Schnitt"
+                kurz += String(localized: ", unter deinem Schnitt")
             } else if letzte > schnitt + 20 {
-                kurz += ", über deinem Schnitt"
+                kurz += String(localized: ", über deinem Schnitt")
             } else {
-                kurz += ", wie dein Schnitt"
+                kurz += String(localized: ", wie dein Schnitt")
             }
-            detail.append("dein Schnitt \(stunden(schnitt))")
+            detail.append(String(localized: "dein Schnitt \(stunden(schnitt))"))
         } else {
-            kurz += " von \(stunden(e.schlafZiel))"
+            kurz += String(localized: " von \(stunden(e.schlafZiel))")
         }
         return Teil(art: .schlaf, wert: wert, sicherheit: min(1, max(0.5, e.schlafSicherheit)), kurz: kurz,
                     detail: detail.joined(separator: ", ") + ".")
@@ -484,18 +484,18 @@ enum TagesformRechnung {
         guard zeiten.count >= mindestNaechteBett else { return nil }
         let sd = streuung(zeiten)
         let wert = klemmen(100 * (streuungSchlecht - sd) / (streuungSchlecht - streuungGut))
-        let kurz = sd < 40 ? "Bettzeit regelmäßig" : "Bettzeit schwankt um \(zahl(sd)) min"
+        let kurz = sd < 40 ? String(localized: "Bettzeit regelmäßig") : String(localized: "Bettzeit schwankt um \(zahl(sd)) min")
         return Teil(art: .rhythmus, wert: wert, sicherheit: 1, kurz: kurz,
-                    detail: "Streuung der letzten \(zeiten.count) Bettzeiten: \(zahl(sd)) min. Bis 30 min gibt es volle Punkte.")
+                    detail: String(localized: "Streuung der letzten \(zeiten.count) Bettzeiten: \(zahl(sd)) min. Bis 30 min gibt es volle Punkte."))
     }
 
     private static func hrvTeil(_ e: TagesformEingabe) -> Teil? {
         guard let v = vergleich(e.hrv) else { return nil }
         let z = (v.heute - v.mittel) / max(v.streuung, hrvStreuungBoden * v.mittel)
         let wert = klemmen(neutral + hrvSteigung * z)
-        let wort = z < -0.5 ? "unter deinem Schnitt" : (z > 0.5 ? "über deinem Schnitt" : "wie dein Schnitt")
-        return Teil(art: .hrv, wert: wert, sicherheit: 1, kurz: "HRV \(zahl(v.heute)) ms, \(wort)",
-                    detail: "Dein Schnitt der letzten Tage: \(zahl(v.mittel)) ms (SDNN aus Apple Health).")
+        let wort = z < -0.5 ? String(localized: "unter deinem Schnitt") : (z > 0.5 ? String(localized: "über deinem Schnitt") : String(localized: "wie dein Schnitt"))
+        return Teil(art: .hrv, wert: wert, sicherheit: 1, kurz: String(localized: "HRV \(zahl(v.heute)) ms, \(wort)"),
+                    detail: String(localized: "Dein Schnitt der letzten Tage: \(zahl(v.mittel)) ms (SDNN aus Apple Health)."))
     }
 
     private static func ruhepulsTeil(_ e: TagesformEingabe) -> Teil? {
@@ -504,14 +504,14 @@ enum TagesformRechnung {
         let wert = klemmen(neutral - ruhepulsSteigung * d)
         let kurz: String
         if d >= 1.5 {
-            kurz = "Ruhepuls \(zahl(v.heute)), \(zahl(d)) über deinem Schnitt"
+            kurz = String(localized: "Ruhepuls \(zahl(v.heute)), \(zahl(d)) über deinem Schnitt")
         } else if d <= -1.5 {
-            kurz = "Ruhepuls \(zahl(v.heute)), \(zahl(-d)) unter deinem Schnitt"
+            kurz = String(localized: "Ruhepuls \(zahl(v.heute)), \(zahl(-d)) unter deinem Schnitt")
         } else {
-            kurz = "Ruhepuls \(zahl(v.heute)), wie dein Schnitt"
+            kurz = String(localized: "Ruhepuls \(zahl(v.heute)), wie dein Schnitt")
         }
         return Teil(art: .ruhepuls, wert: wert, sicherheit: 1, kurz: kurz,
-                    detail: "Dein Schnitt der letzten Tage: \(zahl(v.mittel)) Schläge pro Minute.")
+                    detail: String(localized: "Dein Schnitt der letzten Tage: \(zahl(v.mittel)) Schläge pro Minute."))
     }
 
     private static func erholungTeil(_ e: TagesformEingabe) -> Teil? {
@@ -528,13 +528,13 @@ enum TagesformRechnung {
         let muede = tiefste.filter { $0.value < 90 }.sorted { a, b in
             a.value != b.value ? a.value < b.value : a.key < b.key
         }
-        var kurz = "Muskeln erholt"
+        var kurz = String(localized: "Muskeln erholt")
         if !muede.isEmpty {
             let namen: [String] = muede.prefix(2).map { "\($0.key) \($0.value) %" }
-            kurz = namen.joined(separator: ", ") + " noch müde"
+            kurz = String(localized: "\(namen.joined(separator: ", ")) noch müde")
         }
         return Teil(art: .erholung, wert: wert, sicherheit: 1, kurz: kurz,
-                    detail: "Mittel der \(muedeTeile) müdesten von \(MuskelTeil.allCases.count) Muskelteilen: \(zahl(wert)) %.")
+                    detail: String(localized: "Mittel der \(muedeTeile) müdesten von \(MuskelTeil.allCases.count) Muskelteilen: \(zahl(wert)) %."))
     }
 
     private static func lastTeil(_ e: TagesformEingabe) -> Teil? {
@@ -552,9 +552,9 @@ enum TagesformRechnung {
         } else {
             wert = klemmen(40 - 40 * (r - 2))
         }
-        let wort = r > lastGrenze ? "mehr als sonst" : (r < 0.7 ? "weniger als sonst" : "wie sonst")
-        return Teil(art: .last, wert: wert, sicherheit: 1, kurz: "Training \(drei) Sätze in 3 Tagen, \(wort)",
-                    detail: "Dein Schnitt der letzten 4 Wochen: \(zahl(ueblich * 3)) Sätze je 3 Tage.")
+        let wort = r > lastGrenze ? String(localized: "mehr als sonst") : (r < 0.7 ? String(localized: "weniger als sonst") : String(localized: "wie sonst"))
+        return Teil(art: .last, wert: wert, sicherheit: 1, kurz: String(localized: "Training \(drei) Sätze in 3 Tagen, \(wort)"),
+                    detail: String(localized: "Dein Schnitt der letzten 4 Wochen: \(zahl(ueblich * 3)) Sätze je 3 Tage."))
     }
 
     private static func massTeil(_ m: TagesformMass?, art: TagesformArt, e: TagesformEingabe) -> Teil? {
@@ -564,7 +564,7 @@ enum TagesformRechnung {
         // Am Vormittag zählt der Vortag noch mit, in Punkten gemischt (nicht im Anteil: bei Schritten und Wasser kappt 100).
         if let d = m.davor, d.ziel > 0, d.ziel.isFinite, d.ist.isFinite {
             wert = (1 - d.anteil) * wert + d.anteil * massWert(art, ist: d.ist, ziel: d.ziel)
-            detail = "Am Vormittag zählt noch der Vortag: gestern \(zahl(d.ist)) von \(zahl(d.ziel)), zu \(Int((d.anteil * 100).rounded())) %."
+            detail = String(localized: "Am Vormittag zählt noch der Vortag: gestern \(zahl(d.ist)) von \(zahl(d.ziel)), zu \(Int((d.anteil * 100).rounded())) %.")
         }
         return Teil(art: art, wert: wert, sicherheit: 1, kurz: masstext(art, m, e), detail: detail)
     }
@@ -590,11 +590,11 @@ enum TagesformRechnung {
         let ist = zahl(m.ist)
         let ziel = zahl(m.ziel)
         let einheit = art.einheit.isEmpty ? "" : " " + art.einheit
-        let vortag = e.stunde >= 24 ? "am Vortag" : "gestern"
+        let vortag = e.stunde >= 24 ? String(localized: "am Vortag") : String(localized: "gestern")
         switch m.bezug {
-        case .vortag: return "\(art.titel) \(vortag) \(ist) von \(ziel)\(einheit)"
-        case .bisJetzt: return "\(art.titel) bis jetzt \(ist), Soll \(ziel)\(einheit)"
-        case .tag: return "\(art.titel) \(ist) von \(ziel)\(einheit)"
+        case .vortag: return String(localized: "\(art.titel) \(vortag) \(ist) von \(ziel)\(einheit)")
+        case .bisJetzt: return String(localized: "\(art.titel) bis jetzt \(ist), Soll \(ziel)\(einheit)")
+        case .tag: return String(localized: "\(art.titel) \(ist) von \(ziel)\(einheit)")
         }
     }
 

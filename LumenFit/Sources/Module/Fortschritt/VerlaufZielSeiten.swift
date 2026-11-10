@@ -34,16 +34,16 @@ struct VerlaufGruppeSeite: View {
                     .accessibilityElement(children: .combine)
                 }
                 ListenKarte {
-                    zeile("Einheiten diese Woche", "\(z.woche.einheiten)×")
+                    zeile(String(localized: "Einheiten diese Woche"), "\(z.woche.einheiten)×")
                     Haarlinie()
-                    VerlaufKlapp(titel: "Weitere Statistiken", offen: $statistikOffen) {
-                        zeile("Dieser Monat", VerlaufLogik.kurz(z.monat))
+                    VerlaufKlapp(titel: String(localized: "Weitere Statistiken"), offen: $statistikOffen) {
+                        zeile(String(localized: "Dieser Monat"), VerlaufLogik.kurz(z.monat))
                         Haarlinie()
-                        zeile("Insgesamt", VerlaufLogik.kurz(z.gesamt))
+                        zeile(String(localized: "Insgesamt"), VerlaufLogik.kurz(z.gesamt))
                     }
                     .padding(.horizontal, Abstand.l)
                 }
-                abschnitt("Teile diese Woche") {
+                abschnitt(String(localized: "Teile diese Woche")) {
                     ForEach(MuskelTeil.allCases.filter { $0.gruppe == gruppe }, id: \.self) { t in
                         teilZeile(t, saetze: koerper.woche[t] ?? 0, erholung: koerper.erholung[t] ?? 100)
                         Haarlinie()
@@ -101,7 +101,7 @@ struct VerlaufGruppeSeite: View {
     @ViewBuilder
     private func uebungen(_ laeufe: [VerlaufLogik.Lauf], heute: String) -> some View {
         let liste = VerlaufLogik.uebungen(gruppe, laeufe, heute: heute)
-        abschnitt("Übungen") {
+        abschnitt(String(localized: "Übungen")) {
             if liste.isEmpty {
                 Text("Noch keine Übung für \(gruppe.name) eingetragen. Sobald du eine trainierst, steht sie hier.")
                     .font(.subheadline).foregroundStyle(palette.text2)
@@ -161,12 +161,12 @@ struct VerlaufUebungSeite: View {
                         }
                     }
                     ListenKarte {
-                        zeile("Diesen Monat", "\(v.monat)×")
+                        zeile(String(localized: "Diesen Monat"), "\(v.monat)×")
                         Haarlinie()
-                        zeile("Insgesamt", "\(v.gesamt)×")
+                        zeile(String(localized: "Insgesamt"), "\(v.gesamt)×")
                     }
                     VStack(alignment: .leading, spacing: Abstand.s) {
-                        GymAbschnitt(titel: "Tage")
+                        GymAbschnitt(titel: String(localized: "Tage"))
                         ListenKarte {
                             ForEach(v.tage) { t in
                                 VStack(alignment: .leading, spacing: 2) {
@@ -188,7 +188,7 @@ struct VerlaufUebungSeite: View {
             .navigationTitle(u.name)
             .navigationBarTitleDisplayMode(.inline)
         } else {
-            LeerZustand(stimmung: .denkt, satz: "Diese Übung gibt es nicht mehr im Katalog.").lumenHintergrund()
+            LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Übung gibt es nicht mehr im Katalog.")).lumenHintergrund()
         }
     }
 

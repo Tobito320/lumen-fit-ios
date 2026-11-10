@@ -24,7 +24,7 @@ enum EssenKiFotoLogik {
     nonisolated static let maxGramm = 5000.0
 
     nonisolated static let fotoUnlesbar = EssenKiAnzeige(
-        titel: "Foto nicht lesbar", text: "Mach bitte ein neues Foto.",
+        titel: String(localized: "Foto nicht lesbar"), text: String(localized: "Mach bitte ein neues Foto."),
         symbol: "photo.badge.exclamationmark", nochmal: false, neuesFoto: true)
 
     /// Ohne Zustimmung im Blatt geht kein Foto raus (auch nicht beim Nochmal).
@@ -35,30 +35,30 @@ enum EssenKiFotoLogik {
 
     /// Freundlich und mit der Zahl des Servers; ohne Zahl (oder bei 0) ohne Zahl.
     static func tageslimitText(max: Int?) -> String {
-        let weiter = "Morgen geht es weiter, suchen geht immer."
-        guard let max, max > 0 else { return "Das Foto-Limit für heute ist erreicht. \(weiter)" }
-        return max == 1 ? "Heute ist dein Foto verbraucht. \(weiter)" : "Heute sind deine \(max) Fotos verbraucht. \(weiter)"
+        let weiter = String(localized: "Morgen geht es weiter, suchen geht immer.")
+        guard let max, max > 0 else { return String(localized: "Das Foto-Limit für heute ist erreicht. \(weiter)") }
+        return max == 1 ? String(localized: "Heute ist dein Foto verbraucht. \(weiter)") : String(localized: "Heute sind deine \(max) Fotos verbraucht. \(weiter)")
     }
 
     static func anzeige(_ f: EssenKiFehler) -> EssenKiAnzeige {
         switch f {
         case .netz:
-            EssenKiAnzeige(titel: "Keine Verbindung", text: "Prüf dein Netz und versuch es nochmal.",
+            EssenKiAnzeige(titel: String(localized: "Keine Verbindung"), text: String(localized: "Prüf dein Netz und versuch es nochmal."),
                            symbol: "wifi.slash", nochmal: true, neuesFoto: false)
         case .zuVieleAnfragen:
-            EssenKiAnzeige(titel: "Gerade viel los", text: "Versuch es in einem Moment nochmal.",
+            EssenKiAnzeige(titel: String(localized: "Gerade viel los"), text: String(localized: "Versuch es in einem Moment nochmal."),
                            symbol: "hourglass", nochmal: true, neuesFoto: false)
         case .ungueltig, .unbekannt:
-            EssenKiAnzeige(titel: "Das hat nicht geklappt", text: "Versuch es nochmal oder mach ein neues Foto.",
+            EssenKiAnzeige(titel: String(localized: "Das hat nicht geklappt"), text: String(localized: "Versuch es nochmal oder mach ein neues Foto."),
                            symbol: "exclamationmark.triangle", nochmal: true, neuesFoto: true)
         case .bildZuGross:
-            EssenKiAnzeige(titel: "Foto zu groß", text: "Mach bitte ein neues Foto.",
+            EssenKiAnzeige(titel: String(localized: "Foto zu groß"), text: String(localized: "Mach bitte ein neues Foto."),
                            symbol: "photo.badge.exclamationmark", nochmal: false, neuesFoto: true)
         case .tageslimit(let max):
-            EssenKiAnzeige(titel: "Foto-Limit erreicht", text: tageslimitText(max: max),
+            EssenKiAnzeige(titel: String(localized: "Foto-Limit erreicht"), text: tageslimitText(max: max),
                            symbol: "moon.zzz", nochmal: false, neuesFoto: false)
         case .guthaben, .nichtEingerichtet:
-            EssenKiAnzeige(titel: "KI gerade nicht erreichbar", text: "Trag die Mahlzeit solange von Hand ein.",
+            EssenKiAnzeige(titel: String(localized: "KI gerade nicht erreichbar"), text: String(localized: "Trag die Mahlzeit solange von Hand ein."),
                            symbol: "bolt.slash", nochmal: false, neuesFoto: false)
         }
     }
@@ -68,7 +68,7 @@ enum EssenKiFotoLogik {
 
     static func keinEssenText(_ a: EssenKiAnalyse) -> String {
         let t = a.bemerkung.trimmingCharacters(in: .whitespacesAndNewlines)
-        return t.isEmpty ? "Auf dem Foto ist kein Essen zu erkennen." : t
+        return t.isEmpty ? String(localized: "Auf dem Foto ist kein Essen zu erkennen.") : t
     }
 
     /// Ein Tagebuch-Eintrag je Zutat (in g) und je unsichtbarer Zutat. Die Zahl auf dem Knopf ist `kcal(eintraege)`,
@@ -101,7 +101,7 @@ enum EssenKiFotoLogik {
     /// Name für die Bestätigung: die ersten zwei Zutaten.
     static func titel(_ komponenten: [EssenKiKomponente]) -> String {
         let namen = komponenten.prefix(2).map(\.name).joined(separator: ", ")
-        if namen.isEmpty { return "Foto-Mahlzeit" }
+        if namen.isEmpty { return String(localized: "Foto-Mahlzeit") }
         return komponenten.count > 2 ? namen + " …" : namen
     }
 
@@ -118,9 +118,9 @@ enum EssenKiFotoLogik {
     /// Wie sicher die KI bei einer Zutat ist, als Wort, nicht nur als Symbol.
     static func sicherheit(_ s: String) -> (text: String, symbol: String) {
         switch s {
-        case "hoch": ("sicher", "checkmark.circle.fill")
-        case "niedrig": ("unsicher", "questionmark.circle.fill")
-        default: ("ungefähr", "circle.lefthalf.filled")
+        case "hoch": (String(localized: "sicher"), "checkmark.circle.fill")
+        case "niedrig": (String(localized: "unsicher"), "questionmark.circle.fill")
+        default: (String(localized: "ungefähr"), "circle.lefthalf.filled")
         }
     }
 
@@ -141,9 +141,10 @@ enum EssenKiFotoLogik {
     static func restText(_ rest: Int?) -> String? {
         guard let rest, rest <= 5 else { return nil }
         switch rest {
-        case ..<1: return "Das war dein letztes Foto für heute."
-        case 1: return "Noch 1 Foto für heute."
-        default: return "Noch \(rest) Fotos für heute."
+        case ..<1: return String(localized: "Das war dein letztes Foto für heute.")
+        case 1: return String(localized: "Noch 1 Foto für heute.")
+        default: return String(localized: "Noch \(rest) Fotos für heute.")
+
         }
     }
 }

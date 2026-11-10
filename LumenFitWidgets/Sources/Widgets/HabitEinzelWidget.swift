@@ -87,7 +87,7 @@ struct HabitEinzelAnsicht: View {
             if let habit {
                 kachel(habit, farben)
             } else {
-                WidgetLeerAnsicht(farben: farben, titel: "Noch keine Gewohnheiten", text: "Öffne Lumen Fit einmal, dann kannst du eine wählen.")
+                WidgetLeerAnsicht(farben: farben, titel: String(localized: "Noch keine Gewohnheiten"), text: String(localized: "Öffne Lumen Fit einmal, dann kannst du eine wählen."))
             }
         }
     }
@@ -119,7 +119,7 @@ struct HabitEinzelAnsicht: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        let sprech = "\(habit.name), \(WidgetAnzeige.habitText(habit, wert: wert))" + (habit.serie >= 2 ? ", Serie \(habit.serie)" : "")
+        let sprech = "\(habit.name), \(WidgetAnzeige.habitText(habit, wert: wert))" + (habit.serie >= 2 ? String(localized: ", Serie \(habit.serie)") : "")
         if let profil = eintrag.snapshot?.profilKennung, !profil.isEmpty {
             let naechster = WidgetAnzeige.naechsterWert(zaehlen: habit.zaehlen, heute: wert, ziel: habit.ziel)
             Button(intent: HabitAbhakenIntent(habit: habit.id, wert: naechster, tag: Datum.text(eintrag.date), profil: profil)) { inhalt }

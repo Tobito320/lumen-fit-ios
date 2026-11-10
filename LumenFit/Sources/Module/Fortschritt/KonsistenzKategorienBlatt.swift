@@ -62,7 +62,7 @@ struct KonsistenzKategorienBlatt: View {
         if !plantage.isEmpty {
             Section {
                 ForEach(plantage) { tag in
-                    Picker(tag.name.isEmpty ? "Training" : tag.name, selection: zuordnung(tag)) {
+                    Picker(tag.name.isEmpty ? String(localized: "Training") : tag.name, selection: zuordnung(tag)) {
                         Text("Keine").tag("")
                         ForEach(stand.kategorien) { Text($0.name).tag($0.id) }
                     }

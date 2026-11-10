@@ -40,10 +40,11 @@ enum EssenTagebuchLogik {
 
     /// Unter dem Gewicht: für diesen Tag eingetragen, zuletzt früher ("Zuletzt am 03.10.") oder noch nie.
     nonisolated static func gewichtUnterzeile(datum: String?, tag: String) -> String {
-        guard let datum else { return "Noch nicht eingetragen" }
-        if datum == tag { return "An diesem Tag eingetragen" }
+        guard let datum else { return String(localized: "Noch nicht eingetragen") }
+        if datum == tag { return String(localized: "An diesem Tag eingetragen") }
         let teile = datum.split(separator: "-")
-        return teile.count == 3 ? "Zuletzt am \(teile[2]).\(teile[1])." : "Zuletzt am \(datum)"
+        return String(localized: "Zuletzt am \(teile.count == 3 ? "\(teile[2]).\(teile[1])." : datum)")
+
     }
 
     /// Fasten erscheint, wenn man es eingeschaltet hat oder schon Fasten-Daten hat (Bestand behält es).

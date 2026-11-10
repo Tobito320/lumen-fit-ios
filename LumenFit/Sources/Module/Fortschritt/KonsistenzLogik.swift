@@ -107,7 +107,7 @@ enum KonsistenzLogik {
 
     /// "Push · 18:30 · 45 min" für die Zeile unter dem Raster.
     static func zeile(_ s: GymSession, name: String?) -> String {
-        var teile = [name ?? "Training", Datum.uhrzeit(s.start)]
+        var teile = [name ?? String(localized: "Training"), Datum.uhrzeit(s.start)]
         if let ende = s.ende { teile.append("\(max(1, Int(ende.timeIntervalSince(s.start) / 60))) min") }
         return teile.joined(separator: " · ")
     }

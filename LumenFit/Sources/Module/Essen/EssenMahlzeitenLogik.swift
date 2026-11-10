@@ -15,9 +15,9 @@ enum EssenMahlzeitenLogik {
 
     /// "Heute", "Gestern", "Morgen" oder das Datum.
     nonisolated static func tagTitel(_ tag: String, heute: String) -> String {
-        if tag == heute { return "Heute" }
-        if tag == Datum.addTage(heute, -1) { return "Gestern" }
-        if tag == Datum.addTage(heute, 1) { return "Morgen" }
+        if tag == heute { return String(localized: "Heute") }
+        if tag == Datum.addTage(heute, -1) { return String(localized: "Gestern") }
+        if tag == Datum.addTage(heute, 1) { return String(localized: "Morgen") }
         return Datum.anzeige(tag)
     }
 
@@ -33,10 +33,10 @@ enum EssenMahlzeitenLogik {
 
     nonisolated static func abschnittTitel(_ id: String) -> String {
         switch id {
-        case "uebersicht": "Übersicht"
-        case "ernaehrung": "Ernährung"
-        case "wasser": "Wasserzähler"
-        default: "Körperwerte"
+        case "uebersicht": String(localized: "Übersicht")
+        case "ernaehrung": String(localized: "Ernährung")
+        case "wasser": String(localized: "Wasserzähler")
+        default: String(localized: "Körperwerte")
         }
     }
 
@@ -78,8 +78,8 @@ enum EssenMahlzeitenLogik {
 
     /// Grundnährstoffe, die es gibt (Ballaststoffe, Zucker, Salz, gesättigte Fettsäuren).
     nonisolated static func grundZeilen(_ summe: Naehrwerte) -> [NaehrstoffZeile] {
-        let felder: [(String, Double?)] = [("Ballaststoffe", summe.ballaststoffe), ("Zucker", summe.zucker),
-                                           ("Salz", summe.salz), ("Gesättigte Fettsäuren", summe.gesFett)]
+        let felder: [(String, Double?)] = [(String(localized: "Ballaststoffe"), summe.ballaststoffe), (String(localized: "Zucker"), summe.zucker),
+                                           (String(localized: "Salz"), summe.salz), (String(localized: "Gesättigte Fettsäuren"), summe.gesFett)]
         return felder.compactMap { name, wert in
             wert.map { NaehrstoffZeile(id: name, name: name, menge: "\(ErnaehrungLogik.zahl($0)) g", prozent: nil) }
         }

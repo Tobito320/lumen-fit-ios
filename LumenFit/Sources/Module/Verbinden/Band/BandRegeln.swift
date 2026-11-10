@@ -12,11 +12,11 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .partner: "Partner: Gym, Ziel, Schlaf"
-        case .wunsch: "Vibrationswünsche von Lovea"
-        case .gymPause: "Gym: Pause vorbei"
-        case .gymPuls: "Gym: Ziel-Puls erreicht"
-        case .sitzen: "Sitz-Erinnerung"
+        case .partner: String(localized: "Partner: Gym, Ziel, Schlaf")
+        case .wunsch: String(localized: "Vibrationswünsche von Lovea")
+        case .gymPause: String(localized: "Gym: Pause vorbei")
+        case .gymPuls: String(localized: "Gym: Ziel-Puls erreicht")
+        case .sitzen: String(localized: "Sitz-Erinnerung")
         }
     }
 
@@ -61,7 +61,7 @@ enum BandQuelle: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var pauseName: String { self == .sitzen ? "Nach Minuten ohne Schritte" : "Mindestpause" }
+    var pauseName: String { self == .sitzen ? String(localized: "Nach Minuten ohne Schritte") : String(localized: "Mindestpause") }
 
     private func schluessel(_ teil: String) -> String { "fit.band.\(rawValue).\(teil)" }
     var anSchluessel: String { schluessel("an") }

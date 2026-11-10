@@ -7,7 +7,7 @@ struct PartnerVerlaufAnsicht: View {
     @Environment(AppUmgebung.self) private var umgebung
 
     var body: some View {
-        PartnerAnsichtRahmen(art: .verlauf, titel: "Training und Verlauf") { datei in
+        PartnerAnsichtRahmen(art: .verlauf, titel: String(localized: "Training und Verlauf")) { datei in
             if let verlauf = datei.heute.verlauf { PartnerVerlaufInhalt(name: datei.profilName, verlauf: verlauf, jetzt: umgebung.uhr()) }
         }
     }
@@ -34,7 +34,7 @@ private struct PartnerVerlaufInhalt: View {
         return HeroKarte {
             VStack(alignment: .leading, spacing: Abstand.s) {
                 Text(name).font(.footnote.weight(.semibold))
-                Text(zeile ?? "Gerade nicht im Gym").font(.title2.weight(.bold)).fontDesign(.rounded)
+                Text(zeile ?? String(localized: "Gerade nicht im Gym")).font(.title2.weight(.bold)).fontDesign(.rounded)
                 if zeile == nil, let letztes = verlauf.trainings.first {
                     Text("Zuletzt: \(PartnerAnsichtLogik.trainingZeile(letztes).titel), \(PartnerAnsichtLogik.kurzDatum(letztes.tag))").font(.subheadline)
                 }
@@ -62,7 +62,7 @@ private struct PartnerVerlaufInhalt: View {
     private func diagramm(_ punkte: [PartnerAnsichtLogik.DauerPunkt]) -> some View {
         let farbe = LumenFarben.tief(.trainieren, dunkel: schema == .dark, kontrastHoch: kontrast == .increased)
         let schnitt = punkte.reduce(0) { $0 + $1.minuten } / max(1, punkte.count)
-        return DiagrammKarte(aussage: "Dauer der letzten Einheiten", kernzeile: "Im Schnitt \(schnitt) min") {
+        return DiagrammKarte(aussage: String(localized: "Dauer der letzten Einheiten"), kernzeile: String(localized: "Im Schnitt \(schnitt) min")) {
             Chart(punkte) { p in
                 BarMark(x: .value("Tag", Datum.datum(p.tag), unit: .day), y: .value("Minuten", p.minuten))
                     .foregroundStyle(farbe)
@@ -82,8 +82,8 @@ private struct PartnerVerlaufInhalt: View {
             .frame(height: 160)
             .partnerZeichnet()
             .accessibilityChartDescriptor(FortschrittDeskriptor(
-                titel: "Dauer der letzten Einheiten", zusammenfassung: "\(punkte.count) Einheiten, im Schnitt \(schnitt) Minuten",
-                xTitel: "Tag", yTitel: "Minuten", einheit: "min", stetig: false,
+                titel: String(localized: "Dauer der letzten Einheiten"), zusammenfassung: String(localized: "\(punkte.count) Einheiten, im Schnitt \(schnitt) Minuten"),
+                xTitel: String(localized: "Tag"), yTitel: String(localized: "Minuten"), einheit: "min", stetig: false,
                 punkte: punkte.map { .init(x: PartnerAnsichtLogik.kurzDatum($0.tag), y: Double($0.minuten)) }))
         }
     }

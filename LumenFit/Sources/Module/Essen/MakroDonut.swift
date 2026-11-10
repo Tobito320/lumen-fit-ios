@@ -34,12 +34,12 @@ struct EssenDonutBeschreibung: AXChartDescriptorRepresentable {
     let daten: MakroDonutDaten
 
     func makeChartDescriptor() -> AXChartDescriptor {
-        let x = AXCategoricalDataAxisDescriptor(title: "Nährstoff", categoryOrder: daten.segmente.map { $0.art.name })
+        let x = AXCategoricalDataAxisDescriptor(title: String(localized: "Nährstoff"), categoryOrder: daten.segmente.map { $0.art.name })
         let hoechster = max(1, daten.segmente.map(\.gramm).max() ?? 1)
-        let y = AXNumericDataAxisDescriptor(title: "Gramm", range: 0...hoechster, gridlinePositions: []) { wert in "\(Int(wert.rounded())) Gramm" }
-        let reihe = AXDataSeriesDescriptor(name: "Makronährstoffe", isContinuous: false,
+        let y = AXNumericDataAxisDescriptor(title: String(localized: "Gramm"), range: 0...hoechster, gridlinePositions: []) { wert in String(localized: "\(String(Int(wert.rounded()))) Gramm") }
+        let reihe = AXDataSeriesDescriptor(name: String(localized: "Makronährstoffe"), isContinuous: false,
                                            dataPoints: daten.segmente.map { AXDataPoint(x: $0.art.name, y: $0.gramm) })
-        return AXChartDescriptor(title: "Makronährstoffe", summary: daten.beschreibung, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
+        return AXChartDescriptor(title: String(localized: "Makronährstoffe"), summary: daten.beschreibung, xAxis: x, yAxis: y, additionalAxes: [], series: [reihe])
     }
 
     func updateChartDescriptor(_ descriptor: AXChartDescriptor) {}

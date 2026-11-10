@@ -184,7 +184,7 @@ struct EssenKiFotoBlatt: View {
         case .laedt: ladeAnsicht
         case .ergebnis: ergebnisAnsicht
         case .keinEssen(let text):
-            meldung(symbol: "fork.knife", titel: "Kein Essen erkannt", text: text) {
+            meldung(symbol: "fork.knife", titel: String(localized: "Kein Essen erkannt"), text: text) {
                 Button("Anderes Foto") { neuesFoto() }.buttonStyle(.lumenHauptknopf)
                 Button("Von Hand eintragen") { vonHandEintragen() }.buttonStyle(.bordered)
             }
@@ -199,8 +199,9 @@ struct EssenKiFotoBlatt: View {
         ScrollView {
             VStack(spacing: Abstand.xl) {
                 LeerZustand(stimmung: .bereit, satz: gesperrt
-                    ? "Lumen Fit darf die Kamera nicht nutzen. Du kannst es in den Einstellungen erlauben oder ein Foto aus deiner Bibliothek wählen."
-                    : "Fotografier dein Essen von oben. Die KI schätzt Zutaten und Kalorien, du prüfst und passt an.")
+                    ? String(localized: "Lumen Fit darf die Kamera nicht nutzen. Du kannst es in den Einstellungen erlauben oder ein Foto aus deiner Bibliothek wählen.")
+                    : String(localized: "Fotografier dein Essen von oben. Die KI schätzt Zutaten und Kalorien, du prüfst und passt an."))
+
                 VStack(spacing: Abstand.m) {
                     if gesperrt {
                         Button { einstellungenOeffnen() } label: { Text("Einstellungen öffnen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }

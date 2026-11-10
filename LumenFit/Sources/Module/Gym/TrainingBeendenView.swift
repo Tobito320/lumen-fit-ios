@@ -141,10 +141,10 @@ enum CardioAmEnde {
     }
 
     static let wahl: [Geraet] = [
-        Geraet(id: "rjiM4L3", titel: "Laufband", symbol: "figure.walk.treadmill"),
-        Geraet(id: "j9Q5crt", titel: "Stepper", symbol: "figure.stair.stepper"),
-        Geraet(id: "rjtuP6X", titel: "Crosstrainer", symbol: "figure.elliptical"),
-        Geraet(id: "a8VDgLw", titel: "Fahrrad", symbol: "figure.indoor.cycle"),
+        Geraet(id: "rjiM4L3", titel: String(localized: "Laufband"), symbol: "figure.walk.treadmill"),
+        Geraet(id: "j9Q5crt", titel: String(localized: "Stepper"), symbol: "figure.stair.stepper"),
+        Geraet(id: "rjtuP6X", titel: String(localized: "Crosstrainer"), symbol: "figure.elliptical"),
+        Geraet(id: "a8VDgLw", titel: String(localized: "Fahrrad"), symbol: "figure.indoor.cycle"),
     ]
 }
 

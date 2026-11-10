@@ -24,47 +24,47 @@ struct GymCardioFelder: View {
     var body: some View {
         Section("Was dein Gerät anzeigt") {
             Stepper(value: $eintrag.minuten, in: 1...300, step: 5) {
-                LabeledContent("Dauer", value: "\(eintrag.minuten) min")
+                LabeledContent("Dauer", value: String(localized: "\(eintrag.minuten) min"))
             }
             Stepper(value: CardioBindung.zahl($eintrag.kcal), in: 0...3000, step: 10) {
-                LabeledContent("Energie", value: (eintrag.kcal ?? 0) > 0 ? "\(eintrag.kcal ?? 0) kcal" : "ohne")
+                LabeledContent("Energie", value: (eintrag.kcal ?? 0) > 0 ? String(localized: "\(eintrag.kcal ?? 0) kcal") : String(localized: "ohne"))
             }
             if laufband {
                 Stepper(value: CardioBindung.kommazahl($eintrag.km), in: 0...100, step: 0.5) {
-                    LabeledContent("Entfernung", value: (eintrag.km ?? 0) > 0 ? "\(TrainingLogik.kgText(eintrag.km ?? 0)) km" : "ohne")
+                    LabeledContent("Entfernung", value: (eintrag.km ?? 0) > 0 ? String(localized: "\(TrainingLogik.kgText(eintrag.km ?? 0)) km") : String(localized: "ohne"))
                 }
                 Stepper(value: CardioBindung.zahl($eintrag.hoehe), in: 0...2000, step: 10) {
-                    LabeledContent("Höhe", value: (eintrag.hoehe ?? 0) > 0 ? "\(eintrag.hoehe ?? 0) m" : "ohne")
+                    LabeledContent("Höhe", value: (eintrag.hoehe ?? 0) > 0 ? String(localized: "\(eintrag.hoehe ?? 0) m") : String(localized: "ohne"))
                 }
             } else {
                 Stepper(value: CardioBindung.zahl($eintrag.stufen), in: 0...5000, step: 10) {
-                    LabeledContent("Stufen", value: (eintrag.stufen ?? 0) > 0 ? "\(eintrag.stufen ?? 0)" : "ohne")
+                    LabeledContent("Stufen", value: (eintrag.stufen ?? 0) > 0 ? "\(eintrag.stufen ?? 0)" : String(localized: "ohne"))
                 }
                 Stepper(value: CardioBindung.zahl($eintrag.etagen), in: 0...500) {
-                    LabeledContent("Etagen", value: (eintrag.etagen ?? 0) > 0 ? "\(eintrag.etagen ?? 0)" : "ohne")
+                    LabeledContent("Etagen", value: (eintrag.etagen ?? 0) > 0 ? "\(eintrag.etagen ?? 0)" : String(localized: "ohne"))
                 }
             }
             Stepper(value: $puls, in: 0...220, step: 5) {
-                LabeledContent("Puls im Schnitt", value: puls > 0 ? "\(puls)" : "ohne")
+                LabeledContent("Puls im Schnitt", value: puls > 0 ? "\(puls)" : String(localized: "ohne"))
             }
         }
         Section("Eingestellt") {
             if laufband {
                 Stepper(value: CardioBindung.kommazahl($eintrag.steigung), in: 0...30, step: 0.5) {
-                    LabeledContent("Steigung", value: (eintrag.steigung ?? 0) > 0 ? "\(TrainingLogik.kgText(eintrag.steigung ?? 0)) %" : "ohne")
+                    LabeledContent("Steigung", value: (eintrag.steigung ?? 0) > 0 ? String(localized: "\(TrainingLogik.kgText(eintrag.steigung ?? 0)) %") : String(localized: "ohne"))
                 }
                 Stepper(value: CardioBindung.kommazahl($eintrag.kmh), in: 0...25, step: 0.5) {
-                    LabeledContent("Geschwindigkeit", value: (eintrag.kmh ?? 0) > 0 ? "\(TrainingLogik.kgText(eintrag.kmh ?? 0)) km/h" : "ohne")
+                    LabeledContent("Geschwindigkeit", value: (eintrag.kmh ?? 0) > 0 ? String(localized: "\(TrainingLogik.kgText(eintrag.kmh ?? 0)) km/h") : String(localized: "ohne"))
                 }
             } else {
                 Stepper(value: CardioBindung.zahl($eintrag.stufe), in: 0...30) {
-                    LabeledContent("Stufe", value: (eintrag.stufe ?? 0) > 0 ? "\(eintrag.stufe ?? 0)" : "ohne")
+                    LabeledContent("Stufe", value: (eintrag.stufe ?? 0) > 0 ? "\(eintrag.stufe ?? 0)" : String(localized: "ohne"))
                 }
             }
         }
         if let s = eintrag.schritteCa {
             Section {
-                LabeledContent("Schritte", value: "ca. \(s.formatted())")
+                LabeledContent("Schritte", value: String(localized: "ca. \(s.formatted())"))
             } footer: {
                 Text(laufband ? "Geschätzt aus der Entfernung." : "Eine Stufe zählt als ein Schritt.")
             }
@@ -171,9 +171,9 @@ struct CardioEingabeView: View {
     }
 
     private func zeile(_ e: CardioEintrag) -> String {
-        var teile = ["\(e.minuten) min"]
-        if let km = e.km { teile.append("\(TrainingLogik.kgText(km)) km") }
-        if let p = sitzung.cardioPuls?.puls(e.id) { teile.append("Puls \(p)") }
+        var teile = [String(localized: "\(e.minuten) min")]
+        if let km = e.km { teile.append(String(localized: "\(TrainingLogik.kgText(km)) km")) }
+        if let p = sitzung.cardioPuls?.puls(e.id) { teile.append(String(localized: "Puls \(p)")) }
         return teile.joined(separator: " · ")
     }
 

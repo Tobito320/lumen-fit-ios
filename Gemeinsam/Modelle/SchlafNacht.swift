@@ -13,11 +13,11 @@ enum SchlafPhase: Int, Codable, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .wach: "Wach"
-        case .rem: "REM"
-        case .kern: "Kern"
-        case .tief: "Tief"
-        case .unbestimmt: "Schlaf"
+        case .wach: String(localized: "Wach")
+        case .rem: String(localized: "REM")
+        case .kern: String(localized: "Kern")
+        case .tief: String(localized: "Tief")
+        case .unbestimmt: String(localized: "Schlaf")
         }
     }
 
@@ -79,8 +79,7 @@ struct SchlafNacht: Codable, Equatable, Sendable {
     /// Für VoiceOver: ein Satz mit den Zeiten und den Minuten je Phase.
     var beschreibung: String {
         let teile = phasen.map { "\($0.name) \(Self.dauerText(minuten($0)))" }.joined(separator: ", ")
-        return "Schlaf in der Nacht auf \(Datum.anzeige(tag)): eingeschlafen \(Datum.uhrzeit(von)), aufgewacht \(Datum.uhrzeit(bis)), "
-            + "\(Self.dauerText(schlafMinuten)) geschlafen. \(teile)"
+        return String(localized: "Schlaf in der Nacht auf \(Datum.anzeige(tag)): eingeschlafen \(Datum.uhrzeit(von)), aufgewacht \(Datum.uhrzeit(bis)), \(Self.dauerText(schlafMinuten)) geschlafen. \(teile)")
     }
 }
 

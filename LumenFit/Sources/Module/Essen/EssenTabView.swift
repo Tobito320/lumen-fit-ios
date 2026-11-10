@@ -50,7 +50,7 @@ struct EssenTabView: View {
             if let daten = umgebung.daten {
                 inhalt(daten)
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an, dann führe ich dein Essen.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege zuerst ein Profil an, dann führe ich dein Essen."))
             }
         }
         .navigationTitle("Essen")
@@ -107,14 +107,14 @@ struct EssenTabView: View {
             VStack(spacing: Abstand.xl) {
                 EssenTagesKopf(tag: tag, heute: heute, vorher: { wechseln(-1) }, nachher: { wechseln(1) }, datumOeffnen: { kalenderOffen = true })
                 VStack(spacing: Abstand.xl) {
-                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: "Eingetragen", zeile: name, stimmung: .ziel) }
+                    EssenKiAnalysenAbschnitt { name in toast = ToastInhalt(titel: String(localized: "Eingetragen"), zeile: name, stimmung: .ziel) }
                     ForEach(essen.anpassung.sichtbar.filter { $0 != "koerper" }, id: \.self) { abschnitt($0, daten, summe, ziele) }
                     if essen.eintraege(tag).isEmpty {
-                        LeerZustand(stimmung: .bereit, satz: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus.",
-                                    handlung: "Etwas eintragen") { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
+                        LeerZustand(stimmung: .bereit, satz: String(localized: "Noch nichts gegessen. Scanne eine Packung oder tippe auf das Plus."),
+                                    handlung: String(localized: "Etwas eintragen")) { blatt = .hinzufuegen(Mahlzeit.zurZeit(stunde: Datum.kalender.component(.hour, from: jetzt)), .suche) }
                     }
                     // Körperwerte, Donut und Protein der Woche hinter "Mehr".
-                    MehrKlappe("Makros und Körperwerte", untertitel: "Donut, Protein der Woche, Gewicht", offen: $mehrOffen) {
+                    MehrKlappe(String(localized: "Makros und Körperwerte"), untertitel: String(localized: "Donut, Protein der Woche, Gewicht"), offen: $mehrOffen) {
                         if essen.anpassung.sichtbar.contains("koerper") { abschnitt("koerper", daten, summe, ziele) }
                         if !essen.eintraege(tag).isEmpty { donutKarte(summe) }
                         proteinKarte(woche)
@@ -122,7 +122,7 @@ struct EssenTabView: View {
                     if fastenSichtbar(essen) { EssenFastenKarte(essen: essen) }
                     favoritenAbschnitt(essen)
                     EssenZielKarte(daten: daten, jetzt: jetzt) {
-                        toast = ToastInhalt(titel: "Ziele übernommen", zeile: "Gilt ab sofort für dein Tagebuch", stimmung: .ziel)
+                        toast = ToastInhalt(titel: String(localized: "Ziele übernommen"), zeile: String(localized: "Gilt ab sofort für dein Tagebuch"), stimmung: .ziel)
                     }
                 }
                 .id(tag)
@@ -142,7 +142,7 @@ struct EssenTabView: View {
         switch id {
         case "uebersicht":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                ueberschrift("Übersicht")
+                ueberschrift(String(localized: "Übersicht"))
                 EssenUebersichtKarte(summe: summe, ziele: ziele, verbrannt: verbrannt) { naehrwerteOffen = true }
                 if !essen.ernaehrungsZiele.eingerichtet {
                     Button { zieleOffen = true } label: {
@@ -158,7 +158,7 @@ struct EssenTabView: View {
             }
         case "ernaehrung":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                abschnittKopf("Ernährung", knopf: "Alle Mahlzeiten") { uebersichtOffen = true }
+                abschnittKopf(String(localized: "Ernährung"), knopf: String(localized: "Alle Mahlzeiten")) { uebersichtOffen = true }
                 EssenMahlzeitenAbschnitt(essen: essen, tag: tag, zielKcal: ziele.kcal, bearbeitbar: true,
                                          oeffnen: { offeneMahlzeit = $0 },
                                          hinzufuegen: { blatt = .hinzufuegen($0, .suche) },
@@ -166,7 +166,7 @@ struct EssenTabView: View {
             }
         case "wasser":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                ueberschrift("Wasserzähler")
+                ueberschrift(String(localized: "Wasserzähler"))
                 EssenWasserKarte(glaeser: daten.habits.wert(Habit.wasser.id, tag),
                                  zielGlaeser: daten.habits.habitZiel(Habit.wasser.id) ?? 8,
                                  ausLebensmittelnMl: Int(ErnaehrungLogik.wasserAusLebensmitteln(essen.eintraege(tag)).rounded()),
@@ -174,7 +174,7 @@ struct EssenTabView: View {
             }
         case "koerper":
             VStack(alignment: .leading, spacing: Abstand.m) {
-                abschnittKopf("Körperwerte", knopf: "Alle Werte") { koerperOffen = true }
+                abschnittKopf(String(localized: "Körperwerte"), knopf: String(localized: "Alle Werte")) { koerperOffen = true }
                 EssenKoerperKarte(tag: tag, gewicht: essen.gewicht(bis: tag),
                                   werte: KoerperArt.allCases.compactMap { essen.koerperwert($0, bis: tag) },
                                   aendern: { gewichtAendern($0, essen) })
@@ -262,7 +262,7 @@ struct EssenTabView: View {
     @ViewBuilder
     private func proteinKarte(_ woche: Wochenanalyse) -> some View {
         if !woche.istLeer {
-            DiagrammKarte(aussage: "Protein je Tag gegen das Ziel", kernzeile: woche.klartext.first ?? "") {
+            DiagrammKarte(aussage: String(localized: "Protein je Tag gegen das Ziel"), kernzeile: woche.klartext.first ?? "") {
                 EssenProteinDiagramm(analyse: woche)
             }
         }
@@ -331,12 +331,12 @@ struct EssenTabView: View {
         essen.rezeptSichern(rezept)
         essen.favoritSetzen(ErnaehrungLogik.alsLebensmittel(rezept), an: true)
         gerichtQuelle = nil
-        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .ziel)
+        toast = ToastInhalt(titel: String(localized: "Gericht gespeichert"), zeile: String(localized: "Bei den Favoriten"), stimmung: .ziel)
     }
 
     private func blattSchliessen(gespeichert: Bool) {
         blatt = nil
         vorgewaehlt = nil
-        if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .ziel) }
+        if gespeichert { toast = ToastInhalt(titel: String(localized: "Eingetragen"), zeile: nil, stimmung: .ziel) }
     }
 }

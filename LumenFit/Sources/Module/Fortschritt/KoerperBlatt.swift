@@ -59,9 +59,9 @@ struct KoerperBlatt: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             kopf
-            abschnitt("Teile diese Woche")
+            abschnitt(String(localized: "Teile diese Woche"))
             ForEach(teile, id: \.self) { teilZeile($0) }
-            abschnitt("Übungen")
+            abschnitt(String(localized: "Übungen"))
             if uebungen.isEmpty {
                 Text("Noch nichts für \(gruppe.name) gemacht. Plane im Tab Gym eine Übung dafür ein.")
                     .font(.subheadline)
@@ -96,7 +96,7 @@ struct KoerperBlatt: View {
                     Text(unterzeile).font(.footnote).foregroundStyle(palette.text2)
                     HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                         RollZahl(wert: daten.saetze(gruppe), format: .number.precision(.fractionLength(0...1))).font(.largeTitle.weight(.bold)).fontDesign(.rounded)
-                        Text(ziel.map { "von \($0) Sätzen" } ?? "Sätze diese Woche").font(.subheadline).foregroundStyle(palette.text2)
+                        Text(ziel.map { String(localized: "von \($0) Sätzen") } ?? String(localized: "Sätze diese Woche")).font(.subheadline).foregroundStyle(palette.text2)
                     }
                     .padding(.top, Abstand.s)
                 }
@@ -130,16 +130,16 @@ struct KoerperBlatt: View {
     }
 
     private func erholungTitel(_ stand: KoerperStand?) -> String {
-        guard let stand else { return "Kein Training erfasst" }
+        guard let stand else { return String(localized: "Kein Training erfasst") }
         return "\(KoerperLogik.stufenWort(stand.stufe)) · \(stand.prozent) %"
     }
 
     private var unterzeile: String {
         let g = daten.gruppen[gruppe]
         var teile: [String] = []
-        if let rang = daten.ziele.prio.firstIndex(of: gruppe) { teile.append("Priorität \(rang + 1)") }
-        teile.append("\(g?.monat ?? 0)× diesen Monat")
-        teile.append("\(g?.gesamt ?? 0)× insgesamt")
+        if let rang = daten.ziele.prio.firstIndex(of: gruppe) { teile.append(String(localized: "Priorität \(rang + 1)")) }
+        teile.append(String(localized: "\(g?.monat ?? 0)× diesen Monat"))
+        teile.append(String(localized: "\(g?.gesamt ?? 0)× insgesamt"))
         return teile.joined(separator: " · ")
     }
 
@@ -203,8 +203,8 @@ struct KoerperBlatt: View {
     }
 
     private func meta(_ z: KoerperLogik.UebungsZeile) -> String {
-        let zuletzt = z.verlauf.first.map { "zuletzt \($0.tag)" } ?? "noch nie"
-        return "\(KoerperLogik.teilName(z.teil)) · \(zuletzt) · \(z.monat)× diesen Monat"
+        let zuletzt = z.verlauf.first.map { String(localized: "zuletzt \($0.tag)") } ?? String(localized: "noch nie")
+        return String(localized: "\(KoerperLogik.teilName(z.teil)) · \(zuletzt) · \(z.monat)× diesen Monat")
     }
 
     private func verlauf(_ z: KoerperLogik.UebungsZeile) -> some View {

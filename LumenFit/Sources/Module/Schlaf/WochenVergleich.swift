@@ -63,17 +63,21 @@ struct WochenVergleich: Equatable, Sendable {
     /// "Diese Woche schläfst du im Schnitt 22 min länger als letzte Woche."; `nil` ohne Vergleich.
     var vergleichSatz: String? {
         guard let unterschiedMinuten else { return nil }
-        if abs(unterschiedMinuten) < 5 { return "Diese Woche schläfst du etwa so lang wie letzte Woche." }
+        if abs(unterschiedMinuten) < 5 { return String(localized: "Diese Woche schläfst du etwa so lang wie letzte Woche.") }
         let wie = SchlafFormat.dauer(abs(unterschiedMinuten))
-        return "Diese Woche schläfst du im Schnitt \(wie) \(unterschiedMinuten > 0 ? "länger" : "kürzer") als letzte Woche."
+        return unterschiedMinuten > 0
+            ? String(localized: "Diese Woche schläfst du im Schnitt \(wie) länger als letzte Woche.")
+            : String(localized: "Diese Woche schläfst du im Schnitt \(wie) kürzer als letzte Woche.")
     }
 
     /// "Am Wochenende schläfst du im Schnitt 45 min länger als unter der Woche."; `nil` ohne Vergleich.
     var wochenendeSatz: String? {
         guard let werktagSchnitt, let wochenendeSchnitt else { return nil }
         let unterschied = wochenendeSchnitt - werktagSchnitt
-        if abs(unterschied) < 5 { return "Am Wochenende schläfst du etwa so lang wie unter der Woche." }
+        if abs(unterschied) < 5 { return String(localized: "Am Wochenende schläfst du etwa so lang wie unter der Woche.") }
         let wie = SchlafFormat.dauer(abs(unterschied))
-        return "Am Wochenende schläfst du im Schnitt \(wie) \(unterschied > 0 ? "länger" : "kürzer") als unter der Woche."
+        return unterschied > 0
+            ? String(localized: "Am Wochenende schläfst du im Schnitt \(wie) länger als unter der Woche.")
+            : String(localized: "Am Wochenende schläfst du im Schnitt \(wie) kürzer als unter der Woche.")
     }
 }

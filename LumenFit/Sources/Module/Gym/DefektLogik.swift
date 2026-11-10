@@ -41,9 +41,9 @@ enum DefektLogik {
     /// "heute", "gestern", "vor 3 Tagen".
     static func alterText(_ notiz: DefektNotiz, heute: String) -> String {
         switch alter(notiz, heute: heute) {
-        case 0: "heute"
-        case 1: "gestern"
-        case let n: "vor \(n) Tagen"
+        case 0: String(localized: "heute")
+        case 1: String(localized: "gestern")
+        case let n: String(localized: "vor \(n) Tagen")
         }
     }
 

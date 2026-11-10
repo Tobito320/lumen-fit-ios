@@ -10,9 +10,9 @@ struct ProfilExportView: View {
 
     var body: some View {
         List {
-            ProfilAbschnitt(fuss: "CSV für Excel, Numbers oder Google Tabellen, mit Semikolon und Dezimalkomma.") {
-                exportZeile(titel: "Training", wert: einheiten == 1 ? "1 Einheit" : "\(einheiten) Einheiten", symbol: "dumbbell.fill", datei: training)
-                exportZeile(titel: "Essen", wert: eintraege == 1 ? "1 Eintrag" : "\(eintraege) Einträge", symbol: "fork.knife", datei: essen)
+            ProfilAbschnitt(fuss: String(localized: "CSV für Excel, Numbers oder Google Tabellen, mit Semikolon und Dezimalkomma.")) {
+                exportZeile(titel: String(localized: "Training"), wert: einheiten == 1 ? String(localized: "1 Einheit") : String(localized: "\(einheiten) Einheiten"), symbol: "dumbbell.fill", datei: training)
+                exportZeile(titel: String(localized: "Essen"), wert: eintraege == 1 ? String(localized: "1 Eintrag") : String(localized: "\(eintraege) Einträge"), symbol: "fork.knife", datei: essen)
             }
         }
         .profilListe()

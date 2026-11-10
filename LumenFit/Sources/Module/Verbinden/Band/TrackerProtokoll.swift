@@ -51,9 +51,9 @@ enum TrackerProtokoll {
 
         var name: String {
             switch self {
-            case .spo2: "Blutsauerstoff"
-            case .stress: "Stress"
-            case .hrv: "HRV"
+            case .spo2: String(localized: "Blutsauerstoff")
+            case .stress: String(localized: "Stress")
+            case .hrv: String(localized: "HRV")
             }
         }
     }

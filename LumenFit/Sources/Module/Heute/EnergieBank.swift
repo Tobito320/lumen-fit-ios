@@ -13,7 +13,7 @@ struct EnergieBank: View {
         Button(action: oeffne) {
             ListenKarte {
                 VStack(alignment: .leading, spacing: Abstand.m) {
-                    HeuteKartenKopf(symbol: "bolt.heart.fill", titel: "Energie-Bank", zusatz: energie.ergebnis.urteil)
+                    HeuteKartenKopf(symbol: "bolt.heart.fill", titel: String(localized: "Energie-Bank"), zusatz: energie.ergebnis.urteil)
                     if thema == .lovea {
                         TagesformRing(akku: energie.ergebnis.akku, urteil: energie.ergebnis.urteil)
                     } else {
@@ -34,7 +34,7 @@ struct EnergieBank: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Energie-Bank")
-        .accessibilityValue(energie.ergebnis.akku.map { "\($0) von 100, \(energie.ergebnis.urteil). \(energie.ergebnis.satz.replacingOccurrences(of: "\n", with: ". "))" } ?? energie.ergebnis.urteil)
+        .accessibilityValue(energie.ergebnis.akku.map { String(localized: "\($0) von 100, \(energie.ergebnis.urteil). \(energie.ergebnis.satz.replacingOccurrences(of: "\n", with: ". "))") } ?? energie.ergebnis.urteil)
         .accessibilityHint("Zeigt die Gründe")
         .accessibilityAddTraits(.isButton)
     }
@@ -91,8 +91,8 @@ struct EnergieVerlaufDiagramm: View {
             }
             .frame(height: 64)
             .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
-                titel: "Energie über den Tag", zusammenfassung: "Zuletzt \(energie.verlauf.last?.akku ?? 0) von 100", xTitel: "Uhrzeit", yTitel: "Energie", einheit: "von 100",
-                punkte: energie.verlauf.map { HeuteDiagrammPunkt(name: "\($0.stunde) Uhr", wert: Double($0.akku)) }))
+                titel: String(localized: "Energie über den Tag"), zusammenfassung: String(localized: "Zuletzt \(energie.verlauf.last?.akku ?? 0) von 100"), xTitel: String(localized: "Uhrzeit"), yTitel: String(localized: "Energie"), einheit: String(localized: "von 100"),
+                punkte: energie.verlauf.map { HeuteDiagrammPunkt(name: String(localized: "\($0.stunde) Uhr"), wert: Double($0.akku)) }))
         }
     }
 }
@@ -137,9 +137,9 @@ struct EnergieDetail: View {
 
     private var kopf: some View {
         VStack(alignment: .leading, spacing: Abstand.xs) {
-            Text(energie.ergebnis.akku.map { "\($0) von 100" } ?? "Noch keine Zahl")
+            Text(energie.ergebnis.akku.map { String(localized: "\($0) von 100") } ?? String(localized: "Noch keine Zahl"))
                 .heuteHeldenZahl(40)
-            Text(energie.ergebnis.urteil + " · Datenlage " + energie.ergebnis.datenlage).font(.subheadline).foregroundStyle(palette.text2)
+            Text(String(localized: "\(energie.ergebnis.urteil) · Datenlage \(energie.ergebnis.datenlage)")).font(.subheadline).foregroundStyle(palette.text2)
         }
         .accessibilityElement(children: .combine)
     }
@@ -150,7 +150,7 @@ struct EnergieDetail: View {
             ForEach(Array(energie.klartext.gruende.enumerated()), id: \.offset) { _, zeile in
                 HStack(alignment: .top, spacing: Abstand.s) {
                     Image(systemName: zeile.bremst ? "arrow.down" : "arrow.up").foregroundStyle(palette.text2).frame(width: 20).accessibilityHidden(true)
-                    Text((zeile.bremst ? "Bremst: " : "Hilft: ") + zeile.text).font(.body)
+                    Text(zeile.bremst ? String(localized: "Bremst: \(zeile.text)") : String(localized: "Hilft: \(zeile.text)")).font(.body)
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -189,8 +189,8 @@ struct EnergieDetail: View {
 
     private func vergleichText(_ v: TagesformVergleich) -> String {
         let n = Int(abs(v.schnitt).rounded())
-        if abs(v.schnitt) <= TagesformGefuehl.passtBis { return "Die Rechnung passt zu deinem Gefühl (im Schnitt \(n) Punkte daneben, \(v.anzahl) Tage)." }
-        return "Die Rechnung liegt im Schnitt \(n) Punkte \(v.schnitt > 0 ? "über" : "unter") deinem Gefühl (\(v.anzahl) Tage)."
+        if abs(v.schnitt) <= TagesformGefuehl.passtBis { return String(localized: "Die Rechnung passt zu deinem Gefühl (im Schnitt \(n) Punkte daneben, \(v.anzahl) Tage).") }
+        return String(localized: "Die Rechnung liegt im Schnitt \(n) Punkte \(v.schnitt > 0 ? String(localized: "über") : String(localized: "unter")) deinem Gefühl (\(v.anzahl) Tage).")
     }
 
     private var faktoren: some View {

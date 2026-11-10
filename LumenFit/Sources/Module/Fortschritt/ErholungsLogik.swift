@@ -13,7 +13,7 @@ struct KoerperLetztes: Equatable, Sendable {
     /// "Mo 13.10. · Latzug eng, Rudern am Kabel"; ab vier Übungen "… und 2 weitere".
     var text: String {
         let namen = uebungen.prefix(3).joined(separator: ", ")
-        let mehr = uebungen.count > 3 ? " und \(uebungen.count - 3) weitere" : ""
+        let mehr = uebungen.count > 3 ? " " + String(localized: "und \(uebungen.count - 3) weitere") : ""
         return "\(KoerperLogik.tagKurz(tag)) · \(namen)\(mehr)"
     }
 }
@@ -54,10 +54,10 @@ struct KoerperLegende: Equatable, Sendable {
 
     /// Für VoiceOver: dieselbe Auskunft wie die Liste unter der Karte.
     var sprechtext: String {
-        if keinTraining { return "Noch kein Training erfasst." }
-        var teile = offen.map { "\($0.name) \($0.prozent) Prozent, \($0.wort.lowercased())" }
-        if !erholt.isEmpty { teile.append("Erholt: " + erholt.map(\.name).joined(separator: ", ")) }
-        if !leer.isEmpty { teile.append("Kein Training erfasst: " + leer.map(\.name).joined(separator: ", ")) }
+        if keinTraining { return String(localized: "Noch kein Training erfasst.") }
+        var teile = offen.map { String(localized: "\($0.name) \($0.prozent) Prozent, \($0.wort.lowercased())") }
+        if !erholt.isEmpty { teile.append(String(localized: "Erholt: \(erholt.map(\.name).joined(separator: ", "))")) }
+        if !leer.isEmpty { teile.append(String(localized: "Kein Training erfasst: \(leer.map(\.name).joined(separator: ", "))")) }
         return teile.joined(separator: ". ")
     }
 }
@@ -65,7 +65,7 @@ struct KoerperLegende: Equatable, Sendable {
 extension KoerperLogik {
     /// "Erholt", "Fast erholt", "Müde".
     static func stufenWort(_ s: ErholungsStufe) -> String {
-        s == .erholt ? "Erholt" : s == .fast ? "Fast erholt" : "Müde"
+        s == .erholt ? String(localized: "Erholt") : s == .fast ? String(localized: "Fast erholt") : String(localized: "Müde")
     }
 
     /// Der Teil mit dem niedrigsten Wert unter den Teilen, die Training haben; `nil`, wenn keiner eins hat.

@@ -27,7 +27,7 @@ struct PlanView: View {
                     .padding(.horizontal, Abstand.l)
                     .padding(.bottom, Abstand.xl)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Der Plan lädt noch.")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Der Plan lädt noch."))
             }
         }
         .sheet(item: $tagId) { PlanTagBlatt(sitzung: sitzung, tagId: $0.id) }
@@ -49,8 +49,8 @@ struct PlanView: View {
             Text("Tage, Übungen und Sets selbst festlegen. Ein Split aus der Bibliothek ist die Vorlage.")
                 .font(.subheadline).foregroundStyle(palette.text2)
             if plan.tage.isEmpty {
-                LeerZustand(stimmung: .bereit, satz: "Du hast noch keinen Plan. Wähl einen Split aus der Bibliothek oder bau deinen eigenen.",
-                            handlung: "Split wählen") { bibliothek = true }
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Du hast noch keinen Plan. Wähl einen Split aus der Bibliothek oder bau deinen eigenen."),
+                            handlung: String(localized: "Split wählen")) { bibliothek = true }
             } else {
                 woche(plan, training: training)
                 hinweise(plan, training: training)
@@ -64,7 +64,7 @@ struct PlanView: View {
 
     private func woche(_ plan: TrainingsPlan, training: TrainingStore) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: plan.splitName ?? "Dein Plan")
+            GymAbschnitt(titel: plan.splitName ?? String(localized: "Dein Plan"))
             ListenKarte {
                 ForEach(1...7, id: \.self) { w in
                     wochenZeile(plan, w, training: training)
@@ -85,14 +85,14 @@ struct PlanView: View {
         let art = RuhetagLogik.art(plan, w)
         let text: String
         switch art {
-        case .training(let t): text = t.name.isEmpty ? "Training" : t.name
-        case .ruhe: text = "Ruhetag"
-        case .offen: text = "Noch nicht geplant"
+        case .training(let t): text = t.name.isEmpty ? String(localized: "Training") : t.name
+        case .ruhe: text = String(localized: "Ruhetag")
+        case .offen: text = String(localized: "Noch nicht geplant")
         }
         return GymZeile(titel: TrainingLogik.wochentagName[w - 1]) {
             Menu {
                 ForEach(plan.tage) { t in
-                    Button(t.name.isEmpty ? "Training" : t.name) { training.planSichern(RuhetagLogik.setzen(plan, w, tag: t.id)) }
+                    Button(t.name.isEmpty ? String(localized: "Training") : t.name) { training.planSichern(RuhetagLogik.setzen(plan, w, tag: t.id)) }
                 }
                 Button("Ruhetag") { training.planSichern(RuhetagLogik.setzen(plan, w, tag: nil)) }
             } label: {
@@ -125,11 +125,11 @@ struct PlanView: View {
 
     private func tage(_ plan: TrainingsPlan) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Tage")
+            GymAbschnitt(titel: String(localized: "Tage"))
             ListenKarte {
                 ForEach(plan.tage) { t in
                     Button { tagId = IdentifiableText(id: t.id) } label: {
-                        GymZeile(titel: t.name.isEmpty ? "Training" : t.name,
+                        GymZeile(titel: t.name.isEmpty ? String(localized: "Training") : t.name,
                                  untertitel: "\(TrainingLogik.wochentageText(t.wochentage)) · \(ZeitSchaetzung.umfang(t))") {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                         }
@@ -139,7 +139,8 @@ struct PlanView: View {
                 }
                 Haarlinie()
                 Button { neuerTag = true } label: {
-                    GymZeile(titel: "Tag hinzufügen") { Image(systemName: "plus").accessibilityHidden(true) }
+                    GymZeile(titel: String(localized: "Tag hinzufügen"))
+ { Image(systemName: "plus").accessibilityHidden(true) }
                 }
                 .buttonStyle(.plain)
             }

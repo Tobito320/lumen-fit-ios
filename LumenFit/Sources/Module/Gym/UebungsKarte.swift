@@ -40,7 +40,7 @@ struct UebungsKarte: View {
                 if u.planUebung.istCardio {
                     cardioZeile(u, gruen)
                 } else if u.ausgelassen {
-                    GymZeile(titel: "Ausgelassen", untertitel: "Zählt nicht für Volumen und Rekorde") {
+                    GymZeile(titel: String(localized: "Ausgelassen"), untertitel: String(localized: "Zählt nicht für Volumen und Rekorde")) {
                         Button("Wieder dazu") { sitzung.wiederAufnehmen(index) }.buttonStyle(.bordered).controlSize(.large)
                     }
                 } else {
@@ -120,14 +120,14 @@ struct UebungsKarte: View {
     }
 
     private func untertitel(_ u: WorkoutUebung) -> String {
-        var teile = ["\(u.fertigZahl) von \(u.gesamt)"]
-        if GymEigeneLogik.istEigene(u.planUebung.uebung) { teile.append("Eigene") }
-        if let original = u.ersatzFuer, let name = UebungsKatalog.nachId[original]?.name { teile.append("statt \(name)") }
+        var teile = [String(localized: "\(u.fertigZahl) von \(u.gesamt)")]
+        if GymEigeneLogik.istEigene(u.planUebung.uebung) { teile.append(String(localized: "Eigene")) }
+        if let original = u.ersatzFuer, let name = UebungsKatalog.nachId[original]?.name { teile.append(String(localized: "statt \(name)")) }
         return teile.joined(separator: " · ")
     }
 
     private func cardioZeile(_ u: WorkoutUebung, _ gruen: Color) -> some View {
-        GymZeile(titel: u.cardioFertig ? "Cardio erledigt" : "Cardio: \(u.planUebung.minuten ?? 20) min geplant", untertitel: "Dauer, Distanz und Puls eintragen") {
+        GymZeile(titel: u.cardioFertig ? String(localized: "Cardio erledigt") : String(localized: "Cardio: \(u.planUebung.minuten ?? 20) min geplant"), untertitel: String(localized: "Dauer, Distanz und Puls eintragen")) {
             if u.cardioFertig {
                 Button("Zurück") { sitzung.cardioZurueck(index) }.buttonStyle(.bordered).controlSize(.large)
             } else {

@@ -114,7 +114,7 @@ struct StimmungVerlaufKarte: View {
         }
         .frame(height: 120)
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "Stimmungsverlauf", zusammenfassung: aussage, xTitel: "Tag", yTitel: "Stimmung", einheit: "von 3",
+            titel: String(localized: "Stimmungsverlauf"), zusammenfassung: aussage, xTitel: String(localized: "Tag"), yTitel: String(localized: "Stimmung"), einheit: String(localized: "von 3"),
             stetig: false, punkte: reihe.map { .init(x: KoerperLogik.tagMonat($0.tag), y: Double($0.stufe.wert)) }))
     }
 }

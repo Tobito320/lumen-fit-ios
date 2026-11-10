@@ -43,30 +43,30 @@ enum MuskelTeil: String, CaseIterable, Sendable {
 
     var name: String {
         switch self {
-        case .sVorne, .nVorne: "vorne"
-        case .sSeitlich: "seitlich"
-        case .sHinten, .nHinten: "hinten"
-        case .uSpeiche: "Oberseite"
-        case .uBeuger: "Beuger"
-        case .uStrecker: "Strecker"
-        case .rTrapezOben: "Trapez oben"
-        case .rTrapezUnten: "Trapez Mitte und unten"
-        case .rOben: "Oberer Rücken"
-        case .rLat: "Latissimus"
-        case .rUnten: "Unterer Rücken"
-        case .bOben: "oben"
-        case .bUnten: "Mitte und unten"
-        case .biLang, .triLang: "langer Kopf"
-        case .biKurz: "kurzer Kopf"
-        case .triSeitlich: "seitlicher Kopf"
-        case .triMittel: "mittlerer Kopf"
-        case .baGerade: "gerade"
-        case .baSeitlich: "schräg"
-        case .beQuads: "Quadrizeps"
-        case .beAdd: "Adduktoren"
-        case .bePo: "Po"
-        case .beBeuger: "Beinbeuger"
-        case .beWaden: "Waden"
+        case .sVorne, .nVorne: String(localized: "vorne")
+        case .sSeitlich: String(localized: "seitlich")
+        case .sHinten, .nHinten: String(localized: "hinten")
+        case .uSpeiche: String(localized: "Oberseite")
+        case .uBeuger: String(localized: "Beuger")
+        case .uStrecker: String(localized: "Strecker")
+        case .rTrapezOben: String(localized: "Trapez oben")
+        case .rTrapezUnten: String(localized: "Trapez Mitte und unten")
+        case .rOben: String(localized: "Oberer Rücken")
+        case .rLat: String(localized: "Latissimus")
+        case .rUnten: String(localized: "Unterer Rücken")
+        case .bOben: String(localized: "oben")
+        case .bUnten: String(localized: "Mitte und unten")
+        case .biLang, .triLang: String(localized: "langer Kopf")
+        case .biKurz: String(localized: "kurzer Kopf")
+        case .triSeitlich: String(localized: "seitlicher Kopf")
+        case .triMittel: String(localized: "mittlerer Kopf")
+        case .baGerade: String(localized: "gerade")
+        case .baSeitlich: String(localized: "schräg")
+        case .beQuads: String(localized: "Quadrizeps")
+        case .beAdd: String(localized: "Adduktoren")
+        case .bePo: String(localized: "Po")
+        case .beBeuger: String(localized: "Beinbeuger")
+        case .beWaden: String(localized: "Waden")
         }
     }
 

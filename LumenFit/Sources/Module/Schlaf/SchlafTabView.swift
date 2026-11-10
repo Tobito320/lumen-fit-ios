@@ -2,10 +2,10 @@ import SwiftUI
 
 /// Abschnittsüberschrift im Schlaf-Tab (für VoiceOver eine Überschrift).
 struct SchlafAbschnittKopf: View {
-    let text: String
+    let text: LocalizedStringKey
     @Environment(\.palette) private var palette
 
-    init(_ text: String) { self.text = text }
+    init(_ text: LocalizedStringKey) { self.text = text }
 
     var body: some View {
         Text(text)
@@ -101,7 +101,7 @@ private struct SchlafTabInhalt: View {
         wochenAbschnitt(u)
         erholungKarte(u)
         // Lumen: Werte, Schuld und Rhythmus, Leistung, Quelle, Ziel und Verlauf unter "Details".
-        MehrKlappe("Details", untertitel: "Werte, Schuld, Rhythmus, Quelle, Verlauf", offen: $detailsOffen) {
+        MehrKlappe(String(localized: "Details"), untertitel: String(localized: "Werte, Schuld, Rhythmus, Quelle, Verlauf"), offen: $detailsOffen) {
             werteAbschnitt(u)
             ruheAbschnitt(u)
             leistungsAbschnitt(u)
@@ -146,8 +146,8 @@ private struct SchlafTabInhalt: View {
 
     private func phasen(_ u: SchlafUebersicht, _ letzte: SchlafGewaehlteNacht) -> some View {
         let balken = PhasenBalken(nacht: letzte.nacht)
-        let aussage = u.ohnePhasen ? "Nur die Schlafzeit" : "So hast du geschlafen"
-        let kernzeile = u.ohnePhasen ? "Geschlafen \(SchlafFormat.dauer(letzte.nacht.schlafMinuten))" : balken.kernzeile
+        let aussage = u.ohnePhasen ? String(localized: "Nur die Schlafzeit") : String(localized: "So hast du geschlafen")
+        let kernzeile = u.ohnePhasen ? String(localized: "Geschlafen \(SchlafFormat.dauer(letzte.nacht.schlafMinuten))") : balken.kernzeile
         return DiagrammKarte(aussage: aussage, kernzeile: kernzeile) { balken }
     }
 
@@ -185,7 +185,7 @@ private struct SchlafTabInhalt: View {
         }
     }
 
-    private func zeile(symbol: String, titel: String, text: String) -> some View {
+    private func zeile(symbol: String, titel: LocalizedStringKey, text: LocalizedStringKey) -> some View {
         HStack(spacing: Abstand.m) {
             Image(systemName: symbol).frame(width: 28).foregroundStyle(palette.text2).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
@@ -210,8 +210,8 @@ private struct SchlafTabInhalt: View {
                 .frame(maxWidth: .infinity)
                 .padding(Abstand.xxl)
         } else {
-            LeerZustand(stimmung: u.lumi(jetzt: umgebung.uhr()), satz: "Keine Schlafdaten. Trage dein Handy oder die Uhr nachts.",
-                        handlung: "In Health prüfen", aktion: { SchlafHealthLink.oeffnen(openURL) })
+            LeerZustand(stimmung: u.lumi(jetzt: umgebung.uhr()), satz: String(localized: "Keine Schlafdaten. Trage dein Handy oder die Uhr nachts."),
+                        handlung: String(localized: "In Health prüfen"), aktion: { SchlafHealthLink.oeffnen(openURL) })
         }
     }
 }

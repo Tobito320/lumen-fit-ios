@@ -56,22 +56,25 @@ enum SplitFrei {
         let feste = Set(woche.tage.flatMap(\.wochentage)).sorted()
         guard !feste.isEmpty else { return nil }
         func tag(_ p: TrainingsPlan, _ w: Int) -> TrainingsTag? { p.tage.first { $0.wochentage.contains(w) } }
-        func name(_ t: TrainingsTag) -> String { t.name.isEmpty ? "Training" : t.name }
+        func name(_ t: TrainingsTag) -> String { t.name.isEmpty ? String(localized: "Training") : t.name }
         let heute = Datum.wochentag(datum)
         if let t = tag(woche, heute), let nr = feste.firstIndex(of: heute) {
-            return PlantagStand(titel: "Tag \(nr + 1) diese Woche: \(name(t))", unter: unterzeile(t, von: feste.count), heute: true, tagId: t.id)
+            return PlantagStand(titel: String(localized: "Tag \(nr + 1) diese Woche: \(name(t))"), unter: unterzeile(t, von: feste.count), heute: true, tagId: t.id)
         }
         let spaeter = feste.first { $0 > heute }
         let quelle = spaeter == nil ? plan : woche
         let tage = Set(quelle.tage.flatMap(\.wochentage)).sorted()
         guard let w = spaeter ?? tage.first, let t = tag(quelle, w), let nr = tage.firstIndex(of: w) else { return nil }
-        let wann = w > heute ? TrainingLogik.wochentagName[w - 1] : "nächste Woche \(TrainingLogik.wochentagName[w - 1])"
-        return PlantagStand(titel: "Heute frei", unter: "Als Nächstes Tag \(nr + 1): \(name(t)), \(wann)", heute: false, tagId: t.id)
+        let wann = w > heute ? TrainingLogik.wochentagName[w - 1] : String(localized: "nächste Woche \(TrainingLogik.wochentagName[w - 1])")
+        return PlantagStand(titel: String(localized: "Heute frei"), unter: String(localized: "Als Nächstes Tag \(nr + 1): \(name(t)), \(wann)"), heute: false, tagId: t.id)
     }
 
     private static func unterzeile(_ t: TrainingsTag, von: Int) -> String {
         let n = t.uebungen.count
-        return n == 0 ? "Noch keine Übungen" : "\(n) \(n == 1 ? "Übung" : "Übungen") · \(von) \(von == 1 ? "Trainingstag" : "Trainingstage") pro Woche"
+        guard n > 0 else { return String(localized: "Noch keine Übungen") }
+        let uebungen = n == 1 ? String(localized: "1 Übung") : String(localized: "\(n) Übungen")
+        let tage = von == 1 ? String(localized: "1 Trainingstag pro Woche") : String(localized: "\(von) Trainingstage pro Woche")
+        return "\(uebungen) · \(tage)"
     }
 
     // MARK: - Schnell bearbeiten (Sätze, Wiederholungen, kg einer Übung)

@@ -51,8 +51,8 @@ enum GymRekordPinnwandLogik {
     /// "Kniebeuge 120 kg × 5 · vor 2 Tagen"
     static func text(_ r: PinnwandRekord, heute: String) -> String {
         let n = Datum.tageZwischen(r.tag, heute)
-        let wann = n <= 0 ? "heute" : n == 1 ? "gestern" : "vor \(n) Tagen"
-        return "\(r.uebung) \(TrainingLogik.kgText(r.kg)) kg × \(r.wdh) · \(wann)"
+        let wann = n <= 0 ? String(localized: "heute") : n == 1 ? String(localized: "gestern") : String(localized: "vor \(n) Tagen")
+        return String(localized: "\(r.uebung) \(TrainingLogik.kgText(r.kg)) kg × \(r.wdh) · \(wann)")
     }
 
     private static func anzeige(_ name: String) -> String {

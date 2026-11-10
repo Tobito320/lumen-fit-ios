@@ -26,10 +26,10 @@ enum NamenRegel {
 
     static func text(_ fehler: Fehler) -> String {
         switch fehler {
-        case .leer: "Wie soll Lumi dich nennen?"
-        case .zuKurz: "Der Name braucht mindestens \(minLaenge) Buchstaben."
-        case .zuLang: "Der Name darf höchstens \(maxLaenge) Zeichen lang sein."
-        case .zeichen: "Erlaubt sind Buchstaben, Leerzeichen, Bindestrich und Apostroph. Keine Ziffern, Sonderzeichen oder Emojis."
+        case .leer: String(localized: "Wie soll Lumi dich nennen?")
+        case .zuKurz: String(localized: "Der Name braucht mindestens \(minLaenge) Buchstaben.")
+        case .zuLang: String(localized: "Der Name darf höchstens \(maxLaenge) Zeichen lang sein.")
+        case .zeichen: String(localized: "Erlaubt sind Buchstaben, Leerzeichen, Bindestrich und Apostroph. Keine Ziffern, Sonderzeichen oder Emojis.")
         }
     }
 

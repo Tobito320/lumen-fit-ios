@@ -10,10 +10,10 @@ enum KonstanzRaster {
 
         var name: String {
             switch self {
-            case .kein: "Kein Training"
-            case .besuch: "Besuch"
-            case .training: "Training"
-            case .stark: "Starkes Training"
+            case .kein: String(localized: "Kein Training")
+            case .besuch: String(localized: "Besuch")
+            case .training: String(localized: "Training")
+            case .stark: String(localized: "Starkes Training")
             }
         }
     }
@@ -30,11 +30,11 @@ enum KonstanzRaster {
 
         /// "Montag, 12. Oktober: Training, 14 Sätze" für VoiceOver.
         var sprechtext: String {
-            if zukunft { return "\(Datum.anzeige(tag)): noch nicht dran" }
+            if zukunft { return String(localized: "\(Datum.anzeige(tag)): noch nicht dran") }
             switch stufe {
-            case .kein: return "\(Datum.anzeige(tag)): kein Training"
-            case .besuch: return "\(Datum.anzeige(tag)): Besuch ohne Sätze"
-            case .training, .stark: return "\(Datum.anzeige(tag)): \(stufe.name), \(saetze) Sätze"
+            case .kein: return String(localized: "\(Datum.anzeige(tag)): kein Training")
+            case .besuch: return String(localized: "\(Datum.anzeige(tag)): Besuch ohne Sätze")
+            case .training, .stark: return String(localized: "\(Datum.anzeige(tag)): \(stufe.name), \(saetze) Sätze")
             }
         }
     }
@@ -85,13 +85,13 @@ enum KonstanzRaster {
 
     /// Die Aussage als Titel: "12 Trainingstage in 18 Wochen" oder der Leerzustand.
     static func aussage(_ g: Gitter) -> String {
-        guard g.trainingstage > 0 else { return "Noch kein Training in den letzten 18 Wochen" }
-        return "\(g.trainingstage) \(g.trainingstage == 1 ? "Trainingstag" : "Trainingstage") in \(wochen) Wochen"
+        guard g.trainingstage > 0 else { return String(localized: "Noch kein Training in den letzten 18 Wochen") }
+        return String(localized: "\(g.trainingstage) \(g.trainingstage == 1 ? String(localized: "Trainingstag") : String(localized: "Trainingstage")) in \(wochen) Wochen")
     }
 
     /// Die Kernzeile: in wie vielen der Wochen du trainiert hast.
     static func kernzeile(_ g: Gitter) -> String {
-        guard g.trainingstage > 0 else { return "Tipp auf Starten, Lumi zählt mit." }
-        return "In \(g.aktiveWochen) von \(wochen) Wochen warst du dabei."
+        guard g.trainingstage > 0 else { return String(localized: "Tipp auf Starten, Lumi zählt mit.") }
+        return String(localized: "In \(g.aktiveWochen) von \(wochen) Wochen warst du dabei.")
     }
 }

@@ -11,7 +11,7 @@ struct HeuteEinsichtenSeite: View {
             if let modell, let s = modell.stand {
                 VStack(spacing: Abstand.l) {
                     if s.hinweise.isEmpty && s.einsichten.isEmpty {
-                        LeerZustand(stimmung: .bereit, satz: "Gerade gibt es nichts Neues. Hinweise und Einsichten stehen hier, sobald es welche gibt.")
+                        LeerZustand(stimmung: .bereit, satz: String(localized: "Gerade gibt es nichts Neues. Hinweise und Einsichten stehen hier, sobald es welche gibt."))
                             .lumenKartenFlaeche()
                     }
                     if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise) { modell.wischeHinweis($0) } }

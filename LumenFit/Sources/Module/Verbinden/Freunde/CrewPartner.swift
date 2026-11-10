@@ -19,8 +19,8 @@ struct CrewWochenTag: Identifiable, Equatable, Sendable {
 
 /// Die Woche von Montag bis Sonntag für dich und eine Person: trainiert schlägt geplant. Rein und testbar.
 enum CrewWocheLogik {
-    nonisolated static let kurz = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
-    nonisolated static let lang = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+    nonisolated static let kurz = [String(localized: "Mo"), String(localized: "Di"), String(localized: "Mi"), String(localized: "Do"), String(localized: "Fr"), String(localized: "Sa"), String(localized: "So")]
+    nonisolated static let lang = [String(localized: "Montag"), String(localized: "Dienstag"), String(localized: "Mittwoch"), String(localized: "Donnerstag"), String(localized: "Freitag"), String(localized: "Samstag"), String(localized: "Sonntag")]
 
     /// `geplant`: Wochentage 1 (Montag) bis 7; `trainiert`: Tage `yyyy-MM-dd`.
     static func woche(geplant: Set<Int>, trainiert: Set<String>, heute: String) -> [CrewWochenTag] {
@@ -61,12 +61,12 @@ enum CrewWocheLogik {
     static func vorlesen(_ name: String, _ woche: [CrewWochenTag]) -> String {
         let teile = woche.enumerated().compactMap { i, t -> String? in
             switch t.art {
-            case .trainiert: "\(lang[i]) trainiert"
-            case .geplant: "\(lang[i]) geplant"
+            case .trainiert: String(localized: "\(lang[i]) trainiert")
+            case .geplant: String(localized: "\(lang[i]) geplant")
             case .frei: nil
             }
         }
-        return "\(name): " + (teile.isEmpty ? "nichts geplant" : teile.joined(separator: ", "))
+        return "\(name): " + (teile.isEmpty ? String(localized: "nichts geplant") : teile.joined(separator: ", "))
     }
 }
 
@@ -95,7 +95,7 @@ struct CrewWocheZusammen: View {
                 }
             }
             .accessibilityHidden(true)
-            reihe("Du", ich)
+            reihe(String(localized: "Du"), ich)
             if geplant != nil || trainiert != nil {
                 reihe(name, CrewWocheLogik.woche(geplant: geplant ?? [], trainiert: trainiert ?? [], heute: heute))
             }
@@ -103,8 +103,8 @@ struct CrewWocheZusammen: View {
                 Text("\(name) teilt den Plan noch nicht mit dir.").font(.footnote).foregroundStyle(palette.text2)
             }
             HStack(spacing: Abstand.m) {
-                legende(.trainiert, "trainiert")
-                legende(.geplant, "geplant")
+                legende(.trainiert, String(localized: "trainiert"))
+                legende(.geplant, String(localized: "geplant"))
             }
             .font(.caption)
             .foregroundStyle(palette.text2)
@@ -156,7 +156,7 @@ struct CrewPartnerAbschnitt: View {
                 if let partner {
                     let name = CrewLogik.name(partner)
                     NavigationLink { CrewFreundSeite(id: partner.id) } label: {
-                        GymZeile(titel: name, untertitel: "Jede Seite wählt für sich") {
+                        GymZeile(titel: name, untertitel: String(localized: "Jede Seite wählt für sich")) {
                             Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
                         }
                     }
@@ -168,7 +168,7 @@ struct CrewPartnerAbschnitt: View {
                     if !Set(partner.ich.zeigt).isSuperset(of: ["plan", "gym"]) {
                         Haarlinie()
                         Button { Task { await teilen(partner) } } label: {
-                            GymZeile(titel: "Plan und Training mit \(name) teilen", untertitel: "Dann sieht \(name) deine Trainingstage, deinen Plan und deine Sätze.") {
+                            GymZeile(titel: String(localized: "Plan und Training mit \(name) teilen"), untertitel: String(localized: "Dann sieht \(name) deine Trainingstage, deinen Plan und deine Sätze.")) {
                                 if teilt { ProgressView() }
                             }
                         }
@@ -176,13 +176,13 @@ struct CrewPartnerAbschnitt: View {
                         .disabled(teilt)
                     }
                     Haarlinie()
-                    Button { wahlOffen = true } label: { GymZeile(titel: "Anderen Trainingspartner wählen") }
+                    Button { wahlOffen = true } label: { GymZeile(titel: String(localized: "Anderen Trainingspartner wählen")) }
                         .buttonStyle(.plain)
                 } else {
-                    GymZeile(titel: "Noch keiner gewählt", untertitel: "Wähle einen Freund: ihr seht eure Woche nebeneinander.")
+                    GymZeile(titel: String(localized: "Noch keiner gewählt"), untertitel: String(localized: "Wähle einen Freund: ihr seht eure Woche nebeneinander."))
                     if !personen.isEmpty {
                         Haarlinie()
-                        Button { wahlOffen = true } label: { GymZeile(titel: "Trainingspartner wählen") }
+                        Button { wahlOffen = true } label: { GymZeile(titel: String(localized: "Trainingspartner wählen")) }
                             .buttonStyle(.plain)
                     }
                 }
@@ -222,7 +222,7 @@ struct CrewPartnerWahlBlatt: View {
                     Text("Jede Seite wählt für sich. Wählt ihr euch gegenseitig, seht ihr beide eure Woche nebeneinander.")
                 }
                 Section {
-                    Button { waehle(VerbindungenLogik.keinPartner) } label: { zeile("Keiner", an: aktuell == nil) }
+                    Button { waehle(VerbindungenLogik.keinPartner) } label: { zeile(String(localized: "Keiner"), an: aktuell == nil) }
                         .buttonStyle(.plain)
                 }
             }

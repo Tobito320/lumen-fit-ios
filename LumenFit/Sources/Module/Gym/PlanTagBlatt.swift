@@ -27,11 +27,11 @@ struct PlanTagBlatt: View {
                 if let tag {
                     liste(tag)
                 } else {
-                    LeerZustand(stimmung: .denkt, satz: "Diesen Tag gibt es nicht mehr.")
+                    LeerZustand(stimmung: .denkt, satz: String(localized: "Diesen Tag gibt es nicht mehr."))
                 }
             }
             .lumenHintergrund()
-            .navigationTitle(tag?.name ?? "Tag")
+            .navigationTitle(tag?.name ?? String(localized: "Tag"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Fertig") { nameSichern(); schliessen() } }
@@ -41,7 +41,7 @@ struct PlanTagBlatt: View {
             .onAppear { name = tag?.name ?? "" }
             .onDisappear { nameSichern() }
             .sheet(isPresented: $suche) {
-                UebungsSucheView(titel: "Übung hinzufügen", auswahl: { k in
+                UebungsSucheView(titel: String(localized: "Übung hinzufügen"), auswahl: { k in
                     guard let t = tag else { return }
                     var neu = t
                     neu.uebungen.append(GymEigeneLogik.planUebung(k))
@@ -125,7 +125,7 @@ struct PlanTagBlatt: View {
                 if let plan = training?.plan, plan.tage.contains(where: { $0.id != tag.id && !$0.uebungen.isEmpty }) {
                     Menu {
                         ForEach(plan.tage.filter { $0.id != tag.id && !$0.uebungen.isEmpty }) { quelle in
-                            Button("\(quelle.name.isEmpty ? "Training" : quelle.name) (\(quelle.uebungen.count))") {
+                            Button("\(quelle.name.isEmpty ? String(localized: "Training") : quelle.name) (\(quelle.uebungen.count))") {
                                 sichern(PlanEditor.vonTagKopieren(tag, quelle: quelle))
                             }
                         }
@@ -182,7 +182,7 @@ private struct UebungsPlanZeile: View {
         let satz = u.saetze[i]
         return VStack(alignment: .leading, spacing: Abstand.xs) {
             Stepper("Satz \(i + 1): \(satz.wdh) Wdh.", value: Binding(get: { satz.wdh }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, wdh: v) } }), in: 1...100)
-            Stepper("Gewicht \(satz.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
+            Stepper("Gewicht \(satz.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? String(localized: "ohne"))",
                     value: Binding(get: { satz.kg ?? 0 }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, kg: .some(v)) } }),
                     in: 0...500, step: LetztesMal.kgSchritt(geraet: GymSitzung.von(umgebung).katalog(u)?.geraet))
             Toggle("Bis zum Versagen", isOn: Binding(get: { satz.failure }, set: { v in aendere(index) { PlanEditor.satzAendern($0, i, versagen: v) } }))
@@ -198,7 +198,7 @@ private struct UebungsPlanZeile: View {
             } else {
                 Stepper("Sätze \(u.saetze.count)", value: Binding(get: { u.saetze.count }, set: { v in aendere(index) { SplitFrei.saetzeAnzahl($0, v) } }), in: 1...SplitFrei.maxSaetze)
                 Stepper("Wiederholungen \(u.saetze.first?.wdh ?? 10)", value: Binding(get: { u.saetze.first?.wdh ?? 10 }, set: { v in aendere(index) { SplitFrei.alleWdh($0, v) } }), in: 1...100)
-                Stepper("Gewicht \(u.saetze.first?.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? "ohne")",
+                Stepper("Gewicht \(u.saetze.first?.kg.map { "\(TrainingLogik.kgText($0)) kg" } ?? String(localized: "ohne"))",
                         value: Binding(get: { u.saetze.first?.kg ?? 0 }, set: { v in aendere(index) { SplitFrei.alleKg($0, v) } }), in: 0...500, step: LetztesMal.kgSchritt(geraet: GymSitzung.von(umgebung).katalog(u)?.geraet))
                 DisclosureGroup("Satz für Satz") {
                     ForEach(u.saetze.indices, id: \.self) { i in satzZeile(index, u, i) }
@@ -222,7 +222,8 @@ private struct UebungsPlanZeile: View {
                 UebungsBild(id: u.uebung, koerper: u.katalog?.koerper).frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(u.anzeigeName).font(.body.weight(.medium)).foregroundStyle(palette.text)
-                    Text(TrainingLogik.saetzeText(u) + (u.supersatz == true ? " · Supersatz" : "")).font(.footnote).foregroundStyle(palette.text2)
+                    Text(TrainingLogik.saetzeText(u) + (u.supersatz == true ? " · " + String(localized: "Supersatz") : "")
+).font(.footnote).foregroundStyle(palette.text2)
                 }
             }
             .frame(minHeight: Abstand.tippflaeche)

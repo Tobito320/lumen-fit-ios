@@ -66,53 +66,53 @@ enum ProfilHealthProbe {
     static func zusammenfassung(_ b: Befund, typen: Set<HealthTyp> = Set(HealthTyp.allCases)) -> String {
         let aktiv = HealthTyp.allCases.filter { typen.contains($0) }
         let mitDaten = aktiv.filter { zeile($0, b) == .datenDa }.count
-        return "\(mitDaten) von \(aktiv.count) mit Daten"
+        return String(localized: "\(mitDaten) von \(aktiv.count) mit Daten")
     }
 
     static func text(_ zeile: ProfilHealthZeile) -> String {
         switch zeile {
-        case .datenDa: "Daten da"
-        case .keineDaten: "keine Daten in \(tage) Tagen"
-        case .nichtPruefbar: "noch nicht prüfbar"
+        case .datenDa: String(localized: "Daten da")
+        case .keineDaten: String(localized: "keine Daten in \(tage) Tagen")
+        case .nichtPruefbar: String(localized: "noch nicht prüfbar")
         }
     }
 
     static func name(_ typ: HealthTyp) -> String {
         switch typ {
-        case .schritte: "Schritte"
-        case .distanz: "Strecke"
-        case .etagen: "Etagen"
-        case .aktiveEnergie: "Aktive Energie"
-        case .training: "Training"
-        case .schlaf: "Schlaf"
-        case .ruhepuls: "Ruhepuls"
-        case .hrv: "Herzfrequenzvariabilität"
-        case .sauerstoff: "Blutsauerstoff"
-        case .atmung: "Atemfrequenz"
-        case .temperatur: "Handgelenktemperatur"
+        case .schritte: String(localized: "Schritte")
+        case .distanz: String(localized: "Strecke")
+        case .etagen: String(localized: "Etagen")
+        case .aktiveEnergie: String(localized: "Aktive Energie")
+        case .training: String(localized: "Training")
+        case .schlaf: String(localized: "Schlaf")
+        case .ruhepuls: String(localized: "Ruhepuls")
+        case .hrv: String(localized: "Herzfrequenzvariabilität")
+        case .sauerstoff: String(localized: "Blutsauerstoff")
+        case .atmung: String(localized: "Atemfrequenz")
+        case .temperatur: String(localized: "Handgelenktemperatur")
         case .vo2max: "VO2max"
-        case .gewicht: "Gewicht"
-        case .puls: "Puls"
+        case .gewicht: String(localized: "Gewicht")
+        case .puls: String(localized: "Puls")
         }
     }
 
     /// Warum die App den Typ braucht, in einem Satz.
     static func grund(_ typ: HealthTyp) -> String {
         switch typ {
-        case .schritte: "Für dein Schrittziel und den Tagesbogen."
-        case .distanz: "Für die Strecke deines Tages."
-        case .etagen: "Für gestiegene Etagen im Tagesverlauf."
-        case .aktiveEnergie: "Für deine aktive Energie und das Bewegen-Ziel."
-        case .training: "Damit Training aus anderen Apps und von der Uhr zählt."
-        case .schlaf: "Für deine Nächte, Schlafphasen und die Bereitschaft am Morgen."
-        case .ruhepuls: "Für deine Erholung: ein niedriger Ruhepuls ist ein gutes Zeichen."
-        case .hrv: "Für deine Erholung: Lumi vergleicht mit deinem eigenen Schnitt."
-        case .sauerstoff: "Für die Werte der Nacht."
-        case .atmung: "Für die Werte der Nacht."
-        case .temperatur: "Für die Werte der Nacht."
-        case .vo2max: "Für deine Ausdauer im Fortschritt."
-        case .gewicht: "Damit dein Gewicht aus Health in Verlauf und Zielen erscheint."
-        case .puls: "Für den Puls im Training, wenn eine Uhr ihn misst."
+        case .schritte: String(localized: "Für dein Schrittziel und den Tagesbogen.")
+        case .distanz: String(localized: "Für die Strecke deines Tages.")
+        case .etagen: String(localized: "Für gestiegene Etagen im Tagesverlauf.")
+        case .aktiveEnergie: String(localized: "Für deine aktive Energie und das Bewegen-Ziel.")
+        case .training: String(localized: "Damit Training aus anderen Apps und von der Uhr zählt.")
+        case .schlaf: String(localized: "Für deine Nächte, Schlafphasen und die Bereitschaft am Morgen.")
+        case .ruhepuls: String(localized: "Für deine Erholung: ein niedriger Ruhepuls ist ein gutes Zeichen.")
+        case .hrv: String(localized: "Für deine Erholung: Lumi vergleicht mit deinem eigenen Schnitt.")
+        case .sauerstoff: String(localized: "Für die Werte der Nacht.")
+        case .atmung: String(localized: "Für die Werte der Nacht.")
+        case .temperatur: String(localized: "Für die Werte der Nacht.")
+        case .vo2max: String(localized: "Für deine Ausdauer im Fortschritt.")
+        case .gewicht: String(localized: "Damit dein Gewicht aus Health in Verlauf und Zielen erscheint.")
+        case .puls: String(localized: "Für den Puls im Training, wenn eine Uhr ihn misst.")
         }
     }
 
@@ -137,6 +137,6 @@ enum ProfilHealthProbe {
     }
 
     /// Der Weg in die Einstellungen, wenn sich etwas ändern soll.
-    static let wegText = "Einstellungen, Health, Datenzugriff und Geräte, Lumen Fit"
-    static let erklaerung = "Health verrät Apps nie, ob du das Lesen gesperrt hast. Lumen Fit zeigt deshalb nur, ob Daten ankommen. Ändern kannst du es jederzeit in den Einstellungen deines iPhones."
+    static let wegText = String(localized: "Einstellungen, Health, Datenzugriff und Geräte, Lumen Fit")
+    static let erklaerung = String(localized: "Health verrät Apps nie, ob du das Lesen gesperrt hast. Lumen Fit zeigt deshalb nur, ob Daten ankommen. Ändern kannst du es jederzeit in den Einstellungen deines iPhones.")
 }

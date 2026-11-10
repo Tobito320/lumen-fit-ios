@@ -13,7 +13,7 @@ struct FreundeView: View {
             if let satz = umgebung.daten {
                 FreundeInhalt(daten: satz, link: daten)
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege zuerst ein Profil an."))
             }
         }
         .navigationTitle("Wochenkarten")
@@ -116,7 +116,7 @@ private struct FreundeInhalt: View {
         return VStack(alignment: .leading, spacing: Abstand.m) {
             Text("Karten von Freunden, Woche ab \(FreundeText.woche(woche))").font(.headline).foregroundStyle(palette.text)
             if zeilen.isEmpty {
-                LeerZustand(stimmung: .bereit, satz: "Noch keine Karte von Freunden für diese Woche. Lies eine Karte ein, dann steht sie hier.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Karte von Freunden für diese Woche. Lies eine Karte ein, dann steht sie hier."))
             } else {
                 ListenKarte {
                     ForEach(zeilen) { zeile in
@@ -176,7 +176,7 @@ private struct FreundeInhalt: View {
     private func pruefe(_ text: String) {
         switch FreundeKarteCodec.lies(text) {
         case .success(let karte):
-            gelesen = karte.id == eigene.id ? .fehler("Das ist deine eigene Karte", "Schick sie einem Freund und lies seine Karte ein.") : .karte(karte)
+            gelesen = karte.id == eigene.id ? .fehler(String(localized: "Das ist deine eigene Karte"), String(localized: "Schick sie einem Freund und lies seine Karte ein.")) : .karte(karte)
         case .failure(let fehler):
             let t = FreundeText.fehler(fehler)
             gelesen = .fehler(t.titel, t.hilfe)
@@ -186,11 +186,11 @@ private struct FreundeInhalt: View {
     private func fotoLesen(_ auswahl: PhotosPickerItem) async {
         defer { foto = nil }
         guard let data = try? await auswahl.loadTransferable(type: Data.self), let bild = UIImage(data: data) else {
-            gelesen = .fehler("Das Foto ließ sich nicht öffnen", "Wähle ein anderes Foto oder lies den Link ein.")
+            gelesen = .fehler(String(localized: "Das Foto ließ sich nicht öffnen"), String(localized: "Wähle ein anderes Foto oder lies den Link ein."))
             return
         }
         guard let text = FreundeQR.text(in: bild) else {
-            gelesen = .fehler("Kein QR-Code gefunden", "Das Foto muss den QR-Code ganz und scharf zeigen.")
+            gelesen = .fehler(String(localized: "Kein QR-Code gefunden"), String(localized: "Das Foto muss den QR-Code ganz und scharf zeigen."))
             return
         }
         pruefe(text)
@@ -231,6 +231,6 @@ private struct FreundeInhalt: View {
     private func uebernehme(_ karte: FreundKarte) {
         daten.verbindung.freunde = FreundeRangliste.aufnehmen(karte, in: daten.verbindung.freunde)
         gelesen = nil
-        toast = ToastInhalt(titel: "\(karte.name) ist dabei", zeile: "Die Karte steht jetzt in der Liste.", stimmung: .ziel)
+        toast = ToastInhalt(titel: String(localized: "\(karte.name) ist dabei"), zeile: String(localized: "Die Karte steht jetzt in der Liste."), stimmung: .ziel)
     }
 }

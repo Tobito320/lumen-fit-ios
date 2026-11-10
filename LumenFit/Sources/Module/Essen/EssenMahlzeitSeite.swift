@@ -64,7 +64,7 @@ struct EssenMahlzeitSeite: View {
         .sheet(isPresented: $neuOffen) {
             EssenHinzufuegenView(mahlzeit: mahlzeit, tag: tag, start: .suche, vorgewaehlt: nil) { gespeichert in
                 neuOffen = false
-                if gespeichert { toast = ToastInhalt(titel: "Eingetragen", zeile: nil, stimmung: .ziel) }
+                if gespeichert { toast = ToastInhalt(titel: String(localized: "Eingetragen"), zeile: nil, stimmung: .ziel) }
             }
         }
         .alert("Als Gericht speichern", isPresented: $gerichtAlert) {
@@ -92,9 +92,9 @@ struct EssenMahlzeitSeite: View {
                     Text("kcal").font(.subheadline)
                 }
                 HStack(spacing: 0) {
-                    makro(summe.kohlenhydrate, "Kohlenhydrate")
-                    makro(summe.protein, "Eiweiß")
-                    makro(summe.fett, "Fett")
+                    makro(summe.kohlenhydrate, String(localized: "Kohlenhydrate"))
+                    makro(summe.protein, String(localized: "Eiweiß"))
+                    makro(summe.fett, String(localized: "Fett"))
                 }
             }
             .accessibilityElement(children: .combine)
@@ -141,7 +141,7 @@ struct EssenMahlzeitSeite: View {
         if let e = essen?.eintraege(tag).first(where: { $0.id == id }) {
             EssenDetailView(lebensmittel: e.lebensmittel, mahlzeit: e.mahlzeit, tag: e.datum, bearbeiten: e) { _ in offen = nil }
         } else {
-            LeerZustand(stimmung: .bereit, satz: "Dieser Eintrag ist gelöscht.")
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Dieser Eintrag ist gelöscht."))
         }
     }
 
@@ -155,7 +155,7 @@ struct EssenMahlzeitSeite: View {
         let rezept = Rezept(id: UUID().uuidString, name: name.isEmpty ? essen.mahlzeitName(mahlzeit) : name, portionen: 1, zutaten: zutaten, art: .mahlzeit)
         essen.rezeptSichern(rezept)
         essen.favoritSetzen(ErnaehrungLogik.alsLebensmittel(rezept), an: true)
-        toast = ToastInhalt(titel: "Gericht gespeichert", zeile: "Bei den Favoriten", stimmung: .ziel)
+        toast = ToastInhalt(titel: String(localized: "Gericht gespeichert"), zeile: String(localized: "Bei den Favoriten"), stimmung: .ziel)
     }
 }
 

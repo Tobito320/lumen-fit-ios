@@ -59,6 +59,6 @@ struct GymWocheAnsicht: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(WidgetAnzeige.gymSprechtext(name: "Gym diese Woche", tage: tage, ziel: ziel, jetzt: eintrag.date))
+        .accessibilityLabel(WidgetAnzeige.gymSprechtext(name: String(localized: "Gym diese Woche"), tage: tage, ziel: ziel, jetzt: eintrag.date))
     }
 }

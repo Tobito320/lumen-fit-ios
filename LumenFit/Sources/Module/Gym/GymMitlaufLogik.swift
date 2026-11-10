@@ -29,9 +29,9 @@ enum GymMitlaufLogik {
 
     /// "Bankdrücken · Satz 3 · 80 kg × 8 · vor 1 min"; ohne Gewicht "8 Wdh".
     static func text(_ s: MitlaufSatz) -> String {
-        let last = s.kg.map { "\(TrainingLogik.kgText($0)) kg × \(s.wdh)" } ?? "\(s.wdh) Wdh"
-        return "\(s.uebung) · Satz \(s.satzNr) · \(last) · \(vor(s.vorSekunden))"
+        let last = s.kg.map { String(localized: "\(TrainingLogik.kgText($0)) kg × \(s.wdh)") } ?? String(localized: "\(s.wdh) Wdh")
+        return String(localized: "\(s.uebung) · Satz \(s.satzNr) · \(last) · \(vor(s.vorSekunden))")
     }
 
-    private static func vor(_ sekunden: Int) -> String { sekunden < 60 ? "gerade eben" : "vor \(sekunden / 60) min" }
+    private static func vor(_ sekunden: Int) -> String { sekunden < 60 ? String(localized: "gerade eben") : String(localized: "vor \(sekunden / 60) min") }
 }

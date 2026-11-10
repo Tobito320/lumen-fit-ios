@@ -30,11 +30,11 @@ final class PartnerEreignisRegeln {
     /// Die Texte der Schalter in der Oberfläche.
     nonisolated static func name(_ art: PartnerEreignisArt) -> String {
         switch art {
-        case .gymStart: "Partner ist im Gym"
-        case .gymEnde: "Partner war im Gym"
-        case .ziel: "Partner hat das Ziel erreicht"
-        case .rekord: "Partner hat einen Rekord"
-        case .schlafGut: "Partner hat gut geschlafen"
+        case .gymStart: String(localized: "Partner ist im Gym")
+        case .gymEnde: String(localized: "Partner war im Gym")
+        case .ziel: String(localized: "Partner hat das Ziel erreicht")
+        case .rekord: String(localized: "Partner hat einen Rekord")
+        case .schlafGut: String(localized: "Partner hat gut geschlafen")
         }
     }
 

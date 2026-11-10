@@ -10,19 +10,19 @@ struct GeraeteView: View {
 
     var body: some View {
         Form {
-            VerbindenAbschnitt(fuss: VerbindenDienste.geteilt?.uebernahmeZeile ?? "Was die Apple Watch misst, kommt über Apple Health.") {
+            VerbindenAbschnitt(fuss: VerbindenDienste.geteilt?.uebernahmeZeile ?? String(localized: "Was die Apple Watch misst, kommt über Apple Health.")) {
                 NavigationLink { BandSeite() } label: {
                     if umgebung.daten?.einstellungen.werte.bandEingerichtet == true {
-                        ProfilListenZeile("Fitness-Tracker", symbol: "applewatch", wert: bandKurz)
+                        ProfilListenZeile(String(localized: "Fitness-Tracker"), symbol: "applewatch", wert: bandKurz)
                     } else {
-                        ProfilListenZeile("Band einrichten", symbol: "applewatch")
+                        ProfilListenZeile(String(localized: "Band einrichten"), symbol: "applewatch")
                     }
                 }
                 NavigationLink { KopfhoererSeite() } label: {
-                    ProfilListenZeile("Kopfhörer und AirPods", symbol: "airpods")
+                    ProfilListenZeile(String(localized: "Kopfhörer und AirPods"), symbol: "airpods")
                 }
                 NavigationLink { ProfilHealthZugriffView() } label: {
-                    ProfilListenZeile("Apple Watch und Health", symbol: "heart.text.square.fill")
+                    ProfilListenZeile(String(localized: "Apple Watch und Health"), symbol: "heart.text.square.fill")
                 }
             }
         }
@@ -33,8 +33,8 @@ struct GeraeteView: View {
 
     /// Kurzer Stand für die Zeile: aus, nicht verbunden oder Status mit Akku.
     private var bandKurz: String {
-        guard umgebung.daten?.einstellungen.werte.bandAktiv == true else { return "Aus" }
-        guard let modell = dienst?.modell else { return "Nicht verbunden" }
+        guard umgebung.daten?.einstellungen.werte.bandAktiv == true else { return String(localized: "Aus") }
+        guard let modell = dienst?.modell else { return String(localized: "Nicht verbunden") }
         guard let akku = modell.akku, modell.zustand == .verbunden else { return modell.statusText }
         return "\(modell.statusText), \(akku.prozent) %"
     }

@@ -37,11 +37,11 @@ enum GymCrewLogik {
 
     private static func zeile(_ e: VerbindungEintrag, datum: String, heute: String, jetzt: Date) -> CrewZeile? {
         let name = e.anzeigeName.isEmpty ? (e.daten?.profilName ?? "") : e.anzeigeName
-        if e.ich.pause { return CrewZeile(id: e.id, name: name, status: "pausiert", zustand: .pausiert) }
+        if e.ich.pause { return CrewZeile(id: e.id, name: name, status: String(localized: "pausiert"), zustand: .pausiert) }
         guard let d = e.daten, d.freigaben.contains(where: { [.gym, .verlauf, .plan].contains($0) }) else { return nil }
         let tage = Int(jetzt.timeIntervalSince(d.geschrieben) / 86_400)
         if jetzt.timeIntervalSince(d.geschrieben) > LoveaVertrag.frist {
-            return CrewZeile(id: e.id, name: name, status: "zuletzt vor \(tage) Tagen", zustand: .veraltet)
+            return CrewZeile(id: e.id, name: name, status: String(localized: "zuletzt vor \(tage) Tagen"), zustand: .veraltet)
         }
         let status = GymPartnerLogik.status(d, datum: datum, heute: heute, jetzt: jetzt)
         let zustand: CrewZustand = switch status {

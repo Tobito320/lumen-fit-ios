@@ -75,6 +75,6 @@ struct NaechsterSatzKarte: View {
     private var naechsterSatzText: String? {
         guard let dran = sitzung.dran, sitzung.liste.indices.contains(dran.uebung) else { return nil }
         let u = sitzung.liste[dran.uebung]
-        return LetztesMal.text(zeile: dran.satz, in: u.saetze, vorher: u.vorher).map { "Letztes Mal: \($0)" }
+        return LetztesMal.text(zeile: dran.satz, in: u.saetze, vorher: u.vorher).map { String(localized: "Letztes Mal: \($0)") }
     }
 }

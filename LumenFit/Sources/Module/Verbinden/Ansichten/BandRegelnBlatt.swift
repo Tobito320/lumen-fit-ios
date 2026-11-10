@@ -6,13 +6,13 @@ import SwiftUI
 struct BandRegelnBlatt: View {
     var body: some View {
         Form {
-            VerbindenAbschnitt(fuss: "Das Band kennt nur einen Vibrationsbefehl: ein Puls von fester Stärke, je Mal rund 5 bis 10 Sekunden. Einstellbar ist darum, ob es vibriert, wie viele Pulse (1 bis 3) und wie lange die Pause bis zum nächsten Mal ist.") {
+            VerbindenAbschnitt(fuss: String(localized: "Das Band kennt nur einen Vibrationsbefehl: ein Puls von fester Stärke, je Mal rund 5 bis 10 Sekunden. Einstellbar ist darum, ob es vibriert, wie viele Pulse (1 bis 3) und wie lange die Pause bis zum nächsten Mal ist.")) {
                 EmptyView()
             }
             ForEach(BandQuelle.allCases) { BandQuelleAbschnitt(quelle: $0) }
             BandRuheAbschnitt()
             BandAkkuAbschnitt()
-            VerbindenAbschnitt(titel: "Handy-Anrufe und andere Apps", fuss: "Anrufe und Mitteilungen anderer Apps kann Lumen Fit nicht sehen (iOS erlaubt das nicht). Das Band bekommt sie selbst über die Bluetooth-Kopplung mit dem iPhone, falls sie dort für das Band erlaubt ist; Muster und Dauer bestimmt dann das Band.") {
+            VerbindenAbschnitt(titel: String(localized: "Handy-Anrufe und andere Apps"), fuss: String(localized: "Anrufe und Mitteilungen anderer Apps kann Lumen Fit nicht sehen (iOS erlaubt das nicht). Das Band bekommt sie selbst über die Bluetooth-Kopplung mit dem iPhone, falls sie dort für das Band erlaubt ist; Muster und Dauer bestimmt dann das Band.")) {
                 EmptyView()
             }
         }
@@ -56,8 +56,8 @@ struct BandQuelleAbschnitt: View {
             ForEach(quelle.pausen, id: \.self) { Text(pauseText($0)).tag($0) }
         }
         if quelle == .sitzen {
-            BandZeitZeile(titel: "Von", minute: $sitzVon)
-            BandZeitZeile(titel: "Bis", minute: $sitzBis)
+            BandZeitZeile(titel: String(localized: "Von"), minute: $sitzVon)
+            BandZeitZeile(titel: String(localized: "Bis"), minute: $sitzBis)
         }
         if quelle == .gymPuls {
             Picker("Ziel-Puls", selection: $zielPuls) {
@@ -71,22 +71,22 @@ struct BandQuelleAbschnitt: View {
     }
 
     private func pauseText(_ minuten: Int) -> String {
-        if minuten == 0 { return "Keine" }
-        return minuten == 1 ? "1 Minute" : "\(minuten) Minuten"
+        if minuten == 0 { return String(localized: "Keine") }
+        return minuten == 1 ? String(localized: "1 Minute") : String(localized: "\(minuten) Minuten")
     }
 
     private var fussText: String {
         switch quelle {
         case .partner:
-            "Ein Puls, wenn dein Partner etwas teilt (Gym, Ziel, Rekord, Schlaf). Braucht die Verbindung mit Lovea."
+            String(localized: "Ein Puls, wenn dein Partner etwas teilt (Gym, Ziel, Rekord, Schlaf). Braucht die Verbindung mit Lovea.")
         case .wunsch:
             VerbindenTexte.wunschFuss()
         case .gymPause:
             VerbindenTexte.pauseFuss
         case .gymPuls:
-            "Nur im laufenden Training und nur mit Puls vom Band. Der Puls kommt im Takt der Pulsmessung (alle paar Minuten), nicht sofort."
+            String(localized: "Nur im laufenden Training und nur mit Puls vom Band. Der Puls kommt im Takt der Pulsmessung (alle paar Minuten), nicht sofort.")
         case .sitzen:
-            "Ein Puls, wenn das Band so lange keine Schritte gemeldet hat, nur im Zeitfenster. Prüft nur bei einer Abfrage des Bands, kein eigener Timer."
+            String(localized: "Ein Puls, wenn das Band so lange keine Schritte gemeldet hat, nur im Zeitfenster. Prüft nur bei einer Abfrage des Bands, kein eigener Timer.")
         }
     }
 }
@@ -114,12 +114,12 @@ private struct BandRuheAbschnitt: View {
     @State private var fenster = BandEinstellung.fensterListe()
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Ruhezeiten", fuss: "In einer Ruhezeit vibriert das Band nicht. Die Nacht läuft von 22:00 bis 07:00 Uhr.") {
+        VerbindenAbschnitt(titel: String(localized: "Ruhezeiten"), fuss: String(localized: "In einer Ruhezeit vibriert das Band nicht. Die Nacht läuft von 22:00 bis 07:00 Uhr.")) {
             Toggle(isOn: $nachtAn) { Label("Nachts ruhig", systemImage: "moon.zzz.fill") }
             ForEach(fenster.indices, id: \.self) { i in
                 VStack {
-                    BandZeitZeile(titel: "Von", minute: binding(i, \.von))
-                    BandZeitZeile(titel: "Bis", minute: binding(i, \.bis))
+                    BandZeitZeile(titel: String(localized: "Von"), minute: binding(i, \.von))
+                    BandZeitZeile(titel: String(localized: "Bis"), minute: binding(i, \.bis))
                 }
             }
             .onDelete { weg in
@@ -154,7 +154,7 @@ private struct BandAkkuAbschnitt: View {
     @AppStorage(BandEinstellung.akkuSchwelle) private var schwelle = BandEinstellung.standardAkkuSchwelle
 
     var body: some View {
-        VerbindenAbschnitt(fuss: "Ist das Band unter der Schwelle, vibriert es nicht mehr. Der Akku-Stand ist der zuletzt gelesene, höchstens zwölf Stunden alt.") {
+        VerbindenAbschnitt(fuss: String(localized: "Ist das Band unter der Schwelle, vibriert es nicht mehr. Der Akku-Stand ist der zuletzt gelesene, höchstens zwölf Stunden alt.")) {
             Picker(selection: $schwelle) {
                 ForEach(BandEinstellung.akkuSchwellen, id: \.self) { Text($0 == 0 ? "Aus" : "Unter \($0) %").tag($0) }
             } label: {

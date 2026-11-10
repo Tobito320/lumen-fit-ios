@@ -21,9 +21,9 @@ struct EssenTagesNaehrwerteView: View {
             VStack(alignment: .leading, spacing: Abstand.l) {
                 kalorienUndMakros(summe)
                 grundKarte(summe)
-                mikroKarte("Vitamine", .vitamine, summe)
-                mikroKarte("Mineralstoffe", .mineralstoffe, summe)
-                mikroKarte("Weitere", .weitere, summe)
+                mikroKarte(String(localized: "Vitamine"), .vitamine, summe)
+                mikroKarte(String(localized: "Mineralstoffe"), .mineralstoffe, summe)
+                mikroKarte(String(localized: "Weitere"), .weitere, summe)
                 mahlzeitKarte
             }
             .padding(Abstand.l)
@@ -52,9 +52,9 @@ struct EssenTagesNaehrwerteView: View {
                 Text("kcal").font(.subheadline).foregroundStyle(palette.text2)
             }
             Haarlinie()
-            makroZeile("Kohlenhydrate", summe.kohlenhydrate)
-            makroZeile("Eiweiß", summe.protein)
-            makroZeile("Fett", summe.fett)
+            makroZeile(String(localized: "Kohlenhydrate"), summe.kohlenhydrate)
+            makroZeile(String(localized: "Eiweiß"), summe.protein)
+            makroZeile(String(localized: "Fett"), summe.fett)
         }
     }
 
@@ -116,7 +116,7 @@ struct EssenTagesNaehrwerteView: View {
 
     private var mahlzeitKarte: some View {
         let werte = Mahlzeit.allCases.map { m in (name: m.name, kcal: ErnaehrungLogik.summe(eintraege.filter { $0.mahlzeit == m }).kcal) }
-        let beschreibung = werte.map { "\($0.name) \(Int($0.kcal.rounded())) Kilokalorien" }.joined(separator: ", ")
+        let beschreibung = werte.map { String(localized: "\($0.name) \(String(Int($0.kcal.rounded()))) Kilokalorien") }.joined(separator: ", ")
         return karte {
             Text("Kalorien je Mahlzeit").font(.headline).foregroundStyle(palette.text)
             Chart {

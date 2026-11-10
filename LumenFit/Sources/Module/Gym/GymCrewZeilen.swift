@@ -64,7 +64,7 @@ struct GymMitlaufZeile: View {
         if !imGym.isEmpty {
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(Array(imGym)) { z in
-                    Text("\(z.name) · \(z.mitlauf.map(GymMitlaufLogik.text) ?? "im Gym")")
+                    Text("\(z.name) · \(z.mitlauf.map(GymMitlaufLogik.text) ?? String(localized: "im Gym"))")
                         .font(.footnote).foregroundStyle(palette.text2).lineLimit(2)
                 }
             }

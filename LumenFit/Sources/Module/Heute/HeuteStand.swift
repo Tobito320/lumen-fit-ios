@@ -72,14 +72,14 @@ struct HeuteHabitZeile: Identifiable {
     var id: String { habit.id }
 
     /// Zähl-Gewohnheiten: "5 von 8".
-    var zaehlerText: String? { habit.zaehlen ? "\(wert) von \(ziel ?? habit.tagesziel ?? 1)" : nil }
+    var zaehlerText: String? { habit.zaehlen ? String(localized: "\(wert) von \(ziel ?? habit.tagesziel ?? 1)") : nil }
 
     /// "Serie: 4 Tage" oder bei Wochenzielen "Serie: 2 Wochen"; nil ohne Serie.
     var serieText: String? {
         guard serie > 0 else { return nil }
         var wochen = false
         if case .proWoche = habit.haeufigkeit { wochen = true }
-        return "Serie: \(serie) \(wochen ? (serie == 1 ? "Woche" : "Wochen") : (serie == 1 ? "Tag" : "Tage"))"
+        return String(localized: "Serie: \(serie) \(wochen ? (serie == 1 ? String(localized: "Woche") : String(localized: "Wochen")) : (serie == 1 ? String(localized: "Tag") : String(localized: "Tage")))")
     }
 }
 

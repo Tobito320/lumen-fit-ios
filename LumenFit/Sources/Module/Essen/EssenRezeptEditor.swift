@@ -26,10 +26,10 @@ enum EssenRezeptLogik {
 
     static func titel(start: Rezept?, art: RezeptArt) -> String {
         switch (start != nil, art) {
-        case (true, .mahlzeit): "Mahlzeit bearbeiten"
-        case (true, .rezept): "Rezept bearbeiten"
-        case (false, .mahlzeit): "Neue Mahlzeit"
-        case (false, .rezept): "Neues Rezept"
+        case (true, .mahlzeit): String(localized: "Mahlzeit bearbeiten")
+        case (true, .rezept): String(localized: "Rezept bearbeiten")
+        case (false, .mahlzeit): String(localized: "Neue Mahlzeit")
+        case (false, .rezept): String(localized: "Neues Rezept")
         }
     }
 
@@ -146,7 +146,7 @@ struct EssenRezeptEditor: View {
             }) {
                 if let v = vorschlaege {
                     EssenMehrtrefferBlatt(name: v.name, treffer: v.liste, auswahl: { l in gewaehlt = l },
-                                          keinesDavon: { scanHinweis = "Nicht gefunden. Such die Zutat per Name." })
+                                          keinesDavon: { scanHinweis = String(localized: "Nicht gefunden. Such die Zutat per Name.") })
                 }
             }
             .sheet(item: $mengeFuer) { l in
@@ -185,10 +185,10 @@ struct EssenRezeptEditor: View {
             switch ergebnis {
             case .gefunden(let l): mengeFuer = l
             case .vorschlaege(let n, let liste, _): vorschlaege = (n, liste)
-            case .unbekannt: scanHinweis = "Produkt nicht gefunden. Such die Zutat per Name."
-            case .offline: scanHinweis = "Kein Netz. Versuche es später noch einmal."
-            case .limit(_, let s): scanHinweis = "Open Food Facts erlaubt 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder."
-            case .fehler: scanHinweis = "Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal."
+            case .unbekannt: scanHinweis = String(localized: "Produkt nicht gefunden. Such die Zutat per Name.")
+            case .offline: scanHinweis = String(localized: "Kein Netz. Versuche es später noch einmal.")
+            case .limit(_, let s): scanHinweis = String(localized: "Open Food Facts erlaubt 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder.")
+            case .fehler: scanHinweis = String(localized: "Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal.")
             }
         }
     }
@@ -305,8 +305,8 @@ private struct EssenZutatSucheBlatt: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.m) {
                     if leer {
-                        liste("Zuletzt", essen?.zuletzt ?? [])
-                        liste("Eigene", essen?.eigene ?? [])
+                        liste(String(localized: "Zuletzt"), essen?.zuletzt ?? [])
+                        liste(String(localized: "Eigene"), essen?.eigene ?? [])
                     } else {
                         liste(nil, suche.stand.sichtbar)
                         EssenOnlineHinweis(zustand: suche.online)
@@ -365,7 +365,7 @@ private struct EssenCodeBlatt: View {
                         .aspectRatio(3 / 4, contentMode: .fit)
                         .accessibilityLabel("Kamera für den Barcode")
                 } else {
-                    LeerZustand(stimmung: .bereit, satz: "Die Kamera ist nicht verfügbar. Tippe den Code von der Packung ein.")
+                    LeerZustand(stimmung: .bereit, satz: String(localized: "Die Kamera ist nicht verfügbar. Tippe den Code von der Packung ein."))
                 }
                 Spacer(minLength: 0)
                 TextField("Code eintippen", text: $code)

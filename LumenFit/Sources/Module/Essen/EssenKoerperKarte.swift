@@ -22,8 +22,8 @@ struct EssenKoerperKarte: View {
                 }
                 .accessibilityElement(children: .combine)
                 Spacer(minLength: Abstand.s)
-                rundKnopf("minus", "0,1 kg weniger", -1)
-                rundKnopf("plus", "0,1 kg mehr", 1)
+                rundKnopf("minus", String(localized: "0,1 kg weniger"), -1)
+                rundKnopf("plus", String(localized: "0,1 kg mehr"), 1)
             }
             .padding(.horizontal, Abstand.l)
             .padding(.vertical, Abstand.m)

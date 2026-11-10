@@ -38,7 +38,8 @@ enum MessErfassung {
         let vorzeichen = diff > 0 ? "+" : diff < 0 ? "-" : ""
         let teile = davor.tag.split(separator: "-")
         let datum = teile.count == 3 ? "\(teile[2]).\(teile[1])." : davor.tag
-        return "\(vorzeichen)\(abs(diff) / 10),\(abs(diff) % 10) \(art.einheit) seit \(datum)"
+        let wert = "\(vorzeichen)\(abs(diff) / 10),\(abs(diff) % 10)"
+        return String(localized: "\(wert) \(art.einheit) seit \(datum)")
     }
 }
 

@@ -16,7 +16,9 @@ struct KalenderTag: Equatable, Identifiable, Sendable {
 
 /// Reine Logik des Kalenders im Training: Raster Mo bis So, Trainings rückwärts, Plan nur nach vorn, Partner-Marken.
 enum KalenderLogik {
-    static let monatsnamen = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+    static let monatsnamen = [String(localized: "Januar"), String(localized: "Februar"), String(localized: "März"), String(localized: "April"),
+                              String(localized: "Mai"), String(localized: "Juni"), String(localized: "Juli"), String(localized: "August"),
+                              String(localized: "September"), String(localized: "Oktober"), String(localized: "November"), String(localized: "Dezember")]
 
     /// `monat` als `yyyy-MM`. Das Raster beginnt am Montag der Woche des 1. und endet am Sonntag der Woche des Letzten.
     static func tage(monat: String, sessions: [GymSession], plan: TrainingsPlan, partnerTage: [String], partnerPlan: PartnerPlan?, heute: String) -> [KalenderTag] {
@@ -58,13 +60,13 @@ enum KalenderLogik {
     static func sprechtext(_ t: KalenderTag) -> String {
         let nummer = Int(t.datum.suffix(2)) ?? 0
         let monatsname = Int(t.datum.dropFirst(5).prefix(2)).flatMap { (1...12).contains($0) ? monatsnamen[$0 - 1] : nil } ?? ""
-        var worte = ["\(nummer). \(monatsname)"]
-        if t.heute { worte.append("heute") }
-        if t.trainiert { worte.append("trainiert") }
-        if let geplant = t.geplant { worte.append("geplant: \(geplant)") }
-        if t.ausgefallen { worte.append("ausgefallen") } else if !t.trainiert && t.geplant == nil { worte.append("kein Training") }
-        if t.partnerTrainiert { worte.append("Partner trainiert") }
-        if t.partnerGeplant { worte.append("Partner geplant") }
+        var worte = [String(localized: "\(nummer). \(monatsname)")]
+        if t.heute { worte.append(String(localized: "heute")) }
+        if t.trainiert { worte.append(String(localized: "trainiert")) }
+        if let geplant = t.geplant { worte.append(String(localized: "geplant: \(geplant)")) }
+        if t.ausgefallen { worte.append(String(localized: "ausgefallen")) } else if !t.trainiert && t.geplant == nil { worte.append(String(localized: "kein Training")) }
+        if t.partnerTrainiert { worte.append(String(localized: "Partner trainiert")) }
+        if t.partnerGeplant { worte.append(String(localized: "Partner geplant")) }
         return worte.joined(separator: ", ")
     }
 

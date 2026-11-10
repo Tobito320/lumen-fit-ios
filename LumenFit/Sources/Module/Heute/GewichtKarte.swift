@@ -116,13 +116,13 @@ struct HeuteGewichtDiagramm: View {
         .chartYScale(domain: unten...oben)
         .environment(\.locale, Locale(identifier: "de_DE"))
         .accessibilityChartDescriptor(HeuteDiagrammBeschreibung(
-            titel: "Gewichtsverlauf", zusammenfassung: zusammenfassung, xTitel: "Tag", yTitel: "Gewicht", einheit: "kg",
+            titel: String(localized: "Gewichtsverlauf"), zusammenfassung: zusammenfassung, xTitel: String(localized: "Tag"), yTitel: String(localized: "Gewicht"), einheit: "kg",
             punkte: punkte.map { HeuteDiagrammPunkt(name: SchritteDetailLogik.kurz($0.tag), wert: $0.kg) }))
     }
 
     private var zusammenfassung: String {
-        guard let erster = punkte.first, let letzter = punkte.last else { return "Keine Werte" }
-        let text = "\(String(format: "%.1f", letzter.kg).replacingOccurrences(of: ".", with: ",")) kg am \(SchritteDetailLogik.kurz(letzter.tag)), davor \(String(format: "%.1f", erster.kg).replacingOccurrences(of: ".", with: ",")) kg"
-        return ziel.map { text + ", Ziel \(String(format: "%.1f", $0).replacingOccurrences(of: ".", with: ",")) kg" } ?? text
+        guard let erster = punkte.first, let letzter = punkte.last else { return String(localized: "Keine Werte") }
+        let text = String(localized: "\(String(format: "%.1f", letzter.kg).replacingOccurrences(of: ".", with: ",")) kg am \(SchritteDetailLogik.kurz(letzter.tag)), davor \(String(format: "%.1f", erster.kg).replacingOccurrences(of: ".", with: ",")) kg")
+        return ziel.map { String(localized: "\(text), Ziel \(String(format: "%.1f", $0).replacingOccurrences(of: ".", with: ",")) kg") } ?? text
     }
 }

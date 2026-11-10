@@ -64,7 +64,7 @@ struct VerlaufView: View {
                 }
             }
             if laeufe.isEmpty {
-                LeerZustand(stimmung: .bereit, satz: "Noch keine Sätze eingetragen. Im Tab Gym hakst du Sätze ab, dann stehen sie hier.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Noch keine Sätze eingetragen. Im Tab Gym hakst du Sätze ab, dann stehen sie hier."))
                     .lumenKartenFlaeche()
             } else {
                 gruppen(liste)
@@ -86,14 +86,14 @@ struct VerlaufView: View {
 
     private func lumenGruppen(_ l: VerlaufWoche.Liste, offen: Binding<Bool>) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Sätze pro Muskel")
+            GymAbschnitt(titel: String(localized: "Sätze pro Muskel"))
             ListenKarte {
                 ForEach(l.aktiv) { zeile in
                     gruppenKnopf(zeile)
                     Haarlinie()
                 }
                 if !l.weitere.isEmpty {
-                    VerlaufKlapp(titel: "Weitere Gruppen (\(l.weitere.count))", offen: offen) {
+                    VerlaufKlapp(titel: String(localized: "Weitere Gruppen (\(l.weitere.count))"), offen: offen) {
                         ForEach(l.weitere) { zeile in
                             gruppenKnopf(zeile)
                             Haarlinie()
@@ -147,7 +147,7 @@ struct VerlaufView: View {
             if q.hatTraining || !q.gym.isEmpty {
                 KonsistenzKarte(sessions: q.sessions)
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Noch kein Training. Tipp auf Starten, Lumi zählt mit.", handlung: "Training starten") {
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Noch kein Training. Tipp auf Starten, Lumi zählt mit."), handlung: String(localized: "Training starten")) {
                     umgebung.router.oeffne(.gym(.training))
                 }
                 .lumenKartenFlaeche()

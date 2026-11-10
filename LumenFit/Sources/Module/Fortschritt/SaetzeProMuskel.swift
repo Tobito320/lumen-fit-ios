@@ -13,7 +13,7 @@ struct MuskelSatzZeile: Identifiable, Equatable, Sendable {
     var erreicht: Bool { ziel > 0 && saetze >= Double(ziel) }
 
     /// "9 von 12", halbe Sätze mit Komma ("4,5 von 8").
-    var text: String { "\(VerlaufLogik.zahl(saetze)) von \(ziel)" }
+    var text: String { String(localized: "\(VerlaufLogik.zahl(saetze)) von \(ziel)") }
 }
 
 /// Idee 32: Wochenbalken je Muskelgruppe mit Zielzahl und Wert rechts. Aufwärmsätze zählen nicht.
@@ -46,19 +46,19 @@ enum SaetzeProMuskel {
 
     /// Die Aussage als Titel: "4 von 9 Muskelgruppen im Wochenziel".
     static func aussage(_ zeilen: [MuskelSatzZeile]) -> String {
-        guard !zeilen.isEmpty else { return "Noch keine Wochenziele" }
+        guard !zeilen.isEmpty else { return String(localized: "Noch keine Wochenziele") }
         let im = zeilen.filter(\.erreicht).count
-        return "\(im) von \(zeilen.count) Muskelgruppen im Wochenziel"
+        return String(localized: "\(im) von \(zeilen.count) Muskelgruppen im Wochenziel")
     }
 
     /// Die Kernzeile: die Gruppe, die am meisten fehlt, und wie viele Sätze.
     static func kernzeile(_ zeilen: [MuskelSatzZeile]) -> String {
         let summe = zeilen.reduce(0) { $0 + $1.saetze }
-        guard summe > 0 else { return "Diese Woche noch kein Satz. Tipp auf Starten, Lumi zählt mit." }
+        guard summe > 0 else { return String(localized: "Diese Woche noch kein Satz. Tipp auf Starten, Lumi zählt mit.") }
         guard let offen = zeilen.filter({ !$0.erreicht }).max(by: { Double($0.ziel) - $0.saetze < Double($1.ziel) - $1.saetze }) else {
-            return "Alle Wochenziele sind erreicht."
+            return String(localized: "Alle Wochenziele sind erreicht.")
         }
         let fehlt = Double(offen.ziel) - offen.saetze
-        return "Am meisten fehlt \(offen.gruppe.name): noch \(VerlaufLogik.saetzeText(fehlt))."
+        return String(localized: "Am meisten fehlt \(offen.gruppe.name): noch \(VerlaufLogik.saetzeText(fehlt)).")
     }
 }

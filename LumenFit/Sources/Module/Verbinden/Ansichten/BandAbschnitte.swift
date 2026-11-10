@@ -84,7 +84,7 @@ struct BandVerbindungAbschnitt: View {
 
     var body: some View {
         let status = BandAnzeige.status(modell.zustand, gekoppelt: modell.gekoppelt, abfrageLaeuft: modell.abfrageLaeuft)
-        VerbindenAbschnitt(titel: "Verbindung", fuss: fuss) {
+        VerbindenAbschnitt(titel: String(localized: "Verbindung"), fuss: fuss) {
             if let hilfe = status.hilfe {
                 Label(hilfe, systemImage: status.warnung ? "exclamationmark.triangle.fill" : "info.circle")
                     .font(.subheadline)
@@ -110,10 +110,10 @@ struct BandVerbindungAbschnitt: View {
     private var fuss: String {
         if modell.gekoppelt {
             return modell.automatischVerbinden
-                ? "Lumen Fit verbindet sich von selbst wieder, auch im Hintergrund, sobald das Band sendet."
-                : "Aus: Lumen Fit hält keine Verbindung offen, bis du auf Verbinden tippst."
+                ? String(localized: "Lumen Fit verbindet sich von selbst wieder, auch im Hintergrund, sobald das Band sendet.")
+                : String(localized: "Aus: Lumen Fit hält keine Verbindung offen, bis du auf Verbinden tippst.")
         }
-        return umgebung.konto.loveaErlaubt ? "Ob das iPhone die Verbindung zum Band mit Lovea teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen: fehlen Daten, schalte eine der beiden aus." : "Ob das iPhone die Verbindung zum Band mit anderen Apps teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen."
+        return umgebung.konto.loveaErlaubt ? String(localized: "Ob das iPhone die Verbindung zum Band mit Lovea teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen: fehlen Daten, schalte eine der beiden aus.") : String(localized: "Ob das iPhone die Verbindung zum Band mit anderen Apps teilt und ob zwei Apps beim Lesen stören, ist am Gerät nicht bewiesen.")
     }
 
     @ViewBuilder private var aktion: some View {
@@ -140,9 +140,9 @@ struct BandArmAbschnitt: View {
 
     private var arm: (titel: String, symbol: String) {
         switch modell.armZustand {
-        case .amArm: ("Am Arm", "checkmark.circle.fill")
-        case .abgelegt: ("Abgelegt", "minus.circle.fill")
-        case .unbekannt: ("Unbekannt", "questionmark.circle")
+        case .amArm: (String(localized: "Am Arm"), "checkmark.circle.fill")
+        case .abgelegt: (String(localized: "Abgelegt"), "minus.circle.fill")
+        case .unbekannt: (String(localized: "Unbekannt"), "questionmark.circle")
         }
     }
 
@@ -150,18 +150,18 @@ struct BandArmAbschnitt: View {
     private var armLaedt: Bool { modell.abfrageLaeuft && modell.pulsGelesen == nil }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Am Arm", fuss: fuss) {
+        VerbindenAbschnitt(titel: String(localized: "Am Arm"), fuss: fuss) {
             LabeledContent {
                 Text(arm.titel)
             } label: {
                 Label("Band", systemImage: arm.symbol)
             }
-            .bandLadend(armLaedt, label: "Band wird geprüft")
+            .bandLadend(armLaedt, label: String(localized: "Band wird geprüft"))
             LabeledContent("Puls gemessen") {
                 if let puls = modell.pulsEinstellung {
                     Text(puls.an ? "alle \(puls.intervallMinuten) Min." : "aus")
                 } else {
-                    Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: "wird gelesen")
+                    Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: String(localized: "wird gelesen"))
                 }
             }
             LabeledContent("Letzter Puls") {
@@ -170,7 +170,7 @@ struct BandArmAbschnitt: View {
                 } else if modell.pulsGelesen != nil {
                     Text("heute keiner")
                 } else {
-                    Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: "wird gelesen")
+                    Text("nicht gelesen").foregroundStyle(.secondary).bandLadend(modell.abfrageLaeuft, label: String(localized: "wird gelesen"))
                 }
             }
         }
@@ -178,8 +178,8 @@ struct BandArmAbschnitt: View {
 
     private var fuss: String {
         modell.pulsEinstellung?.an == false
-            ? "Die Puls-Dauermessung ist aus. Ohne sie kann Lumen Fit nicht erkennen, ob das Band am Arm ist."
-            : "Misst das Band zwei Abstände lang keinen Puls, liegt es vermutlich nicht am Arm. Lumen Fit liest dafür bei jeder Abfrage den Pulsverlauf von heute. Am Gerät noch nicht geprüft."
+            ? String(localized: "Die Puls-Dauermessung ist aus. Ohne sie kann Lumen Fit nicht erkennen, ob das Band am Arm ist.")
+            : String(localized: "Misst das Band zwei Abstände lang keinen Puls, liegt es vermutlich nicht am Arm. Lumen Fit liest dafür bei jeder Abfrage den Pulsverlauf von heute. Am Gerät noch nicht geprüft.")
     }
 }
 
@@ -193,7 +193,7 @@ struct BandModusAbschnitt: View {
 
     private var zeile: String {
         modell.modus?.erklaerung
-            ?? "Sparen: lange Akkulaufzeit, Kernfunktionen bleiben. Viele Daten: dichte Messung, mehr Verlauf, der Akku hält kürzer."
+            ?? String(localized: "Sparen: lange Akkulaufzeit, Kernfunktionen bleiben. Viele Daten: dichte Messung, mehr Verlauf, der Akku hält kürzer.")
     }
 
     private var fuss: String {
@@ -204,7 +204,7 @@ struct BandModusAbschnitt: View {
     }
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Modus", fuss: fuss) {
+        VerbindenAbschnitt(titel: String(localized: "Modus"), fuss: fuss) {
             Picker("Modus", selection: wahl) {
                 ForEach(TrackerModus.allCases) { Text($0.name).tag(Optional($0)) }
             }

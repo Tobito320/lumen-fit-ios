@@ -95,7 +95,7 @@ struct PhasenBalken: View {
 
     /// "Tief 1 h 20 min, Kern 3 h 50 min, REM 1 h 30 min"; ohne Phasen die Dauer.
     var kernzeile: String {
-        guard hatPhasen else { return "Geschlafen \(SchlafFormat.dauer(nacht.schlafMinuten)). Phasen kennt nur eine Uhr oder das Band." }
+        guard hatPhasen else { return String(localized: "Geschlafen \(SchlafFormat.dauer(nacht.schlafMinuten)). Phasen kennt nur eine Uhr oder das Band.") }
         return teile.map { "\($0.phase.name) \(SchlafFormat.dauer($0.minuten))" }.joined(separator: ", ")
     }
 
@@ -145,9 +145,9 @@ struct PhasenBalken: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(hatPhasen ? "Schlafphasen von \(Datum.uhrzeit(nacht.von)) bis \(Datum.uhrzeit(nacht.bis)). \(kernzeile)" : kernzeile)
+        .accessibilityLabel(hatPhasen ? String(localized: "Schlafphasen von \(Datum.uhrzeit(nacht.von)) bis \(Datum.uhrzeit(nacht.bis)). \(kernzeile)") : kernzeile)
         .accessibilityChartDescriptor(SchlafDiagrammBeschreibung(
-            titel: "Schlafphasen", zusammenfassung: kernzeile, achseX: "Phase", reihe: "Minuten je Phase",
+            titel: String(localized: "Schlafphasen"), zusammenfassung: kernzeile, achseX: String(localized: "Phase"), reihe: String(localized: "Minuten je Phase"),
             punkte: teile.map { SchlafDiagrammBeschreibung.Punkt(name: $0.phase.name, minuten: Double($0.minuten)) }))
     }
 }

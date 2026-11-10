@@ -44,33 +44,33 @@ enum TagesHinweisLogik {
         let gestern = Datum.addTage(e.heute, -1)
         liste += rueckblickKarten(e)
         if let heute = e.schlafMinuten[e.heute], let davor = e.schlafMinuten[gestern], heute < kurzeNachtBis, davor < kurzeNachtBis {
-            liste.append(TagesHinweis(id: "schlaf-kurz-\(e.heute)", symbol: "bed.double.fill", titel: "Zweimal unter 6 Stunden",
-                                      text: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett.", bereich: .schlaf))
+            liste.append(TagesHinweis(id: "schlaf-kurz-\(e.heute)", symbol: "bed.double.fill", titel: String(localized: "Zweimal unter 6 Stunden"),
+                                      text: String(localized: "\(BereitScore.stunden(davor)) und \(BereitScore.stunden(heute)). Heute locker, früh ins Bett."), bereich: .schlaf))
         }
         if e.gymInFolge >= 3 {
-            liste.append(TagesHinweis(id: "gym-folge-\(e.heute)", symbol: "dumbbell.fill", titel: "\(e.gymInFolge) Tage Gym am Stück",
-                                      text: "Plane einen Ruhetag ein, dann bleibt die Kraft.", bereich: .gym))
+            liste.append(TagesHinweis(id: "gym-folge-\(e.heute)", symbol: "dumbbell.fill", titel: String(localized: "\(e.gymInFolge) Tage Gym am Stück"),
+                                      text: String(localized: "Plane einen Ruhetag ein, dann bleibt die Kraft."), bereich: .gym))
         }
         let woche = HabitLogik.wochenTage(heute: e.heute)
         let gym = e.gymTage.intersection(Set(woche)).count
         let uebrig = 7 - Datum.wochentag(e.heute) + (e.gymTage.contains(e.heute) ? 0 : 1)
         if e.gymZielWoche > 0, gym < e.gymZielWoche, Datum.wochentag(e.heute) >= 5 {
             let fehlt = e.gymZielWoche - gym
-            liste.append(TagesHinweis(id: "gym-woche-\(woche[0])", symbol: "calendar", titel: "Noch \(fehlt) \(fehlt == 1 ? "Gym-Tag" : "Gym-Tage") bis zum Wochenziel",
-                                      text: "\(gym) von \(e.gymZielWoche) Tagen, noch \(uebrig) \(uebrig == 1 ? "Tag" : "Tage") in der Woche.", bereich: .gym))
+            liste.append(TagesHinweis(id: "gym-woche-\(woche[0])", symbol: "calendar", titel: String(localized: "Noch \(fehlt) \(fehlt == 1 ? String(localized: "Gym-Tag") : String(localized: "Gym-Tage")) bis zum Wochenziel"),
+                                      text: String(localized: "\(gym) von \(e.gymZielWoche) Tagen, noch \(uebrig) \(uebrig == 1 ? String(localized: "Tag") : String(localized: "Tage")) in der Woche."), bereich: .gym))
         }
         if e.wasserZiel > 0, e.stunde >= 16, e.wasserHeute * 2 < e.wasserZiel {
-            liste.append(TagesHinweis(id: "wasser-\(e.heute)", symbol: "drop.fill", titel: "Wenig Wasser bisher",
-                                      text: "\(e.wasserHeute) von \(e.wasserZiel) Gläsern. Ein Glas jetzt hilft."))
+            liste.append(TagesHinweis(id: "wasser-\(e.heute)", symbol: "drop.fill", titel: String(localized: "Wenig Wasser bisher"),
+                                      text: String(localized: "\(e.wasserHeute) von \(e.wasserZiel) Gläsern. Ein Glas jetzt hilft.")))
         }
         if let letzter = e.gewichtTage.max(), Datum.tageZwischen(letzter, e.heute) >= 7 {
-            liste.append(TagesHinweis(id: "gewicht-\(e.heute)", symbol: "scalemass.fill", titel: "Länger nicht gewogen",
-                                      text: "Dein letzter Eintrag ist \(Datum.tageZwischen(letzter, e.heute)) Tage her. Drei Sekunden reichen."))
+            liste.append(TagesHinweis(id: "gewicht-\(e.heute)", symbol: "scalemass.fill", titel: String(localized: "Länger nicht gewogen"),
+                                      text: String(localized: "Dein letzter Eintrag ist \(Datum.tageZwischen(letzter, e.heute)) Tage her. Drei Sekunden reichen.")))
         }
         let serie = (0..<3).allSatisfy { (e.schritte[Datum.addTage(e.heute, -$0)] ?? 0) >= e.schritteZiel && e.schritteZiel > 0 }
         if serie {
-            liste.append(TagesHinweis(id: "schritte-serie-\(e.heute)", symbol: "figure.walk", titel: "Drei Tage über dem Schrittziel",
-                                      text: "Das hält dein Herz fit. Weiter so."))
+            liste.append(TagesHinweis(id: "schritte-serie-\(e.heute)", symbol: "figure.walk", titel: String(localized: "Drei Tage über dem Schrittziel"),
+                                      text: String(localized: "Das hält dein Herz fit. Weiter so.")))
         }
         return liste.filter { $0.bereich.map(e.bereiche.zeigt) ?? true }
     }
@@ -82,12 +82,14 @@ enum TagesHinweisLogik {
         let woche = HabitLogik.wochenTage(heute: e.heute)
         if Datum.wochentag(e.heute) == 7 {
             let gym = e.gymTage.intersection(Set(woche)).count
-            karten.append(TagesHinweis(id: "rueckblick-woche-\(woche[0])", symbol: "calendar", titel: "Dein Wochenrückblick ist da",
-                                       text: (e.bereiche.gymAn ? "\(gym) \(gym == 1 ? "Gym-Tag" : "Gym-Tage") diese Woche. " : "") + "Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
+            karten.append(TagesHinweis(id: "rueckblick-woche-\(woche[0])", symbol: "calendar", titel: String(localized: "Dein Wochenrückblick ist da"),
+                                       text: e.bereiche.gymAn
+                                           ? String(localized: "\(gym) \(gym == 1 ? String(localized: "Gym-Tag") : String(localized: "Gym-Tage")) diese Woche. Tippe, um ihn anzusehen und zu teilen.")
+                                           : String(localized: "Tippe, um ihn anzusehen und zu teilen."), ziel: .rueckblick))
         }
         if Datum.addTage(e.heute, 1).prefix(7) != e.heute.prefix(7) {
-            karten.append(TagesHinweis(id: "rueckblick-monat-\(e.heute.prefix(7))", symbol: "calendar.badge.clock", titel: "Dein Monatsrückblick ist da",
-                                       text: "Der Monat ist rum. Tippe, um ihn anzusehen und zu teilen.", ziel: .rueckblick))
+            karten.append(TagesHinweis(id: "rueckblick-monat-\(e.heute.prefix(7))", symbol: "calendar.badge.clock", titel: String(localized: "Dein Monatsrückblick ist da"),
+                                       text: String(localized: "Der Monat ist rum. Tippe, um ihn anzusehen und zu teilen."), ziel: .rueckblick))
         }
         return karten
     }

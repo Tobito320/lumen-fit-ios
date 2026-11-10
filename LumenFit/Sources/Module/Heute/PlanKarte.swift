@@ -28,7 +28,7 @@ struct PlanKarte: View {
                     if let unter = unterzeile { Text(unter).font(.subheadline).foregroundStyle(palette.text2) }
                 }
                 .accessibilityElement(children: .combine)
-                if plan.locker { Pille(text: "Heute locker", symbolName: "leaf.fill") }
+                if plan.locker { Pille(text: String(localized: "Heute locker"), symbolName: "leaf.fill") }
                 if zeigtTipp { Text(plan.tipp).font(.subheadline).foregroundStyle(palette.text2) }
                 if woche.count == 7 { HeutePlanWoche(woche: woche, oeffne: oeffneTag) }
                 knopf

@@ -21,9 +21,10 @@ enum SchlafFormat {
         let m = max(0, minuten)
         let stunden = m / 60
         let rest = m % 60
-        if stunden == 0 { return rest == 1 ? "1 Minute" : "\(rest) Minuten" }
-        let h = stunden == 1 ? "1 Stunde" : "\(stunden) Stunden"
-        return rest == 0 ? h : "\(h) \(rest == 1 ? "1 Minute" : "\(rest) Minuten")"
+        let r = rest == 1 ? String(localized: "1 Minute") : String(localized: "\(rest) Minuten")
+        if stunden == 0 { return r }
+        let h = stunden == 1 ? String(localized: "1 Stunde") : String(localized: "\(stunden) Stunden")
+        return rest == 0 ? h : "\(h) \(r)"
     }
 
     /// Minute des Tages (0 bis 1439) nach Berliner Uhr. Über die Zeitumstellung hinweg zählt, was die Wanduhr zeigt.
@@ -44,7 +45,7 @@ enum SchlafFormat {
     /// "12 min später", "1 h 05 min früher", "gleich".
     static func abstand(_ minuten: Int, mehr: String, weniger: String) -> String {
         let betrag = abs(minuten)
-        guard betrag > 0 else { return "gleich" }
+        guard betrag > 0 else { return String(localized: "gleich") }
         return "\(dauer(betrag)) \(minuten > 0 ? mehr : weniger)"
     }
 
@@ -57,7 +58,7 @@ enum SchlafFormat {
 
     /// Kurzer Wochentag "Mo" bis "So" für die Balken.
     static func wochentagKurz(_ tag: String) -> String {
-        ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"][max(1, min(7, Datum.wochentag(tag))) - 1]
+        [String(localized: "Mo"), String(localized: "Di"), String(localized: "Mi"), String(localized: "Do"), String(localized: "Fr"), String(localized: "Sa"), String(localized: "So")][max(1, min(7, Datum.wochentag(tag))) - 1]
     }
 
     /// Zahl mit deutschem Komma und fester Zahl von Nachkommastellen ("36,5").

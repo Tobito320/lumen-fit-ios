@@ -4,10 +4,26 @@ import Foundation
 /// Welche Art Eintrag die Liste im Hinzufügen-Blatt zeigt.
 enum EssenHinzuTyp: String, CaseIterable, Hashable, Sendable {
     case lebensmittel = "Lebensmittel", mahlzeiten = "Mahlzeiten", rezepte = "Rezepte"
+
+    var titel: String {
+        switch self {
+        case .lebensmittel: String(localized: "Lebensmittel")
+        case .mahlzeiten: String(localized: "Mahlzeiten")
+        case .rezepte: String(localized: "Rezepte")
+        }
+    }
 }
 
 enum EssenHinzuSortierung: String, CaseIterable, Hashable, Sendable {
     case haeufig = "Häufig", zuletzt = "Zuletzt", favoriten = "Favoriten"
+
+    var titel: String {
+        switch self {
+        case .haeufig: String(localized: "Häufig")
+        case .zuletzt: String(localized: "Zuletzt")
+        case .favoriten: String(localized: "Favoriten")
+        }
+    }
 }
 
 /// Filter über den Suchtreffern. Lumen hat keine feste Partner-Kennung: "Von anderen" heißt, ein anderes Profil hat es angelegt.
@@ -16,9 +32,9 @@ enum EssenSuchChip: Hashable, Sendable {
 
     var titel: String {
         switch self {
-        case .favoriten: "Favoriten"
-        case .vonMir: "Von mir erstellt"
-        case .vonAnderen: "Von anderen"
+        case .favoriten: String(localized: "Favoriten")
+        case .vonMir: String(localized: "Von mir erstellt")
+        case .vonAnderen: String(localized: "Von anderen")
         }
     }
 
@@ -83,8 +99,9 @@ enum EssenHinzuLogik {
 
     /// "Mahlzeit", "Rezept" oder "Lebensmittel" für das kleine Etikett in der Suchzeile.
     static func typLabel(_ l: Lebensmittel, rezepte: [Rezept]) -> String {
-        guard let r = rezept(zu: l, in: rezepte) else { return "Lebensmittel" }
-        return r.istMahlzeit ? "Mahlzeit" : "Rezept"
+        guard let r = rezept(zu: l, in: rezepte) else { return String(localized: "Lebensmittel") }
+        return r.istMahlzeit ? String(localized: "Mahlzeit") : String(localized: "Rezept")
+
     }
 
     /// Das Rezept hinter einem `rezept-…`-Lebensmittel.

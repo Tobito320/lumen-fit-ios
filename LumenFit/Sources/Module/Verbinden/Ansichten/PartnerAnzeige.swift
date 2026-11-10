@@ -22,31 +22,31 @@ enum PartnerAnzeige {
         switch bereich {
         case .heute:
             if frei.contains(.schritte), let s = datei.heute.schritte {
-                liste.append(Zeile(titel: "Schritte", wert: s.formatted(), symbol: "figure.walk"))
+                liste.append(Zeile(titel: String(localized: "Schritte"), wert: s.formatted(), symbol: "figure.walk"))
             }
             if frei.contains(.gym), let g = datei.heute.gymTageWoche {
-                liste.append(Zeile(titel: "Gym diese Woche", wert: g == 1 ? "1 Tag" : "\(g) Tage", symbol: "dumbbell.fill"))
+                liste.append(Zeile(titel: String(localized: "Gym diese Woche"), wert: g == 1 ? String(localized: "1 Tag") : String(localized: "\(g) Tage"), symbol: "dumbbell.fill"))
             }
             if frei.contains(.essen), let k = datei.heute.kcal {
-                liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
+                liste.append(Zeile(titel: String(localized: "Essen"), wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
             }
             if frei.contains(.stimmung), let s = datei.heute.stimmung {
-                liste.append(Zeile(titel: "Stimmung", wert: stimmungText(s), symbol: "face.smiling"))
+                liste.append(Zeile(titel: String(localized: "Stimmung"), wert: stimmungText(s), symbol: "face.smiling"))
             }
             if frei.contains(.gewohnheiten), let g = datei.heute.gewohnheiten, !g.isEmpty {
-                liste.append(Zeile(titel: "Gewohnheiten", wert: "\(g.filter(\.heute).count) von \(g.count) heute", symbol: "checkmark.circle"))
+                liste.append(Zeile(titel: String(localized: "Gewohnheiten"), wert: String(localized: "\(g.filter(\.heute).count) von \(g.count) heute"), symbol: "checkmark.circle"))
             }
         case .essen:
             if frei.contains(.essen), let k = datei.heute.kcal {
-                liste.append(Zeile(titel: "Essen", wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
+                liste.append(Zeile(titel: String(localized: "Essen"), wert: "\(k.formatted()) kcal", symbol: "fork.knife"))
             }
         case .gym:
             if frei.contains(.gym), let g = datei.heute.gymTageWoche {
-                liste.append(Zeile(titel: "Gym diese Woche", wert: g == 1 ? "1 Tag" : "\(g) Tage", symbol: "dumbbell.fill"))
+                liste.append(Zeile(titel: String(localized: "Gym diese Woche"), wert: g == 1 ? String(localized: "1 Tag") : String(localized: "\(g) Tage"), symbol: "dumbbell.fill"))
             }
         case .schlaf:
             if frei.contains(.schlaf), let m = datei.heute.schlafMinuten {
-                liste.append(Zeile(titel: "Schlaf", wert: schlafText(m), symbol: "bed.double.fill"))
+                liste.append(Zeile(titel: String(localized: "Schlaf"), wert: schlafText(m), symbol: "bed.double.fill"))
             }
         }
         return liste
@@ -65,9 +65,9 @@ enum PartnerAnzeige {
         guard datei.freigaben.contains(.schlaf), let stufe = datei.heute.energieStufe else { return nil }
         let titel: String
         switch stufe {
-        case "hoch": titel = "Viel Energie heute"
-        case "mittel": titel = "Normale Energie"
-        case "niedrig": titel = "Heute eher wenig Energie"
+        case "hoch": titel = String(localized: "Viel Energie heute")
+        case "mittel": titel = String(localized: "Normale Energie")
+        case "niedrig": titel = String(localized: "Heute eher wenig Energie")
         default: return nil
         }
         return (titel, datei.freigaben.contains(.gym) ? datei.heute.energieGym : nil)
@@ -98,11 +98,11 @@ enum PartnerAnzeige {
     /// Die Antwort auf den Morgen-Check in Worten (1 schwer bis 5 top).
     static func stimmungText(_ wert: Int) -> String {
         switch wert {
-        case ...1: "Schwer"
-        case 2: "Müde"
-        case 3: "Okay"
-        case 4: "Gut"
-        default: "Top"
+        case ...1: String(localized: "Schwer")
+        case 2: String(localized: "Müde")
+        case 3: String(localized: "Okay")
+        case 4: String(localized: "Gut")
+        default: String(localized: "Top")
         }
     }
 

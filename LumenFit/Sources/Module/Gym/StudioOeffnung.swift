@@ -95,8 +95,8 @@ enum GymOeffnung {
         return gruppen.map { g in
             let tage = TrainingLogik.wochentageText(g.tage)
             switch g.grund {
-            case .vorOeffnung(let von): return "\(tage): öffnet erst um \(Datum.uhrzeit(minuten: von))"
-            case .nachSchluss(let bis): return "\(tage): schließt um \(Datum.uhrzeit(minuten: bis))"
+            case .vorOeffnung(let von): return String(localized: "\(tage): öffnet erst um \(Datum.uhrzeit(minuten: von))")
+            case .nachSchluss(let bis): return String(localized: "\(tage): schließt um \(Datum.uhrzeit(minuten: bis))")
             }
         }
     }
@@ -108,16 +108,16 @@ enum GymOeffnung {
         let minute = Datum.minuten(Datum.uhrzeit(jetzt)) ?? 0
         guard !istOffen(o, wochentag: tag, minute: minute) else { return nil }
         let f = fenster(o, wochentag: tag)
-        if minute < f.von { return "Das Studio öffnet erst um \(Datum.uhrzeit(minuten: f.von))." }
-        return "Das Studio hat seit \(Datum.uhrzeit(minuten: f.bis ?? 0)) zu."
+        if minute < f.von { return String(localized: "Das Studio öffnet erst um \(Datum.uhrzeit(minuten: f.von)).") }
+        return String(localized: "Das Studio hat seit \(Datum.uhrzeit(minuten: f.bis ?? 0)) zu.")
     }
 
     /// Eine Zeile für die Studio-Karte: "24/7 geöffnet", "Mo–Fr 08:00–22:00, Sa/So 09:00–18:00", "Zeiten unbekannt".
     static func kurztext(_ o: StudioOeffnung) -> String {
-        if o.rund { return "24/7 geöffnet" }
+        if o.rund { return String(localized: "24/7 geöffnet") }
         var teile: [String] = []
-        if let w = o.werktage { teile.append("Mo–Fr \(Datum.uhrzeit(minuten: w.von))–\(Datum.uhrzeit(minuten: w.bis))") }
-        if let w = o.wochenende { teile.append("Sa/So \(Datum.uhrzeit(minuten: w.von))–\(Datum.uhrzeit(minuten: w.bis))") }
-        return teile.isEmpty ? "Zeiten unbekannt" : teile.joined(separator: ", ")
+        if let w = o.werktage { teile.append(String(localized: "Mo–Fr \(Datum.uhrzeit(minuten: w.von))–\(Datum.uhrzeit(minuten: w.bis))")) }
+        if let w = o.wochenende { teile.append(String(localized: "Sa/So \(Datum.uhrzeit(minuten: w.von))–\(Datum.uhrzeit(minuten: w.bis))")) }
+        return teile.isEmpty ? String(localized: "Zeiten unbekannt") : teile.joined(separator: ", ")
     }
 }

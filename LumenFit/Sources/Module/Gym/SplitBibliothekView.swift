@@ -258,7 +258,7 @@ struct SplitFreiBlatt: View {
             Form {
                 Section("Name") { TextField("Mein Split", text: $name) }
                 Section {
-                    Stepper("\(anzahl) \(anzahl == 1 ? "Tag" : "Tage") pro Woche", value: $anzahl, in: SplitFrei.tageBereich)
+                    Stepper(anzahl == 1 ? String(localized: "1 Tag pro Woche") : String(localized: "\(anzahl) Tage pro Woche"), value: $anzahl, in: SplitFrei.tageBereich)
                     ForEach(0..<anzahl, id: \.self) { i in
                         TextField(SplitFrei.standardName(i + 1), text: $namen[i])
                     }

@@ -12,8 +12,8 @@ enum VerlaufSeite: String, CaseIterable, Identifiable {
 
     var titel: String {
         switch self {
-        case .woche: "Woche"
-        case .verlauf: "Verlauf"
+        case .woche: String(localized: "Woche")
+        case .verlauf: String(localized: "Verlauf")
         }
     }
 }
@@ -40,9 +40,9 @@ struct VerlaufZusammenfassung: View {
     }
 
     @ViewBuilder private var spalten: some View {
-        wert(z.besuche, z.besuche == 1 ? "Besuch" : "Besuche")
-        wert(z.minuten, "Minuten")
-        wert(z.saetze, z.saetze == 1 ? "Satz" : "Sätze")
+        wert(z.besuche, z.besuche == 1 ? String(localized: "Besuch") : String(localized: "Besuche"))
+        wert(z.minuten, String(localized: "Minuten"))
+        wert(z.saetze, z.saetze == 1 ? String(localized: "Satz") : String(localized: "Sätze"))
     }
 
     private func wert(_ n: Int, _ name: String) -> some View {
@@ -143,9 +143,9 @@ struct VerlaufGruppenZeile: View {
     private var sprechtext: String {
         var teile = [zeile.gruppe.name]
         if leer {
-            teile.append("keine Sätze diese Woche")
+            teile.append(String(localized: "keine Sätze diese Woche"))
         } else {
-            teile.append(zeile.ziel.map { "\(VerlaufLogik.zahl(zeile.saetze)) von \($0) Sätzen" } ?? VerlaufLogik.saetzeText(zeile.saetze))
+            teile.append(zeile.ziel.map { String(localized: "\(VerlaufLogik.zahl(zeile.saetze)) von \($0) Sätzen") } ?? VerlaufLogik.saetzeText(zeile.saetze))
         }
         if let e = zeile.erholung { teile.append(KoerperLogik.stufenWort(e)) }
         return teile.joined(separator: ", ")
@@ -256,14 +256,14 @@ struct VerlaufHighlightsListe: View {
 
     private func lumenListe(_ teile: (offen: [VerlaufHighlights.Eintrag], mehr: [VerlaufHighlights.Eintrag])) -> some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
-            GymAbschnitt(titel: "Rekorde und Plateaus")
+            GymAbschnitt(titel: String(localized: "Rekorde und Plateaus"))
             ListenKarte {
                 ForEach(teile.offen) { e in
                     zeile(e)
                     Haarlinie()
                 }
                 if !teile.mehr.isEmpty {
-                    VerlaufKlapp(titel: "Weitere Übungen (\(teile.mehr.count))", offen: $mehrOffen) {
+                    VerlaufKlapp(titel: String(localized: "Weitere Übungen (\(teile.mehr.count))"), offen: $mehrOffen) {
                         ForEach(teile.mehr) { e in
                             zeile(e)
                             Haarlinie()
@@ -300,6 +300,6 @@ struct VerlaufHighlightsListe: View {
 
     private func untertitel(_ e: VerlaufHighlights.Eintrag) -> String {
         let kg = "e1RM \(VerlaufLogik.zahl(e.e1rm)) kg"
-        return e.art == .rekord ? "Neuer Rekord, \(kg)" : "Plateau bei \(kg), seit drei Einheiten nicht gesteigert"
+        return e.art == .rekord ? String(localized: "Neuer Rekord, \(kg)") : String(localized: "Plateau bei \(kg), seit drei Einheiten nicht gesteigert")
     }
 }

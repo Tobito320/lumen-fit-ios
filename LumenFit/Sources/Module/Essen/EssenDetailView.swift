@@ -71,7 +71,7 @@ struct EssenDetailView: View {
         .lumenHintergrund()
         .toolbar { werkzeugleiste }
         .safeAreaInset(edge: .bottom) {
-            EssenMengenLeiste(lebensmittel: lebensmittel, auswahl: auswahl, zahl: $zahl, knopf: bearbeiten == nil ? "Eintragen" : "Speichern",
+            EssenMengenLeiste(lebensmittel: lebensmittel, auswahl: auswahl, zahl: $zahl, knopf: bearbeiten == nil ? String(localized: "Eintragen") : String(localized: "Speichern"),
                               deaktiviert: gesichert > 0, einheitWechseln: { einheitWechseln($0) }, aktion: { speichern() })
         }
         .haptik(.erfolg, bei: gesichert)
@@ -119,9 +119,9 @@ struct EssenDetailView: View {
                     Text("kcal").font(.subheadline)
                 }
                 HStack(spacing: Abstand.xl) {
-                    makro("Protein", werte.protein)
-                    makro("Kohlenhydrate", werte.kohlenhydrate)
-                    makro("Fett", werte.fett)
+                    makro(String(localized: "Protein"), werte.protein)
+                    makro(String(localized: "Kohlenhydrate"), werte.kohlenhydrate)
+                    makro(String(localized: "Fett"), werte.fett)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -149,13 +149,13 @@ struct EssenDetailView: View {
     private var naehrwerteKarte: some View {
         let n = lebensmittel.pro100
         let einheit = lebensmittel.basisEinheit.rawValue
-        var zeilen: [(String, String)] = [("Energie", "\(Int(n.kcal.rounded())) kcal"), ("Fett", gramm(n.fett))]
-        if let g = n.gesFett { zeilen.append(("davon gesättigt", gramm(g))) }
-        zeilen.append(("Kohlenhydrate", gramm(n.kohlenhydrate)))
-        if let z = n.zucker { zeilen.append(("davon Zucker", gramm(z))) }
-        if let b = n.ballaststoffe { zeilen.append(("Ballaststoffe", gramm(b))) }
-        zeilen.append(("Eiweiß", gramm(n.protein)))
-        if let s = n.salz { zeilen.append(("Salz", gramm(s))) }
+        var zeilen: [(String, String)] = [(String(localized: "Energie"), "\(Int(n.kcal.rounded())) kcal"), (String(localized: "Fett"), gramm(n.fett))]
+        if let g = n.gesFett { zeilen.append((String(localized: "davon gesättigt"), gramm(g))) }
+        zeilen.append((String(localized: "Kohlenhydrate"), gramm(n.kohlenhydrate)))
+        if let z = n.zucker { zeilen.append((String(localized: "davon Zucker"), gramm(z))) }
+        if let b = n.ballaststoffe { zeilen.append((String(localized: "Ballaststoffe"), gramm(b))) }
+        zeilen.append((String(localized: "Eiweiß"), gramm(n.protein)))
+        if let s = n.salz { zeilen.append((String(localized: "Salz"), gramm(s))) }
         return VStack(alignment: .leading, spacing: Abstand.s) {
             Text("Nährwerte pro 100 \(einheit)").font(.headline).foregroundStyle(palette.text)
             ForEach(Array(zeilen.enumerated()), id: \.offset) { _, z in

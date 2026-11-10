@@ -32,11 +32,11 @@ enum WidgetAnzeige {
     static func boegen(_ snapshot: WidgetSnapshot?, jetzt: Date) -> [BogenWert] {
         let werte = istVonHeute(snapshot, jetzt: jetzt) ? snapshot?.boegen : nil
         return [
-            BogenWert(id: .bewegen, anteil: anteil(werte?.schritte, werte?.schritteZiel), zahl: werte?.schritte.map(zahlText) ?? "–", beschriftung: "Schritte"),
+            BogenWert(id: .bewegen, anteil: anteil(werte?.schritte, werte?.schritteZiel), zahl: werte?.schritte.map(zahlText) ?? "–", beschriftung: String(localized: "Schritte")),
             BogenWert(id: .trainieren, anteil: anteil(werte?.trainingTage, werte?.trainingZiel),
-                      zahl: werte?.trainingTage.map { "\($0) von \(max(werte?.trainingZiel ?? 0, 1))" } ?? "–", beschriftung: "Training"),
+                      zahl: werte?.trainingTage.map { String(localized: "\($0) von \(max(werte?.trainingZiel ?? 0, 1))") } ?? "–", beschriftung: String(localized: "Training")),
             BogenWert(id: .erholen, anteil: anteil(werte?.schlafMinuten, werte?.schlafZiel),
-                      zahl: werte?.schlafMinuten.map { LockscreenLogik.schlafText(minuten: $0) + " h" } ?? "–", beschriftung: "Schlaf"),
+                      zahl: werte?.schlafMinuten.map { LockscreenLogik.schlafText(minuten: $0) + " h" } ?? "–", beschriftung: String(localized: "Schlaf")),
         ]
     }
 
@@ -53,28 +53,28 @@ enum WidgetAnzeige {
 
     /// Ein Satz für VoiceOver über alle drei Bögen.
     static func sprechtext(_ snapshot: WidgetSnapshot?, jetzt: Date) -> String {
-        guard istVonHeute(snapshot, jetzt: jetzt), let b = snapshot?.boegen else { return "Lumen Fit: noch keine Werte von heute" }
+        guard istVonHeute(snapshot, jetzt: jetzt), let b = snapshot?.boegen else { return String(localized: "Lumen Fit: noch keine Werte von heute") }
         var teile: [String] = []
-        if let s = b.schritte { teile.append("Schritte \(zahlText(s))" + (b.schritteZiel.map { " von \(zahlText($0))" } ?? "")) }
-        if let t = b.trainingTage { teile.append("Training \(t) von \(max(b.trainingZiel ?? 0, 1)) Tagen in dieser Woche") }
-        if let m = b.schlafMinuten { teile.append("Schlaf \(m / 60) Stunden \(m % 60) Minuten" + (b.schlafZiel.map { " von \($0 / 60) Stunden" } ?? "")) }
-        return teile.isEmpty ? "Lumen Fit: noch keine Werte von heute" : teile.joined(separator: ", ")
+        if let s = b.schritte { teile.append(b.schritteZiel.map { String(localized: "Schritte \(zahlText(s)) von \(zahlText($0))") } ?? String(localized: "Schritte \(zahlText(s))")) }
+        if let t = b.trainingTage { teile.append(String(localized: "Training \(t) von \(max(b.trainingZiel ?? 0, 1)) Tagen in dieser Woche")) }
+        if let m = b.schlafMinuten { teile.append(b.schlafZiel.map { String(localized: "Schlaf \(m / 60) Stunden \(m % 60) Minuten von \($0 / 60) Stunden") } ?? String(localized: "Schlaf \(m / 60) Stunden \(m % 60) Minuten")) }
+        return teile.isEmpty ? String(localized: "Lumen Fit: noch keine Werte von heute") : teile.joined(separator: ", ")
     }
 
     // MARK: - Plan und Serie
 
     /// Titel und Zeitpunkt des nächsten Trainings: ("Push", "heute"), ("Pull", "morgen"), ("Beine", "in 3 Tagen"); ohne Plan ("Kein Training geplant", nil).
     static func planText(_ plan: WidgetPlanTag?, jetzt: Date) -> (titel: String, wann: String?) {
-        guard let plan, let tage = LockscreenLogik.tageBis(tag: plan.tag, heute: Datum.text(jetzt)) else { return ("Kein Training geplant", nil) }
+        guard let plan, let tage = LockscreenLogik.tageBis(tag: plan.tag, heute: Datum.text(jetzt)) else { return (String(localized: "Kein Training geplant"), nil) }
         return (plan.name, LockscreenLogik.countdownText(tage: tage))
     }
 
     /// "4 Wochen in Folge", "1 Woche in Folge", ohne Serie "Noch keine Serie".
     static func serieText(_ wochen: Int?) -> String {
         switch wochen ?? 0 {
-        case ...0: "Noch keine Serie"
-        case 1: "1 Woche in Folge"
-        default: "\(wochen ?? 0) Wochen in Folge"
+        case ...0: String(localized: "Noch keine Serie")
+        case 1: String(localized: "1 Woche in Folge")
+        default: String(localized: "\(wochen ?? 0) Wochen in Folge")
         }
     }
 
@@ -110,7 +110,7 @@ enum WidgetAnzeige {
 
     /// "3 von 8" bei zählenden, "Erledigt" oder "Offen" bei den anderen.
     static func habitText(_ habit: WidgetHabitKachel, wert: Int) -> String {
-        habit.zaehlen ? "\(wert) von \(max(habit.ziel, 1))" : (wert > 0 ? "Erledigt" : "Offen")
+        habit.zaehlen ? String(localized: "\(String(wert)) von \(String(max(habit.ziel, 1)))") : (wert > 0 ? String(localized: "Erledigt") : String(localized: "Offen"))
     }
 
     // MARK: - Sperrbildschirm
@@ -162,15 +162,16 @@ enum WidgetAnzeige {
     static func gymSprechtext(name: String, tage: [WidgetGymTag], ziel: Int, jetzt: Date) -> String {
         let heute = Datum.text(jetzt)
         let heuteFertig = tage.first { $0.tag == heute }?.erledigt ?? false
-        return "\(name): \(gymZahl(tage, jetzt: jetzt)) von \(max(ziel, 1)) Tagen" + (heuteFertig ? ", heute erledigt" : "")
+        let zahl = gymZahl(tage, jetzt: jetzt), soll = max(ziel, 1)
+        return heuteFertig ? String(localized: "\(name): \(zahl) von \(soll) Tagen, heute erledigt") : String(localized: "\(name): \(zahl) von \(soll) Tagen")
     }
 
     // MARK: - Schlaf auf dem Sperrbildschirm
 
     /// "Schlaf 7:12 h" für die Inline-Zeile; ohne Wert von heute "Schlaf –".
     static func schlafInline(_ snapshot: WidgetSnapshot?, jetzt: Date) -> String {
-        guard istVonHeute(snapshot, jetzt: jetzt), let m = snapshot?.boegen?.schlafMinuten else { return "Schlaf –" }
-        return "Schlaf " + LockscreenLogik.schlafText(minuten: m) + " h"
+        guard istVonHeute(snapshot, jetzt: jetzt), let m = snapshot?.boegen?.schlafMinuten else { return String(localized: "Schlaf –") }
+        return String(localized: "Schlaf \(LockscreenLogik.schlafText(minuten: m)) h")
     }
 
     // MARK: - Einzelne Gewohnheit

@@ -66,18 +66,18 @@ struct KontoView: View {
             switch art {
             case .passwortAendern:
                 let festlegen = aktiv?.ohnePasswort ?? false
-                ProfilPasswortBlatt(titel: festlegen ? "Passwort festlegen" : "Passwort ändern",
-                                    erklaerung: festlegen ? "Mit einem Passwort fragt die App beim Wechseln und bei Alles löschen danach. Beim Start nie."
-                                                          : "Gib dein aktuelles und dein neues Passwort ein.",
-                                    knopf: festlegen ? "Passwort festlegen" : "Passwort ändern",
-                                    neuTitel: festlegen ? "Passwort" : "Neues Passwort", ohneAlt: festlegen) { alt, neu in
+                ProfilPasswortBlatt(titel: festlegen ? String(localized: "Passwort festlegen") : String(localized: "Passwort ändern"),
+                                    erklaerung: festlegen ? String(localized: "Mit einem Passwort fragt die App beim Wechseln und bei Alles löschen danach. Beim Start nie.")
+                                                          : String(localized: "Gib dein aktuelles und dein neues Passwort ein."),
+                                    knopf: festlegen ? String(localized: "Passwort festlegen") : String(localized: "Passwort ändern"),
+                                    neuTitel: festlegen ? String(localized: "Passwort") : String(localized: "Neues Passwort"), ohneAlt: festlegen) { alt, neu in
                     let ok = await umgebung.profil.aenderePasswortImHintergrund(alt: alt, neu: neu)
-                    if ok { toast = ToastInhalt(titel: festlegen ? "Passwort festgelegt" : "Passwort geändert", zeile: nil, stimmung: .ziel) }
+                    if ok { toast = ToastInhalt(titel: festlegen ? String(localized: "Passwort festgelegt") : String(localized: "Passwort geändert"), zeile: nil, stimmung: .ziel) }
                     return ok
                 }
             case .wechseln(let ziel):
-                ProfilPasswortBlatt(titel: "Zu \(ziel.name) wechseln",
-                                    erklaerung: ziel.ohnePasswort ? "\(ziel.name) hat kein Passwort. Wechseln?" : "Gib das Passwort von \(ziel.name) ein.", knopf: "Wechseln",
+                ProfilPasswortBlatt(titel: String(localized: "Zu \(ziel.name) wechseln"),
+                                    erklaerung: ziel.ohnePasswort ? String(localized: "\(ziel.name) hat kein Passwort. Wechseln?") : String(localized: "Gib das Passwort von \(ziel.name) ein."), knopf: String(localized: "Wechseln"),
                                     ohneAlt: ziel.ohnePasswort, zuruecksetzen: ziel) { passwort, _ in
                     await umgebung.profil.wechsleImHintergrund(zu: ziel.id, passwort: passwort)
                 }
@@ -98,7 +98,7 @@ struct KontoView: View {
     // MARK: - Teile
 
     private var namensGruppe: some View {
-        ProfilAbschnitt("Name", fuss: regelText) {
+        ProfilAbschnitt(String(localized: "Name"), fuss: regelText) {
             TextField("Dein Name", text: $name)
                 .textContentType(.givenName)
                 .textInputAutocapitalization(.words)
@@ -121,23 +121,23 @@ struct KontoView: View {
     /// Die Regel in einem Satz; gesperrt: mit dem Tag, ab dem es wieder geht.
     private var regelText: String {
         if let frei = freiAb {
-            return "Gesperrt bis \(frei.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "de_DE"))))."
+            return String(localized: "Gesperrt bis \(frei.formatted(.dateTime.day().month(.wide))).")
         }
-        let wann = tage == 0 ? "" : tage == 1 ? ", einmal am Tag änderbar" : ", alle \(tage) Tage änderbar"
-        return "\(NamenRegel.minLaenge) bis \(NamenRegel.maxLaenge) Zeichen aus Buchstaben, Leerzeichen, - und '\(wann)."
+        let wann = tage == 0 ? "" : tage == 1 ? String(localized: ", einmal am Tag änderbar") : String(localized: ", alle \(tage) Tage änderbar")
+        return String(localized: "\(NamenRegel.minLaenge) bis \(NamenRegel.maxLaenge) Zeichen aus Buchstaben, Leerzeichen, - und '\(wann).")
     }
 
     private var kontoGruppe: some View {
         ProfilAbschnitt {
             Button { blatt = .passwortAendern } label: {
-                ProfilListenZeile(aktiv?.ohnePasswort == true ? "Passwort festlegen" : "Passwort ändern", symbol: "key.fill",
-                                  wert: aktiv?.ohnePasswort == true ? "freiwillig" : nil)
+                ProfilListenZeile(aktiv?.ohnePasswort == true ? String(localized: "Passwort festlegen") : String(localized: "Passwort ändern"), symbol: "key.fill",
+                                  wert: aktiv?.ohnePasswort == true ? String(localized: "freiwillig") : nil)
             }
             if !andere.isEmpty {
-                Button { profilWahl = true } label: { ProfilListenZeile("Profil wechseln", symbol: "person.2.fill", wert: "\(andere.count + 1) Profile") }
+                Button { profilWahl = true } label: { ProfilListenZeile(String(localized: "Profil wechseln"), symbol: "person.2.fill", wert: String(localized: "\(andere.count + 1) Profile")) }
             }
             if darfAnlegen {
-                Button { blatt = .anlegen } label: { ProfilListenZeile("Neues Profil anlegen", symbol: "person.badge.plus") }
+                Button { blatt = .anlegen } label: { ProfilListenZeile(String(localized: "Neues Profil anlegen"), symbol: "person.badge.plus") }
             }
         }
     }
@@ -161,11 +161,11 @@ struct KontoView: View {
         case .geaendert:
             fokus = false
             name = aktiv?.name ?? name
-            toast = ToastInhalt(titel: "Name geändert", zeile: nil, stimmung: .ziel)
+            toast = ToastInhalt(titel: String(localized: "Name geändert"), zeile: nil, stimmung: .ziel)
         case .ungueltig(let f): meldung = NamenRegel.text(f)
-        case .gesperrt: meldung = "Dein Name ist gerade gesperrt."
+        case .gesperrt: meldung = String(localized: "Dein Name ist gerade gesperrt.")
         case .unveraendert: break
-        case .nichtGespeichert: meldung = "Der Name konnte nicht gespeichert werden. Versuch es nochmal."
+        case .nichtGespeichert: meldung = String(localized: "Der Name konnte nicht gespeichert werden. Versuch es nochmal.")
         }
     }
 }

@@ -25,7 +25,7 @@ extension TrainingLiveStand {
     /// "60 kg × 8"; ohne Gewicht "8 Wdh."; nil ohne Wiederholungen (Cardio, alter Stand).
     var satzZeile: String? {
         guard let wdh else { return nil }
-        guard let kg, kg > 0 else { return "\(wdh) Wdh." }
+        guard let kg, kg > 0 else { return String(localized: "\(wdh) Wdh.") }
         return "\(TrainingLogik.kgText(kg)) kg × \(wdh)"
     }
 }

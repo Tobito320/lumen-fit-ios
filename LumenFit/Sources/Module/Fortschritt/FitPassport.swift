@@ -25,15 +25,15 @@ struct FitPassportDaten: Equatable, Sendable {
     let stufe: Int
 
     /// Die Aussage als Titel: "FitPassport: Stufe 4, 38 Gym-Tage".
-    var titel: String { "FitPassport: Stufe \(stufe), \(gymTage) \(gymTage == 1 ? "Gym-Tag" : "Gym-Tage")" }
+    var titel: String { String(localized: "FitPassport: Stufe \(stufe), \(gymTage) \(gymTage == 1 ? String(localized: "Gym-Tag") : String(localized: "Gym-Tage"))") }
 
     /// Alles in Sätzen für VoiceOver und als Textvorschau beim Teilen.
     var sprechtext: String {
         var teile = [titel]
-        if !kraft.isEmpty { teile.append("Kraft: " + kraft.map { "\($0.name) \($0.e1rmKg) kg" }.joined(separator: ", ")) }
-        if let s = schlafSchnitt { teile.append("Schlaf im Schnitt \(Rueckblick.dauer(s)) in \(schlafNaechte) Nächten") }
-        teile.append("Konstanz: \(aktiveWochen) von \(KonstanzRaster.wochen) Wochen, Serie \(serieWochen) \(serieWochen == 1 ? "Woche" : "Wochen")")
-        teile.append("\(medaillen) von \(MeilensteinKatalog.anzahl) Medaillen")
+        if !kraft.isEmpty { teile.append(String(localized: "Kraft: \(kraft.map { "\($0.name) \($0.e1rmKg) kg" }.joined(separator: ", "))")) }
+        if let s = schlafSchnitt { teile.append(String(localized: "Schlaf im Schnitt \(Rueckblick.dauer(s)) in \(schlafNaechte) Nächten")) }
+        teile.append(String(localized: "Konstanz: \(aktiveWochen) von \(KonstanzRaster.wochen) Wochen, Serie \(serieWochen) \(serieWochen == 1 ? String(localized: "Woche") : String(localized: "Wochen"))"))
+        teile.append(String(localized: "\(medaillen) von \(MeilensteinKatalog.anzahl) Medaillen"))
         return teile.joined(separator: ". ")
     }
 }

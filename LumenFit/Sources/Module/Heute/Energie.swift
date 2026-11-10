@@ -34,13 +34,13 @@ struct EnergieRat: Sendable, Equatable {
 
     var titel: String {
         switch stufe {
-        case .hoch: "Viel Energie heute"
-        case .mittel: "Normale Energie"
-        case .niedrig: "Heute eher wenig Energie"
+        case .hoch: String(localized: "Viel Energie heute")
+        case .mittel: String(localized: "Normale Energie")
+        case .niedrig: String(localized: "Heute eher wenig Energie")
         }
     }
 
-    var cardioText: String { cardio == 0 ? "Kein Cardio" : "Cardio \(cardio) min" }
+    var cardioText: String { cardio == 0 ? String(localized: "Kein Cardio") : String(localized: "Cardio \(cardio) min") }
 }
 
 enum EnergieLogik {
@@ -60,35 +60,35 @@ enum EnergieLogik {
 
         var gruende: [String] = []
         if bekannt.isEmpty {
-            gruende.append("Keine Schlafdaten. Trag ein, wann du im Bett warst.")
+            gruende.append(String(localized: "Keine Schlafdaten. Trag ein, wann du im Bett warst."))
         } else if letzte < 360 {
-            gruende.append("Letzte Nacht nur \(dauer(letzte)) geschlafen.")
+            gruende.append(String(localized: "Letzte Nacht nur \(dauer(letzte)) geschlafen."))
         } else if letzte >= 450 {
-            gruende.append("Gut geschlafen (\(dauer(letzte))).")
+            gruende.append(String(localized: "Gut geschlafen (\(dauer(letzte)))."))
         }
         if bekannt.count >= 2 && schnitt < 390 {
-            gruende.append("Die letzten Nächte waren kürzer (Ø \(dauer(schnitt))).")
+            gruende.append(String(localized: "Die letzten Nächte waren kürzer (Ø \(dauer(schnitt)))."))
         }
         if soll - e.wasser >= 2 {
-            gruende.append("Beim Wasser hinten: \(e.wasser) von \(soll) bis jetzt.")
+            gruende.append(String(localized: "Beim Wasser hinten: \(e.wasser) von \(soll) bis jetzt."))
         }
         if e.gymInFolge >= 3 {
-            gruende.append("Schon \(e.gymInFolge) Tage am Stück trainiert.")
+            gruende.append(String(localized: "Schon \(e.gymInFolge) Tage am Stück trainiert."))
         }
 
         let gym: String
         if e.heuteSchonGym {
-            gym = "Gym heute erledigt"
+            gym = String(localized: "Gym heute erledigt")
         } else if e.ruhetag {
-            gym = "Ruhetag laut Plan"
+            gym = String(localized: "Ruhetag laut Plan")
         } else if !e.trainingstag && !e.planLeer {
-            gym = "Kein Gym geplant"
+            gym = String(localized: "Kein Gym geplant")
         } else if stufe == .niedrig {
-            gym = "Heute besser kein Gym"
+            gym = String(localized: "Heute besser kein Gym")
         } else if stufe == .mittel || e.gymInFolge >= 3 {
-            gym = "Gym ja, etwas leichter"
+            gym = String(localized: "Gym ja, etwas leichter")
         } else {
-            gym = "Gym ja"
+            gym = String(localized: "Gym ja")
         }
         let cardio: Int
         switch stufe {

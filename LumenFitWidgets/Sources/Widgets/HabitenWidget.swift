@@ -24,7 +24,7 @@ struct HabitenAnsicht: View {
     var body: some View {
         WidgetRahmen(snapshot: eintrag.snapshot, link: RouteURL.url(fuer: .heute)) { farben in
             if habits.isEmpty {
-                WidgetLeerAnsicht(farben: farben, titel: "Noch keine Gewohnheiten", text: "Öffne Lumen Fit einmal, dann erscheinen sie hier.")
+                WidgetLeerAnsicht(farben: farben, titel: String(localized: "Noch keine Gewohnheiten"), text: String(localized: "Öffne Lumen Fit einmal, dann erscheinen sie hier."))
             } else {
                 VStack(alignment: .leading, spacing: 2) {
                     Label("Gewohnheiten", systemImage: "checkmark.circle.fill")
@@ -95,6 +95,6 @@ struct HabitenAnsicht: View {
     }
 
     private func sprechtext(_ habit: WidgetHabitKachel, wert: Int) -> String {
-        "\(habit.name), \(WidgetAnzeige.habitText(habit, wert: wert))" + (habit.serie >= 2 ? ", Serie \(habit.serie)" : "")
+        "\(habit.name), \(WidgetAnzeige.habitText(habit, wert: wert))" + (habit.serie >= 2 ? String(localized: ", Serie \(habit.serie)") : "")
     }
 }

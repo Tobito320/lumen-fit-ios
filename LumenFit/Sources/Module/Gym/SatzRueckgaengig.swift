@@ -24,8 +24,8 @@ enum SatzRueckgaengigLogik {
     /// Der Text der Leiste: "Satz 2 gelöscht", "Satz 2 kopiert". `nummer` ist die Anzeige-Nummer des Satzes ("2", "W", "D", "F").
     static func text(_ aktion: Aktion, nummer: String) -> String {
         switch aktion {
-        case .geloescht: "Satz \(nummer) gelöscht"
-        case .kopiert: "Satz \(nummer) kopiert"
+        case .geloescht: String(localized: "Satz \(nummer) gelöscht")
+        case .kopiert: String(localized: "Satz \(nummer) kopiert")
         }
     }
 

@@ -12,7 +12,7 @@ struct KopfhoererSeite: View {
         Form {
             if let dienst { KopfhoererKopf(status: dienst.status) }
             AnsageAbschnitt(dienst: dienst)
-            VerbindenAbschnitt(fuss: "Akku, Sensoren und Einstellungen der AirPods gibt iOS Apps nicht frei.") {
+            VerbindenAbschnitt(fuss: String(localized: "Akku, Sensoren und Einstellungen der AirPods gibt iOS Apps nicht frei.")) {
                 EmptyView()
             }
         }
@@ -52,7 +52,7 @@ private struct AnsageAbschnitt: View {
     @AppStorage(AnsageRegel.nurKopfhoererSchluessel) private var nurKopfhoerer = true
 
     var body: some View {
-        VerbindenAbschnitt(titel: "Ansagen im Training", fuss: "Klappt nur, solange Lumen Fit offen oder durch das Training wach ist.") {
+        VerbindenAbschnitt(titel: String(localized: "Ansagen im Training"), fuss: String(localized: "Klappt nur, solange Lumen Fit offen oder durch das Training wach ist.")) {
             Toggle(isOn: $pause) { Label("Pause vorbei ansagen", systemImage: "timer") }
                 .frame(minHeight: Abstand.tippflaeche)
             Toggle(isOn: $rekord) { Label("Neuen Rekord ansagen", systemImage: "trophy.fill") }

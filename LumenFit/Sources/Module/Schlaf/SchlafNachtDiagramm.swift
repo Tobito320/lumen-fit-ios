@@ -64,7 +64,7 @@ struct SchlafNachtDiagramm: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(nacht.beschreibung)
         .accessibilityChartDescriptor(SchlafDiagrammBeschreibung(
-            titel: "Schlaf in der Nacht", zusammenfassung: nacht.beschreibung, achseX: "Phase", reihe: "Minuten je Phase",
+            titel: String(localized: "Schlaf in der Nacht"), zusammenfassung: nacht.beschreibung, achseX: String(localized: "Phase"), reihe: String(localized: "Minuten je Phase"),
             punkte: zeilen.map { SchlafDiagrammBeschreibung.Punkt(name: $0.name, minuten: Double(nacht.minuten($0))) }))
     }
 }

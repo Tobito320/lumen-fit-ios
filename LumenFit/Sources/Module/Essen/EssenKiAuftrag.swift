@@ -57,7 +57,7 @@ struct EssenKiAuftrag: Codable, Equatable, Identifiable, Sendable {
 /// damit die Tests nichts Echtes anfassen.
 enum EssenKiAuftragLogik {
     nonisolated static let unterbrochen = EssenKiAnzeige(
-        titel: "Unterbrochen", text: "Die Analyse wurde unterbrochen. Das Foto ist noch da.",
+        titel: String(localized: "Unterbrochen"), text: String(localized: "Die Analyse wurde unterbrochen. Das Foto ist noch da."),
         symbol: "arrow.clockwise", nochmal: true, neuesFoto: false)
 
     static func neu(mahlzeit: Mahlzeit, datum: String, id: UUID = UUID(), jetzt: Date = Date()) -> EssenKiAuftrag {
@@ -124,7 +124,8 @@ enum EssenKiAuftragLogik {
             var n = a
             if a.analyse != nil {
                 n.status = .fertig
-                n.neuFehler = "Neu schätzen wurde unterbrochen."
+                n.neuFehler = String(localized: "Neu schätzen wurde unterbrochen.")
+
             } else {
                 n.status = .unterbrochen
             }

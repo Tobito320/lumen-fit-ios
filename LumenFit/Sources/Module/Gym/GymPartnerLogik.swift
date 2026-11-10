@@ -12,9 +12,10 @@ enum GymPartnerLogik {
         let verlauf = datei.freigaben.contains(.verlauf) ? datei.heute.verlauf : nil
         if datum == heute, let verlauf, PartnerAnsichtLogik.statusZeile(verlauf, jetzt: jetzt) != nil { return "gerade im Gym" }
         if let t = verlauf?.trainings.first(where: { $0.tag == datum }) {
-            guard let min = t.minuten else { return "war im Gym" }
+            guard let min = t.minuten else { return String(localized: "war im Gym") }
             let dauer = TrainingLogik.dauerText(TimeInterval(min * 60))
-            return t.saetze > 0 ? "\(dauer) · \(t.saetze) \(t.saetze == 1 ? "Satz" : "Sätze")" : dauer
+            guard t.saetze > 0 else { return dauer }
+            return t.saetze == 1 ? String(localized: "\(dauer) · 1 Satz") : String(localized: "\(dauer) · \(t.saetze) Sätze")
         }
         if datum > heute { return geplant(datei, datum: datum).map { "geplant: \($0)" } ?? (kenntPlan(datei) ? "Ruhetag" : "noch nicht") }
         return datum == heute ? "noch nicht" : "nicht im Gym"
@@ -26,7 +27,7 @@ enum GymPartnerLogik {
 
     private static func geplant(_ datei: ZusammenfassungDatei, datum: String) -> String? {
         guard kenntPlan(datei), let plan = datei.heute.plan else { return nil }
-        return PartnerAnsichtLogik.heutigerTag(plan, wochentag: Datum.wochentag(datum)).map { $0.name.isEmpty ? "Training" : $0.name }
+        return PartnerAnsichtLogik.heutigerTag(plan, wochentag: Datum.wochentag(datum)).map { $0.name.isEmpty ? String(localized: "Training") : $0.name }
     }
 
     /// Der Partner für die Zeile und den Wechsel: nur verbunden (auch mit älterem Stand), mit Namen. Sonst nil, dann gibt es weder Zeile noch Wechsel.

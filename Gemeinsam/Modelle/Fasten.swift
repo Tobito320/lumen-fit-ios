@@ -44,8 +44,8 @@ enum FastenPlan: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var name: String {
         switch self {
-        case .omad: "23:1 (OMAD)"
-        case .sechsunddreissig: "36 Stunden"
+        case .omad: String(localized: "23:1 (OMAD)")
+        case .sechsunddreissig: String(localized: "36 Stunden")
         case .jedenZweitenTag: "1:1"
         default: rawValue
         }
@@ -53,16 +53,16 @@ enum FastenPlan: String, CaseIterable, Identifiable, Codable, Sendable {
 
     var beschreibung: String {
         switch self {
-        case .zwoelf: "12 Stunden fasten, 12 Stunden essen. Leichter Einstieg."
-        case .vierzehn: "14 Stunden fasten, 10 Stunden essen."
-        case .sechzehn: "16 Stunden fasten, 8 Stunden essen. Der bekannteste Plan."
-        case .achtzehn: "18 Stunden fasten, 6 Stunden essen."
-        case .zwanzig: "20 Stunden fasten, 4 Stunden essen."
-        case .omad: "23 Stunden fasten, eine Mahlzeit am Tag."
-        case .sechsunddreissig: "36 Stunden am Stück fasten, z. B. vom Abendessen bis zum übernächsten Frühstück."
-        case .fuenfZuZwei: "An 2 Tagen pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 5 Tagen normal essen."
-        case .sechsZuEins: "An 1 Tag pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 6 Tagen normal essen."
-        case .jedenZweitenTag: "Jeden zweiten Tag fasten oder stark reduziert essen."
+        case .zwoelf: String(localized: "12 Stunden fasten, 12 Stunden essen. Leichter Einstieg.")
+        case .vierzehn: String(localized: "14 Stunden fasten, 10 Stunden essen.")
+        case .sechzehn: String(localized: "16 Stunden fasten, 8 Stunden essen. Der bekannteste Plan.")
+        case .achtzehn: String(localized: "18 Stunden fasten, 6 Stunden essen.")
+        case .zwanzig: String(localized: "20 Stunden fasten, 4 Stunden essen.")
+        case .omad: String(localized: "23 Stunden fasten, eine Mahlzeit am Tag.")
+        case .sechsunddreissig: String(localized: "36 Stunden am Stück fasten, z. B. vom Abendessen bis zum übernächsten Frühstück.")
+        case .fuenfZuZwei: String(localized: "An 2 Tagen pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 5 Tagen normal essen.")
+        case .sechsZuEins: String(localized: "An 1 Tag pro Woche höchstens 500 kcal (Frau) bzw. 600 kcal (Mann), an den restlichen 6 Tagen normal essen.")
+        case .jedenZweitenTag: String(localized: "Jeden zweiten Tag fasten oder stark reduziert essen.")
         }
     }
 

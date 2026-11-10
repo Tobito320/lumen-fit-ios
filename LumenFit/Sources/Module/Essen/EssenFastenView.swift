@@ -21,13 +21,15 @@ enum EssenFastenAnzeige {
     static func endeText(_ eintrag: FastenEintrag?, plan: FastenPlan) -> String {
         guard let eintrag else { return "–" }
         if let ende = eintrag.ende { return FastenLogik.zeitpunktText(ende) }
-        return "\(FastenLogik.zeitpunktText(FastenLogik.geplantesEnde(start: eintrag.start, plan: plan))) (geplant)"
+        return String(localized: "\(FastenLogik.zeitpunktText(FastenLogik.geplantesEnde(start: eintrag.start, plan: plan))) (geplant)")
     }
 
     /// "16 von 16 Stunden, geschafft": Dauer gegen das Ziel, für VoiceOver.
     static func zielText(_ e: FastenEintrag) -> String {
         let stunden = FastenLogik.dauerStunden(e) ?? 0
-        return "\(ErnaehrungLogik.zahl(stunden)) von \(FastenLogik.planVon(e).stunden) Stunden, \(FastenLogik.geschafft(e) ? "geschafft" : "nicht ganz")"
+        return FastenLogik.geschafft(e)
+            ? String(localized: "\(ErnaehrungLogik.zahl(stunden)) von \(FastenLogik.planVon(e).stunden) Stunden, geschafft")
+            : String(localized: "\(ErnaehrungLogik.zahl(stunden)) von \(FastenLogik.planVon(e).stunden) Stunden, nicht ganz")
     }
 }
 
@@ -51,7 +53,7 @@ struct EssenFastenView: View {
             if let essen = umgebung.daten?.essen {
                 liste(essen)
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Lege zuerst ein Profil an, dann zähle ich dein Fasten mit.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege zuerst ein Profil an, dann zähle ich dein Fasten mit."))
             }
         }
         .navigationTitle("Intervallfasten")
@@ -179,8 +181,8 @@ struct EssenFastenView: View {
     private func startEndeZeile(anzeige: FastenEintrag?, plan: FastenPlan) -> some View {
         HStack(alignment: .top, spacing: Abstand.m) {
             VStack(alignment: .leading, spacing: Abstand.s) {
-                zeitFeld("Fasten Start", anzeige.map { FastenLogik.zeitpunktText($0.start) } ?? "–")
-                zeitFeld("Fasten Ende", EssenFastenAnzeige.endeText(anzeige, plan: plan))
+                zeitFeld(String(localized: "Fasten Start"), anzeige.map { FastenLogik.zeitpunktText($0.start) } ?? "–")
+                zeitFeld(String(localized: "Fasten Ende"), EssenFastenAnzeige.endeText(anzeige, plan: plan))
             }
             Spacer(minLength: Abstand.s)
             if let anzeige {
@@ -225,9 +227,9 @@ struct EssenFastenView: View {
             } else {
                 statistikChart(letzte, plan: aktuellerPlan)
                 HStack(spacing: 0) {
-                    EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(FastenLogik.durchschnittStunden(beendete))) h", titel: "Schnitt", mittig: true)
-                    EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(FastenLogik.laengstesStunden(beendete))) h", titel: "Längstes", mittig: true)
-                    EssenKennzahlSpalte(wert: "\(FastenLogik.serie(essen.fastenEintraege))", titel: "Serie", mittig: true)
+                    EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(FastenLogik.durchschnittStunden(beendete))) h", titel: String(localized: "Schnitt"), mittig: true)
+                    EssenKennzahlSpalte(wert: "\(ErnaehrungLogik.zahl(FastenLogik.laengstesStunden(beendete))) h", titel: String(localized: "Längstes"), mittig: true)
+                    EssenKennzahlSpalte(wert: "\(FastenLogik.serie(essen.fastenEintraege))", titel: String(localized: "Serie"), mittig: true)
                 }
             }
         }
@@ -239,9 +241,10 @@ struct EssenFastenView: View {
     private func statistikChart(_ letzte: [FastenEintrag], plan: FastenPlan) -> some View {
         let wachstum = gezeichnet || bewegungAus ? 1.0 : 0.0
         let beschreibung = EssenReiheBeschreibung(
-            titel: "Fastendauer der letzten Fenster",
-            zusammenfassung: "Ziel \(plan.stunden) Stunden, \(letzte.filter(FastenLogik.geschafft).count) von \(letzte.count) geschafft",
-            xTitel: "Start", yTitel: "Stunden", einheit: "h",
+            titel: String(localized: "Fastendauer der letzten Fenster"),
+            zusammenfassung: String(localized: "Ziel \(plan.stunden) Stunden, \(letzte.filter(FastenLogik.geschafft).count) von \(letzte.count) geschafft"),
+            xTitel: String(localized: "Start"), yTitel: String(localized: "Stunden"), einheit: "h",
+
             kategorien: letzte.map { FastenLogik.zeitpunktText($0.start) },
             werte: letzte.map { FastenLogik.dauerStunden($0) },
             ziel: Double(plan.stunden))

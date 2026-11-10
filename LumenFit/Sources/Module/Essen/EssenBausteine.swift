@@ -121,8 +121,8 @@ struct EssenOnlineHinweis: View {
         case .ruhig: EmptyView()
         case .laedt: ProgressView("Ich suche weiter …").font(.footnote)
         case .fertig: EmptyView()
-        case .offline: hinweis("Gerade offline. Du siehst die Treffer aus dem BLS.")
-        case .fehler: hinweis("Die Online-Suche antwortet gerade nicht. Die Treffer aus dem BLS bleiben stehen.")
+        case .offline: hinweis(String(localized: "Gerade offline. Du siehst die Treffer aus dem BLS."))
+        case .fehler: hinweis(String(localized: "Die Online-Suche antwortet gerade nicht. Die Treffer aus dem BLS bleiben stehen."))
         }
     }
 

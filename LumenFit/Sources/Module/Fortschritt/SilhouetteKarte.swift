@@ -58,7 +58,7 @@ struct SilhouetteKarte: View {
     var body: some View {
         let zeilen = SilhouetteZeile.zeilen(daten, reihenfolge: daten.ziele.reihenfolge)
         let legende = KoerperLogik.legende(daten.erholung, reihenfolge: daten.ziele.reihenfolge)
-        DiagrammKarte(aussage: aussage(zeilen), kernzeile: legende.keinTraining ? "Noch kein Training erfasst. Tipp auf Starten, Lumi zählt mit." : "Prozent: so erholt ist der müdeste Teil der Gruppe.") {
+        DiagrammKarte(aussage: aussage(zeilen), kernzeile: legende.keinTraining ? String(localized: "Noch kein Training erfasst. Tipp auf Starten, Lumi zählt mit.") : String(localized: "Prozent: so erholt ist der müdeste Teil der Gruppe.")) {
             VStack(alignment: .leading, spacing: Abstand.m) {
                 Picker("Seite", selection: $seite) {
                     ForEach(SilhouetteSeite.allCases, id: \.self) { Text($0.name).tag($0) }
@@ -81,9 +81,9 @@ struct SilhouetteKarte: View {
 
     private func aussage(_ zeilen: [SilhouetteZeile]) -> String {
         guard let muedeste = zeilen.first, muedeste.stufe == .muede || muedeste.stufe == .fast else {
-            return zeilen.contains { $0.stufe != .leer } ? "Alle trainierten Muskeln sind erholt" : "Noch kein Muskel trainiert"
+            return zeilen.contains { $0.stufe != .leer } ? String(localized: "Alle trainierten Muskeln sind erholt") : String(localized: "Noch kein Muskel trainiert")
         }
-        return "\(muedeste.gruppe.name) ist erst zu \(muedeste.prozent) Prozent erholt"
+        return String(localized: "\(muedeste.gruppe.name) ist erst zu \(muedeste.prozent) Prozent erholt")
     }
 
     // MARK: Legende in drei Gruppen
@@ -95,22 +95,22 @@ struct SilhouetteKarte: View {
                     .font(.subheadline).foregroundStyle(palette.text2)
             } else {
                 if !l.offen.isEmpty {
-                    kopf("Noch nicht erholt")
+                    kopf(String(localized: "Noch nicht erholt"))
                     ForEach(l.offen) { e in
                         zeile(name: e.name, stufe: SilhouetteStufe(e.stufe), prozent: e.prozent, detail: untertitel(e),
-                              sprech: "\(e.name), \(e.prozent) Prozent, \(e.wort.lowercased())") { beiGruppe(e.gruppe, e.teil) }
+                              sprech: String(localized: "\(e.name), \(e.prozent) Prozent, \(e.wort.lowercased())")) { beiGruppe(e.gruppe, e.teil) }
                     }
                 }
                 if !l.erholt.isEmpty {
-                    kopf("Erholt")
+                    kopf(String(localized: "Erholt"))
                     ForEach(l.erholt, id: \.self) { g in
-                        zeile(name: g.name, stufe: .erholt, prozent: nil, detail: nil, sprech: "\(g.name), erholt") { beiGruppe(g, nil) }
+                        zeile(name: g.name, stufe: .erholt, prozent: nil, detail: nil, sprech: String(localized: "\(g.name), erholt")) { beiGruppe(g, nil) }
                     }
                 }
                 if !l.leer.isEmpty {
-                    kopf("Kein Training erfasst")
+                    kopf(String(localized: "Kein Training erfasst"))
                     ForEach(l.leer, id: \.self) { g in
-                        zeile(name: g.name, stufe: .leer, prozent: nil, detail: nil, sprech: "\(g.name), kein Training erfasst") { beiGruppe(g, nil) }
+                        zeile(name: g.name, stufe: .leer, prozent: nil, detail: nil, sprech: String(localized: "\(g.name), kein Training erfasst")) { beiGruppe(g, nil) }
                     }
                 }
             }
@@ -131,7 +131,7 @@ struct SilhouetteKarte: View {
     private func untertitel(_ e: KoerperLegende.Eintrag) -> String {
         let wort = e.wort.lowercased()
         guard let tag = daten.letzte[e.teil]?.tag else { return wort }
-        return "\(wort) · zuletzt \(KoerperLogik.tagKurz(tag))"
+        return String(localized: "\(wort) · zuletzt \(KoerperLogik.tagKurz(tag))")
     }
 
     private func zeile(name: String, stufe: SilhouetteStufe, prozent: Int?, detail: String?, sprech: String, aktion: @escaping () -> Void) -> some View {

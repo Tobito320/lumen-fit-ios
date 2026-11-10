@@ -54,22 +54,22 @@ struct ZieleView: View {
 
     /// Ein Satz: woraus die Vorschläge rechnen.
     private var vorschlagHinweis: String {
-        if let kg = gewichtKg { return "Vorschläge nach Mifflin-St Jeor, mit deinem Gewicht \(gewichtText(kg))." }
-        return "Vorschläge nach Mifflin-St Jeor, ohne Gewicht mit einem Durchschnittswert."
+        if let kg = gewichtKg { return String(localized: "Vorschläge nach Mifflin-St Jeor, mit deinem Gewicht \(gewichtText(kg)).") }
+        return String(localized: "Vorschläge nach Mifflin-St Jeor, ohne Gewicht mit einem Durchschnittswert.")
     }
 
     private var tageszieleGruppe: some View {
-        ProfilAbschnitt("Tagesziele") {
-            zeile("Schritte", ziele.schritte.formatted(.number), $ziele.schritte, 1_000...50_000, schritt: 500)
-            zeile("Kalorien", "\(ziele.kalorien) kcal", $ziele.kalorien, 1_000...6_000, schritt: 50)
-            zeile("Protein", "\(ziele.proteinGramm) g", $ziele.proteinGramm, 20...350, schritt: 5)
-            zeile("Schlaf", schlafText(ziele.schlafMinuten), $ziele.schlafMinuten, 240...720, schritt: 15)
-            zeile("Wasser", "\(ziele.wasserMl) ml", $ziele.wasserMl, 500...6_000, schritt: 100)
+        ProfilAbschnitt(String(localized: "Tagesziele")) {
+            zeile(String(localized: "Schritte"), ziele.schritte.formatted(.number), $ziele.schritte, 1_000...50_000, schritt: 500)
+            zeile(String(localized: "Kalorien"), "\(ziele.kalorien) kcal", $ziele.kalorien, 1_000...6_000, schritt: 50)
+            zeile(String(localized: "Protein"), "\(ziele.proteinGramm) g", $ziele.proteinGramm, 20...350, schritt: 5)
+            zeile(String(localized: "Schlaf"), schlafText(ziele.schlafMinuten), $ziele.schlafMinuten, 240...720, schritt: 15)
+            zeile(String(localized: "Wasser"), "\(ziele.wasserMl) ml", $ziele.wasserMl, 500...6_000, schritt: 100)
             Toggle(isOn: Binding(get: { ziele.gewichtKg != nil }, set: { an in ziele.gewichtKg = an ? (gewichtKg ?? 75).rounded() : nil })) {
-                ProfilListenZeile("Gewichtsziel")
+                ProfilListenZeile(String(localized: "Gewichtsziel"))
             }
             if let ziel = ziele.gewichtKg {
-                zeile("Zielgewicht", gewichtText(ziel), Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), Koerpermasse.gewichtKg, schritt: 0.5)
+                zeile(String(localized: "Zielgewicht"), gewichtText(ziel), Binding(get: { ziel }, set: { ziele.gewichtKg = $0 }), Koerpermasse.gewichtKg, schritt: 0.5)
             }
         }
     }
@@ -80,10 +80,10 @@ struct ZieleView: View {
             NavigationLink {
                 ZieleKoerperSeite(koerper: $koerper, groesseText: $groesseText, jahr: jahr)
             } label: {
-                ProfilListenZeile("Körperdaten", symbol: "figure.stand", wert: koerperWert)
+                ProfilListenZeile(String(localized: "Körperdaten"), symbol: "figure.stand", wert: koerperWert)
             }
             Button { befragung = true } label: {
-                ProfilListenZeile("Satzziele je Muskel", symbol: "figure.strengthtraining.traditional", wert: muskelWert)
+                ProfilListenZeile(String(localized: "Satzziele je Muskel"), symbol: "figure.strengthtraining.traditional", wert: muskelWert)
             }
         }
     }
@@ -91,11 +91,11 @@ struct ZieleView: View {
     /// "180 cm, 1990" oder "Keine Angabe".
     private var koerperWert: String {
         let teile: [String] = [koerper.groesseCm.map { "\($0) cm" }, koerper.geburtsjahr.map { String($0) }].compactMap { $0 }
-        return teile.isEmpty ? "Keine Angabe" : teile.joined(separator: ", ")
+        return teile.isEmpty ? String(localized: "Keine Angabe") : teile.joined(separator: ", ")
     }
 
     private var muskelWert: String {
-        guard let raum = umgebung.daten?.raum, let prio = ZieleLogik.gespeichert(in: raum), let erste = prio.first else { return "Offen" }
+        guard let raum = umgebung.daten?.raum, let prio = ZieleLogik.gespeichert(in: raum), let erste = prio.first else { return String(localized: "Offen") }
         return erste.name
     }
 
@@ -151,7 +151,7 @@ private struct ZieleKoerperSeite: View {
 
     var body: some View {
         List {
-            ProfilAbschnitt(fuss: "Geschlecht und Geburtsjahr sind freiwillig und nur für die Formeln der Vorschläge.") {
+            ProfilAbschnitt(fuss: String(localized: "Geschlecht und Geburtsjahr sind freiwillig und nur für die Formeln der Vorschläge.")) {
                 LabeledContent {
                     HStack(spacing: Abstand.xs) {
                         TextField("cm", text: $groesseText)

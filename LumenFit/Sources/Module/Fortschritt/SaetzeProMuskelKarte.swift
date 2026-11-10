@@ -16,7 +16,7 @@ struct SaetzeProMuskelKarte: View {
     var body: some View {
         DiagrammKarte(aussage: SaetzeProMuskel.aussage(zeilen), kernzeile: SaetzeProMuskel.kernzeile(zeilen)) {
             if zeilen.isEmpty {
-                LeerZustand(stimmung: .bereit, satz: "Lege deine Wochenziele fest, dann zählt Lumi mit.", handlung: "Ziele öffnen") {
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Lege deine Wochenziele fest, dann zählt Lumi mit."), handlung: String(localized: "Ziele öffnen")) {
                     umgebung.router.oeffne(.profil(.ziele))
                 }
             } else {
@@ -60,7 +60,7 @@ struct SaetzeProMuskelKarte: View {
         .animation(reduceMotion ? nil : Feder.weich, value: gefuellt)
         .onAppear { gefuellt = true }
         .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "Sätze je Muskel", zusammenfassung: SaetzeProMuskel.aussage(zeilen), xTitel: "Muskelgruppe", yTitel: "Sätze diese Woche", einheit: "Sätze",
-            stetig: false, punkte: zeilen.map { .init(x: "\($0.gruppe.name), Ziel \($0.ziel)", y: $0.saetze) }))
+            titel: String(localized: "Sätze je Muskel"), zusammenfassung: SaetzeProMuskel.aussage(zeilen), xTitel: String(localized: "Muskelgruppe"), yTitel: String(localized: "Sätze diese Woche"), einheit: String(localized: "Sätze"),
+            stetig: false, punkte: zeilen.map { .init(x: String(localized: "\($0.gruppe.name), Ziel \($0.ziel)"), y: $0.saetze) }))
     }
 }

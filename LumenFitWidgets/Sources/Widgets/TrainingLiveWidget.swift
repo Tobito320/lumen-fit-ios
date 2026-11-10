@@ -138,7 +138,7 @@ private struct TrainingSperrbildschirm: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
                 LumiView(stimmung: stand.lumi, groesse: 24)
-                Text(planName ?? stand.planName ?? "Training")
+                Text(planName ?? stand.planName ?? String(localized: "Training"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(farben.text2)
                     .lineLimit(1)

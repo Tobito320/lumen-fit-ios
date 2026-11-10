@@ -54,26 +54,26 @@ enum EssenLiveLogik {
     }
 
     /// "1.240 von 2.000 kcal"
-    static func kcalText(_ stand: EssenLiveStand) -> String { "\(zahl(stand.kcal)) von \(zahl(stand.kcalZiel)) kcal" }
+    static func kcalText(_ stand: EssenLiveStand) -> String { String(localized: "\(zahl(stand.kcal)) von \(zahl(stand.kcalZiel)) kcal") }
 
     /// "760 kcal übrig" oder "240 kcal drüber"
     static func restText(_ stand: EssenLiveStand) -> String {
         let rest = stand.kcalZiel - stand.kcal
-        return rest >= 0 ? "\(zahl(rest)) kcal übrig" : "\(zahl(-rest)) kcal drüber"
+        return rest >= 0 ? String(localized: "\(zahl(rest)) kcal übrig") : String(localized: "\(zahl(-rest)) kcal drüber")
     }
 
     /// "Protein 85 von 120 g"
-    static func proteinText(_ stand: EssenLiveStand) -> String { "Protein \(stand.proteinG) von \(stand.proteinZiel) g" }
+    static func proteinText(_ stand: EssenLiveStand) -> String { String(localized: "Protein \(String(stand.proteinG)) von \(String(stand.proteinZiel)) g") }
 
     /// "Als Nächstes: Abendessen" oder "Alle Mahlzeiten eingetragen" (nur wenn heute schon etwas steht, sonst "Noch nichts eingetragen").
     static func naechsteText(_ stand: EssenLiveStand) -> String {
-        if let m = naechsteMahlzeit(stand) { return "Als Nächstes: \(m.name)" }
-        return stand.kcal > 0 ? "Heute alles eingetragen" : "Noch nichts eingetragen"
+        if let m = naechsteMahlzeit(stand) { return String(localized: "Als Nächstes: \(m.name)") }
+        return stand.kcal > 0 ? String(localized: "Heute alles eingetragen") : String(localized: "Noch nichts eingetragen")
     }
 
     /// Ein Satz für VoiceOver über die ganze Karte.
     static func sprechtext(_ stand: EssenLiveStand) -> String {
-        "Essen heute: \(kcalText(stand)), \(restText(stand)). \(proteinText(stand)). Kohlenhydrate \(stand.kohlenhydrateG) von \(stand.kohlenhydrateZiel) Gramm, Fett \(stand.fettG) von \(stand.fettZiel) Gramm. \(naechsteText(stand))."
+        String(localized: "Essen heute: \(kcalText(stand)), \(restText(stand)). \(proteinText(stand)). Kohlenhydrate \(String(stand.kohlenhydrateG)) von \(String(stand.kohlenhydrateZiel)) Gramm, Fett \(String(stand.fettG)) von \(String(stand.fettZiel)) Gramm. \(naechsteText(stand)).")
     }
 
     // MARK: - Entscheidung

@@ -11,19 +11,19 @@ struct FortschrittSegmentView: View {
     var body: some View {
         let q = FortschrittQuelle(umgebung: umgebung)
         ListenKarte {
-            FortschrittLinkZeile(titel: "Einsichten und Hinweise", detail: "Hinweise des Tages und was mir auffällt", symbol: "lightbulb.fill", route: .einsichten)
+            FortschrittLinkZeile(titel: String(localized: "Einsichten und Hinweise"), detail: String(localized: "Hinweise des Tages und was mir auffällt"), symbol: "lightbulb.fill", route: .einsichten)
             Haarlinie()
-            FortschrittLinkZeile(titel: "Verlauf", detail: "Konstanz und Gewicht", symbol: "chart.xyaxis.line") { VerlaufView() }
+            FortschrittLinkZeile(titel: String(localized: "Verlauf"), detail: String(localized: "Konstanz und Gewicht"), symbol: "chart.xyaxis.line") { VerlaufView() }
             Haarlinie()
-            FortschrittLinkZeile(titel: "Kraftkurve", detail: "Bestes Gewicht, 1RM und Volumen je Übung", symbol: "chart.line.uptrend.xyaxis") { KraftKurveSeite() }
+            FortschrittLinkZeile(titel: String(localized: "Kraftkurve"), detail: String(localized: "Bestes Gewicht, 1RM und Volumen je Übung"), symbol: "chart.line.uptrend.xyaxis") { KraftKurveSeite() }
             Haarlinie()
-            FortschrittLinkZeile(titel: "Muskelkarte", detail: "Sätze und Erholung je Körperteil", symbol: "figure.arms.open") { MuskelkartenSeite() }
+            FortschrittLinkZeile(titel: String(localized: "Muskelkarte"), detail: String(localized: "Sätze und Erholung je Körperteil"), symbol: "figure.arms.open") { MuskelkartenSeite() }
             Haarlinie()
-            FortschrittLinkZeile(titel: "Nächstes Training", detail: "Was heute passt", symbol: "figure.strengthtraining.traditional") { NaechstesTrainingSeite() }
+            FortschrittLinkZeile(titel: String(localized: "Nächstes Training"), detail: String(localized: "Was heute passt"), symbol: "figure.strengthtraining.traditional") { NaechstesTrainingSeite() }
             Haarlinie()
-            FortschrittLinkZeile(titel: "Rückblick", detail: "Woche und Monat teilen, FitPassport", symbol: "calendar") { RueckblickView() }
+            FortschrittLinkZeile(titel: String(localized: "Rückblick"), detail: String(localized: "Woche und Monat teilen, FitPassport"), symbol: "calendar") { RueckblickView() }
             Haarlinie()
-            FortschrittLinkZeile(titel: "Lumi", detail: "Stufe \(q.stufe) von \(LumiStufe.schwellen.count)", symbol: "sparkles") { LumiSeiteView() }
+            FortschrittLinkZeile(titel: String(localized: "Lumi"), detail: String(localized: "Stufe \(q.stufe) von \(LumiStufe.schwellen.count)"), symbol: "sparkles") { LumiSeiteView() }
         }
     }
 }

@@ -23,7 +23,7 @@ struct VerbindungZeile: View {
     }
 
     private var untertitel: String {
-        if eintrag.ich.pause { return "Pausiert" }
+        if eintrag.ich.pause { return String(localized: "Pausiert") }
         return VerbindungenLogik.kurzInfo(eintrag, jetzt: umgebung.uhr()) ?? VerbindungenLogik.zuletztText(eintrag.zuletzt, jetzt: umgebung.uhr())
     }
 }
@@ -65,10 +65,10 @@ struct VerbindungPersonView: View {
                     name = neu.name
                 }
             } else {
-                LeerZustand(stimmung: .bereit, satz: "Diese Verbindung gibt es nicht mehr.")
+                LeerZustand(stimmung: .bereit, satz: String(localized: "Diese Verbindung gibt es nicht mehr."))
             }
         }
-        .navigationTitle(eintrag?.anzeigeName ?? "Verbindung")
+        .navigationTitle(eintrag?.anzeigeName ?? String(localized: "Verbindung"))
         .navigationBarTitleDisplayMode(.inline)
         .lumenHintergrund()
         .alert("Das hat nicht geklappt", isPresented: Binding(get: { fehler != nil }, set: { if !$0 { fehler = nil } })) {
@@ -79,15 +79,15 @@ struct VerbindungPersonView: View {
     // MARK: Abschnitte
 
     private func kopf(_ e: VerbindungEintrag) -> some View {
-        VerbindenAbschnitt(titel: nil, fuss: e.lovea ? "Das ist deine Verbindung über Lovea. Sie bleibt, bis du sie entfernst oder ausschaltest." : nil) {
+        VerbindenAbschnitt(titel: nil, fuss: e.lovea ? String(localized: "Das ist deine Verbindung über Lovea. Sie bleibt, bis du sie entfernst oder ausschaltest.") : nil) {
             LabeledContent("Zuletzt") { Text(VerbindungenLogik.zuletztText(e.zuletzt, jetzt: umgebung.uhr())).foregroundStyle(palette.text2) }
         }
     }
 
     private func zeigstAbschnitt(_ e: VerbindungEintrag) -> some View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
-        return VerbindenAbschnitt(titel: "Das zeigst du \(e.anzeigeName)",
-                                  fuss: "Wenig: Schritte und Gym. Alles: alle Bereiche. Es gehen nur Zusammenfassungen von heute hinaus.") {
+        return VerbindenAbschnitt(titel: String(localized: "Das zeigst du \(e.anzeigeName)"),
+                                  fuss: String(localized: "Wenig: Schritte und Gym. Alles: alle Bereiche. Es gehen nur Zusammenfassungen von heute hinaus.")) {
             FreigabeAuswahl(an: an, einklappbar: $einzelnOffen) { neu in
                 zeigtLokal = neu
                 senden(FreigabeStufe.felder(neu))
@@ -99,7 +99,7 @@ struct VerbindungPersonView: View {
         let an = zeigtLokal ?? e.ich.zeigtBereiche
         let frei = VerbindungenLogik.erlaubt(Set(an.compactMap(\.freigabe)), einstellungen: umgebung.daten?.einstellungen.werte ?? Einstellungen())
         let zeilen = VerbindenDienste.geteilt?.bruecke.vorschau(freigaben: frei).map(FreigabenVorschau.zeilen) ?? []
-        return VerbindenAbschnitt(titel: "Das sieht \(e.anzeigeName)", fuss: "Genau diese Zeilen bekommt diese Person, nicht mehr.") {
+        return VerbindenAbschnitt(titel: String(localized: "Das sieht \(e.anzeigeName)"), fuss: String(localized: "Genau diese Zeilen bekommt diese Person, nicht mehr.")) {
             if an.isEmpty || e.ich.pause {
                 Text(e.ich.pause ? "Nichts, die Pause ist an." : "Nichts. Du zeigst dieser Person noch nichts.").foregroundStyle(palette.text2)
             } else if zeilen.isEmpty {
@@ -119,9 +119,9 @@ struct VerbindungPersonView: View {
         let aus = ausblendenLokal ?? e.ich.ausgeblendet
         let liste = VerbindungBereich.allCases.filter { e.sichtbareBereiche.contains($0) || aus.contains($0) }
         if liste.isEmpty {
-            VerbindenAbschnitt(titel: "Das siehst du von \(e.anzeigeName)", fuss: "\(e.anzeigeName) teilt mit dir noch nichts.") { EmptyView() }
+            VerbindenAbschnitt(titel: String(localized: "Das siehst du von \(e.anzeigeName)"), fuss: String(localized: "\(e.anzeigeName) teilt mit dir noch nichts.")) { EmptyView() }
         } else {
-            VerbindenAbschnitt(titel: "Das siehst du von \(e.anzeigeName)", fuss: "Ausgeschaltetes verschwindet bei dir. Es ändert nicht, was die andere Person teilt.") {
+            VerbindenAbschnitt(titel: String(localized: "Das siehst du von \(e.anzeigeName)"), fuss: String(localized: "Ausgeschaltetes verschwindet bei dir. Es ändert nicht, was die andere Person teilt.")) {
                 ForEach(liste, id: \.self) { b in
                     Toggle(isOn: Binding(get: { !aus.contains(b) }, set: { neu in
                         var n = aus
@@ -151,7 +151,7 @@ struct VerbindungPersonView: View {
     }
 
     private func optionen(_ e: VerbindungEintrag) -> some View {
-        VerbindenAbschnitt(titel: "Optionen", fuss: "Pause: ihr seht euch beide nichts, bis du sie ausschaltest. Mitteilungen: Meldungen wie \"im Gym\" von dieser Person.") {
+        VerbindenAbschnitt(titel: String(localized: "Optionen"), fuss: String(localized: "Pause: ihr seht euch beide nichts, bis du sie ausschaltest. Mitteilungen: Meldungen wie \"im Gym\" von dieser Person.")) {
             Toggle("Pause", isOn: Binding(get: { e.ich.pause }, set: { senden(["pause": $0]) })).frame(minHeight: Abstand.tippflaeche)
             Toggle("Mitteilungen", isOn: Binding(get: { e.ich.mitteilungen }, set: { senden(["mitteilungen": $0]) })).frame(minHeight: Abstand.tippflaeche)
             Toggle("Favorit", isOn: Binding(get: { e.ich.favorit }, set: { senden(["favorit": $0]) })).frame(minHeight: Abstand.tippflaeche)
@@ -163,13 +163,13 @@ struct VerbindungPersonView: View {
     }
 
     private func entfernen(_ e: VerbindungEintrag) -> some View {
-        VerbindenAbschnitt(fuss: "Beide Seiten sehen sich sofort nicht mehr. Gespeicherte Daten dieser Person werden von diesem Gerät gelöscht. Wieder verbinden geht nur mit einem neuen Code.") {
+        VerbindenAbschnitt(fuss: String(localized: "Beide Seiten sehen sich sofort nicht mehr. Gespeicherte Daten dieser Person werden von diesem Gerät gelöscht. Wieder verbinden geht nur mit einem neuen Code.")) {
             Button("Verbindung entfernen", role: .destructive) { fragen = true }
                 .frame(minHeight: Abstand.tippflaeche)
                 .confirmationDialog("Verbindung mit \(e.anzeigeName) entfernen?", isPresented: $fragen, titleVisibility: .visible) {
                     Button("Entfernen", role: .destructive) {
                         Task {
-                            if await umgebung.konto.verbindungEntfernen(e.id) { dismiss() } else { fehler = "Die Verbindung ließ sich nicht entfernen. Prüfe das Netz und versuche es nochmal." }
+                            if await umgebung.konto.verbindungEntfernen(e.id) { dismiss() } else { fehler = String(localized: "Die Verbindung ließ sich nicht entfernen. Prüfe das Netz und versuche es nochmal.") }
                         }
                     }
                     Button("Abbrechen", role: .cancel) {}
@@ -184,7 +184,7 @@ struct VerbindungPersonView: View {
             if !(await umgebung.konto.verbindungAendern(id, felder)) {
                 zeigtLokal = nil
                 ausblendenLokal = nil
-                fehler = "Das ließ sich nicht speichern. Prüfe das Netz und versuche es nochmal."
+                fehler = String(localized: "Das ließ sich nicht speichern. Prüfe das Netz und versuche es nochmal.")
             }
         }
     }

@@ -22,9 +22,9 @@ struct CrewHerausforderungBlatt: View {
         var id: String { rawValue }
         var titel: String {
             switch self {
-            case .duell: "Duell"
-            case .gruppe: "Gruppe"
-            case .gemeinsam: "Gemeinsam"
+            case .duell: String(localized: "Duell")
+            case .gruppe: String(localized: "Gruppe")
+            case .gemeinsam: String(localized: "Gemeinsam")
             }
         }
     }

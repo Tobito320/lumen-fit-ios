@@ -8,10 +8,10 @@ enum EssenHinzuBereich: String, CaseIterable, Identifiable, Sendable {
 
     var name: String {
         switch self {
-        case .suche: "Suche"
-        case .favoriten: "Favoriten"
-        case .zuletzt: "Zuletzt"
-        case .eigene: "Eigene"
+        case .suche: String(localized: "Suche")
+        case .favoriten: String(localized: "Favoriten")
+        case .zuletzt: String(localized: "Zuletzt")
+        case .eigene: String(localized: "Eigene")
         }
     }
 }
@@ -230,10 +230,10 @@ struct EssenHinzufuegenView: View {
 
     private var werkzeuge: some View {
         HStack(spacing: Abstand.s) {
-            kachel("Scannen", symbol: "barcode.viewfinder") { scanOffen = true }
-            kachel("Etikett", symbol: "camera.fill") { fotoOffen = true }
-            kachel("Von Hand", symbol: "square.and.pencil") { pfad = [.eigenes(barcode: nil)] }
-            kachel("Schnell", symbol: "bolt.fill") { schnellOffen = true }
+            kachel(String(localized: "Scannen"), symbol: "barcode.viewfinder") { scanOffen = true }
+            kachel(String(localized: "Etikett"), symbol: "camera.fill") { fotoOffen = true }
+            kachel(String(localized: "Von Hand"), symbol: "square.and.pencil") { pfad = [.eigenes(barcode: nil)] }
+            kachel(String(localized: "Schnell"), symbol: "bolt.fill") { schnellOffen = true }
             EssenKiFotoKnopf(mahlzeit: mahlzeit, tag: tag, vonHand: { pfad = [.eigenes(barcode: nil)] }) { vermerken(name: $0) }
         }
     }
@@ -249,7 +249,7 @@ struct EssenHinzufuegenView: View {
             .lumenKartenFlaeche()
         }
         .buttonStyle(.federnd)
-        .accessibilityLabel(titel == "Schnell" ? "Schnell eintragen, nur Kalorien" : titel)
+        .accessibilityLabel(titel == String(localized: "Schnell") ? String(localized: "Schnell eintragen, nur Kalorien") : titel)
     }
 
     private var barcodeZeile: some View {
@@ -268,9 +268,9 @@ struct EssenHinzufuegenView: View {
         case .gefunden(let l): pfad = [.detail(l)]
         case .vorschlaege(let n, let liste, let c): vorschlaege = (n, liste, c)
         case .unbekannt(let c): pfad = [.eigenes(barcode: c)]
-        case .offline: barcodeFehler = "Kein Netz. Versuche es mit Netz noch einmal."
-        case .limit(_, let s): barcodeFehler = "Open Food Facts erlaubt 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder."
-        case .fehler: barcodeFehler = "Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal."
+        case .offline: barcodeFehler = String(localized: "Kein Netz. Versuche es mit Netz noch einmal.")
+        case .limit(_, let s): barcodeFehler = String(localized: "Open Food Facts erlaubt 15 Abfragen in der Minute. In etwa \(s) Sekunden geht es wieder.")
+        case .fehler: barcodeFehler = String(localized: "Open Food Facts antwortet gerade nicht. Versuche es gleich noch einmal.")
         }
     }
 
@@ -287,8 +287,8 @@ struct EssenHinzufuegenView: View {
     @ViewBuilder
     private var grundliste: some View {
         HStack(spacing: Abstand.s) {
-            menue($typ, EssenHinzuTyp.allCases).haptik(.auswahl, bei: typ)
-            menue($sortierung, EssenHinzuSortierung.allCases).haptik(.auswahl, bei: sortierung)
+            menue($typ, EssenHinzuTyp.allCases, \.titel).haptik(.auswahl, bei: typ)
+            menue($sortierung, EssenHinzuSortierung.allCases, \.titel).haptik(.auswahl, bei: sortierung)
             Spacer(minLength: 0)
         }
         let liste = EssenHinzuLogik.liste(typ: typ, sortierung: sortierung, haeufig: essen?.haeufig ?? [], zuletzt: essen?.zuletzt ?? [],
@@ -302,20 +302,20 @@ struct EssenHinzufuegenView: View {
 
     private var grundlisteLeer: String {
         switch typ {
-        case .lebensmittel: "Tippe einen Namen, scanne eine Packung oder fotografiere das Etikett."
-        case .mahlzeiten: "Speichere zum Beispiel Haferflocken, Milch und Honig als eine Mahlzeit und trag sie mit einem Plus ein."
-        case .rezepte: "Noch kein Rezept. Lege mit dem Plus oben eines an."
+        case .lebensmittel: String(localized: "Tippe einen Namen, scanne eine Packung oder fotografiere das Etikett.")
+        case .mahlzeiten: String(localized: "Speichere zum Beispiel Haferflocken, Milch und Honig als eine Mahlzeit und trag sie mit einem Plus ein.")
+        case .rezepte: String(localized: "Noch kein Rezept. Lege mit dem Plus oben eines an.")
         }
     }
 
-    private func menue<T: Hashable & RawRepresentable>(_ wert: Binding<T>, _ faelle: [T]) -> some View where T.RawValue == String {
+    private func menue<T: Hashable>(_ wert: Binding<T>, _ faelle: [T], _ titel: @escaping (T) -> String) -> some View {
         Menu {
             Picker("Auswahl", selection: wert) {
-                ForEach(faelle, id: \.self) { Text($0.rawValue).tag($0) }
+                ForEach(faelle, id: \.self) { Text(titel($0)).tag($0) }
             }
         } label: {
             HStack(spacing: Abstand.xs) {
-                Text(wert.wrappedValue.rawValue).lineLimit(1)
+                Text(titel(wert.wrappedValue)).lineLimit(1)
                 Image(systemName: "chevron.down").font(.caption).accessibilityHidden(true)
             }
             .font(.subheadline.weight(.medium))
@@ -324,7 +324,7 @@ struct EssenHinzufuegenView: View {
             .frame(minHeight: Abstand.tippflaeche)
             .background(palette.flaeche, in: .capsule)
         }
-        .accessibilityLabel("\(wert.wrappedValue.rawValue), ändern")
+        .accessibilityLabel("\(titel(wert.wrappedValue)), ändern")
     }
 
     private var chipReihe: some View {
@@ -364,7 +364,7 @@ struct EssenHinzufuegenView: View {
     @ViewBuilder
     private var ergebnisse: some View {
         let liste = treffer
-        if let barcodeFehler { FehlerKarte(titel: "Barcode nicht geprüft", hilfe: barcodeFehler) }
+        if let barcodeFehler { FehlerKarte(titel: String(localized: "Barcode nicht geprüft"), hilfe: barcodeFehler) }
         if liste.isEmpty {
             Text("Nichts gefunden. Du kannst das Lebensmittel von Hand eintragen.")
                 .font(.subheadline).foregroundStyle(palette.text2)
@@ -413,9 +413,9 @@ struct EssenHinzufuegenView: View {
 
     private var leerSatz: String {
         switch bereich {
-        case .favoriten: "Noch keine Favoriten. Tippe in einem Lebensmittel auf den Stern, oder speichere eine ganze Mahlzeit als Gericht."
-        case .zuletzt: "Hier erscheint, was du zuletzt gegessen hast."
-        case .eigene: "Noch nichts Eigenes. Lebensmittel von Hand oder vom Etikett landen hier."
+        case .favoriten: String(localized: "Noch keine Favoriten. Tippe in einem Lebensmittel auf den Stern, oder speichere eine ganze Mahlzeit als Gericht.")
+        case .zuletzt: String(localized: "Hier erscheint, was du zuletzt gegessen hast.")
+        case .eigene: String(localized: "Noch nichts Eigenes. Lebensmittel von Hand oder vom Etikett landen hier.")
         case .suche: ""
         }
     }
@@ -434,8 +434,8 @@ struct EssenHinzufuegenView: View {
     private func vermerken(name: String?) {
         zaehler += 1
         let n = zaehler
-        toast = ToastInhalt(titel: name.map { "\($0) eingetragen" } ?? "Eingetragen",
-                            zeile: "\(n) \(n == 1 ? "Eintrag" : "Einträge") in \(mahlzeitName)", stimmung: .bereit)
+        toast = ToastInhalt(titel: name.map { String(localized: "\($0) eingetragen") } ?? String(localized: "Eingetragen"),
+                            zeile: n == 1 ? String(localized: "1 Eintrag in \(mahlzeitName)") : String(localized: "\(n) Einträge in \(mahlzeitName)"), stimmung: .bereit)
     }
 
     /// Plus-Tipp: Mahlzeit-Vorlage als ganze Mahlzeit, sonst letzte Menge oder Standard. Das Plus wird eine Sekunde lang zum Häkchen.
@@ -468,7 +468,8 @@ struct EssenHinzufuegenView: View {
 
     private func kopieren(_ l: Lebensmittel) {
         if let r = EssenHinzuLogik.rezept(zu: l, in: essen?.rezepte ?? []) { essen?.kopieren(r) } else { essen?.kopieren(l) }
-        toast = ToastInhalt(titel: "\(l.name) kopiert", zeile: "Jetzt bei deinen eigenen", stimmung: .bereit)
+        toast = ToastInhalt(titel: String(localized: "\(l.name) kopiert"), zeile: String(localized: "Jetzt bei deinen eigenen"), stimmung: .bereit)
+
         neuSuchen()
     }
 }

@@ -67,8 +67,8 @@ enum ProfilSicherungFehler: Error, Equatable, Sendable {
 
     var text: String {
         switch self {
-        case .keineSicherung: "Das ist keine Sicherung von Lumen Fit oder die Datei ist kaputt."
-        case .zuNeu: "Diese Sicherung ist von einer neueren Fassung von Lumen Fit. Bitte aktualisiere die App zuerst."
+        case .keineSicherung: String(localized: "Das ist keine Sicherung von Lumen Fit oder die Datei ist kaputt.")
+        case .zuNeu: String(localized: "Diese Sicherung ist von einer neueren Fassung von Lumen Fit. Bitte aktualisiere die App zuerst.")
         }
     }
 }
@@ -94,23 +94,23 @@ struct ProfilSicherungStand: Codable, Equatable, Sendable {
 
     /// "Letzte Sicherung: vor 12 Tagen"
     static func zeile(zuletzt: Date?, jetzt: Date) -> String {
-        guard let zuletzt else { return "Noch keine Sicherung" }
+        guard let zuletzt else { return String(localized: "Noch keine Sicherung") }
         let tage = Datum.tageZwischen(Datum.text(zuletzt), Datum.text(jetzt))
         switch tage {
-        case ..<1: return "Letzte Sicherung: heute"
-        case 1: return "Letzte Sicherung: gestern"
-        default: return "Letzte Sicherung: vor \(tage) Tagen"
+        case ..<1: return String(localized: "Letzte Sicherung: heute")
+        case 1: return String(localized: "Letzte Sicherung: gestern")
+        default: return String(localized: "Letzte Sicherung: vor \(tage) Tagen")
         }
     }
 
     /// Kurzer Wert für rechts in einer Einstellungszeile: "Heute", "Gestern", "Vor 12 Tagen", "Noch keine".
     static func kurz(zuletzt: Date?, jetzt: Date) -> String {
-        guard let zuletzt else { return "Noch keine" }
+        guard let zuletzt else { return String(localized: "Noch keine") }
         let tage = Datum.tageZwischen(Datum.text(zuletzt), Datum.text(jetzt))
         switch tage {
-        case ..<1: return "Heute"
-        case 1: return "Gestern"
-        default: return "Vor \(tage) Tagen"
+        case ..<1: return String(localized: "Heute")
+        case 1: return String(localized: "Gestern")
+        default: return String(localized: "Vor \(tage) Tagen")
         }
     }
 }

@@ -43,6 +43,6 @@ struct SchlafSperrbildschirmAnsicht: View {
         }
         .gaugeStyle(.accessoryCircularCapacity)
         .accessibilityLabel("Schlaf")
-        .accessibilityValue(w.schlaf.map { "\($0), \(Int(w.anteil * 100)) Prozent des Ziels" } ?? "keine Werte von heute")
+        .accessibilityValue(w.schlaf.map { String(localized: "\($0), \(Int(w.anteil * 100)) Prozent des Ziels") } ?? String(localized: "keine Werte von heute"))
     }
 }

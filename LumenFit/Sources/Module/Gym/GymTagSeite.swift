@@ -84,7 +84,7 @@ struct GymTagSeite: View {
     private func zeile(_ u: PlanUebung) -> some View {
         let katalog = sitzung.katalog(u)
         let muskel = katalog.map { $0.muskel }
-        let sets = u.istCardio ? "\(u.minuten ?? 0) min" : TrainingLogik.saetzeText(u)
+        let sets = u.istCardio ? String(localized: "\(u.minuten ?? 0) min") : TrainingLogik.saetzeText(u)
         let untertitel = [muskel, sets].compactMap { $0 }.joined(separator: " · ")
         if katalog != nil {
             NavigationLink { UebungDetailView(id: u.uebung, anleitungZuerst: true) } label: {

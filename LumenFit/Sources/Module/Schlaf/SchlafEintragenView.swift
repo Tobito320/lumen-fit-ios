@@ -88,9 +88,9 @@ struct SchlafEintragenView: View {
     }
 
     private func fuss(_ aktuell: SchlafGewaehlteNacht?) -> String {
-        guard let aktuell else { return "Für diese Nacht ist noch nichts eingetragen." }
-        if aktuell.quelle == .eingetragen { return "Für diese Nacht gibt es schon einen Eintrag. Sichern ersetzt ihn." }
-        return "Für diese Nacht gibt es eine automatische Erkennung (\(aktuell.quelle.name)). Sichern ersetzt sie."
+        guard let aktuell else { return String(localized: "Für diese Nacht ist noch nichts eingetragen.") }
+        if aktuell.quelle == .eingetragen { return String(localized: "Für diese Nacht gibt es schon einen Eintrag. Sichern ersetzt ihn.") }
+        return String(localized: "Für diese Nacht gibt es eine automatische Erkennung (\(aktuell.quelle.name)). Sichern ersetzt sie.")
     }
 
     private func sichern() {
@@ -180,8 +180,8 @@ struct SchlafZielView: View {
 
     private var erklaerung: String {
         let ziel = SchlafFormat.dauer(max(0, basis + extra.extraMinuten))
-        return extra.extraTage == 0 ? "Wähle Wochentage, an denen du mehr (oder weniger) Schlaf brauchst, zum Beispiel vor Trainingstagen."
-            : "An den gewählten Tagen gilt \(ziel). Der Schlaf-Tab und der Schlafbogen in Heute rechnen damit."
+        return extra.extraTage == 0 ? String(localized: "Wähle Wochentage, an denen du mehr (oder weniger) Schlaf brauchst, zum Beispiel vor Trainingstagen.")
+            : String(localized: "An den gewählten Tagen gilt \(ziel). Der Schlaf-Tab und der Schlafbogen in Heute rechnen damit.")
     }
 
     private func lade() {

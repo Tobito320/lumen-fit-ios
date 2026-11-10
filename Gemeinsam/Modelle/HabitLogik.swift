@@ -79,19 +79,19 @@ enum HabitLogik {
         return (0..<7).map { Datum.addTage(montag, $0) }
     }
 
-    static let wochentagKuerzel = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+    static let wochentagKuerzel = [String(localized: "Mo"), String(localized: "Di"), String(localized: "Mi"), String(localized: "Do"), String(localized: "Fr"), String(localized: "Sa"), String(localized: "So")]
 
     /// "jeden Tag", "3 Tage/Woche", "Mo, Mi, Fr" (Spec 3.3).
     static func haeufigkeitText(_ habit: Habit, ziel: Int?) -> String {
         switch habit.haeufigkeit {
         case .taeglich:
-            return "jeden Tag"
+            return String(localized: "jeden Tag")
         case .proWoche(let n):
             let anzahl = wochenziel(habit, ziel, n)
-            return anzahl == 1 ? "1 Tag/Woche" : "\(anzahl) Tage/Woche"
+            return anzahl == 1 ? String(localized: "1 Tag/Woche") : String(localized: "\(anzahl) Tage/Woche")
         case .tage(let tage):
             let sortiert = Set(tage).filter { (1...7).contains($0) }.sorted()
-            if sortiert.count == 7 { return "jeden Tag" }
+            if sortiert.count == 7 { return String(localized: "jeden Tag") }
             return sortiert.map { wochentagKuerzel[$0 - 1] }.joined(separator: ", ")
         }
     }

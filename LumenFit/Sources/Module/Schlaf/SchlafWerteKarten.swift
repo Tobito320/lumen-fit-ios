@@ -32,7 +32,7 @@ struct SchlafWerteChips: View {
                     .font(.footnote.weight(.semibold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(tief)
-                Text(stand.aktuell.map { SchlafVitalInfo.text(stand.art, $0.wert) } ?? "Keine Daten")
+                Text(stand.aktuell.map { SchlafVitalInfo.text(stand.art, $0.wert) } ?? String(localized: "Keine Daten"))
                     .font(.title3.weight(.bold))
                     .monospacedDigit()
                     .fontDesign(.rounded)
@@ -73,18 +73,18 @@ struct SchlafBereichKarte: View {
     @Environment(\.openURL) private var openURL
 
     private var aussage: String {
-        guard let aktuell = hrv.aktuell else { return "HRV: Keine Daten" }
+        guard let aktuell = hrv.aktuell else { return String(localized: "HRV: Keine Daten") }
         let wert = SchlafVitalInfo.text(.hrv, aktuell.wert) + (hrv.datumHinweis.map { " \($0)" } ?? "")
         guard let bereich = hrv.bereich else { return "HRV \(wert)" }
         return "HRV \(wert), \(bereich.lage.name)"
     }
 
     private var kernzeile: String {
-        guard hrv.aktuell != nil else { return "Die HRV liefert eine Apple Watch." }
+        guard hrv.aktuell != nil else { return String(localized: "Die HRV liefert eine Apple Watch.") }
         guard let bereich = hrv.bereich else {
-            return "Zu wenig Daten für deinen 60-Tage-Bereich (\(hrv.vorhanden) von \(PersoenlicherBereich.mindestWerte) Tagen)."
+            return String(localized: "Zu wenig Daten für deinen 60-Tage-Bereich (\(hrv.vorhanden) von \(PersoenlicherBereich.mindestWerte) Tagen).")
         }
-        return "Dein Bereich der letzten \(PersoenlicherBereich.tage) Tage: \(bereich.bereichText)"
+        return String(localized: "Dein Bereich der letzten \(PersoenlicherBereich.tage) Tage: \(bereich.bereichText)")
     }
 
     var body: some View {

@@ -113,21 +113,21 @@ struct EssenEigenesView: View {
                 Toggle("Getränk (Werte je 100 ml)", isOn: $eingabe.fluessig)
             }
             Section("Nährwerte pro 100 \(eingabe.fluessig ? "ml" : "g")") {
-                EssenZahlFeld(titel: "Energie", einheit: "kcal", text: $eingabe.kcal)
-                EssenZahlFeld(titel: "Eiweiß", einheit: "g", text: $eingabe.protein)
-                EssenZahlFeld(titel: "Kohlenhydrate", einheit: "g", text: $eingabe.kohlenhydrate)
-                EssenZahlFeld(titel: "davon Zucker", einheit: "g", text: $eingabe.zucker)
-                EssenZahlFeld(titel: "Fett", einheit: "g", text: $eingabe.fett)
-                EssenZahlFeld(titel: "davon gesättigt", einheit: "g", text: $eingabe.gesFett)
-                EssenZahlFeld(titel: "Ballaststoffe", einheit: "g", text: $eingabe.ballaststoffe)
-                EssenZahlFeld(titel: "Salz", einheit: "g", text: $eingabe.salz)
+                EssenZahlFeld(titel: String(localized: "Energie"), einheit: "kcal", text: $eingabe.kcal)
+                EssenZahlFeld(titel: String(localized: "Eiweiß"), einheit: "g", text: $eingabe.protein)
+                EssenZahlFeld(titel: String(localized: "Kohlenhydrate"), einheit: "g", text: $eingabe.kohlenhydrate)
+                EssenZahlFeld(titel: String(localized: "davon Zucker"), einheit: "g", text: $eingabe.zucker)
+                EssenZahlFeld(titel: String(localized: "Fett"), einheit: "g", text: $eingabe.fett)
+                EssenZahlFeld(titel: String(localized: "davon gesättigt"), einheit: "g", text: $eingabe.gesFett)
+                EssenZahlFeld(titel: String(localized: "Ballaststoffe"), einheit: "g", text: $eingabe.ballaststoffe)
+                EssenZahlFeld(titel: String(localized: "Salz"), einheit: "g", text: $eingabe.salz)
             }
             Section("Portion (freiwillig)") {
-                EssenZahlFeld(titel: "Eine Portion wiegt", einheit: eingabe.fluessig ? "ml" : "g", text: $eingabe.portion)
+                EssenZahlFeld(titel: String(localized: "Eine Portion wiegt"), einheit: eingabe.fluessig ? "ml" : "g", text: $eingabe.portion)
                 TextField("Name der Portion (z. B. Scheibe)", text: $eingabe.portionName).accessibilityLabel("Name der Portion")
             }
             Section("Packung (freiwillig)") {
-                EssenZahlFeld(titel: "Packungsgröße", einheit: eingabe.fluessig ? "ml" : "g", text: $eingabe.packung)
+                EssenZahlFeld(titel: String(localized: "Packungsgröße"), einheit: eingabe.fluessig ? "ml" : "g", text: $eingabe.packung)
             }
             Section {
                 Button { fotoOffen = true } label: {

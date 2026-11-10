@@ -30,7 +30,7 @@ enum BandAkkuWarnung {
     static func an(_ d: UserDefaults = .standard) -> Bool { d.bool(forKey: schluessel) }
 
     static func text(prozent: Int) -> (titel: String, text: String) {
-        ("Band-Akku niedrig", "Das Band hat noch \(prozent) %. Lade es bald, sonst fehlen Schritte und Puls.")
+        (String(localized: "Band-Akku niedrig"), String(localized: "Das Band hat noch \(prozent) %. Lade es bald, sonst fehlen Schritte und Puls."))
     }
 }
 

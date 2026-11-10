@@ -31,14 +31,16 @@ enum ZielKarteLogik {
     /// Rechnet nur mit echten Angaben. Fehlt Größe, Geburtsjahr, Geschlecht oder Gewicht, steht es in `fehlt` und `ziele` ist nil.
     /// `aktuell` liefert Aktivität und die übrigen Einstellungen (Fasten, flexible Tage), die bleiben erhalten.
     static func vorschlag(koerper: Koerperdaten, art: Zielart, kg: Double?, aktuell: ErnaehrungsZiele, heute: Date) -> ZielVorschlag {
+        // `fehlt` bleibt deutsch (die Karte vergleicht "Gewicht"), `fehltText` ist die Anzeige.
         var fehlt: [String] = []
-        if koerper.groesseCm == nil { fehlt.append("Größe") }
-        if koerper.geburtsjahr == nil { fehlt.append("Geburtsjahr") }
-        if koerper.geschlecht == nil { fehlt.append("Geschlecht") }
-        if kg == nil || (kg ?? 0) <= 0 { fehlt.append("Gewicht") }
+        var fehltText: [String] = []
+        if koerper.groesseCm == nil { fehlt.append("Größe"); fehltText.append(String(localized: "Größe")) }
+        if koerper.geburtsjahr == nil { fehlt.append("Geburtsjahr"); fehltText.append(String(localized: "Geburtsjahr")) }
+        if koerper.geschlecht == nil { fehlt.append("Geschlecht"); fehltText.append(String(localized: "Geschlecht")) }
+        if kg == nil || (kg ?? 0) <= 0 { fehlt.append("Gewicht"); fehltText.append(String(localized: "Gewicht")) }
         guard fehlt.isEmpty, let groesse = koerper.groesseCm, let jahr = koerper.geburtsjahr, let geschlecht = koerper.geschlecht, let kg else {
             return ZielVorschlag(ziele: nil, grundumsatz: 0, bedarf: 0, aenderung: 0, fehlt: fehlt,
-                                 erklaerung: "Für die Rechnung fehlt noch: \(fehlt.joined(separator: ", "))")
+                                 erklaerung: String(localized: "Für die Rechnung fehlt noch: \(fehltText.joined(separator: ", "))"))
         }
         var z = aktuell
         z.groesseCm = groesse
@@ -90,13 +92,15 @@ enum ZielKarteLogik {
     }
 
     private static func erklaerung(art: Zielart, grundumsatz: Double, faktor: Double, bedarf: Double, aenderung: Int, kg: Double, ergebnis: ErnaehrungsZiele) -> String {
-        var text = "Dein Grundumsatz ist rund \(tausend(Int(grundumsatz.rounded()))) kcal (Mifflin-St Jeor). Mal Aktivität \(faktor.formatted(.number.precision(.fractionLength(0...3)).locale(Locale(identifier: "de_DE")))) ergibt einen Bedarf von \(tausend(Int(bedarf.rounded()))) kcal."
+        let faktorText = faktor.formatted(.number.precision(.fractionLength(0...3)).locale(Locale(identifier: "de_DE")))
+        var text = String(localized: "Dein Grundumsatz ist rund \(tausend(Int(grundumsatz.rounded()))) kcal (Mifflin-St Jeor). Mal Aktivität \(faktorText) ergibt einen Bedarf von \(tausend(Int(bedarf.rounded()))) kcal.")
         switch art {
-        case .halten: text += " Du willst dein Gewicht halten, also isst du so viel."
-        case .aufbauen: text += " Zum Aufbauen kommen rund \(aenderung) kcal dazu."
-        case .abnehmen: text += " Zum Abnehmen gehen rund \(-aenderung) kcal ab."
+        case .halten: text += " " + String(localized: "Du willst dein Gewicht halten, also isst du so viel.")
+        case .aufbauen: text += " " + String(localized: "Zum Aufbauen kommen rund \(aenderung) kcal dazu.")
+        case .abnehmen: text += " " + String(localized: "Zum Abnehmen gehen rund \(-aenderung) kcal ab.")
         }
-        text += " Protein: \(ergebnis.protein) g, bei \(Int(kg.rounded())) kg etwa \(ErnaehrungLogik.zahl(Double(ergebnis.protein) / kg)) g je kg."
+        text += " " + String(localized: "Protein: \(ergebnis.protein) g, bei \(Int(kg.rounded())) kg etwa \(ErnaehrungLogik.zahl(Double(ergebnis.protein) / kg)) g je kg.")
+
         return text
     }
 

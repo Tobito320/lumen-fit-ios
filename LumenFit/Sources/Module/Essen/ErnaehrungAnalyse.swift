@@ -13,11 +13,11 @@ enum AnalyseZeitraum: Int, CaseIterable, Identifiable, Hashable, Sendable {
 
     var name: String {
         switch self {
-        case .woche: "Woche"
-        case .monat: "Monat"
-        case .dreiMonate: "3 Monate"
-        case .jahr: "Jahr"
-        case .zweiJahre: "2 Jahre"
+        case .woche: String(localized: "Woche")
+        case .monat: String(localized: "Monat")
+        case .dreiMonate: String(localized: "3 Monate")
+        case .jahr: String(localized: "Jahr")
+        case .zweiJahre: String(localized: "2 Jahre")
         }
     }
 

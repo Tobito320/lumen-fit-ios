@@ -11,7 +11,7 @@ struct WochenStreifen: View {
     var body: some View {
         ListenKarte {
             VStack(alignment: .leading, spacing: Abstand.m) {
-                HeuteKartenKopf(symbol: "calendar", titel: "Diese Woche")
+                HeuteKartenKopf(symbol: "calendar", titel: String(localized: "Diese Woche"))
                 HStack(spacing: 0) {
                     ForEach(woche) { tag in
                         Button { oeffne(tag.tag) } label: {
@@ -135,24 +135,24 @@ struct HeuteTagZeilen: View {
         let ziele = daten.ziele.ziele
         let bereiche = umgebung.bereicheWirksam
         return ListenKarte {
-            zeile("figure.walk", "Schritte", (werte?.schritte).map { $0 > 0 ? "\(HeuteQuellen.zahl($0)) von \(HeuteQuellen.zahl(ziele.schritte))" : "keine Daten" } ?? "keine Daten")
+            zeile("figure.walk", String(localized: "Schritte"), (werte?.schritte).map { $0 > 0 ? String(localized: "\(HeuteQuellen.zahl($0)) von \(HeuteQuellen.zahl(ziele.schritte))") : String(localized: "keine Daten") } ?? String(localized: "keine Daten"))
             if bereiche.gymAn {
                 Haarlinie()
-                zeile("dumbbell.fill", "Gym", einheit != nil ? "Training gespeichert" : (gymHaken ? "abgehakt" : "kein Training"))
+                zeile("dumbbell.fill", String(localized: "Gym"), einheit != nil ? String(localized: "Training gespeichert") : (gymHaken ? String(localized: "abgehakt") : String(localized: "kein Training")))
             }
             if bereiche.schlafAn {
                 Haarlinie()
-                zeile("bed.double.fill", "Schlaf", nacht.map { "\(BereitScore.stunden($0.minuten)) von \(BereitScore.stunden(ziele.schlafMinuten))" } ?? "keine Daten")
+                zeile("bed.double.fill", String(localized: "Schlaf"), nacht.map { String(localized: "\(BereitScore.stunden($0.minuten)) von \(BereitScore.stunden(ziele.schlafMinuten))") } ?? String(localized: "keine Daten"))
             }
             Haarlinie()
-            zeile("drop.fill", "Wasser", wasser > 0 ? "\(wasser) Gläser" : "nichts eingetragen")
+            zeile("drop.fill", String(localized: "Wasser"), wasser > 0 ? String(localized: "\(wasser) Gläser") : String(localized: "nichts eingetragen"))
             if gewicht > 0 {
                 Haarlinie()
-                zeile("scalemass.fill", "Gewicht", GewichtText.anzeige(gewicht))
+                zeile("scalemass.fill", String(localized: "Gewicht"), GewichtText.anzeige(gewicht))
             }
             if let m = werte, m.distanzMeter > 0 || m.etagen > 0 {
                 Haarlinie()
-                zeile("figure.stair.stepper", "Distanz und Etagen", "\(String(format: "%.1f", m.distanzMeter / 1000).replacingOccurrences(of: ".", with: ",")) km, \(m.etagen) Etagen")
+                zeile("figure.stair.stepper", String(localized: "Distanz und Etagen"), String(localized: "\(String(format: "%.1f", m.distanzMeter / 1000).replacingOccurrences(of: ".", with: ",")) km, \(m.etagen) Etagen"))
             }
         }
     }

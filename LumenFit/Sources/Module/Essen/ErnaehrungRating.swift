@@ -24,27 +24,27 @@ enum FoodRating {
 
         if n.kcal > 0 {
             let eiweissAnteil = n.protein * 4 / n.kcal
-            if eiweissAnteil >= 0.20 { gut.append(FoodSchild(text: "Viel Eiweiß", positiv: true)) }
-            else if eiweissAnteil >= 0.12 { gut.append(FoodSchild(text: "Eiweißquelle", positiv: true)) }
+            if eiweissAnteil >= 0.20 { gut.append(FoodSchild(text: String(localized: "Viel Eiweiß"), positiv: true)) }
+            else if eiweissAnteil >= 0.12 { gut.append(FoodSchild(text: String(localized: "Eiweißquelle"), positiv: true)) }
         }
         if let b = n.ballaststoffe {
             let pro100kcal = n.kcal > 0 ? b / n.kcal * 100 : 0
-            if b >= 6 || pro100kcal >= 3 { gut.append(FoodSchild(text: "Ballaststoffreich", positiv: true)) }
-            else if b >= 3 || pro100kcal >= 1.5 { gut.append(FoodSchild(text: "Ballaststoffquelle", positiv: true)) }
+            if b >= 6 || pro100kcal >= 3 { gut.append(FoodSchild(text: String(localized: "Ballaststoffreich"), positiv: true)) }
+            else if b >= 3 || pro100kcal >= 1.5 { gut.append(FoodSchild(text: String(localized: "Ballaststoffquelle"), positiv: true)) }
         }
         if let z = n.zucker {
-            if z <= 0.5 { gut.append(FoodSchild(text: "Zuckerfrei", positiv: true)) }
-            else if z <= (getraenk ? 2.5 : 5) { gut.append(FoodSchild(text: "Zuckerarm", positiv: true)) }
-            else if z > (getraenk ? 11.25 : 22.5) { hinweis.append(FoodSchild(text: "Stark zuckerhaltig", positiv: false)) }
+            if z <= 0.5 { gut.append(FoodSchild(text: String(localized: "Zuckerfrei"), positiv: true)) }
+            else if z <= (getraenk ? 2.5 : 5) { gut.append(FoodSchild(text: String(localized: "Zuckerarm"), positiv: true)) }
+            else if z > (getraenk ? 11.25 : 22.5) { hinweis.append(FoodSchild(text: String(localized: "Stark zuckerhaltig"), positiv: false)) }
         }
-        if n.fett <= (getraenk ? 1.5 : 3) && n.kcal > 0 { gut.append(FoodSchild(text: "Fettarm", positiv: true)) }
-        else if n.fett > (getraenk ? 8.75 : 17.5) { hinweis.append(FoodSchild(text: "Viel Fett", positiv: false)) }
-        if let g = n.gesFett, g > (getraenk ? 2.5 : 5) { hinweis.append(FoodSchild(text: "Viele gesättigte Fettsäuren", positiv: false)) }
+        if n.fett <= (getraenk ? 1.5 : 3) && n.kcal > 0 { gut.append(FoodSchild(text: String(localized: "Fettarm"), positiv: true)) }
+        else if n.fett > (getraenk ? 8.75 : 17.5) { hinweis.append(FoodSchild(text: String(localized: "Viel Fett"), positiv: false)) }
+        if let g = n.gesFett, g > (getraenk ? 2.5 : 5) { hinweis.append(FoodSchild(text: String(localized: "Viele gesättigte Fettsäuren"), positiv: false)) }
         if let s = n.salz {
-            if s <= 0.3 { gut.append(FoodSchild(text: "Salzarm", positiv: true)) }
-            else if s > (getraenk ? 0.75 : 1.5) { hinweis.append(FoodSchild(text: "Viel Salz", positiv: false)) }
+            if s <= 0.3 { gut.append(FoodSchild(text: String(localized: "Salzarm"), positiv: true)) }
+            else if s > (getraenk ? 0.75 : 1.5) { hinweis.append(FoodSchild(text: String(localized: "Viel Salz"), positiv: false)) }
         }
-        if n.kcal > 0 && n.kcal <= (getraenk ? 20 : 40) { gut.append(FoodSchild(text: "Energiearm", positiv: true)) }
+        if n.kcal > 0 && n.kcal <= (getraenk ? 20 : 40) { gut.append(FoodSchild(text: String(localized: "Energiearm"), positiv: true)) }
 
         // Bis zu drei Vitamine/Mineralstoffe mit dem höchsten Anteil an der Referenz.
         let schwelle = getraenk ? 0.15 : 0.30
@@ -55,7 +55,7 @@ enum FoodRating {
         }
         .sorted { $0.1 > $1.1 }
         .prefix(3)
-        for (m, _) in reich { gut.append(FoodSchild(text: "Reich an \(kurzName(m))", positiv: true)) }
+        for (m, _) in reich { gut.append(FoodSchild(text: String(localized: "Reich an \(kurzName(m))"), positiv: true)) }
 
         return hinweis + gut
     }

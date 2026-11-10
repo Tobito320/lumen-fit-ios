@@ -25,6 +25,6 @@ enum WasserProtokoll {
 
     /// "14:32 · +1 Glas".
     static func text(_ e: WasserEintrag) -> String {
-        "\(Datum.uhrzeit(e.zeit)) · +\(e.glaeser) \(e.glaeser == 1 ? "Glas" : "Gläser")"
+        String(localized: "\(Datum.uhrzeit(e.zeit)) · +\(e.glaeser) \(e.glaeser == 1 ? String(localized: "Glas") : String(localized: "Gläser"))")
     }
 }

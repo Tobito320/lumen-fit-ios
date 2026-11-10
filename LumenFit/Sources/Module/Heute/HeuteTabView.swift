@@ -147,9 +147,9 @@ struct HeuteLeerKarte: View {
         LeerZustand(
             stimmung: .denkt,
             satz: versucht
-                ? "Ich sehe noch nichts. Erlaube Lumen Fit in den Einstellungen unter Health den Zugriff auf Schritte und Schlaf."
-                : "Ich sehe noch keine Health-Daten. Erlaube Health, dann füllen sich deine Bögen.",
-            handlung: versucht ? "Einstellungen öffnen" : "Health erlauben"
+                ? String(localized: "Ich sehe noch nichts. Erlaube Lumen Fit in den Einstellungen unter Health den Zugriff auf Schritte und Schlaf.")
+                : String(localized: "Ich sehe noch keine Health-Daten. Erlaube Health, dann füllen sich deine Bögen."),
+            handlung: versucht ? String(localized: "Einstellungen öffnen") : String(localized: "Health erlauben")
         ) {
             if versucht {
                 if let url = URL(string: UIApplication.openSettingsURLString) { oeffneURL(url) }

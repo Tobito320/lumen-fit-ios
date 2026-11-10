@@ -83,9 +83,9 @@ struct SatzVorschlagAnzeige: View {
     }
 
     private func vorleseText(_ v: SatzVorschlag) -> String {
-        let wert = v.kg.map { "\(TrainingLogik.kgText($0)) Kilo, \(v.wdh) Wiederholungen" } ?? "\(v.wdh) Wiederholungen"
+        let wert = v.kg.map { String(localized: "\(TrainingLogik.kgText($0)) Kilo, \(v.wdh) Wiederholungen") } ?? String(localized: "\(v.wdh) Wiederholungen")
         let reserve = v.reserveText.map { ", \($0)" } ?? ""
-        return "Vorschlag: \(wert)\(reserve). \(v.grund.text)"
+        return String(localized: "Vorschlag: \(wert)\(reserve). \(v.grund.text)")
     }
 
     private var farbe: Color { aufPlatte ? .white : palette.akzent }

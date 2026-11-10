@@ -51,11 +51,11 @@ struct SplitGefuehrtView: View {
     private var inhalt: some View {
         switch schritt {
         case 0:
-            frage("Wie oft pro Woche?", SplitLogik.tageWahl.map { "\($0) Tage" }, gewaehlt: SplitLogik.tageWahl.firstIndex(of: tage)) { tage = SplitLogik.tageWahl[$0] }
+            frage(String(localized: "Wie oft pro Woche?"), SplitLogik.tageWahl.map { String(localized: "\($0) Tage") }, gewaehlt: SplitLogik.tageWahl.firstIndex(of: tage)) { tage = SplitLogik.tageWahl[$0] }
         case 1:
-            frage("Was ist dein Ziel?", SplitLogik.ziele.map { $0.text }, gewaehlt: SplitLogik.ziele.firstIndex { $0.id == ziel }) { ziel = SplitLogik.ziele[$0].id }
+            frage(String(localized: "Was ist dein Ziel?"), SplitLogik.ziele.map { $0.text }, gewaehlt: SplitLogik.ziele.firstIndex { $0.id == ziel }) { ziel = SplitLogik.ziele[$0].id }
         case 2:
-            frage("Was steht dir zur Verfügung?", SplitLogik.geraete.map { $0.text }, gewaehlt: SplitLogik.geraete.firstIndex { $0.id == geraet }) { geraet = SplitLogik.geraete[$0].id }
+            frage(String(localized: "Was steht dir zur Verfügung?"), SplitLogik.geraete.map { $0.text }, gewaehlt: SplitLogik.geraete.firstIndex { $0.id == geraet }) { geraet = SplitLogik.geraete[$0].id }
         default:
             vorschlag
         }
