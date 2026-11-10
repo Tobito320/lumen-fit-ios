@@ -23,8 +23,8 @@ final class LoveaEssenExportTests: XCTestCase {
             .compactMap { $0.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } }
     }
 
-    private func datenMitEssen() throws -> DatenSatz {
-        let satz = DatenSatz(profil: .testA, ordner: try tempOrdner(), ereignisse: EreignisKanal(), uhr: { Date() })
+    private func datenMitEssen(profil: ProfilID = .testA) throws -> DatenSatz {
+        let satz = DatenSatz(profil: profil, ordner: try tempOrdner(), ereignisse: EreignisKanal(), uhr: { Date() })
         satz.raum.senden("essen.setzen", ["id": JSONValue.string("e1"), "kcal": .number(500)])
         satz.raum.senden("gym.checkin", ["session": "s1"])   // kein Essen: geht nicht mit
         satz.raum.senden("fasten.plan", ["plan": "16:8"])
@@ -90,6 +90,28 @@ final class LoveaEssenExportTests: XCTestCase {
         XCTAssertEqual((anfragen.last?["ops"] as? [Any])?.count, 1)
         XCTAssertEqual(konto.essenExportAnzahl, 2, "der Export hängt nicht an dem abgelehnten Op")
         XCTAssertTrue(konto.essenExportErledigt)
+    }
+
+    func testZweitesProfilSendetNichtAlsPersonDesKontosUndVerschiebtDenZaehlerNicht() async throws {
+        let (konto, lader) = try await angemeldet(exportAn: true, danach: antwort(200, #"{"seq":9,"uebersprungen":0}"#))
+        let n = await LoveaEssenExport.starteWennOffen(konto: konto, daten: try datenMitEssen(profil: .testA), jetzt: Date())
+        XCTAssertEqual(n, 2, "das erste Profil, das fragt, besitzt das Konto")
+        XCTAssertEqual(konto.essenExportAnzahl, 2)
+        let pakete = opsAnfragen(lader).count
+
+        let zweites = try datenMitEssen(profil: .testB)
+        zweites.raum.senden("essen.setzen", ["id": JSONValue.string("b2"), "kcal": .number(700)])
+        let m = await LoveaEssenExport.starteWennOffen(konto: konto, daten: zweites, jetzt: Date())
+        XCTAssertNil(m, "die Essen-Ops des zweiten Profils gehen nicht unter der Lovea-Person des Kontos raus")
+        XCTAssertEqual(opsAnfragen(lader).count, pakete)
+        XCTAssertEqual(konto.essenExportAnzahl, 2, "der Zähler gehört dem Profil des Kontos")
+
+        // Zurück zum ersten Profil: es macht dort weiter, wo es war.
+        let erstes = try datenMitEssen(profil: .testA)
+        erstes.raum.senden("essen.setzen", ["id": JSONValue.string("a3"), "kcal": .number(100)])
+        let k = await LoveaEssenExport.starteWennOffen(konto: konto, daten: erstes, jetzt: Date())
+        XCTAssertEqual(k, 1)
+        XCTAssertEqual(konto.essenExportAnzahl, 3)
     }
 
     func testAlterKontoStandOhneExportFelderLaedt() throws {
