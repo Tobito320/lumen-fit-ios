@@ -56,7 +56,9 @@ export async function kontakt(request, url, env, h) {
   const adresse = typeof b?.antwort === "string" ? b.antwort.trim() : "";
   if (text.length < TEXT_MIN || text.length > TEXT_MAX) return antwort(400, { fehler: "text" }, erlaubt);
   if (adresse && (adresse.length > ADRESSE_MAX || !ADRESSE_FORM.test(adresse))) return antwort(400, { fehler: "antwort" }, erlaubt);
-  const ip = request.headers.get("CF-Connecting-IP") ?? "";
+  // Über die Webseite (Pages Function) kommt die Anfrage vom Cloudflare-Netz: dann zählt die mitgeschickte IP, aber nur mit dem geteilten Schlüssel.
+  const proxy = typeof env.PROXY_SCHLUESSEL === "string" && env.PROXY_SCHLUESSEL.length >= 32 && request.headers.get("x-lumen-proxy") === env.PROXY_SCHLUESSEL;
+  const ip = (proxy && request.headers.get("x-lumen-ip")) || request.headers.get("CF-Connecting-IP") || "";
   const ipHash = (await h.sha256(`kontakt:${ip}`)).slice(0, 32);
   if (!(await drosseln(env, `kontakt:${ipHash}`, JE_IP_STUNDE)) || !(await drosseln(env, "kontakt:alle", ALLE_STUNDE))) {
     return antwort(429, { fehler: "zu viele" }, erlaubt);

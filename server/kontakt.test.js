@@ -77,3 +77,18 @@ test("Kontakt: Admin liest nur mit Schlüssel, alte Nachrichten (über 180 Tage)
   assert.deepEqual((await r.json()).nachrichten.map((n) => n.text), ["neu genug"]);
   assert.equal(zeilen(e).length, 1);
 });
+
+test("kontakt: über die Webseite zählt die weitergereichte IP nur mit dem Schlüssel", async () => {
+  const e = env();
+  e.PROXY_SCHLUESSEL = "s".repeat(40);
+  const ueber = (ip, schluessel) => handleFetch(new Request("https://x.test/kontakt", {
+    method: "POST",
+    headers: { "content-type": "application/json", Origin: ORIGIN, "CF-Connecting-IP": "198.51.100.9", "x-lumen-proxy": schluessel, "x-lumen-ip": ip },
+    body: JSON.stringify({ text: "Hallo, eine Frage zur App" }),
+  }), e);
+  for (let i = 0; i < 5; i++) assert.equal((await ueber("203.0.113.50", e.PROXY_SCHLUESSEL)).status, 201);
+  assert.equal((await ueber("203.0.113.50", e.PROXY_SCHLUESSEL)).status, 429, "gleiche Person über die Webseite gedrosselt");
+  assert.equal((await ueber("203.0.113.51", e.PROXY_SCHLUESSEL)).status, 201, "andere Person über die Webseite nicht");
+  for (let i = 0; i < 5; i++) await ueber("203.0.113." + (60 + i), "falsch".repeat(8));
+  assert.equal((await ueber("203.0.113.70", "falsch".repeat(8))).status, 429, "ohne Schlüssel zählt die Leitung, nicht der Kopf");
+});

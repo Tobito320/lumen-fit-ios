@@ -14,9 +14,12 @@ link="${APPSTORE_LINK:-}"
 if [[ -z "$link" && -s "$appstore_datei" ]]; then link="$(tr -d '[:space:]' < "$appstore_datei")"; fi
 [[ -n "$link" ]] || { echo "Kein App-Store-Link: APPSTORE_LINK setzen oder $appstore_datei anlegen" >&2; exit 1; }
 
-tmp="$(mktemp -d "${TMPDIR:-/tmp}/lumen-fit-web.XXXXXX")"
-if [[ "${WEB_TROCKEN:-0}" != "1" ]]; then trap 'rm -rf "$tmp"' EXIT; fi
+basis="$(mktemp -d "${TMPDIR:-/tmp}/lumen-fit-web.XXXXXX")"
+if [[ "${WEB_TROCKEN:-0}" != "1" ]]; then trap 'rm -rf "$basis"' EXIT; fi
+tmp="$basis/seite"; mkdir -p "$tmp"
 cp -r "$repo/web/." "$tmp/"
+# Pages Functions (Weiterleitung /kontakt und /f/<Token> an den Server) liegen neben der Seite, nie in ihr (sonst wären sie abrufbar).
+cp -r "$repo/web-functions" "$basis/functions"
 
 # Ersetzen in Python (kein sed: der Inhalt kann /, &, Umlaute und mehrere Zeilen haben). Gibt nichts vom Inhalt aus.
 APPSTORE_LINK="$link" python3 -I - "$tmp" "$verantwortlich" <<'PY'
@@ -39,8 +42,8 @@ print(f"{len(seiten)} Seiten vorbereitet")
 PY
 
 if [[ "${WEB_TROCKEN:-0}" == "1" ]]; then
-  echo "Trockenlauf: kein Deploy. Kopie: $tmp"
+  echo "Trockenlauf: kein Deploy. Kopie: $basis"
   exit 0
 fi
-cd "$repo/server"
-npx wrangler pages deploy "$tmp" --project-name lumen-fit --commit-dirty=true
+cd "$basis"
+"$repo/server/node_modules/.bin/wrangler" pages deploy seite --project-name lumen-fit --commit-dirty=true

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fakeD1 } from "./fake-d1.js";
-import { handleFetch, filtern } from "./index.js";
+import { handleFetch, filtern, MAX_KONTEN } from "./index.js";
 
 const SCHEMA = readFileSync(new URL("./schema.sql", import.meta.url), "utf8");
 const APP = "app-key-test";
@@ -51,7 +51,9 @@ test("Registrieren: falscher App-Key 401, doppelte ID 409, schlechte Form 400", 
 
 test("Registrieren ist bei zu vielen Konten gedeckelt", async () => {
   const env = umgebung();
-  for (let i = 0; i < 200; i++) env.DB.roh.prepare("INSERT INTO konten (id, hash, name, erstellt, gesehen) VALUES (?, 'h', 'n', 't', 't')").run("k" + i);
+  const ein = env.DB.roh.prepare("INSERT INTO konten (id, hash, name, erstellt, gesehen) VALUES (?, 'h', 'n', 't', 't')");
+  for (let i = 0; i < MAX_KONTEN - 1; i++) ein.run("k" + i);
+  assert.equal((await registrieren(env)).status, 201, "bis zur Grenze geht es");
   assert.equal((await registrieren(env)).status, 429);
 });
 

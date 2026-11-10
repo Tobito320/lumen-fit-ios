@@ -15,7 +15,8 @@ import { zaehlerPruefen, gruppenPruefen, zusammenfuehren, fehlerAuswerten, auswe
 const STANDARD = { profilAnlegenErlaubt: false, loveaVerbinden: false, nameAendernTage: 7, bandStandard: false, schlafBeleg: false, schlafSichtbar: false, kiFotoErlaubt: true, kiFotoLimit: 5 };
 const PERSONEN = ["ahmed", "annika"];
 // shortcut: harte Obergrenze statt Ratenbegrenzung gegen Massen-Registrierung; bei mehr Geräten Grenze anheben oder Cloudflare-Regel davor.
-const MAX_KONTEN = 200;
+// Öffentlich im App Store (10.11.2026): Schutz gegen Massen-Anlage, nicht gegen echte Nutzer. D1 frei reicht dafür weit.
+export const MAX_KONTEN = 20000;
 const ID_FORM = /^[A-Za-z0-9_-]{16,64}$/;
 const GEHEIM_FORM = /^[A-Za-z0-9_-]{32,128}$/;
 const SCHLUESSEL_FORM = /^[A-Za-z][A-Za-z0-9_]{0,40}$/;
