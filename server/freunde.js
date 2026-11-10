@@ -11,6 +11,12 @@ const TAG_MS = 86400_000;
 const LINK_MS = TAG_MS;
 const MAX_LAUFEND = 10;
 const MAX_LINKS = 3;
+// Gegen Fluten: offene Einladungen je Empfänger, neue Herausforderungen je Ersteller in 24 Stunden, Reaktionen je Paar in 24 Stunden.
+const MAX_EINGELADEN = 20;
+const MAX_NEU_JE_TAG = 20;
+const MAX_REAKTIONEN_JE_TAG = 30;
+// Ziele so, wie die App sie baut (CrewLogik.ziel*): sonst wäre der Eindeutig-Index je Art und Ziel wirkungslos.
+const ZIEL_FORM = /^(rekord:\d{4}-\d\d-\d\d:.+|(einheit|live|stups):\d{4}-\d\d-\d\d)$/;
 // Steuerzeichen, Zeilen- und Absatztrenner und Formatzeichen (Umkehr der Leserichtung) kommen nicht in Texte.
 const UNSAUBER = /[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/u;
 const ISO_FORM = /^\d{4}-\d\d-\d\dT[\d:.]{5,12}(Z|[+-]\d\d:\d\d)$/;
@@ -37,22 +43,23 @@ const verbindung = (env, k, id) => env.DB.prepare(
   .bind(k.id, id, k.id, k.id).first();
 const nutzbar = (z, h) => !!z && z.status === "aktiv" && !z.o_gesperrt && !pausiert(z, h);
 
-// Namen: Profilname aus der Zusammenfassung der Person, sonst der Kontoname, höchstens 40 Zeichen.
-function namenHolen(env) {
-  const merk = new Map();
-  return async (id) => {
-    if (!merk.has(id)) {
-      const z = await env.DB.prepare(
-        "SELECT k.name AS name, CASE WHEN json_valid(p.daten) THEN json_extract(p.daten, '$.profilName') END AS pn FROM konten k LEFT JOIN partner_stand p ON p.konto = k.id WHERE k.id = ?").bind(id).first();
-      const pn = typeof z?.pn === "string" && z.pn.trim() ? z.pn : (z?.name ?? "");
-      merk.set(id, pn.slice(0, 40));
-    }
-    return merk.get(id);
-  };
+const fragen = (n) => Array(n).fill("?").join(", ");
+
+// Namen: Profilname aus der Zusammenfassung der Person, sonst der Kontoname, höchstens 40 Zeichen. Eine Abfrage je 90 Konten (D1: höchstens 100 Parameter).
+async function namenLaden(env, ids) {
+  const liste = [...new Set(ids)];
+  const namen = new Map();
+  for (let i = 0; i < liste.length; i += 90) {
+    const teil = liste.slice(i, i + 90);
+    const { results } = await env.DB.prepare(
+      `SELECT k.id, k.name, CASE WHEN json_valid(p.daten) THEN json_extract(p.daten, '$.profilName') END AS pn FROM konten k LEFT JOIN partner_stand p ON p.konto = k.id WHERE k.id IN (${fragen(teil.length)})`)
+      .bind(...teil).all();
+    for (const z of results) namen.set(z.id, (typeof z.pn === "string" && z.pn.trim() ? z.pn : z.name).slice(0, 40));
+  }
+  return (id) => namen.get(id) ?? "";
 }
 
 async function uebersicht(k, env, h) {
-  const name = namenHolen(env);
   const { results: verb } = await env.DB.prepare(
     "SELECT v.*, o.id AS o_id FROM verbindungen v JOIN konten o ON o.id = CASE WHEN v.a = ? THEN v.b ELSE v.a END WHERE (v.a = ? OR v.b = ?) AND v.status = 'aktiv' AND o.gesperrt = 0")
     .bind(k.id, k.id, k.id).all();
@@ -63,18 +70,32 @@ async function uebersicht(k, env, h) {
   const { results: xs } = await env.DB.prepare(
     "SELECT x.*, t.status AS ich FROM herausforderungen x JOIN herausforderung_teilnehmer t ON t.herausforderung = x.id WHERE t.konto = ? AND t.status IN ('eingeladen', 'dabei') AND x.ende > ? ORDER BY x.ende DESC LIMIT 50")
     .bind(k.id, vor(14 * TAG_MS)).all();
+  // Teilnehmer aller gezeigten Herausforderungen in einer Abfrage (höchstens 50 Ids).
+  const { results: ts } = xs.length ? await env.DB.prepare(
+    `SELECT herausforderung, konto, status, wert, aktualisiert FROM herausforderung_teilnehmer WHERE herausforderung IN (${fragen(xs.length)}) AND status IN ('eingeladen', 'dabei') ORDER BY rowid`)
+    .bind(...xs.map((x) => x.id)).all() : { results: [] };
+  const je = new Map(xs.map((x) => [x.id, []]));
+  for (const t of ts) je.get(t.herausforderung).push(t);
+  const ichDabei = new Map(xs.map((x) => [x.id, x.ich === "dabei"]));
+  // Eingewilligt hat, wer verbunden ist oder wie ich dabei ist. Andere Unverbundene: ohne Namen, Wert und Zeit.
+  const offen = (t) => t.konto === k.id || aktiv.has(t.konto) || (ichDabei.get(t.herausforderung) && t.status === "dabei");
+
+  const { results: rs } = await env.DB.prepare("SELECT id, von, art, ziel, text, zeit FROM reaktionen WHERE an = ? AND zeit > ? ORDER BY zeit DESC LIMIT 200")
+    .bind(k.id, vor(30 * TAG_MS)).all();
+  const sichtbar = rs.filter((r) => verbunden(r.von)).slice(0, 100);
+  const name = await namenLaden(env, [...ts.filter(offen).map((t) => t.konto), ...sichtbar.map((r) => r.von)]);
+
   const herausforderungen = [];
   for (const x of xs) {
-    const { results: ts } = await env.DB.prepare(
-      "SELECT konto, status, wert, aktualisiert FROM herausforderung_teilnehmer WHERE herausforderung = ? AND status IN ('eingeladen', 'dabei') ORDER BY rowid").bind(x.id).all();
     const teilnehmer = [];
-    for (const t of ts) {
+    let n = 0;
+    for (const t of je.get(x.id)) {
       const z = t.konto === k.id ? null : aktiv.get(t.konto); // die Id bleibt auch in der Pause gleich
-      // Wer noch nicht angenommen hat, hat nicht eingewilligt: Unverbundene sehen dann keinen Namen.
-      const anonym = !z && t.konto !== k.id && t.status === "eingeladen";
+      const o = offen(t);
       teilnehmer.push({
         id: z ? z.id : (await h.sha256(`${x.id}:${t.konto}`)).slice(0, 16), verbunden: !!z, ich: t.konto === k.id,
-        name: anonym ? "Eingeladen" : await name(t.konto), status: t.status, wert: t.wert, aktualisiert: t.aktualisiert ?? null,
+        name: o ? name(t.konto) : t.status === "eingeladen" ? "Eingeladen" : `Teilnehmer ${++n}`,
+        status: t.status, wert: o ? t.wert : null, aktualisiert: o ? (t.aktualisiert ?? null) : null,
       });
     }
     herausforderungen.push({
@@ -83,13 +104,7 @@ async function uebersicht(k, env, h) {
     });
   }
 
-  const { results: rs } = await env.DB.prepare("SELECT id, von, art, ziel, text, zeit FROM reaktionen WHERE an = ? AND zeit > ? ORDER BY zeit DESC LIMIT 200")
-    .bind(k.id, vor(30 * TAG_MS)).all();
-  const reaktionen = [];
-  for (const r of rs) {
-    const z = verbunden(r.von);
-    if (z && reaktionen.length < 100) reaktionen.push({ id: r.id, von: z.id, name: await name(r.von), art: r.art, ziel: r.ziel, text: r.text, zeit: r.zeit });
-  }
+  const reaktionen = sichtbar.map((r) => ({ id: r.id, von: verbunden(r.von).id, name: name(r.von), art: r.art, ziel: r.ziel, text: r.text, zeit: r.zeit }));
   const { results: gs } = await env.DB.prepare("SELECT an, art, ziel FROM reaktionen WHERE von = ? AND zeit > ? ORDER BY zeit DESC LIMIT 300")
     .bind(k.id, vor(30 * TAG_MS)).all();
   const gesendet = gs.filter((g) => aktiv.has(g.an)).map((g) => ({ an: aktiv.get(g.an).id, art: g.art, ziel: g.ziel }));
@@ -144,8 +159,15 @@ async function erstellen(k, request, env, h) {
   }
   if (konten.size !== v.einladen.length) return h.nein(400, "einladen: nur aktive Verbindungen ohne Pause");
   if ((await laufende(env, k)) >= MAX_LAUFEND) return h.nein(429, "zu viele laufende Herausforderungen");
-  const id = bytesHex(16);
+  // Verlassen gibt den Platz frei: darum zählen auch die neuen der letzten 24 Stunden, abgebrochene mit.
+  const neu = await env.DB.prepare("SELECT COUNT(*) AS n FROM herausforderungen WHERE ersteller = ? AND erstellt > ?").bind(k.id, vor(TAG_MS)).first();
+  if (neu.n >= MAX_NEU_JE_TAG) return h.nein(429, "zu viele neue Herausforderungen heute");
   const t = new Date().toISOString();
+  const voll = await env.DB.prepare(
+    `SELECT 1 FROM herausforderung_teilnehmer t JOIN herausforderungen x ON x.id = t.herausforderung WHERE t.konto IN (${fragen(konten.size)}) AND t.status = 'eingeladen' AND x.abgebrochen = 0 AND x.ende > ? GROUP BY t.konto HAVING COUNT(*) >= ? LIMIT 1`)
+    .bind(...konten, t, MAX_EINGELADEN).first();
+  if (voll) return h.nein(429, "eine Person hat zu viele offene Einladungen");
+  const id = bytesHex(16);
   // Aufräumen: was seit mehr als 30 Tagen vorbei ist, geht samt Teilnehmern.
   await env.DB.prepare("DELETE FROM herausforderung_teilnehmer WHERE herausforderung IN (SELECT id FROM herausforderungen WHERE ende < ?)").bind(vor(30 * TAG_MS)).run();
   await env.DB.prepare("DELETE FROM herausforderungen WHERE ende < ?").bind(vor(30 * TAG_MS)).run();
@@ -157,6 +179,7 @@ async function erstellen(k, request, env, h) {
 }
 
 async function antworten(k, id, aktion, env, h) {
+  if (!(await drosseln(env, `antwort:${k.id}`, 30))) return h.nein(429, "zu schnell");
   const x = await env.DB.prepare(
     "SELECT x.*, t.status AS ich FROM herausforderungen x JOIN herausforderung_teilnehmer t ON t.herausforderung = x.id WHERE x.id = ? AND t.konto = ?").bind(id, k.id).first();
   if (!x) return h.nein(404, "not found");
@@ -164,7 +187,11 @@ async function antworten(k, id, aktion, env, h) {
   if (aktion === "verlassen") {
     if (x.ich !== "dabei") return h.nein(409, "nicht dabei");
     await setzen("ausgetreten");
-    if (x.ersteller === k.id) await env.DB.prepare("UPDATE herausforderungen SET abgebrochen = 1 WHERE id = ?").bind(id).run();
+    if (x.ersteller === k.id) {
+      await env.DB.prepare("UPDATE herausforderungen SET abgebrochen = 1 WHERE id = ?").bind(id).run();
+      // Offene Einladungen in eine abgebrochene Herausforderung sind hinfällig und sollen sich bei niemandem stapeln.
+      await env.DB.prepare("DELETE FROM herausforderung_teilnehmer WHERE herausforderung = ? AND status = 'eingeladen'").bind(id).run();
+    }
     return h.json({ ok: true });
   }
   if (x.ich !== "eingeladen") return h.nein(409, "keine offene Einladung");
@@ -176,6 +203,7 @@ async function antworten(k, id, aktion, env, h) {
 }
 
 async function werteMelden(k, request, env, h) {
+  if (!(await drosseln(env, `werte:${k.id}`, 30))) return h.nein(429, "zu schnell");
   const b = await h.koerper(request);
   if (!h.istObjekt(b) || !Array.isArray(b.werte) || b.werte.length > 20
     || !b.werte.every((w) => h.istObjekt(w) && typeof w.id === "string" && ID_FORM.test(w.id) && ganz(w.wert, 0, 1_000_000_000))) return h.nein(400, "werte: bis 20 Einträge {id, wert}");
@@ -199,13 +227,15 @@ async function reagieren(k, request, env, h) {
   const b = await h.koerper(request);
   if (!h.istObjekt(b) || typeof b.an !== "string" || !ID_FORM.test(b.an)) return h.nein(400, "an: Verbindungs-Id");
   if (!REAKTIONEN.includes(b.art)) return h.nein(400, "art ungültig");
-  if (!text(b.ziel, 1, 80)) return h.nein(400, "ziel: 1 bis 80 Zeichen");
+  if (!text(b.ziel, 1, 80) || !ZIEL_FORM.test(b.ziel)) return h.nein(400, "ziel: rekord:<tag>:<übung>, einheit:<tag>, live:<tag> oder stups:<tag>, bis 80 Zeichen");
   const anzeige = b.text ?? "";
   if (!text(anzeige, 0, 80)) return h.nein(400, "text: bis 80 Zeichen");
   if (b.art === "stups" && !stupsTage().some((tag) => b.ziel === `stups:${tag}`)) return h.nein(400, "stups: ziel stups:<heute>");
   const z = await verbindung(env, k, b.an);
   if (!z || z.status !== "aktiv" || z.o_gesperrt) return h.nein(404, "not found");
   if (!nutzbar(z, h) || !erlaubteBereiche(z, seite(z, k.id), h).includes("gym")) return h.nein(403, "keine Freigabe");
+  const heute = await env.DB.prepare("SELECT COUNT(*) AS n FROM reaktionen WHERE von = ? AND an = ? AND zeit > ?").bind(k.id, z.o_id, vor(TAG_MS)).first();
+  if (heute.n >= MAX_REAKTIONEN_JE_TAG) return h.nein(429, "zu viele Reaktionen an diese Person heute");
   await env.DB.prepare("DELETE FROM reaktionen WHERE zeit < ?").bind(vor(30 * TAG_MS)).run();
   await env.DB.prepare("INSERT OR IGNORE INTO reaktionen (id, von, an, art, ziel, text, zeit) VALUES (?, ?, ?, ?, ?, ?, ?)")
     .bind(bytesHex(16), k.id, z.o_id, b.art, b.ziel, anzeige, new Date().toISOString()).run();
@@ -213,6 +243,7 @@ async function reagieren(k, request, env, h) {
 }
 
 async function zuruecknehmen(k, request, env, h) {
+  if (!(await drosseln(env, `zuruecknehmen:${k.id}`, 30))) return h.nein(429, "zu schnell");
   const b = await h.koerper(request);
   if (!h.istObjekt(b) || typeof b.an !== "string" || !ID_FORM.test(b.an) || !REAKTIONEN.includes(b.art) || !text(b.ziel, 1, 80)) return h.nein(400, "an, art, ziel erwartet");
   const z = await verbindung(env, k, b.an);
@@ -221,7 +252,7 @@ async function zuruecknehmen(k, request, env, h) {
   return h.json({ ok: true });
 }
 
-// Link-Einladung: dieselbe Tabelle und Token-Form wie der QR-Code, nur 24 Stunden gültig. Lang = laeuft_ab nach jetzt + 10 Minuten (so trennt auch einladungAnlegen).
+// Link-Einladung: dieselbe Tabelle und Token-Form wie der QR-Code, nur 24 Stunden gültig. Lang = laeuft_ab nach jetzt + 10 Minuten; einladungAnlegen löscht nur den gemerkten vorigen QR-Code.
 async function linkEinladung(k, env, h) {
   if (!(await drosseln(env, `link:${k.id}`, 10))) return h.nein(429, "zu schnell");
   const jetzt = Date.now();
