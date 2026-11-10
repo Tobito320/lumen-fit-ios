@@ -2,42 +2,27 @@ import Charts
 import SwiftUI
 
 /// "Gewichte": je Plan-Übung der schwerste Satz der letzten 8 Wochen als Linie, der aktuelle Wert und die Änderung seit 4 Wochen.
-/// Ein Tipp öffnet die Übung (Kurve, Rekorde, letzte Einheiten). Sechs Zeilen sind sichtbar, der Rest hinter "Alle … Übungen".
+/// Ein Tipp öffnet die Übung (Kurve, Rekorde, letzte Einheiten). Mit `anzahl` nur die ersten Zeilen (Tab: Top 3), sonst alle (Seite "Gewichte").
 struct GewichteListe: View {
     let zeilen: [GewichtZeile]
-    @State private var alle = false
+    var anzahl: Int?
     @Environment(AppUmgebung.self) private var umgebung
-    @Environment(\.palette) private var palette
 
-    static let vorschau = 6
-    private var sichtbar: [GewichtZeile] { alle ? zeilen : Array(zeilen.prefix(Self.vorschau)) }
+    private var sichtbar: [GewichtZeile] { anzahl.map { Array(zeilen.prefix($0)) } ?? zeilen }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            FortschrittAbschnitt(titel: "Gewichte", detail: "Schwerster Satz, 8 Wochen")
-            if zeilen.isEmpty {
-                LeerZustand(stimmung: .bereit, satz: "Noch kein Gewicht in den letzten 8 Wochen. Hake Sätze mit Gewicht ab, dann zeichnet Lumi die Linien.", handlung: "Training starten") {
-                    umgebung.router.oeffne(.gym(.training))
+        if zeilen.isEmpty {
+            LeerZustand(stimmung: .bereit, satz: String(localized: "Noch kein Gewicht in den letzten 8 Wochen. Hake Sets mit Gewicht ab, dann zeichnet Lumi die Linien."),
+                        handlung: String(localized: "Training starten")) {
+                umgebung.router.oeffne(.gym(.training))
+            }
+            .lumenKartenFlaeche()
+        } else {
+            ListenKarte {
+                ForEach(Array(sichtbar.enumerated()), id: \.element.id) { i, z in
+                    if i > 0 { Haarlinie() }
+                    Zeile(zeile: z)
                 }
-                .lumenKartenFlaeche()
-            } else {
-                ListenKarte {
-                    ForEach(Array(sichtbar.enumerated()), id: \.element.id) { i, z in
-                        if i > 0 { Haarlinie() }
-                        Zeile(zeile: z)
-                    }
-                    if zeilen.count > Self.vorschau {
-                        Haarlinie()
-                        Button { alle.toggle() } label: {
-                            Text(alle ? "Weniger anzeigen" : "Alle \(zeilen.count) Übungen aus dem Plan")
-                                .font(.subheadline.weight(.semibold)).foregroundStyle(palette.akzent)
-                                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                Text("Änderung seit 4 Wochen. Tippen für Kurve, Rekorde und letzte Einheiten.").font(.footnote).foregroundStyle(palette.text2)
             }
         }
     }

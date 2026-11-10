@@ -1,75 +1,70 @@
-import Charts
 import SwiftUI
 
-/// "Einheiten": Balken der letzten 8 Kalenderwochen, umschaltbar zwischen Dauer, Volumen und Wiederholungen. Über dem Diagramm steht der Wert der laufenden Woche.
-/// Die Pillen sind Knöpfe (44 pt hoch, gewählt mit Haken-Merkmal); das Diagramm hat einen Descriptor für VoiceOver.
+/// "Einheiten je Woche": Balken der letzten 8 Kalenderwochen, umschaltbar zwischen Dauer, Volumen und Reps. Ein Tipp auf einen Balken wählt die Woche,
+/// ihr Wert steht groß darüber (Standard: die laufende Woche). Pillen und Balken sind Knöpfe (44 pt, gewählt mit Merkmal).
 struct EinheitenKarte: View {
     let sessions: [GymSession]
     let heute: String
     var jetzt: Date?
     @State private var art = StatistikArt.dauer
+    @State private var woche: String?
     @Environment(\.palette) private var palette
 
     var body: some View {
         let werte = FortschrittLogik.wochen(sessions, heute: heute, jetzt: jetzt, art: art)
-        let dieseWoche = werte.last?.wert ?? 0
-        let text = Self.text(dieseWoche, art: art)
+        let montag = Datum.montagDerWoche(heute)
+        let gewaehlt = werte.first { $0.montag == woche } ?? werte.last
+        let text = Self.text(gewaehlt?.wert ?? 0, art: art)
         VStack(alignment: .leading, spacing: Abstand.m) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Diese Woche").font(.footnote).foregroundStyle(palette.text2)
+                Text(Self.wochenTitel(gewaehlt?.montag ?? montag, heute: heute)).font(.footnote).foregroundStyle(palette.text2)
                 Text(text).font(.largeTitle.weight(.bold)).fontDesign(.rounded).monospacedDigit().foregroundStyle(palette.text)
                     .lineLimit(1).minimumScaleFactor(0.6)
             }
             .accessibilityElement(children: .combine)
-            diagramm(werte, text: text)
-            Text("Kalenderwoche").font(.footnote).foregroundStyle(palette.text2).frame(maxWidth: .infinity)
-                .accessibilityHidden(true)
+            FortSaeulen(saeulen: werte.map { w in
+                .init(id: w.montag, beschriftung: "\(FortschrittLogik.kalenderwoche(w.montag))", wert: w.wert,
+                      sprechtext: "\(Self.wochenTitel(w.montag, heute: heute)), \(Self.text(w.wert, art: art))")
+            }, hervorgehoben: gewaehlt?.montag, hoehe: 112) { woche = $0 }
             HStack(spacing: Abstand.s) {
                 ForEach(StatistikArt.allCases, id: \.self) { pille($0) }
+                Spacer(minLength: 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Abstand.l)
         .lumenKartenFlaeche()
         .haptik(.auswahl, bei: art)
+        .haptik(.auswahl, bei: woche)
     }
 
-    /// Dauer als "2:17 h" (Minuten), Volumen als "12,9 t" oder "9.690 kg", Wiederholungen als Zahl.
+    /// "Diese Woche", "Letzte Woche", sonst "KW 44".
+    static func wochenTitel(_ montag: String, heute: String) -> String {
+        let jetzt = Datum.montagDerWoche(heute)
+        if montag == jetzt { return String(localized: "Diese Woche") }
+        if montag == Datum.addTage(jetzt, -7) { return String(localized: "Letzte Woche") }
+        return String(localized: "KW \(FortschrittLogik.kalenderwoche(montag))")
+    }
+
+    /// Dauer als "2:17 h" (Minuten), Volumen als "12,9 t" oder "9.690 kg", Reps als Zahl.
     static func text(_ wert: Double, art: StatistikArt) -> String {
         switch art {
         case .dauer: TrainingLogik.dauerText(wert * 60)
         case .volumen: FortschrittLogik.volumenText(wert)
-        case .wiederholungen: "\(Int(wert.rounded())) Wdh"
+        case .wiederholungen: String(localized: "\(Int(wert.rounded())) Reps")
         }
-    }
-
-    private func diagramm(_ werte: [WochenWert], text: String) -> some View {
-        Chart(werte, id: \.montag) { w in
-            BarMark(x: .value("Woche", String(FortschrittLogik.kalenderwoche(w.montag))), y: .value(art.titel, w.wert))
-                .foregroundStyle(w.montag == werte.last?.montag ? palette.akzent : palette.akzent.opacity(0.65))
-                .cornerRadius(4)
-        }
-        .chartYAxis(.hidden)
-        .chartXAxis {
-            AxisMarks { _ in AxisValueLabel().foregroundStyle(palette.text2) }
-        }
-        .frame(height: 140)
-        .accessibilityChartDescriptor(FortschrittDeskriptor(
-            titel: "\(art.titel) je Woche", zusammenfassung: "Diese Woche \(text). Die letzten \(werte.count) Wochen.", xTitel: "Kalenderwoche", yTitel: art.titel,
-            einheit: art == .dauer ? "Minuten" : art == .volumen ? "kg" : "Wiederholungen", stetig: false,
-            punkte: werte.map { .init(x: "KW \(FortschrittLogik.kalenderwoche($0.montag))", y: $0.wert) }))
     }
 
     private func pille(_ a: StatistikArt) -> some View {
         let gewaehlt = a == art
         return Button { art = a } label: {
             Text(a.titel)
-                .font(.footnote.weight(.semibold))
+                .font(.subheadline.weight(.semibold))
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .foregroundStyle(gewaehlt ? palette.aufAkzent : palette.text)
-                .frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
-                .background(gewaehlt ? palette.akzent : palette.haar, in: .capsule)
+                .foregroundStyle(gewaehlt ? palette.aufAkzentFlaeche : palette.text)
+                .padding(.horizontal, Abstand.l)
+                .frame(minHeight: Abstand.tippflaeche)
+                .background(gewaehlt ? palette.akzentFlaeche : palette.haar, in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(gewaehlt ? .isSelected : [])

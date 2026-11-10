@@ -34,4 +34,14 @@ final class MessErfassungTests: XCTestCase {
         XCTAssertNil(MessErfassung.aenderung([punkte[0]], art: .gewicht))
         XCTAssertNil(MessErfassung.aenderung([], art: .gewicht))
     }
+
+    // Fortschritt: Zeitraum-Menü auf Körper und Gewicht
+    func testZeitraumZeigtNurTageImFenster() {
+        let punkte = [MessPunkt(tag: "2025-11-01", zehntel: 800), MessPunkt(tag: "2026-08-20", zehntel: 790),
+                      MessPunkt(tag: "2026-10-12", zehntel: 786), MessPunkt(tag: "2026-11-10", zehntel: 784)]
+        XCTAssertEqual(FortMessZeitraum.monat.filter(punkte, heute: "2026-11-10").map(\.tag), ["2026-10-12", "2026-11-10"])
+        XCTAssertEqual(FortMessZeitraum.dreiMonate.filter(punkte, heute: "2026-11-10").count, 3)
+        XCTAssertEqual(FortMessZeitraum.jahr.filter(punkte, heute: "2026-11-10").count, 3)
+        XCTAssertEqual(FortMessZeitraum.alles.filter(punkte, heute: "2026-11-10"), punkte)
+    }
 }

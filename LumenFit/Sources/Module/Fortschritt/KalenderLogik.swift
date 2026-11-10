@@ -10,6 +10,8 @@ struct KalenderTag: Equatable, Identifiable, Sendable {
     var partnerGeplant: Bool
     var heute: Bool
     var imMonat: Bool
+    /// Vergangener Plantag ohne Training, ab dem ersten Training (davor gab es die App nicht). shortcut: misst gegen den heutigen Plan, nicht den damaligen.
+    var ausgefallen = false
 }
 
 /// Reine Logik des Kalenders im Training: Raster Mo bis So, Trainings rückwärts, Plan nur nach vorn, Partner-Marken.
@@ -23,6 +25,7 @@ enum KalenderLogik {
         let anfang = Datum.montagDerWoche(erster)
         let ende = Datum.addTage(Datum.montagDerWoche(letzter), 6)
         let trainiert = Set(sessions.map { Datum.text($0.start) })
+        let ersterTraining = trainiert.min() ?? heute
         let partnerGemacht = Set(partnerTage)
         return (0...max(0, Datum.tageZwischen(anfang, ende))).map { i in
             let datum = Datum.addTage(anfang, i)
@@ -33,7 +36,8 @@ enum KalenderLogik {
                 geplant: kommend ? TrainingLogik.tag(plan, datum: datum)?.name : nil,
                 partnerTrainiert: partnerGemacht.contains(datum),
                 partnerGeplant: kommend && (partnerPlan?.tage.contains { $0.wochentage.contains(wochentag) } ?? false),
-                heute: datum == heute, imMonat: datum.hasPrefix(monat))
+                heute: datum == heute, imMonat: datum.hasPrefix(monat),
+                ausgefallen: !kommend && datum >= ersterTraining && !trainiert.contains(datum) && TrainingLogik.tag(plan, datum: datum) != nil)
         }
     }
 
@@ -58,7 +62,7 @@ enum KalenderLogik {
         if t.heute { worte.append("heute") }
         if t.trainiert { worte.append("trainiert") }
         if let geplant = t.geplant { worte.append("geplant: \(geplant)") }
-        if !t.trainiert && t.geplant == nil { worte.append("kein Training") }
+        if t.ausgefallen { worte.append("ausgefallen") } else if !t.trainiert && t.geplant == nil { worte.append("kein Training") }
         if t.partnerTrainiert { worte.append("Partner trainiert") }
         if t.partnerGeplant { worte.append("Partner geplant") }
         return worte.joined(separator: ", ")

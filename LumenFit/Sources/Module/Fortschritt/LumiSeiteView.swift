@@ -18,8 +18,8 @@ struct LumiSeiteView: View {
                     }
                     .lumenKartenFlaeche()
                 }
-                pfad(stand)
-                if let ziel { zielKarte(ziel) }
+                LumiPfadKarte(stand: stand)
+                if let ziel { LumiZielKarte(ziel: ziel) }
                 NavigationLink { MeilensteineView() } label: {
                     Label("Alle Medaillen", systemImage: "medal.fill").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
                 }
@@ -50,9 +50,15 @@ struct LumiSeiteView: View {
             .accessibilityElement(children: .combine)
         }
     }
+}
 
-    /// Neun Knoten, drei Reihen: erreicht mit Haken und gefüllt, die übrigen mit der Zahl der Medaillen, ab der sie gelten.
-    private func pfad(_ stand: LumiPfadStand) -> some View {
+/// Lumis Pfad: neun Knoten, drei Reihen; erreicht mit Haken und gefüllt, die übrigen mit der Zahl der Medaillen, ab der sie gelten.
+/// Steht auf der Seite Lumi und als Abschnitt unten auf Erfolge.
+struct LumiPfadKarte: View {
+    let stand: LumiPfadStand
+    @Environment(\.palette) private var palette
+
+    var body: some View {
         VStack(alignment: .leading, spacing: Abstand.m) {
             Text("Dein Pfad").font(.headline)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Abstand.m), count: 3), spacing: Abstand.m) {
@@ -83,8 +89,14 @@ struct LumiSeiteView: View {
         .padding(Abstand.l)
         .lumenKartenFlaeche()
     }
+}
 
-    private func zielKarte(_ ziel: MeilensteinZiel) -> some View {
+/// "Nächste Medaille" mit Balken (Seite Lumi und Erfolge).
+struct LumiZielKarte: View {
+    let ziel: MeilensteinZiel
+    @Environment(\.palette) private var palette
+
+    var body: some View {
         VStack(alignment: .leading, spacing: Abstand.s) {
             Text("Nächste Medaille").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2)
             Label(ziel.meilenstein.titel, systemImage: ziel.meilenstein.symbol).font(.headline)

@@ -12,6 +12,8 @@ struct MessungenView: View {
     @Environment(\.bewegungAus) private var reduceMotion
     @State private var art = MessArt.gewicht
     @State private var erfassen = false
+    @State private var zeitraum = FortMessZeitraum.dreiMonate
+    @State private var loeschen: MessPunkt?
     @State private var toast: ToastInhalt?
 
     var body: some View {
@@ -19,13 +21,18 @@ struct MessungenView: View {
         Group {
             lumenSeite(punkte)
         }
-        .navigationTitle("Messungen")
+        .navigationTitle("Körper und Gewicht")
         .navigationBarTitleDisplayMode(.inline)
         .lumenToast($toast)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Messung erfassen", systemImage: "plus") { erfassen = true }
             }
+        }
+        .confirmationDialog("Eintrag löschen?", isPresented: Binding { loeschen != nil } set: { if !$0 { loeschen = nil } }, titleVisibility: .visible, presenting: loeschen) { p in
+            Button("Löschen", role: .destructive) { loesche(p) }
+        } message: { p in
+            Text("\(art.titel) \(art.text(p.zehntel)) am \(Datum.anzeige(p.tag))")
         }
         .sheet(isPresented: $erfassen) {
             MessungBlatt { gespeichert in
@@ -52,6 +59,7 @@ struct MessungenView: View {
                 .haptik(.auswahl, bei: art)
                 if let letzter = punkte.last {
                     karte(punkte, letzter: letzter)
+                    if art == .gewicht { prognose() }
                     historie(punkte)
                 } else {
                     LeerZustand(stimmung: .bereit, satz: "Noch kein Wert für \(art.titel). Ein Wert, dann zeichnet Lumi die Kurve.", handlung: "Messung erfassen") { erfassen = true }
@@ -64,17 +72,45 @@ struct MessungenView: View {
         .lumenHintergrund()
     }
 
+    /// Kopf "82,4 kg  12. Nov.", rechts das Zeitraum-Menü; darunter die Kurve im gewählten Zeitraum mit Legende.
     private func karte(_ punkte: [MessPunkt], letzter: MessPunkt) -> some View {
         let zusatz = MessErfassung.aenderung(punkte, art: art)
+        let sichtbar = zeitraum.filter(punkte, heute: Datum.text(umgebung.uhr()))
         return VStack(alignment: .leading, spacing: Abstand.s) {
-            Text(art.titel).font(.footnote.weight(.semibold)).foregroundStyle(palette.text2)
             HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
                 RollZahl(wert: Double(letzter.zehntel) / 10, format: .number.precision(.fractionLength(1))).font(.largeTitle.weight(.bold)).fontDesign(.rounded)
-                Text(art.einheit).font(.title3).foregroundStyle(palette.text2)
+                Text(art.einheit).font(.title3.weight(.semibold)).foregroundStyle(palette.text2)
+                Text(Datum.anzeige(letzter.tag)).font(.subheadline).foregroundStyle(palette.text2).padding(.leading, Abstand.xs)
+                Spacer(minLength: Abstand.s)
+                Menu {
+                    Picker("Zeitraum", selection: $zeitraum) {
+                        ForEach(FortMessZeitraum.allCases) { Text($0.titel).tag($0) }
+                    }
+                } label: {
+                    HStack(spacing: Abstand.xs) {
+                        Text(zeitraum.titel)
+                        Image(systemName: "chevron.down").font(.caption.weight(.semibold))
+                    }
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(palette.text)
+                    .padding(.horizontal, Abstand.m)
+                    .frame(minHeight: Abstand.tippflaeche)
+                    .background(palette.haar, in: .capsule)
+                }
+                .accessibilityLabel("Zeitraum: \(zeitraum.titel)")
             }
             .id(art)
-            Text(zusatz.map { "\(Datum.anzeige(letzter.tag)) · \($0)" } ?? Datum.anzeige(letzter.tag)).font(.subheadline).foregroundStyle(palette.text2)
-            if punkte.count > 1 { diagramm(punkte) }
+            if let zusatz { Text(zusatz).font(.subheadline).foregroundStyle(palette.text2) }
+            if sichtbar.count > 1 {
+                diagramm(sichtbar)
+                HStack(spacing: Abstand.xs) {
+                    Circle().fill(palette.akzent).frame(width: 8, height: 8)
+                    Text(art.titel)
+                }
+                .font(.caption).foregroundStyle(palette.text2)
+                .accessibilityHidden(true)
+            } else if punkte.count > 1 {
+                Text("In diesem Zeitraum gibt es weniger als zwei Werte.").font(.footnote).foregroundStyle(palette.text2)
+            }
         }
         .foregroundStyle(palette.text)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -84,10 +120,13 @@ struct MessungenView: View {
     }
 
     private func diagramm(_ punkte: [MessPunkt]) -> some View {
-        let farbe = LumenFarben.tief(.bewegen, dunkel: schema == .dark, kontrastHoch: kontrast == .increased)
+        let farbe = palette.akzent
         let werte = punkte.map { Double($0.zehntel) / 10 }
         let niedrig = (werte.min() ?? 0) - 1, hoch = (werte.max() ?? 1) + 1
         return Chart(punkte) { p in
+            AreaMark(x: .value("Tag", Datum.datum(p.tag)), yStart: .value(art.einheit, niedrig), yEnd: .value(art.einheit, Double(p.zehntel) / 10))
+                .foregroundStyle(LinearGradient(colors: [palette.akzentFlaeche.opacity(0.35), palette.akzentFlaeche.opacity(0)], startPoint: .top, endPoint: .bottom))
+                .interpolationMethod(.monotone)
             LineMark(x: .value("Tag", Datum.datum(p.tag)), y: .value(art.einheit, Double(p.zehntel) / 10))
                 .foregroundStyle(farbe)
                 .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
@@ -120,8 +159,9 @@ struct MessungenView: View {
     // MARK: Historie
 
     private func historie(_ punkte: [MessPunkt]) -> some View {
-        VStack(alignment: .leading, spacing: Abstand.s) {
-            Text("\(art.titel) Historie").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityAddTraits(.isHeader)
+        let eigen = Set((umgebung.daten?.habits.werte(art.habitId) ?? [:]).filter { $0.value > 0 }.keys)
+        return VStack(alignment: .leading, spacing: Abstand.s) {
+            Text("Verlauf").font(.title3.weight(.bold)).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
             ListenKarte {
                 ForEach(punkte.reversed()) { p in
                     HStack {
@@ -131,11 +171,37 @@ struct MessungenView: View {
                     }
                     .padding(.horizontal, Abstand.l)
                     .frame(minHeight: Abstand.tippflaeche)
+                    .contentShape(.rect)
                     .accessibilityElement(children: .combine)
+                    .contextMenu {
+                        if eigen.contains(p.tag) { Button("Eintrag löschen", systemImage: "trash", role: .destructive) { loeschen = p } }
+                    }
+                    .accessibilityActions {
+                        if eigen.contains(p.tag) { Button("Eintrag löschen") { loeschen = p } }
+                    }
                     if p.id != punkte.first?.id { Haarlinie() }
                 }
             }
         }
+    }
+}
+
+extension MessungenView {
+    /// Gewichtsverlauf mit gleitendem Mittel, Ziellinie und Prognose (früher auf der Seite Verlauf).
+    fileprivate func prognose() -> some View {
+        let q = FortschrittQuelle(umgebung: umgebung)
+        let trend = GewichtVerlauf.trend(werte: q.gewicht, zielKg: q.gewichtZielKg, heute: q.heute)
+        return VStack(alignment: .leading, spacing: Abstand.s) {
+            Text("Prognose").font(.title3.weight(.bold)).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
+            GewichtVerlaufKarte(trend: trend) { erfassen = true }
+        }
+    }
+
+    /// Nur eigene Einträge (Gewohnheits-Werte); 0 heißt "kein Wert". Ältere Tagebuch-Werte bleiben, sie stehen nicht in der Gewohnheit.
+    fileprivate func loesche(_ p: MessPunkt) {
+        umgebung.daten?.habits.setze(art.habitId, datum: p.tag, wert: 0)
+        if art == .gewicht { umgebung.ereignisse.senden(.gewichtGespeichert(tag: p.tag)) }
+        loeschen = nil
     }
 }
 

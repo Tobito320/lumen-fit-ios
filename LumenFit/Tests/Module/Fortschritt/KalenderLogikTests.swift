@@ -37,6 +37,11 @@ final class KalenderLogikTests: XCTestCase {
         let verpasst = try tag("2026-11-05")
         XCTAssertFalse(verpasst.trainiert)
         XCTAssertNil(verpasst.geplant, "Donnerstag ist Plantag, liegt aber vor heute")
+        XCTAssertTrue(verpasst.ausgefallen, "Plantag nach dem ersten Training ohne Einheit")
+        XCTAssertFalse(try tag("2026-11-02").ausgefallen)
+        XCTAssertFalse(try tag("2026-11-04").ausgefallen, "Mittwoch ist kein Plantag")
+        XCTAssertFalse(try tag("2026-11-12").ausgefallen, "Zukunft fällt nicht aus")
+        XCTAssertEqual(KalenderLogik.sprechtext(verpasst), "5. November, ausgefallen")
     }
 
     func testKommendeTageZeigenDenPlantagNachWochentag() throws {

@@ -41,3 +41,35 @@ enum MessErfassung {
         return "\(vorzeichen)\(abs(diff) / 10),\(abs(diff) % 10) \(art.einheit) seit \(datum)"
     }
 }
+
+/// Zeitraum-Menü auf "Körper und Gewicht": 1, 3, 6 Monate, 1 Jahr, alles. Gezählt wird in Tagen bis heute (30, 91, 182, 365).
+enum FortMessZeitraum: String, CaseIterable, Identifiable, Sendable {
+    case monat, dreiMonate, sechsMonate, jahr, alles
+    var id: String { rawValue }
+
+    var tage: Int? {
+        switch self {
+        case .monat: 30
+        case .dreiMonate: 91
+        case .sechsMonate: 182
+        case .jahr: 365
+        case .alles: nil
+        }
+    }
+
+    var titel: String {
+        switch self {
+        case .monat: String(localized: "1 Monat")
+        case .dreiMonate: String(localized: "3 Monate")
+        case .sechsMonate: String(localized: "6 Monate")
+        case .jahr: String(localized: "1 Jahr")
+        case .alles: String(localized: "Alles")
+        }
+    }
+
+    func filter(_ punkte: [MessPunkt], heute: String) -> [MessPunkt] {
+        guard let tage else { return punkte }
+        let ab = Datum.addTage(heute, -tage)
+        return punkte.filter { $0.tag >= ab }
+    }
+}
