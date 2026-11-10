@@ -30,7 +30,7 @@ enum TagesformGefuehl {
     // Eine Datei im Profilordner (`tagesform-gefuehl.json`) statt der Einstellungen: mit den Rohwerten sind es bis zu 300 KB.
     static let dateiname = "tagesform-gefuehl.json"
     static let behalten = 120
-    static let namen = ["Leer", "Schwach", "Mittel", "Gut", "Voll"]
+    static let namen = [String(localized: "Leer"), String(localized: "Schwach"), String(localized: "Mittel"), String(localized: "Gut"), String(localized: "Voll")]
     /// Welche Zahl ein Gefühl bedeutet, passend zu den Urteilen der Karte (unter 50 Sparmodus, ab 70 gut, ab 85 voll).
     static let zielwerte = [20, 40, 60, 78, 92]
     /// Ab so vielen Einträgen gibt es einen Vergleich, über die letzten so vielen.

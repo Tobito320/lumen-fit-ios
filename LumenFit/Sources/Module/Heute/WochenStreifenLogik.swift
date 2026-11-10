@@ -57,11 +57,11 @@ enum WochenStreifenLogik {
 
     /// "Montag: Schritte 80 %, Gym ja, Schlaf 95 %" für VoiceOver.
     static func beschreibung(_ t: HeuteWochenTag, bereiche: Einstellungen = Einstellungen()) -> String {
-        if t.zukunft { return "\(Datum.anzeige(t.tag)): noch nicht dran" }
+        if t.zukunft { return String(localized: "\(Datum.anzeige(t.tag)): noch nicht dran") }
         let prozent = { (x: Double) in "\(Int((x * 100).rounded())) %" }
-        var teile = ["Schritte \(prozent(t.schritte))"]
-        if bereiche.gymAn { teile.append("Gym \(t.gym > 0 ? "ja" : "nein")") }
-        if bereiche.schlafAn { teile.append("Schlaf \(prozent(t.schlaf))") }
+        var teile = [String(localized: "Schritte \(prozent(t.schritte))")]
+        if bereiche.gymAn { teile.append(String(localized: "Gym \(t.gym > 0 ? String(localized: "ja") : String(localized: "nein"))")) }
+        if bereiche.schlafAn { teile.append(String(localized: "Schlaf \(prozent(t.schlaf))")) }
         return "\(Datum.anzeige(t.tag)): " + teile.joined(separator: ", ")
     }
 }

@@ -97,7 +97,7 @@ struct GewichtEintragenView: View {
     private var streifen: some View {
         let wert = kilo * 10 + zehntel
         return HStack(spacing: Abstand.s) {
-            schrittKnopf("minus", "Weniger", -1)
+            schrittKnopf("minus", String(localized: "Weniger"), -1)
             HStack(alignment: .firstTextBaseline, spacing: Abstand.m) {
                 ForEach(-2...2, id: \.self) { d in
                     let w = wert + d
@@ -139,7 +139,7 @@ struct GewichtEintragenView: View {
                 @unknown default: break
                 }
             }
-            schrittKnopf("plus", "Mehr", 1)
+            schrittKnopf("plus", String(localized: "Mehr"), 1)
         }
     }
 

@@ -29,7 +29,7 @@ enum LetzteEinheitLogik {
         let frueher = sessions.filter { $0.start < s.start }
         let liste = WorkoutLogik.uebungen(s, tag: plantag, frueher: frueher)
         let zeilen = liste.compactMap { zeile($0, frueher: frueher) }
-        let titel = plantag.map { $0.name.isEmpty ? "Training" : $0.name } ?? "Freies Training"
+        let titel = plantag.map { $0.name.isEmpty ? String(localized: "Training") : $0.name } ?? String(localized: "Freies Training")
         return LetzteEinheit(
             sessionId: s.id, titel: titel, kopfzeile: EinheitZeitenLogik.kopfZeit(s),
             dauer: TrainingLogik.dauerText(ende.timeIntervalSince(s.start)),
@@ -63,10 +63,10 @@ struct LetzteEinheitKarte: View {
                 VStack(alignment: .leading, spacing: Abstand.m) {
                     kopf
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 84), alignment: .leading)], alignment: .leading, spacing: Abstand.m) {
-                        kennzahl("Dauer", einheit.dauer)
-                        kennzahl("Volumen", einheit.volumenText)
-                        kennzahl("Sätze", "\(einheit.saetze)")
-                        kennzahl("Rekorde", "\(einheit.rekorde)", symbol: einheit.rekorde > 0 ? "trophy.fill" : nil)
+                        kennzahl(String(localized: "Dauer"), einheit.dauer)
+                        kennzahl(String(localized: "Volumen"), einheit.volumenText)
+                        kennzahl(String(localized: "Sätze"), "\(einheit.saetze)")
+                        kennzahl(String(localized: "Rekorde"), "\(einheit.rekorde)", symbol: einheit.rekorde > 0 ? "trophy.fill" : nil)
                     }
                     if !einheit.zeilen.isEmpty {
                         Haarlinie()

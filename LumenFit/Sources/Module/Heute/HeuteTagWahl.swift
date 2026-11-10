@@ -44,8 +44,8 @@ enum HeuteTagWahl {
 
     /// "Heute", "Gestern" oder "Mittwoch, 23. September".
     static func titel(_ tag: String, heute: String) -> String {
-        if tag == heute { return "Heute" }
-        if tag == Datum.addTage(heute, -1) { return "Gestern" }
+        if tag == heute { return String(localized: "Heute") }
+        if tag == Datum.addTage(heute, -1) { return String(localized: "Gestern") }
         return Datum.anzeige(tag)
     }
 

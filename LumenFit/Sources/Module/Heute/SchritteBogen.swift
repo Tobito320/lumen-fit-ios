@@ -32,7 +32,7 @@ struct SchritteBogen: View {
         .frame(width: seite, height: seite)
         .animation(bewegungAus ? nil : Feder.weich, value: laeufe)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(titel): \(anzahl.map(HeuteQuellen.zahl) ?? "keine") von \(HeuteQuellen.zahl(ziel)) Schritten\(laeufe.erreicht ? ", Ziel erreicht" : "")")
+        .accessibilityLabel("\(titel): \(anzahl.map(HeuteQuellen.zahl) ?? String(localized: "keine")) von \(HeuteQuellen.zahl(ziel)) Schritten\(laeufe.erreicht ? String(localized: ", Ziel erreicht") : "")")
     }
 
     private func mitte(seite: CGFloat, laeufe: SchritteBogenLogik.Laeufe) -> some View {

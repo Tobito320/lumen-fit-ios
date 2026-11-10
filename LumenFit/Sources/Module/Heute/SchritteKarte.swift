@@ -11,7 +11,7 @@ struct SchritteKarte: View {
         Button(action: oeffne) {
             ListenKarte {
                 VStack(alignment: .leading, spacing: Abstand.m) {
-                    HeuteKartenKopf(symbol: "figure.walk", titel: "Schritte", zusatz: "Ziel \(HeuteQuellen.zahl(schritte.ziel))")
+                    HeuteKartenKopf(symbol: "figure.walk", titel: String(localized: "Schritte"), zusatz: String(localized: "Ziel \(HeuteQuellen.zahl(schritte.ziel))"))
                     RollZahl(wert: Double(schritte.schritte), format: HeuteFormat.ganz())
                         .heuteHeldenZahl(40).foregroundStyle(palette.text)
                     ProgressView(value: schritte.anteil).tint(palette.text)
@@ -31,6 +31,6 @@ struct SchritteKarte: View {
 
     private var unterzeile: String {
         let km = String(format: "%.1f", schritte.distanzKm).replacingOccurrences(of: ".", with: ",")
-        return "\(km) km, \(schritte.etagen) Etagen"
+        return String(localized: "\(km) km, \(schritte.etagen) Etagen")
     }
 }

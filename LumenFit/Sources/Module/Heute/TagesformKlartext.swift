@@ -32,8 +32,8 @@ enum TagesformKlartext {
             zeilen.append(Zeile(art: f.art, bremst: f.einfluss < 0, text: text(f, e, kappe: r.kappe)))
         }
         var hinweise: [String] = []
-        if r.akku != nil, zeilen.isEmpty { hinweise.append("Nichts bremst dich, alles im normalen Bereich.") }
-        if r.akku != nil, r.deckung < TagesformRechnung.mittelDeckung { hinweise.append("Wenig Daten, die Zahl ist grob.") }
+        if r.akku != nil, zeilen.isEmpty { hinweise.append(String(localized: "Nichts bremst dich, alles im normalen Bereich.")) }
+        if r.akku != nil, r.deckung < TagesformRechnung.mittelDeckung { hinweise.append(String(localized: "Wenig Daten, die Zahl ist grob.")) }
         let hauptgrund: TagesformArt? = r.gruende.first(where: { $0.einfluss < 0 })?.art
         return Inhalt(gruende: zeilen,
                       empfehlung: empfehlung(akku: r.akku, muskeln: e.muskeln, hauptgrund: hauptgrund, plan: plan),
@@ -54,13 +54,13 @@ enum TagesformKlartext {
     private static func schlafText(_ f: TagesformFaktor, _ e: TagesformEingabe, kappe: TagesformKappe?) -> String {
         let erste: Int? = e.schlaf.first.flatMap { $0 }
         guard let letzte = erste, e.schlafZiel > 0 else { return f.kurz }
-        var satz = "Schlaf \(dauer(letzte))"
+        var satz = String(localized: "Schlaf \(dauer(letzte))")
         if Double(letzte) >= 0.95 * Double(e.schlafZiel) {
-            satz += ", Ziel erreicht"
+            satz += String(localized: ", Ziel erreicht")
         } else {
-            satz += ", \(dauer(e.schlafZiel - letzte)) unter deinem Ziel"
+            satz += String(localized: ", \(dauer(e.schlafZiel - letzte)) unter deinem Ziel")
         }
-        if let kappe, kappe.art == .schlaf { satz += ", deckelt dich bei \(kappe.grenze) %" }
+        if let kappe, kappe.art == .schlaf { satz += String(localized: ", deckelt dich bei \(kappe.grenze) %") }
         return satz
     }
 
@@ -69,7 +69,7 @@ enum TagesformKlartext {
         guard !muede.isEmpty else { return nil }
         var teile: [String] = []
         for m in muede.prefix(2) { teile.append("\(m.gruppe) \(m.prozent) %") }
-        return "Noch nicht erholt: " + teile.joined(separator: ", ")
+        return String(localized: "Noch nicht erholt: \(teile.joined(separator: ", "))")
     }
 
     /// Gruppen unter `grenze` Prozent, je Gruppe der tiefste Teil, die müdeste zuerst.
@@ -87,15 +87,15 @@ enum TagesformKlartext {
     /// Plan aus `EnergieEingabe`. Ohne Zahl oder ohne Plan gibt es keine Empfehlung.
     static func empfehlung(akku: Int?, muskeln: [TagesformMuskel], hauptgrund: TagesformArt?, plan: EnergieEingabe?) -> String? {
         guard let akku, let plan else { return nil }
-        if plan.heuteSchonGym { return "Gym heute erledigt." }
-        if plan.ruhetag { return "Ruhetag laut Plan." }
-        if !plan.trainingstag && !plan.planLeer { return "Kein Gym geplant." }
+        if plan.heuteSchonGym { return String(localized: "Gym heute erledigt.") }
+        if plan.ruhetag { return String(localized: "Ruhetag laut Plan.") }
+        if !plan.trainingstag && !plan.planLeer { return String(localized: "Kein Gym geplant.") }
 
         var was: String
         var grund: String? = nil
-        let wegen: String? = hauptgrund.map { "vor allem wegen \($0.titel)" }
+        let wegen: String? = hauptgrund.map { String(localized: "vor allem wegen \($0.titel)") }
         if akku < leichtAb {
-            was = "Besser kein Gym und kein Cardio"
+            was = String(localized: "Besser kein Gym und kein Cardio")
             grund = wegen
         } else {
             let leicht: Bool = akku < vollAb || plan.gymInFolge >= 3
@@ -103,22 +103,22 @@ enum TagesformKlartext {
             if let tiefste = muede.first {
                 let nurBeine: Bool = muede.allSatisfy { $0.gruppe == MuskelGruppe.beine.name }
                 if nurBeine {
-                    was = leicht ? "Lieber Oberkörper leicht" : "Lieber Oberkörper"
+                    was = leicht ? String(localized: "Lieber Oberkörper leicht") : String(localized: "Lieber Oberkörper")
                 } else {
-                    let namen: String = muede.prefix(2).map { $0.gruppe }.joined(separator: " und ")
-                    was = (leicht ? "Leichter, ohne " : "Ohne ") + namen + " trainieren"
+                    let namen: String = muede.prefix(2).map { $0.gruppe }.joined(separator: String(localized: " und "))
+                    was = leicht ? String(localized: "Leichter, ohne \(namen) trainieren") : String(localized: "Ohne \(namen) trainieren")
                 }
-                grund = "\(tiefste.gruppe) erst zu \(tiefste.prozent) % erholt"
+                grund = String(localized: "\(tiefste.gruppe) erst zu \(tiefste.prozent) % erholt")
             } else if plan.gymInFolge >= 3 {
-                was = "Leichter trainieren"
-                grund = "schon \(plan.gymInFolge) Tage am Stück Gym"
+                was = String(localized: "Leichter trainieren")
+                grund = String(localized: "schon \(plan.gymInFolge) Tage am Stück Gym")
             } else if leicht {
-                was = "Leichter trainieren"
+                was = String(localized: "Leichter trainieren")
                 grund = wegen
             } else {
-                was = "Volles Training passt"
+                was = String(localized: "Volles Training passt")
             }
-            if akku < vollAb { was += ", Cardio höchstens 15 min" }
+            if akku < vollAb { was += String(localized: ", Cardio höchstens 15 min") }
         }
         if let grund { was += " – " + grund }
         return was + "."

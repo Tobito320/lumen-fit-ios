@@ -22,7 +22,7 @@ struct HabitDetailView: View {
             if let daten = umgebung.daten, let habit = daten.habits.habits[habitId] {
                 inhalt(habit, daten)
             } else {
-                LeerZustand(stimmung: .denkt, satz: "Diese Gewohnheit gibt es nicht mehr.")
+                LeerZustand(stimmung: .denkt, satz: String(localized: "Diese Gewohnheit gibt es nicht mehr."))
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -165,11 +165,11 @@ private struct HabitDetailKopf: View {
                 }
             }
             HStack(alignment: .top, spacing: Abstand.s) {
-                zahl("Serie", symbol: "flame.fill", wert: Double(serie), einheit: wochen ? (serie == 1 ? "Woche" : "Wochen") : (serie == 1 ? "Tag" : "Tage"),
+                zahl(String(localized: "Serie"), symbol: "flame.fill", wert: Double(serie), einheit: wochen ? (serie == 1 ? String(localized: "Woche") : String(localized: "Wochen")) : (serie == 1 ? String(localized: "Tag") : String(localized: "Tage")),
                      satz: HabitRaster.serieText(habit, serie))
-                zahl("Beste", symbol: "trophy.fill", wert: Double(beste), einheit: wochen ? (beste == 1 ? "Woche" : "Wochen") : (beste == 1 ? "Tag" : "Tage"),
+                zahl(String(localized: "Beste"), symbol: "trophy.fill", wert: Double(beste), einheit: wochen ? (beste == 1 ? String(localized: "Woche") : String(localized: "Wochen")) : (beste == 1 ? String(localized: "Tag") : String(localized: "Tage")),
                      satz: HabitRaster.serieText(habit, beste))
-                zahl("30 Tage", symbol: "chart.bar.fill", wert: (quote * 100).rounded(), einheit: "%", satz: HabitRaster.prozent(quote))
+                zahl(String(localized: "30 Tage"), symbol: "chart.bar.fill", wert: (quote * 100).rounded(), einheit: "%", satz: HabitRaster.prozent(quote))
             }
         }
     }
@@ -334,7 +334,7 @@ struct HabitMonatGitter: View {
             } else {
                 zelle
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(Datum.anzeige(tag)): \(fertig ? "erledigt" : "offen")")
+                    .accessibilityLabel("\(Datum.anzeige(tag)): \(fertig ? String(localized: "erledigt") : String(localized: "offen"))")
             }
         } else {
             Color.clear.aspectRatio(1, contentMode: .fit)
@@ -378,6 +378,6 @@ private struct HabitJahrRaster: View {
             }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(HabitRaster.monatsTitel(heute: heute, monateZurueck: zurueck)): \(erledigt == 1 ? "1 Tag" : "\(erledigt) Tage") erledigt")
+        .accessibilityLabel("\(HabitRaster.monatsTitel(heute: heute, monateZurueck: zurueck)): \(erledigt == 1 ? String(localized: "1 Tag") : String(localized: "\(erledigt) Tage")) erledigt")
     }
 }

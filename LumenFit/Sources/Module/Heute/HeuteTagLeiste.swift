@@ -14,7 +14,7 @@ struct HeuteTagLeiste: View {
     var body: some View {
         VStack(spacing: Abstand.xs) {
             HStack(spacing: 0) {
-                pfeil("chevron.left", -1, "Tag davor", aktiv: HeuteTagWahl.kannZurueck(tag, heute: heute))
+                pfeil("chevron.left", -1, String(localized: "Tag davor"), aktiv: HeuteTagWahl.kannZurueck(tag, heute: heute))
                 Spacer(minLength: Abstand.s)
                 Button(action: kalender) {
                     VStack(spacing: 2) {
@@ -35,11 +35,11 @@ struct HeuteTagLeiste: View {
                 .accessibilityLabel("Tag wählen, \(Datum.anzeige(tag))")
                 .accessibilityHint("Öffnet den Kalender")
                 Spacer(minLength: Abstand.s)
-                pfeil("chevron.right", 1, "Tag danach", aktiv: HeuteTagWahl.kannVor(tag, heute: heute))
+                pfeil("chevron.right", 1, String(localized: "Tag danach"), aktiv: HeuteTagWahl.kannVor(tag, heute: heute))
             }
             if tag != heute {
                 Button(action: zuHeute) {
-                    Pille(text: "Zurück zu heute", symbolName: "arrow.uturn.backward")
+                    Pille(text: String(localized: "Zurück zu heute"), symbolName: "arrow.uturn.backward")
                         .frame(minHeight: Abstand.tippflaeche)
                         .contentShape(Rectangle())
                 }

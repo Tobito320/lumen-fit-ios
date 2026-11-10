@@ -421,28 +421,28 @@ struct TagesFormenReihe: View {
         let spalten = Array(repeating: GridItem(.flexible(), spacing: Abstand.s), count: schrift.isAccessibilitySize ? 1 : 3)
         LazyVGrid(columns: spalten, spacing: Abstand.s) {
             if let b = stand.boegen.first(where: { $0.id == .bewegen }) {
-                TagesFormKachel(form: .schritte, titel: "Schritte", wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil,
-                                zusatz: stand.schritte.ziel > 0 ? "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))" : nil, aktion: { oeffne(.schritte) })
+                TagesFormKachel(form: .schritte, titel: String(localized: "Schritte"), wert: b.zahl, einheit: "", fuellung: stand.schritte.anteil,
+                                zusatz: stand.schritte.ziel > 0 ? String(localized: "Ziel \(HeuteQuellen.zahl(stand.schritte.ziel))") : nil, aktion: { oeffne(.schritte) })
             }
             habitKachel(.wasser, Habit.wasser.id)
             if stand.bereiche.schlafAn, let b = stand.boegen.first(where: { $0.id == .erholen }) {
-                TagesFormKachel(form: .schlaf, titel: "Schlaf", wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil, aktion: { oeffne(.schlaf) })
+                TagesFormKachel(form: .schlaf, titel: String(localized: "Schlaf"), wert: b.zahl, einheit: b.zahl == "–" ? "" : "h", fuellung: b.anteil, aktion: { oeffne(.schlaf) })
             }
             if !stand.habits.isEmpty {
                 let erledigt = stand.habits.filter(\.erledigt).count
-                TagesFormKachel(form: .habits, titel: "Gewohnheiten", wert: String(erledigt), einheit: "/\(stand.habits.count)",
+                TagesFormKachel(form: .habits, titel: String(localized: "Gewohnheiten"), wert: String(erledigt), einheit: "/\(stand.habits.count)",
                                 fuellung: Double(erledigt) / Double(stand.habits.count), aktion: { oeffne(.habits) })
             }
             if stand.bereiche.essenAn {
-                TagesFormKachel(form: .protein, titel: "Food", wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
+                TagesFormKachel(form: .protein, titel: String(localized: "Food"), wert: String(essen.kcal), einheit: "/\(essen.ziel) kcal",
                                 fuellung: essen.ziel > 0 ? Double(essen.kcal) / Double(essen.ziel) : 0, aktion: { oeffne(.protein) })
             }
-            TagesFormKachel(form: .gewicht, titel: "Gewicht", wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
+            TagesFormKachel(form: .gewicht, titel: String(localized: "Gewicht"), wert: stand.gewicht.aktuellKg.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "–",
                             einheit: stand.gewicht.aktuellKg == nil ? "" : "kg", fuellung: 0,
-                            zusatz: stand.gewicht.punkte.last.map { "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))" },
+                            zusatz: stand.gewicht.punkte.last.map { String(localized: "zuletzt \($0.kg.formatted(.number.precision(.fractionLength(1))))") },
                             aktion: stand.istHeute ? { oeffne(.gewicht) } : nil)
             if stand.bereiche.gymAn, let b = stand.boegen.first(where: { $0.id == .trainieren }) {
-                TagesFormKachel(form: .training, titel: "Gym", wert: b.anteil > 0 ? "Gym" : "Pause", einheit: "", fuellung: b.anteil > 0 ? 1 : 0, aktion: { oeffne(.training) })
+                TagesFormKachel(form: .training, titel: String(localized: "Gym"), wert: b.anteil > 0 ? String(localized: "Gym") : String(localized: "Pause"), einheit: "", fuellung: b.anteil > 0 ? 1 : 0, aktion: { oeffne(.training) })
             }
             habitKachel(.creatin, Habit.creatin.id)
             habitKachel(.koffein, Habit.koffein.id)
@@ -450,7 +450,7 @@ struct TagesFormenReihe: View {
             if stand.bereiche.essenAn { habitKachel(.protein, Habit.protein.id) }
             if let stimmung = stand.stimmungsWert {
                 // 1 bis 2 traurig, 3 neutral, 4 bis 5 froh.
-                TagesFormKachel(form: .stimmung, titel: "Stimmung", wert: String(stimmung), einheit: "von 5", fuellung: Double(stimmung) / 5,
+                TagesFormKachel(form: .stimmung, titel: String(localized: "Stimmung"), wert: String(stimmung), einheit: String(localized: "von 5"), fuellung: Double(stimmung) / 5,
                                 stimmung: stimmung <= 2 ? 1 : (stimmung == 3 ? 2 : 3))
             }
         }
@@ -462,11 +462,11 @@ struct TagesFormenReihe: View {
             let ziel = zeile.ziel ?? zeile.habit.tagesziel
             TagesFormKachel(
                 form: form, titel: zeile.habit.name,
-                wert: zeile.habit.zaehlen ? String(zeile.wert) : (zeile.erledigt ? "Ja" : "Nein"),
-                einheit: zeile.habit.zaehlen ? (ziel.map { form == .wasser ? "/\($0) Gl." : "von \($0)" } ?? "") : "",
+                wert: zeile.habit.zaehlen ? String(zeile.wert) : (zeile.erledigt ? String(localized: "Ja") : String(localized: "Nein")),
+                einheit: zeile.habit.zaehlen ? (ziel.map { form == .wasser ? String(localized: "/\($0) Gl.") : String(localized: "von \($0)") } ?? "") : "",
                 // Ohne Ziel (Koffein) füllt sich die Form bis vier Stück.
                 fuellung: zeile.habit.zaehlen && ziel == nil ? min(1, Double(zeile.wert) / 4) : zeile.anteil,
-                zusatz: form == .creatin ? ziel.map { "\(zeile.wert)/\($0) Klicks" } : nil,
+                zusatz: form == .creatin ? ziel.map { String(localized: "\(zeile.wert)/\($0) Klicks") } : nil,
                 aktion: stand.istHeute ? { tippe(zeile) } : nil)
         }
     }

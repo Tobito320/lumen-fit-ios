@@ -56,7 +56,7 @@ struct HabitsKarte: View {
 
     private var standard: some View {
         ListenKarte {
-            HeuteKartenKopf(symbol: "checkmark.circle", titel: "Gewohnheiten").padding(Abstand.l)
+            HeuteKartenKopf(symbol: "checkmark.circle", titel: String(localized: "Gewohnheiten")).padding(Abstand.l)
             ForEach(habits) { zeile in
                 Haarlinie()
                 HeuteHabitReihe(zeile: zeile, tag: tag, tippe: { tippe(zeile) }, weniger: { weniger(zeile) }, oeffne: { oeffne(zeile) }, zoom: zoom)
@@ -104,7 +104,7 @@ private struct HeuteHabitReihe: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(zeile.habit.name), \(unterzeile ?? ""), heute \(zeile.erledigt ? "erledigt" : "offen")")
+            .accessibilityLabel("\(zeile.habit.name), \(unterzeile ?? ""), heute \(zeile.erledigt ? String(localized: "erledigt") : String(localized: "offen"))")
             .accessibilityHint("Öffnet die Details")
             .modifier(HabitZoomQuelle(id: zeile.habit.id, zoom: zoom))
             if !kompakt { PartnerHabitKopf(habitID: zeile.habit.id) }

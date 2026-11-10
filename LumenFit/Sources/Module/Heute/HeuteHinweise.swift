@@ -78,11 +78,11 @@ enum HeuteHinweisLogik {
                   jung <= alt else { return nil }
             let name = katalog(id)?.name ?? id
             return HeuteHinweis(
-                id: "stillstand.\(id)", art: .stillstand, titel: "\(name) steht still",
+                id: "stillstand.\(id)", art: .stillstand, titel: String(localized: "\(name) steht still"),
                 zahl: "\(kommaZahl(alt)) kg",
-                text: "Seit 3 Einheiten kein Plus bei geschätzten \(kommaZahl(alt)) kg.",
-                tipp: "3 Wochen lang 3 × 6 mit +2,5 kg, oder eine leichte Woche.",
-                basis: "Geschätztes Maximum nach Epley (kg × (1 + Wdh ÷ 30)), bestes Set je Einheit, \(verlauf.count) Einheiten.",
+                text: String(localized: "Seit 3 Einheiten kein Plus bei geschätzten \(kommaZahl(alt)) kg."),
+                tipp: String(localized: "3 Wochen lang 3 × 6 mit +2,5 kg, oder eine leichte Woche."),
+                basis: String(localized: "Geschätztes Maximum nach Epley (kg × (1 + Wdh ÷ 30)), bestes Set je Einheit, \(verlauf.count) Einheiten."),
                 fortschritt: nil)
         }
     }
@@ -99,14 +99,14 @@ enum HeuteHinweisLogik {
             let her = Datum.tageZwischen(letzter, e.heute)
             guard her >= 8 else { return nil }
             return HeuteHinweis(
-                id: "vergessen.\(g.rawValue)", art: .vergessen, titel: "\(g.name) vergessen?",
-                zahl: "\(her) Tage", text: "\(g.name) hatte seit \(her) Tagen keinen Satz.",
-                tipp: "Nimm eine \(g.name)-Übung in die nächste Einheit.",
-                basis: "Prio-Gruppe ohne Satz seit mindestens 8 Tagen.", fortschritt: nil)
+                id: "vergessen.\(g.rawValue)", art: .vergessen, titel: String(localized: "\(g.name) vergessen?"),
+                zahl: String(localized: "\(her) Tage"), text: String(localized: "\(g.name) hatte seit \(her) Tagen keinen Satz."),
+                tipp: String(localized: "Nimm eine \(g.name)-Übung in die nächste Einheit."),
+                basis: String(localized: "Prio-Gruppe ohne Satz seit mindestens 8 Tagen."), fortschritt: nil)
         }
     }
 
-    private static let schlafBasis = "Einheiten nach Nächten unter 6 h gegen Einheiten nach mindestens 7 h, je mindestens 4."
+    private static let schlafBasis = String(localized: "Einheiten nach Nächten unter 6 h gegen Einheiten nach mindestens 7 h, je mindestens 4.")
 
     /// Performance of a session: mean of e1RM / best e1RM of that exercise.
     private static func schlaf(_ e1rm: [(session: GymSession, werte: [String: Double])], _ e: HeuteHinweisEingabe) -> [HeuteHinweis] {
@@ -122,17 +122,17 @@ enum HeuteHinweisLogik {
             guard !e1rm.isEmpty else { return [] }
             let da = min(kurz.count, 4) + min(gut.count, 4)
             return [HeuteHinweis(
-                id: "gesperrt.schlaf", art: .gesperrt, titel: "Schlaf gegen Leistung",
-                zahl: "\(da)/8", text: "Noch \(8 - da) Einheiten mit Schlafdaten, dann sehe ich, ob Schlaf deine Kraft bremst.",
-                tipp: "Trag deinen Schlaf ein oder verbinde Apple Health.", basis: schlafBasis,
+                id: "gesperrt.schlaf", art: .gesperrt, titel: String(localized: "Schlaf gegen Leistung"),
+                zahl: "\(da)/8", text: String(localized: "Noch \(8 - da) Einheiten mit Schlafdaten, dann sehe ich, ob Schlaf deine Kraft bremst."),
+                tipp: String(localized: "Trag deinen Schlaf ein oder verbinde Apple Health."), basis: schlafBasis,
                 fortschritt: Double(da) / 8)]
         }
         let unterschied = Int(((mittel(gut) - mittel(kurz)) * 100).rounded())
         guard unterschied >= 3 else { return [] }
         return [HeuteHinweis(
-            id: "schlaf", art: .schlaf, titel: "Schlaf bremst dich",
-            zahl: "\(unterschied) %", text: "Nach kurzen Nächten trainierst du im Schnitt \(unterschied) % schwächer.",
-            tipp: "Vor einer kurzen Nacht die Last etwas senken oder einen Satz weglassen.",
+            id: "schlaf", art: .schlaf, titel: String(localized: "Schlaf bremst dich"),
+            zahl: "\(unterschied) %", text: String(localized: "Nach kurzen Nächten trainierst du im Schnitt \(unterschied) % schwächer."),
+            tipp: String(localized: "Vor einer kurzen Nacht die Last etwas senken oder einen Satz weglassen."),
             basis: schlafBasis, fortschritt: nil)]
     }
 
@@ -147,24 +147,24 @@ enum HeuteHinweisLogik {
         let weniger = diff < 0
         let glaeser = kommaZahl(abs(diff))
         return [HeuteHinweis(
-            id: "wasser", art: .wasser, titel: weniger ? "Wenig Wasser beim Training" : "Mehr Wasser an Gym-Tagen",
-            zahl: "\(weniger ? "−" : "+")\(glaeser) Gläser",
-            text: weniger ? "An Gym-Tagen trinkst du \(glaeser) Gläser weniger als an Ruhetagen."
-                : "An Gym-Tagen trinkst du \(glaeser) Gläser mehr als an Ruhetagen.",
-            tipp: weniger ? "Eine Flasche mit ins Gym nehmen und zwischen den Sätzen trinken." : "Weiter so, das hält dich leistungsfähig.",
-            basis: "Mittelwert der Gläser an Gym-Tagen gegen Ruhetage, je mindestens 5 Tage.", fortschritt: nil)]
+            id: "wasser", art: .wasser, titel: weniger ? String(localized: "Wenig Wasser beim Training") : String(localized: "Mehr Wasser an Gym-Tagen"),
+            zahl: String(localized: "\(weniger ? "−" : "+")\(glaeser) Gläser"),
+            text: weniger ? String(localized: "An Gym-Tagen trinkst du \(glaeser) Gläser weniger als an Ruhetagen.")
+                : String(localized: "An Gym-Tagen trinkst du \(glaeser) Gläser mehr als an Ruhetagen."),
+            tipp: weniger ? String(localized: "Eine Flasche mit ins Gym nehmen und zwischen den Sätzen trinken.") : String(localized: "Weiter so, das hält dich leistungsfähig."),
+            basis: String(localized: "Mittelwert der Gläser an Gym-Tagen gegen Ruhetage, je mindestens 5 Tage."), fortschritt: nil)]
     }
 
     /// "Stimmung gegen Schlaf" until 14 days are collected. "Koffein gegen Schlaf" is gone with the Koffein tile:
     /// nothing counts coffee any more, so it would never unlock.
     private static func gesperrt(_ e: HeuteHinweisEingabe) -> [HeuteHinweis] {
-        let kandidaten = [("stimmung", "Stimmung", e.stimmungTage, "Trag deine Stimmung im Kalender ein.")]
+        let kandidaten = [("stimmung", String(localized: "Stimmung"), e.stimmungTage, String(localized: "Trag deine Stimmung im Kalender ein."))]
         return kandidaten.compactMap { (schluessel, name, tage, tipp) -> HeuteHinweis? in
             guard tage < sperreTage else { return nil }
             return HeuteHinweis(
-                id: "gesperrt.\(schluessel)", art: .gesperrt, titel: "\(name) gegen Schlaf",
-                zahl: "\(tage)/\(sperreTage)", text: "Noch \(sperreTage - tage) Tage, dann vergleiche ich \(name) mit deinem Schlaf.",
-                tipp: tipp, basis: "Braucht \(sperreTage) Tage mit beiden Werten.",
+                id: "gesperrt.\(schluessel)", art: .gesperrt, titel: String(localized: "\(name) gegen Schlaf"),
+                zahl: "\(tage)/\(sperreTage)", text: String(localized: "Noch \(sperreTage - tage) Tage, dann vergleiche ich \(name) mit deinem Schlaf."),
+                tipp: tipp, basis: String(localized: "Braucht \(sperreTage) Tage mit beiden Werten."),
                 fortschritt: Double(max(0, tage)) / Double(sperreTage))
         }
     }

@@ -215,17 +215,17 @@ final class HeuteModell {
         let bereiche = umgebung.bereicheWirksam
         var boegen: [BogenWert] = [
             BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
-                      beschriftung: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))"),
+                      beschriftung: String(localized: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))")),
         ]
-        var boegenTexte = ["Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))"]
+        var boegenTexte = [String(localized: "Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))")]
         if bereiche.gymAn {
-            boegen.append(BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: "\(gymWoche) von \(gymZiel)", beschriftung: "Gym-Tage der Woche"))
-            boegenTexte.append("Gym: \(gymWoche) von \(gymZiel) Tagen")
+            boegen.append(BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: String(localized: "\(gymWoche) von \(gymZiel)"), beschriftung: String(localized: "Gym-Tage der Woche")))
+            boegenTexte.append(String(localized: "Gym: \(gymWoche) von \(gymZiel) Tagen"))
         }
         if bereiche.schlafAn {
             boegen.append(BogenWert(id: .erholen, anteil: anteil(schlafMin, schlafZiel), zahl: nacht == nil ? "–" : BereitScore.stunden(schlafMin),
-                                    beschriftung: "Schlaf von \(BereitScore.stunden(schlafZiel))"))
-            boegenTexte.append(nacht == nil ? "Schlaf: keine Daten" : "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))")
+                                    beschriftung: String(localized: "Schlaf von \(BereitScore.stunden(schlafZiel))")))
+            boegenTexte.append(nacht == nil ? String(localized: "Schlaf: keine Daten") : String(localized: "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))"))
         }
         let boegenSatz = boegenTexte.joined(separator: ". ") + "."
         let voll = boegen.allSatisfy { $0.anteil >= 1 }
@@ -312,7 +312,7 @@ final class HeuteModell {
         let zustand: LumiStimmung = istHeute ? LumiLogik.zustand(lage) : satz.stimmung
         let stimmungAnzeige: LumiStimmung = istHeute ? zustand : (voll ? .ziel : .denkt)
         let satzAnzeige = istHeute ? (zustand == satz.stimmung ? satz.satz : zustand.satz)
-                                   : (voll ? "An diesem Tag waren alle Bögen voll." : "So sah dieser Tag aus.")
+                                   : (voll ? String(localized: "An diesem Tag waren alle Bögen voll.") : String(localized: "So sah dieser Tag aus."))
         // Bei Bereit und Ruhetag spricht Lumi über den Fortschritt (größtes Plus einer Übung), sonst bleibt der Satz des Zustands.
         let fortschritt: String? = istHeute && bereiche.gymAn && (zustand == .bereit || zustand == .ruhetag)
             ? HeuteKartenLogik.fortschrittsSatz(FortschrittLogik.gewichte(sessions, plan: daten.training.plan, heute: heute), ruhetag: zustand == .ruhetag)

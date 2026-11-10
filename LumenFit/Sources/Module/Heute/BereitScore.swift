@@ -29,9 +29,9 @@ enum BereitScore {
 
         var titel: String {
             switch self {
-            case .schlaf: "Schlaf"
-            case .erholung: "Erholung"
-            case .belastung: "Belastung"
+            case .schlaf: String(localized: "Schlaf")
+            case .erholung: String(localized: "Erholung")
+            case .belastung: String(localized: "Belastung")
             }
         }
 
@@ -82,10 +82,10 @@ enum BereitScore {
 
     /// Die Formel in Worten, für das Detail unter dem Score.
     static let klartext = [
-        "Schlaf zählt 40 %: die Dauer gegen dein Ziel, im Quadrat. Zu wenig Schlaf wirkt stärker als ein bisschen zu viel.",
-        "Erholung zählt 40 %: HRV und Ruhepuls gegen deinen eigenen Schnitt der letzten 60 Tage, nicht gegen Normwerte.",
-        "Belastung zählt 20 %: dein Training und deine Bewegung der letzten 3 Tage gegen die 4 Wochen davor.",
-        "Fehlt ein Wert, rechnet Lumen Fit ohne ihn weiter. Ohne mindestens Schlaf oder HRV mit Ruhepuls gibt es keine Zahl.",
+        String(localized: "Schlaf zählt 40 %: die Dauer gegen dein Ziel, im Quadrat. Zu wenig Schlaf wirkt stärker als ein bisschen zu viel."),
+        String(localized: "Erholung zählt 40 %: HRV und Ruhepuls gegen deinen eigenen Schnitt der letzten 60 Tage, nicht gegen Normwerte."),
+        String(localized: "Belastung zählt 20 %: dein Training und deine Bewegung der letzten 3 Tage gegen die 4 Wochen davor."),
+        String(localized: "Fehlt ein Wert, rechnet Lumen Fit ohne ihn weiter. Ohne mindestens Schlaf oder HRV mit Ruhepuls gibt es keine Zahl."),
     ].joined(separator: "\n")
 
     static func rechnen(_ e: Eingabe) -> Ergebnis {
@@ -110,8 +110,8 @@ enum BereitScore {
         guard let minuten = e.schlafMinuten, minuten > 0, e.schlafZiel > 0 else { return nil }
         let anteil = min(1, Double(minuten) / Double(e.schlafZiel))
         let wert = 100 * anteil * anteil
-        return Teil(art: .schlaf, wert: wert, kurz: "Schlaf \(stunden(minuten))",
-                    detail: "Letzte Nacht \(stunden(minuten)) von \(stunden(e.schlafZiel)) Ziel.")
+        return Teil(art: .schlaf, wert: wert, kurz: String(localized: "Schlaf \(stunden(minuten))"),
+                    detail: String(localized: "Letzte Nacht \(stunden(minuten)) von \(stunden(e.schlafZiel)) Ziel."))
     }
 
     private static func erholungTeil(_ e: Eingabe) -> Teil? {
@@ -120,15 +120,15 @@ enum BereitScore {
         if let h = e.hrv, let v = vergleich(h, basis: e.hrvBasis) {
             let z = (h - v.mittel) / max(v.streuung, hrvStreuungBoden * v.mittel)
             werte.append(klemmen(neutral + hrvSteigung * z))
-            zeilen.append("HRV \(zahl(h)) ms, \(z < -0.5 ? "unter" : (z > 0.5 ? "über" : "wie")) deinem Schnitt von \(zahl(v.mittel)) ms")
+            zeilen.append(String(localized: "HRV \(zahl(h)) ms, \(z < -0.5 ? String(localized: "unter") : (z > 0.5 ? String(localized: "über") : String(localized: "wie"))) deinem Schnitt von \(zahl(v.mittel)) ms"))
         }
         if let r = e.ruhepuls, let v = vergleich(r, basis: e.ruhepulsBasis) {
             werte.append(klemmen(neutral - ruhepulsSteigung * (r - v.mittel)))
-            zeilen.append("Ruhepuls \(zahl(r)), Schnitt \(zahl(v.mittel))")
+            zeilen.append(String(localized: "Ruhepuls \(zahl(r)), Schnitt \(zahl(v.mittel))"))
         }
         guard !werte.isEmpty else { return nil }
         let wert = werte.reduce(0, +) / Double(werte.count)
-        return Teil(art: .erholung, wert: wert, kurz: zeilen.first ?? "Erholung", detail: zeilen.joined(separator: ". ") + ".")
+        return Teil(art: .erholung, wert: wert, kurz: zeilen.first ?? String(localized: "Erholung"), detail: zeilen.joined(separator: ". ") + ".")
     }
 
     private static func belastungTeil(_ e: Eingabe) -> Teil? {
@@ -146,9 +146,9 @@ enum BereitScore {
         } else {
             wert = klemmen(40 - 40 * (r - 2))
         }
-        let wort = r > lastGrenze ? "mehr als sonst" : (r < 0.7 ? "weniger als sonst" : "wie sonst")
-        return Teil(art: .belastung, wert: wert, kurz: "Belastung der letzten 3 Tage \(wort)",
-                    detail: "Das \(String(format: "%.1f", r).replacingOccurrences(of: ".", with: ","))-Fache deines üblichen Tages der letzten 4 Wochen.")
+        let wort = r > lastGrenze ? String(localized: "mehr als sonst") : (r < 0.7 ? String(localized: "weniger als sonst") : String(localized: "wie sonst"))
+        return Teil(art: .belastung, wert: wert, kurz: String(localized: "Belastung der letzten 3 Tage \(wort)"),
+                    detail: String(localized: "Das \(String(format: "%.1f", r).replacingOccurrences(of: ".", with: ","))-Fache deines üblichen Tages der letzten 4 Wochen."))
     }
 
     // MARK: Satz
@@ -156,17 +156,17 @@ enum BereitScore {
     private static func satz(punkte: Int?, teile: [Teil], fehlend: [Art]) -> String {
         var teileSatz: [String] = []
         if let punkte {
-            teileSatz.append(punkte >= bereitAb ? "Gut erholt." : (punkte >= normalAb ? "Solide Basis." : "Dein Körper will Ruhe."))
+            teileSatz.append(punkte >= bereitAb ? String(localized: "Gut erholt.") : (punkte >= normalAb ? String(localized: "Solide Basis.") : String(localized: "Dein Körper will Ruhe.")))
             if let schwach = teile.min(by: { $0.wert < $1.wert }), schwach.wert < 60 {
-                teileSatz.append("Am meisten bremst: \(schwach.kurz).")
+                teileSatz.append(String(localized: "Am meisten bremst: \(schwach.kurz)."))
             }
         } else {
-            teileSatz.append("Noch zu wenig Daten für einen Score.")
+            teileSatz.append(String(localized: "Noch zu wenig Daten für einen Score."))
         }
         if !fehlend.isEmpty {
             let namen = fehlend.map { $0.titel }
-            let hilfe = fehlend.contains(.erholung) ? " (HRV und Ruhepuls kommen von der Apple Watch)" : ""
-            teileSatz.append("Ohne \(namen.joined(separator: " und ")) gerechnet\(hilfe).")
+            let hilfe = fehlend.contains(.erholung) ? String(localized: " (HRV und Ruhepuls kommen von der Apple Watch)") : ""
+            teileSatz.append(String(localized: "Ohne \(namen.joined(separator: String(localized: " und "))) gerechnet\(hilfe)."))
         }
         return teileSatz.joined(separator: " ")
     }

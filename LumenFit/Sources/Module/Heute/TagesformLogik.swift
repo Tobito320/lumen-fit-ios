@@ -30,7 +30,7 @@ enum TagesformLogik {
     }
 
     static func urteil(_ akku: Int) -> String {
-        akku >= 85 ? "Voll geladen" : akku >= 70 ? "Gut geladen" : akku >= 50 ? "Halb leer" : "Sparmodus"
+        akku >= 85 ? String(localized: "Voll geladen") : akku >= 70 ? String(localized: "Gut geladen") : akku >= 50 ? String(localized: "Halb leer") : String(localized: "Sparmodus")
     }
 
     /// Mittlere Erholung 0...1. Teile ohne Training fehlen in `MuskelLogik.erholung` und zählen als 100.

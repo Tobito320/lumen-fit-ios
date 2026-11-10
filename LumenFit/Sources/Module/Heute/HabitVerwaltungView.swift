@@ -42,7 +42,7 @@ struct HabitVerwaltungView: View {
                     Text(HabitLogik.haeufigkeitText(habit, ziel: daten.habits.habitZiel(habit.id))).font(.footnote).foregroundStyle(palette.text2)
                 }
                 Spacer(minLength: Abstand.s)
-                if aus { Pille(text: "ausgeblendet", symbolName: "eye.slash") }
+                if aus { Pille(text: String(localized: "ausgeblendet"), symbolName: "eye.slash") }
             }
             .frame(minHeight: Abstand.tippflaeche)
         }
