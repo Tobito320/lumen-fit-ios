@@ -20,6 +20,8 @@ struct TrainingLaufView: View {
     /// Reihenfolge-Modus (Knopf über den Übungen): die Karten klappen zu und lassen sich ziehen, nach dem Ablegen wieder normal.
     @State private var umordnen = false
     @State private var pausenFrage = false
+    /// Erste zwei Wochen (`LaufHilfe.ersteWochen`): Formtipp und "Wie war das Set?". Einmal je Training gerechnet, nicht im Körper.
+    @State private var ersteWochen = false
     @AppStorage(GymAnzeige.pausenTimerSchluessel) private var pausenTimer = false
     @AppStorage(GymAnzeige.pausenTimerGefragtSchluessel) private var pausenTimerGefragt = false
 
@@ -35,7 +37,9 @@ struct TrainingLaufView: View {
                 if sitzung.pause != nil { NaechsterSatzKarte(sitzung: sitzung) }
                 listenKopf
                 ForEach(Array(sitzung.liste.enumerated()), id: \.element.id) { i, _ in
-                    LaufUebungsKarte(sitzung: sitzung, index: i, kompakt: umordnen) { withAnimation(ruhig ? nil : Feder.schnell) { umordnen = false } }
+                    LaufUebungsKarte(sitzung: sitzung, index: i, kompakt: umordnen, formtipp: formtipp(i), gefuehl: ersteWochen) {
+                        withAnimation(ruhig ? nil : Feder.schnell) { umordnen = false }
+                    }
                 }
                 Button { suche = true } label: {
                     Label("Übung hinzufügen", systemImage: "plus").font(.headline).frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche)
@@ -66,7 +70,10 @@ struct TrainingLaufView: View {
         .haptik(.satzFertig, bei: sitzung.hakenZaehler)
         .haptik(.pauseEnde, bei: sitzung.pauseEndeZaehler)
         .haptik(.auswahl, bei: sitzung.hakenZurueckZaehler)
-        .task { sitzung.ladeWennNoetig() }
+        .task(id: sitzung.sessionId) {
+            sitzung.ladeWennNoetig()
+            ersteWochen = LaufHilfe.ersteWochen(sitzung.training?.sessions ?? [], jetzt: umgebung.uhr())
+        }
         // In den Hintergrund: geänderte Zeilen ohne Haken sofort schreiben, nicht erst nach dem Verzug (iOS kann die App gleich einfrieren).
         .onChange(of: phase) { _, neu in if neu == .background { sitzung.entwurfSenden() } }
         // Pausen-Timer ist Standard aus: beim ersten Haken einmal fragen, danach steht es unter Einstellungen, Präferenzen.
@@ -77,6 +84,12 @@ struct TrainingLaufView: View {
         } message: {
             Text("Nach jedem Set läuft dann eine Pause mit Haptik am Ende. Du änderst das jederzeit unter Einstellungen, Präferenzen.")
         }
+    }
+
+    /// Formtipp nur unter der Übung, die dran ist, und nur in den ersten Wochen.
+    private func formtipp(_ i: Int) -> String? {
+        guard ersteWochen, sitzung.dran?.uebung == i, sitzung.liste.indices.contains(i) else { return nil }
+        return LaufHilfe.formtipp(sitzung.liste[i].planUebung.uebung)
     }
 
     // MARK: Kopf

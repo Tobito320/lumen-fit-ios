@@ -10,6 +10,8 @@ struct LaufUebungsKarte: View {
     var kompakt = false
     /// Formtipp unter der Übung, die dran ist (nur in den ersten Wochen, `LaufHilfe.formtipp`).
     var formtipp: String? = nil
+    /// Erste Wochen: unter dem zuletzt abgehakten Set fragt "Wie war das Set?" (`LaufHilfe.gefuehlFrage`).
+    var gefuehl = false
     var abgelegt: () -> Void = {}
     @Environment(\.palette) private var palette
     @Environment(\.colorScheme) private var schema
@@ -52,6 +54,9 @@ struct LaufUebungsKarte: View {
                     if !schrift.isAccessibilitySize { tabellenKopf }
                     ForEach(u.saetze.indices, id: \.self) { i in
                         SatzZeile(sitzung: sitzung, uebung: index, satz: i)
+                        if gefuehl, !sitzung.gefuehlGegeben.contains("\(u.id)|\(i)"), LaufHilfe.gefuehlFrage(u.saetze, satz: i) {
+                            gefuehlZeile(i)
+                        }
                     }
                     Button { sitzung.satzDazu(index) } label: {
                         Label("Set dazu", systemImage: "plus").font(.subheadline.weight(.semibold))
@@ -163,6 +168,25 @@ struct LaufUebungsKarte: View {
             .padding(.horizontal, Abstand.m)
             .padding(.bottom, Abstand.s)
             .accessibilityLabel("Formtipp: \(text)")
+    }
+
+    /// "Wie war das Set? Leicht / Passt / Schwer" (Entwurf `fbRow`): stellt das nächste Set eine Stufe um.
+    private func gefuehlZeile(_ i: Int) -> some View {
+        HStack(spacing: Abstand.s) {
+            Text("Wie war das Set?").font(.footnote).foregroundStyle(palette.text2)
+            Spacer(minLength: 0)
+            Button("Leicht") { sitzung.satzGefuehl(index, i, .leicht) }
+            Button("Passt") { sitzung.satzGefuehl(index, i, .passt) }
+            Button("Schwer") { sitzung.satzGefuehl(index, i, .schwer) }
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(palette.text)
+        .font(.subheadline.weight(.semibold))
+        .padding(.horizontal, Abstand.m)
+        .padding(.bottom, Abstand.s)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Wie war das Set?")
     }
 
     private func cardioZeile(_ u: WorkoutUebung) -> some View {

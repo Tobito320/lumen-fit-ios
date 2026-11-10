@@ -63,6 +63,8 @@ final class GymSitzung: TrainingSteuerung {
     private(set) var rueckgaengig: SatzRueckgaengig?
     /// Rekord-Beschriftung je Satz ("plan|zeile"), im Training gemerkt; die Zeile zeigt sie neben dem Haken.
     private(set) var rekordLabel: [String: String] = [:]
+    /// Sets, zu denen "Wie war das Set?" schon beantwortet ist ("planId|satz"); nur im Speicher, die Antwort wirkt über das Gewicht.
+    private(set) var gefuehlGegeben: Set<String> = []
     /// Der Rekord-Toast (`.lumenToast`); die Ansicht bindet ihn.
     var toast: ToastInhalt?
 
@@ -155,6 +157,7 @@ final class GymSitzung: TrainingSteuerung {
         pause = nil
         satzLauf = nil
         gemeldet = []
+        gefuehlGegeben = []
     }
 
     // MARK: - Starten und Beenden
@@ -349,6 +352,19 @@ final class GymSitzung: TrainingSteuerung {
         guard liste.indices.contains(u) else { return }
         liste[u].saetze = f(liste[u].saetze)
         if senden { sende(u) } else { entwurfMerken(u) }
+    }
+
+    /// "Wie war das Set?" (erste Wochen): Leicht stellt das nächste offene Set eine Stufe schwerer, Schwer eine leichter, Passt lässt es.
+    func satzGefuehl(_ u: Int, _ i: Int, _ g: SatzGefuehl) {
+        guard liste.indices.contains(u), liste[u].saetze.indices.contains(i) else { return }
+        gefuehlGegeben.insert("\(liste[u].id)|\(i)")
+        guard g != .passt, let j = LaufHilfe.naechstesOffenes(liste[u].saetze, nach: i) else {
+            toast = ToastInhalt(titel: String(localized: "Gut, das Gewicht bleibt"), zeile: nil, stimmung: .anfeuern)
+            return
+        }
+        gewicht(u, j, richtung: g == .leicht ? 1 : -1)
+        let kg = liste[u].saetze[j].kg.map { TrainingLogik.kgText($0) } ?? "–"
+        toast = ToastInhalt(titel: String(localized: "Nächstes Set: \(kg) kg"), zeile: nil, stimmung: .anfeuern)
     }
 
     func gewicht(_ u: Int, _ i: Int, richtung: Int) {
