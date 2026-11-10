@@ -42,7 +42,7 @@ async function api(methode, pfad, koerper) {
   const text = await r.text();
   const j = text ? JSON.parse(text) : null;
   if (!r.ok) {
-    const f = (j?.errors || []).map((e) => `${e.code}: ${e.detail || e.title}`).join(" | ");
+    const f = (j?.errors || []).map((e) => `${e.code}: ${e.detail || e.title}${e.meta?.associatedErrors ? " " + JSON.stringify(e.meta.associatedErrors) : ""}`).join(" | ");
     throw new Error(`${methode} ${pfad.split("?")[0]} -> ${r.status} ${f}`);
   }
   return j;

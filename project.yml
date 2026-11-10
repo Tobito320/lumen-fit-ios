@@ -48,6 +48,7 @@ targets:
           - com.onlyus.lumen-fit.aktualisieren
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # nur iPhone; der XcodeGen-Standard für iOS-Ziele ist "1,2" und verlangt sonst iPad-Bilder im Store
         PRODUCT_BUNDLE_IDENTIFIER: com.onlyus.lumen-fit
         PRODUCT_NAME: LumenFit
         SWIFT_OPTIMIZATION_LEVEL: "-O"
@@ -82,6 +83,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
       base:
+        TARGETED_DEVICE_FAMILY: "1"   # nur iPhone; der XcodeGen-Standard für iOS-Ziele ist "1,2" und verlangt sonst iPad-Bilder im Store
         PRODUCT_BUNDLE_IDENTIFIER: com.onlyus.lumen-fit.widgets
         PRODUCT_NAME: LumenFitWidgets
         SWIFT_OPTIMIZATION_LEVEL: "-O"
