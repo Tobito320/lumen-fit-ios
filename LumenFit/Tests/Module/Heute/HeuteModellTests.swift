@@ -91,6 +91,26 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(leser.tagesAbfragen.count, 1, "Health wird beim Laden einmal gelesen")
     }
 
+    func testSchritteMitzaehlenSchaltetDenSchritteBogen() async throws {
+        let u = try umgebung(leser: FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 12_000)], naechte: [nacht(heute, minuten: 480)]))
+        let m = HeuteModell(umgebung: u)
+        await m.lade()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [.bewegen, .trainieren, .erholen])
+        u.daten?.einstellungen.aendere { $0.schritteMitzaehlen = false }
+        m.berechne()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [.trainieren, .erholen], "aus: kein Schritte-Bogen, die anderen rücken nach")
+        XCTAssertEqual(m.stand?.boegenSatz, "Gym: 0 von 3 Tagen. Schlaf: 8:00 h von 8:00 h.")
+        u.daten?.einstellungen.aendere { $0.setze(.gym, an: false); $0.setze(.schlaf, an: false) }
+        m.berechne()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [])
+        XCTAssertEqual(m.stand?.boegenSatz, "")
+        XCTAssertFalse(m.stand?.boegenVoll ?? true, "ohne Bogen ist nichts voll")
+        u.daten?.einstellungen.aendere { $0.schritteMitzaehlen = true }
+        m.berechne()
+        XCTAssertEqual(m.stand?.boegen.map(\.id), [.bewegen], "wieder an: der Bogen ist zurück")
+        XCTAssertTrue(m.stand?.boegenVoll ?? false)
+    }
+
     func testHealthMeldungRechnetNeuOhneHealthNochmalZuLesen() async throws {
         let leser = FakeHealthLeser(tage: [TagesWerte(tag: heute, schritte: 4_000)])
         let m = HeuteModell(umgebung: try umgebung(leser: leser))

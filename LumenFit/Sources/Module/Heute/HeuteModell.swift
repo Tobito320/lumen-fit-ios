@@ -213,11 +213,13 @@ final class HeuteModell {
         let schlafMin = nacht?.minuten ?? 0
         // Nur die gewählten Bereiche: ein ausgeschalteter Bogen fehlt hier, in der Ansage und in der Rechnung "alle voll".
         let bereiche = umgebung.bereicheWirksam
-        var boegen: [BogenWert] = [
-            BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
-                      beschriftung: String(localized: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))")),
-        ]
-        var boegenTexte = [String(localized: "Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))")]
+        var boegen: [BogenWert] = []
+        var boegenTexte: [String] = []
+        if bereiche.schritteMitzaehlen {
+            boegen.append(BogenWert(id: .bewegen, anteil: anteil(schritteHeute, ziele.schritte), zahl: HeuteQuellen.zahl(schritteHeute),
+                                    beschriftung: String(localized: "Schritte von \(HeuteQuellen.zahl(ziele.schritte))")))
+            boegenTexte.append(String(localized: "Schritte: \(HeuteQuellen.zahl(schritteHeute)) von \(HeuteQuellen.zahl(ziele.schritte))"))
+        }
         if bereiche.gymAn {
             boegen.append(BogenWert(id: .trainieren, anteil: anteil(gymWoche, gymZiel), zahl: String(localized: "\(gymWoche) von \(gymZiel)"), beschriftung: String(localized: "Gym-Tage der Woche")))
             boegenTexte.append(String(localized: "Gym: \(gymWoche) von \(gymZiel) Tagen"))
@@ -227,8 +229,9 @@ final class HeuteModell {
                                     beschriftung: String(localized: "Schlaf von \(BereitScore.stunden(schlafZiel))")))
             boegenTexte.append(nacht == nil ? String(localized: "Schlaf: keine Daten") : String(localized: "Schlaf: \(BereitScore.stunden(schlafMin)) von \(BereitScore.stunden(schlafZiel))"))
         }
-        let boegenSatz = boegenTexte.joined(separator: ". ") + "."
-        let voll = boegen.allSatisfy { $0.anteil >= 1 }
+        let boegenSatz = boegenTexte.isEmpty ? "" : boegenTexte.joined(separator: ". ") + "."
+        // Ohne Bogen ist nichts "voll" (allSatisfy wäre sonst true).
+        let voll = !boegen.isEmpty && boegen.allSatisfy { $0.anteil >= 1 }
 
         // Lumis Satz und Stimmung
         let satz = Morgensatz.sprich(Morgensatz.Eingabe(score: score, stimmungsWert: stimmungsWert, planName: plan.art == .training ? plan.name : nil,

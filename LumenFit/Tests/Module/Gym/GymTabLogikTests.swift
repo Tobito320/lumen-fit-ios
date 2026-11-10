@@ -27,6 +27,20 @@ final class GymTabLogikTests: XCTestCase {
         XCTAssertEqual(GymTabLogik.kurzversion(lang, minuten: neueRegel).uebungen.map(\.id), ["a"])
     }
 
+    func testKurzversionTrenntKeinenSupersatz() {
+        var b = uebung("b")
+        b.supersatz = true
+        // a 17 -> 15 min, a+b 27,5 -> 25 min, a+b+c 38 -> 40: früher blieb b ohne seinen Partner c.
+        let paarAmRand = TrainingsTag(id: "t", name: "", wochentage: [], uebungen: [uebung("a", saetze: 2), b, uebung("c")])
+        XCTAssertEqual(GymTabLogik.kurzversion(paarAmRand, minuten: neueRegel).uebungen.map(\.id), ["a"])
+        XCTAssertEqual(GymTabLogik.kurzWeg(paarAmRand, minuten: neueRegel), ["b", "c"])
+        // Ein Paar ganz vorn bleibt als Ganzes, auch wenn es allein schon zu lang ist.
+        var a = uebung("a", saetze: 5)
+        a.supersatz = true
+        let paarVorn = TrainingsTag(id: "t", name: "", wochentage: [], uebungen: [a, uebung("b", saetze: 5), uebung("c")])
+        XCTAssertEqual(GymTabLogik.kurzversion(paarVorn, minuten: neueRegel).uebungen.map(\.id), ["a", "b"])
+    }
+
     func testKurzLohntNichtWennDerTagSchonPasst() {
         XCTAssertFalse(GymTabLogik.kurzLohnt(tag(1), minuten: neueRegel))
         XCTAssertTrue(GymTabLogik.kurzWeg(tag(1), minuten: neueRegel).isEmpty)
