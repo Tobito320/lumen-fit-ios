@@ -116,8 +116,9 @@ final class EssenKiAuftragTests: XCTestCase {
     }
 
     @MainActor
+    /// Bis 20 s: der CI-Simulator ist manchmal langsam (Lauf vom 10.11.2026 brauchte über 5 s für den Fehlerfall).
     private func warte(_ bedingung: @MainActor () -> Bool) async throws {
-        for _ in 0..<200 where !bedingung() { try await Task.sleep(for: .milliseconds(25)) }
+        for _ in 0..<800 where !bedingung() { try await Task.sleep(for: .milliseconds(25)) }
     }
 
     @MainActor
