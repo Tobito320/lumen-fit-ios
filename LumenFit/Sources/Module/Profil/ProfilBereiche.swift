@@ -5,8 +5,8 @@ enum ProfilBereiche {
     static func titel(_ bereich: AppBereich) -> String {
         switch bereich {
         case .gym: "Gym"
-        case .essen: "Essen"
-        case .schlaf: "Schlaf"
+        case .essen: String(localized: "Essen")
+        case .schlaf: String(localized: "Schlaf")
         }
     }
 
@@ -21,7 +21,7 @@ enum ProfilBereiche {
     /// Die Bereiche, die diese Person wählen kann: Schlaf nur mit Erlaubnis des Servers (`ServerConfig.schlafSichtbar`).
     static func waehlbar(schlafSichtbar: Bool) -> [AppBereich] { AppBereich.allCases.filter { $0 != .schlaf || schlafSichtbar } }
 
-    static let erklaerung = "Ausblenden löscht nichts. Deine Daten bleiben, bis du den Bereich wieder einschaltest. Einer bleibt immer an."
+    static let erklaerung = String(localized: "Ausblenden löscht nichts. Deine Daten bleiben, bis du den Bereich wieder einschaltest. Einer bleibt immer an.")
 
     /// Schaltet einen Bereich im aktiven Profil. false, wenn nichts passiert ist (kein Profil oder der letzte eingeschaltete Bereich).
     /// Beim Einschalten werden die fehlenden Health-Rechte erfragt und die Beobachtung nachgemeldet.

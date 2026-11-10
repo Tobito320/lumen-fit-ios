@@ -37,25 +37,25 @@ enum ProfilLoveaFehler: Error, Equatable, Sendable {
 
     var titel: String {
         switch self {
-        case .nichtErlaubt: "Nicht freigegeben"
-        case .profilNichtLeer: "Das Profil hat schon Einträge"
-        case .netz: "Keine Verbindung zu Lovea"
-        case .abgelehnt: "Lovea hat den Zugang abgelehnt"
-        case .server: "Lovea antwortet nicht richtig"
-        case .antwortKaputt: "Die Antwort von Lovea ist unlesbar"
-        case .speichern: "Konnte nicht speichern"
+        case .nichtErlaubt: String(localized: "Nicht freigegeben")
+        case .profilNichtLeer: String(localized: "Das Profil hat schon Einträge")
+        case .netz: String(localized: "Keine Verbindung zu Lovea")
+        case .abgelehnt: String(localized: "Lovea hat den Zugang abgelehnt")
+        case .server: String(localized: "Lovea antwortet nicht richtig")
+        case .antwortKaputt: String(localized: "Die Antwort von Lovea ist unlesbar")
+        case .speichern: String(localized: "Konnte nicht speichern")
         }
     }
 
     var hilfe: String {
         switch self {
-        case .nichtErlaubt: "Für dieses Profil ist der Import aus Lovea nicht freigegeben."
-        case .profilNichtLeer: "Bestätige den Import, dann wird Neues dazugelegt und Gleiches übersprungen."
-        case .netz: "Prüfe dein Netz und versuch es nochmal. Es wurde noch nichts übernommen."
-        case .abgelehnt: "Der Schlüssel passt nicht oder die Person ist unbekannt. Es wurde noch nichts übernommen."
-        case .server: "Lovea hat einen Fehler gemeldet. Versuch es später nochmal. Es wurde noch nichts übernommen."
-        case .antwortKaputt: "Die Daten kamen in einer Form an, die Lumen Fit nicht versteht. Es wurde noch nichts übernommen."
-        case .speichern: "Ist auf dem iPhone der Speicher voll? Gib Platz frei und versuch es nochmal. Schon Übernommenes bleibt, nichts wird doppelt."
+        case .nichtErlaubt: String(localized: "Für dieses Profil ist der Import aus Lovea nicht freigegeben.")
+        case .profilNichtLeer: String(localized: "Bestätige den Import, dann wird Neues dazugelegt und Gleiches übersprungen.")
+        case .netz: String(localized: "Prüfe dein Netz und versuch es nochmal. Es wurde noch nichts übernommen.")
+        case .abgelehnt: String(localized: "Der Schlüssel passt nicht oder die Person ist unbekannt. Es wurde noch nichts übernommen.")
+        case .server: String(localized: "Lovea hat einen Fehler gemeldet. Versuch es später nochmal. Es wurde noch nichts übernommen.")
+        case .antwortKaputt: String(localized: "Die Daten kamen in einer Form an, die Lumen Fit nicht versteht. Es wurde noch nichts übernommen.")
+        case .speichern: String(localized: "Ist auf dem iPhone der Speicher voll? Gib Platz frei und versuch es nochmal. Schon Übernommenes bleibt, nichts wird doppelt.")
         }
     }
 
@@ -283,9 +283,9 @@ enum ProfilLoveaImport {
                           bestaetigt: Bool, stand: ProfilLoveaLadeStand? = nil, fortschritt: @MainActor (String) -> Void = { _ in }) async throws -> ProfilLoveaErgebnis {
         guard freigegeben else { throw ProfilLoveaFehler.nichtErlaubt }
         if ProfilSicherungLogik.hatDaten(daten), !bestaetigt { throw ProfilLoveaFehler.profilNichtLeer }
-        let abzug = try await hole(zugang: zugang, lader: lader, stand: stand) { n in fortschritt("\(n) Einträge geladen") }
+        let abzug = try await hole(zugang: zugang, lader: lader, stand: stand) { n in fortschritt(String(localized: "\(n) Einträge geladen")) }
         let plan = plane(abzug, fuer: daten.profil)
-        var ergebnis = try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt("\(fertig) von \(gesamt) gespeichert") }
+        var ergebnis = try await spieleEin(plan, in: daten) { fertig, gesamt in fortschritt(String(localized: "\(fertig) von \(gesamt) gespeichert")) }
         // Danach, weil es nur Ops liest, die oben geschrieben wurden; ein zweiter Lauf findet alles schon vor und überschreibt nichts.
         ergebnis.uebernahme = ProfilLoveaUebernahme.uebernehme(plan.ops, in: daten)
         return ergebnis

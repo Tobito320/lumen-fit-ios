@@ -14,10 +14,10 @@ enum ProfilUmzugLogik {
     static func zeilen(essenAn: Bool, schlafSichtbar: Bool, loveaErlaubt: Bool) -> [ProfilUmzugZeile] {
         var liste: [ProfilUmzugZeile] = []
         if essenAn {
-            liste.append(ProfilUmzugZeile(titel: "Essen", untertitel: loveaErlaubt ? "Zieht bald zu Lovea um" : "", symbol: "fork.knife", route: .essen(.heute)))
+            liste.append(ProfilUmzugZeile(titel: String(localized: "Essen"), untertitel: loveaErlaubt ? String(localized: "Zieht bald zu Lovea um") : "", symbol: "fork.knife", route: .essen(.heute)))
         }
         if schlafSichtbar {
-            liste.append(ProfilUmzugZeile(titel: "Schlaf", untertitel: "Zieht bald zu Lumen Alarm um", symbol: "bed.double.fill", route: .schlaf(.letzteNacht)))
+            liste.append(ProfilUmzugZeile(titel: String(localized: "Schlaf"), untertitel: String(localized: "Zieht bald zu Lumen Alarm um"), symbol: "bed.double.fill", route: .schlaf(.letzteNacht)))
         }
         return liste
     }

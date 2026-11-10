@@ -31,7 +31,7 @@ final class LoveaEinmalImport {
         guard konto.loveaImportOffen else { return false }
         guard let daten else { await meldeStill("keine_daten", konto: konto); return false }
         guard let zugang = konto.loveaZugang() else { await meldeStill("kein_zugang", konto: konto); return false }
-        zustand = .laeuft("Lade")
+        zustand = .laeuft(String(localized: "Lade"))
         let stand = ProfilLoveaLadeStand()
         // Kurz zurück zum Home-Bildschirm bricht den Lauf nicht ab: iOS gibt dafür grob 30 Sekunden.
         let wach = hintergrund ?? EssenKiSystemHintergrund()
@@ -108,10 +108,10 @@ struct LoveaEinmalKarte: View {
                 .onTapGesture { lauf.schliesse() }
                 .task { try? await Task.sleep(for: .seconds(10)); lauf.schliesse() }
             case .unvollstaendig:
-                FehlerKarte(titel: "Nicht alles ist angekommen", hilfe: "Lumen Fit hat die Lücke gemeldet und versucht es beim nächsten Start nochmal. Lovea blieb unverändert.")
+                FehlerKarte(titel: String(localized: "Nicht alles ist angekommen"), hilfe: String(localized: "Lumen Fit hat die Lücke gemeldet und versucht es beim nächsten Start nochmal. Lovea blieb unverändert."))
                     .onTapGesture { lauf.schliesse() }
             case .fehler(let f):
-                FehlerKarte(titel: f.titel, hilfe: f.hilfe + " Lumen Fit versucht es beim nächsten Öffnen nochmal.")
+                FehlerKarte(titel: f.titel, hilfe: f.hilfe + " " + String(localized: "Lumen Fit versucht es beim nächsten Öffnen nochmal."))
                     .onTapGesture { lauf.schliesse() }
             }
         }
@@ -126,6 +126,6 @@ struct LoveaEinmalKarte: View {
 
     /// "12 Trainings, 30 Tage Essen übernommen; 5 neu ..." in einfachen Worten.
     static func ergebnisText(_ e: ProfilLoveaErgebnis) -> String {
-        "\(e.trainings) Trainings und \(e.essenstage) Tage Essen sind jetzt in Lumen Fit. Lovea blieb unverändert."
+        String(localized: "\(e.trainings) Trainings und \(e.essenstage) Tage Essen sind jetzt in Lumen Fit. Lovea blieb unverändert.")
     }
 }

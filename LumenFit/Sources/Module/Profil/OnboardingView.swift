@@ -24,7 +24,7 @@ struct OnboardingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Abstand.xl) {
                     EinfuehrungKarte(fluss: fluss, fokus: $fokus)
-                    if let fehler = fluss.fehler { FehlerKarte(titel: "Das hat nicht geklappt", hilfe: fehler) }
+                    if let fehler = fluss.fehler { FehlerKarte(titel: String(localized: "Das hat nicht geklappt"), hilfe: fehler) }
                 }
                 .padding(.horizontal, Abstand.l)
                 .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))

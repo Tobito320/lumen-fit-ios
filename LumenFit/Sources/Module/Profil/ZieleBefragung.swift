@@ -12,10 +12,10 @@ enum ZieleLogik {
     }
 
     static let optionen: [Wahl] = [
-        Wahl(id: "po", name: "Po und Beine formen", hinweis: "Po, Beinbeuger, Quadrizeps", gruppen: [.beine, .bauch]),
-        Wahl(id: "stark", name: "Stärker werden", hinweis: "Mehr Gewicht bei den Grundübungen", gruppen: [.beine, .ruecken, .brust]),
-        Wahl(id: "straff", name: "Straffen", hinweis: "Ganzer Körper, Muskeln halten", gruppen: [.beine, .ruecken, .schulter]),
-        Wahl(id: "haltung", name: "Rücken und Haltung", hinweis: "Oberer Rücken, Schulter hinten, Rumpf", gruppen: [.ruecken, .schulter, .bauch]),
+        Wahl(id: "po", name: String(localized: "Po und Beine formen"), hinweis: String(localized: "Po, Beinbeuger, Quadrizeps"), gruppen: [.beine, .bauch]),
+        Wahl(id: "stark", name: String(localized: "Stärker werden"), hinweis: String(localized: "Mehr Gewicht bei den Grundübungen"), gruppen: [.beine, .ruecken, .brust]),
+        Wahl(id: "straff", name: String(localized: "Straffen"), hinweis: String(localized: "Ganzer Körper, Muskeln halten"), gruppen: [.beine, .ruecken, .schulter]),
+        Wahl(id: "haltung", name: String(localized: "Rücken und Haltung"), hinweis: String(localized: "Oberer Rücken, Schulter hinten, Rumpf"), gruppen: [.ruecken, .schulter, .bauch]),
     ]
 
     static let auffuellen: [MuskelGruppe] = [.beine, .ruecken, .schulter, .bauch, .brust]
@@ -120,9 +120,9 @@ struct ZieleBefragungView: View {
 
     @ViewBuilder private var kopf: some View {
         switch schritt {
-        case 0: titel("Was willst du im Gym erreichen?", "Mehrere gehen.")
-        case 1: titel("Wie oft trainierst du pro Woche?", "Danach richtet sich, wie viele Sätze pro Muskel realistisch sind.")
-        default: titel("Das ist deine Reihenfolge", "Daraus rechnet die App deine Satzziele pro Woche. Ändern geht jederzeit.")
+        case 0: titel(String(localized: "Was willst du im Gym erreichen?"), String(localized: "Mehrere gehen."))
+        case 1: titel(String(localized: "Wie oft trainierst du pro Woche?"), String(localized: "Danach richtet sich, wie viele Sätze pro Muskel realistisch sind."))
+        default: titel(String(localized: "Das ist deine Reihenfolge"), String(localized: "Daraus rechnet die App deine Satzziele pro Woche. Ändern geht jederzeit."))
         }
     }
 
@@ -149,7 +149,7 @@ struct ZieleBefragungView: View {
         case 1:
             ListenKarte {
                 ForEach(2...5, id: \.self) { n in
-                    ProfilAuswahlZeile(titel: "\(n)× pro Woche", hinweis: nil, an: tage == n) { tage = n }
+                    ProfilAuswahlZeile(titel: String(localized: "\(n)× pro Woche"), hinweis: nil, an: tage == n) { tage = n }
                     if n < 5 { Haarlinie() }
                 }
             }

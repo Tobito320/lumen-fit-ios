@@ -16,7 +16,7 @@ struct DatensicherungView: View {
     var body: some View {
         List {
             if umgebung.neuinstallationErkannt {
-                ProfilAbschnitt("Willkommen zurück", fuss: "Dein Profil ist wieder da, Trainings und Essen kommen mit der Sicherung.") {
+                ProfilAbschnitt(String(localized: "Willkommen zurück"), fuss: String(localized: "Dein Profil ist wieder da, Trainings und Essen kommen mit der Sicherung.")) {
                     Button("Ohne Sicherung weiter") { umgebung.neuinstallationQuittieren() }
                 }
             }
@@ -25,8 +25,8 @@ struct DatensicherungView: View {
                     Label(fehler, systemImage: "exclamationmark.triangle.fill").foregroundStyle(palette.text)
                 }
             }
-            ProfilAbschnitt(fuss: "Trainings, Essen, Gewohnheiten, Ziele und Einstellungen in einer Datei, ohne Passwort.") {
-                ProfilListenZeile("Letzte Sicherung", wert: kurz)
+            ProfilAbschnitt(fuss: String(localized: "Trainings, Essen, Gewohnheiten, Ziele und Einstellungen in einer Datei, ohne Passwort.")) {
+                ProfilListenZeile(String(localized: "Letzte Sicherung"), wert: kurz)
                 Button(action: erstelle) {
                     Label(datei == nil ? "Sicherung erstellen" : "Neu erstellen", systemImage: "externaldrive.badge.plus")
                 }
@@ -34,7 +34,7 @@ struct DatensicherungView: View {
                     ShareLink(item: datei) { Label("\(datei.lastPathComponent) teilen", systemImage: "square.and.arrow.up") }
                 }
             }
-            ProfilAbschnitt(fuss: "Was schon da ist, wird übersprungen, nichts wird doppelt.") {
+            ProfilAbschnitt(fuss: String(localized: "Was schon da ist, wird übersprungen, nichts wird doppelt.")) {
                 Button { fehler = nil; waehlen = true } label: {
                     Label("Sicherung einspielen", systemImage: "square.and.arrow.down")
                 }
@@ -65,7 +65,7 @@ struct DatensicherungView: View {
             datei = try ProfilSicherungLogik.schreibeDatei(aus: daten, jetzt: umgebung.uhr())
             fehler = nil
         } catch {
-            fehler = "Die Sicherung konnte nicht geschrieben werden. Prüfe, ob auf deinem iPhone Platz frei ist."
+            fehler = String(localized: "Die Sicherung konnte nicht geschrieben werden. Prüfe, ob auf deinem iPhone Platz frei ist.")
         }
     }
 
@@ -81,17 +81,17 @@ struct DatensicherungView: View {
         } catch let f as ProfilSicherungFehler {
             fehler = f.text
         } catch {
-            fehler = "Die Datei konnte nicht gelesen werden."
+            fehler = String(localized: "Die Datei konnte nicht gelesen werden.")
         }
     }
 
-    private var bestaetigungTitel: String { "Sicherung einspielen?" }
+    private var bestaetigungTitel: String { String(localized: "Sicherung einspielen?") }
 
     private var bestaetigungText: String {
         guard let offen else { return "" }
-        var text = "\(offen.ops.count) Einträge vom \(Datum.anzeige(Datum.text(offen.erstellt)))."
+        var text = String(localized: "\(offen.ops.count) Einträge vom \(Datum.anzeige(Datum.text(offen.erstellt))).")
         if let daten = umgebung.daten, ProfilSicherungLogik.hatDaten(daten) {
-            text += " Dein Profil hat schon Einträge: Neues wird dazugelegt, Gleiches übersprungen, deine Einstellungen bleiben."
+            text += " " + String(localized: "Dein Profil hat schon Einträge: Neues wird dazugelegt, Gleiches übersprungen, deine Einstellungen bleiben.")
         }
         return text
     }
@@ -102,9 +102,9 @@ struct DatensicherungView: View {
         let ergebnis = ProfilSicherungLogik.spieleEin(sicherung, in: daten)
         umgebung.neuinstallationQuittieren()
         if ergebnis.neu == 0, ergebnis.uebersprungen > 0 {
-            toast = ToastInhalt(titel: "Schon eingespielt", zeile: "Alles aus dieser Sicherung war schon da.", stimmung: .bereit)
+            toast = ToastInhalt(titel: String(localized: "Schon eingespielt"), zeile: String(localized: "Alles aus dieser Sicherung war schon da."), stimmung: .bereit)
         } else {
-            toast = ToastInhalt(titel: "Eingespielt", zeile: "\(ergebnis.neu) Einträge sind wieder da.", stimmung: .ziel)
+            toast = ToastInhalt(titel: String(localized: "Eingespielt"), zeile: String(localized: "\(ergebnis.neu) Einträge sind wieder da."), stimmung: .ziel)
         }
     }
 }

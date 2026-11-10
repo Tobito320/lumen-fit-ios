@@ -249,7 +249,7 @@ struct ProfilDatenView: View {
                     ProfilListenZeile(String(localized: "Als Tabelle teilen"), symbol: "tablecells", farbe: Bereichsfarbe.einstellungen)
                 }
             }
-            ProfilAbschnitt(fuss: "Löscht Profil und alle Daten auf diesem iPhone.") {
+            ProfilAbschnitt(fuss: String(localized: "Löscht Profil und alle Daten auf diesem iPhone.")) {
                 Button(role: .destructive) { loeschen = true } label: { Label("Alles löschen", systemImage: "trash.fill") }
             }
         }
@@ -268,9 +268,9 @@ struct ProfilUeberView: View {
     var body: some View {
         List {
             ProfilAbschnitt {
-                NavigationLink { ProfilDatenschutzView() } label: { ProfilListenZeile("Datenschutz", symbol: "hand.raised.fill") }
-                NavigationLink { QuellenView() } label: { ProfilListenZeile("Quellen und Lizenzen", symbol: "doc.text.fill") }
-                ProfilListenZeile("Version", symbol: "info.circle", wert: ProfilAppInfo.version)
+                NavigationLink { ProfilDatenschutzView() } label: { ProfilListenZeile(String(localized: "Datenschutz"), symbol: "hand.raised.fill") }
+                NavigationLink { QuellenView() } label: { ProfilListenZeile(String(localized: "Quellen und Lizenzen"), symbol: "doc.text.fill") }
+                ProfilListenZeile(String(localized: "Version"), symbol: "info.circle", wert: ProfilAppInfo.version)
             }
         }
         .profilListe()
@@ -331,15 +331,15 @@ struct ProfilAnlegenBlatt: View {
                 try await umgebung.profil.anlegenImHintergrund(name: name, passwort: passwort)
                 dismiss()
             } catch ProfilFehler.nameLeer {
-                fehler = "Wie soll das Profil heißen?"
+                fehler = String(localized: "Wie soll das Profil heißen?")
             } catch ProfilFehler.nameUngueltig(let grund) {
                 fehler = NamenRegel.text(grund)
             } catch ProfilFehler.nichtErlaubt {
-                fehler = "Weitere Profile sind auf diesem iPhone nicht möglich."
+                fehler = String(localized: "Weitere Profile sind auf diesem iPhone nicht möglich.")
             } catch ProfilFehler.passwortZuKurz {
-                fehler = "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen."
+                fehler = String(localized: "Das Passwort braucht mindestens \(Passwort.mindestLaenge) Zeichen.")
             } catch {
-                fehler = "Das Profil konnte nicht gespeichert werden. Versuch es nochmal."
+                fehler = String(localized: "Das Profil konnte nicht gespeichert werden. Versuch es nochmal.")
             }
         }
     }
@@ -355,10 +355,10 @@ struct ProfilLoeschenBlatt: View {
     var body: some View {
         if weiter {
             let ohne = umgebung.profil.aktiv?.ohnePasswort ?? false
-            ProfilPasswortBlatt(titel: "Alles löschen",
-                                erklaerung: ohne ? "Zur Bestätigung tippe auf Alles löschen. Das lässt sich nicht rückgängig machen."
-                                                 : "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen.",
-                                knopf: "Alles löschen", zerstoererisch: true, ohneAlt: ohne, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
+            ProfilPasswortBlatt(titel: String(localized: "Alles löschen"),
+                                erklaerung: ohne ? String(localized: "Zur Bestätigung tippe auf Alles löschen. Das lässt sich nicht rückgängig machen.")
+                                                 : String(localized: "Zur Bestätigung dein Passwort. Das lässt sich nicht rückgängig machen."),
+                                knopf: String(localized: "Alles löschen"), zerstoererisch: true, ohneAlt: ohne, zuruecksetzen: umgebung.profil.aktiv) { passwort, _ in
                 await ProfilLoeschen.fuehreAusImHintergrund(umgebung, passwort: passwort)
             }
         } else {
@@ -427,7 +427,7 @@ struct ProfilZuruecksetzenBlatt: View {
                         }
                     }
                     if misslungen {
-                        FehlerKarte(titel: "Das hat nicht geklappt", hilfe: "Das Profil konnte nicht gelöscht werden. Versuch es nochmal.")
+                        FehlerKarte(titel: String(localized: "Das hat nicht geklappt"), hilfe: String(localized: "Das Profil konnte nicht gelöscht werden. Versuch es nochmal."))
                     }
                     Button(role: .destructive) { frage = true } label: { Text("Profil zurücksetzen").frame(maxWidth: .infinity, minHeight: Abstand.tippflaeche) }
                         .buttonStyle(.borderedProminent)
