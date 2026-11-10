@@ -1,9 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// Der Heute-Tab: ruhiger Einstieg. Oben die Ringplatte als einzige mutige Karte, darunter Plan, Hinweise (nur bei Bedarf), Einsichten, Energie-Bank,
-/// Schritte, der Wochenstreifen, Gewohnheiten und Gewicht, jede Karte einmal und ohne "Mehr". Die Partner-Karte erscheint nur mit Verbindung.
-/// Ohne Health zeigt er statt der Health-Karten einen Leerzustand mit "Health erlauben"; Plan, Gewohnheiten und Gewicht gehen auch ohne.
+/// Die Startseite (Aufteilung B, Bild `home-*.png`): oben Plan für heute mit Start, dann die Woche (ohne Freunde und Partner), Gewohnheiten, Gewicht,
+/// das letzte Training zum Nachlesen und unten die Ringplatte mit Lumi. Tagesform, Energie-Bank, Einsichten, Hinweise und die Schritte-Karte zeigt sie nicht mehr
+/// (Code und Detailseiten bleiben, Schritte stehen im Profil). Ohne Health zeigt sie statt der Ringplatte einen Leerzustand mit "Health erlauben".
 struct HeuteTabView: View {
     @Environment(AppUmgebung.self) private var umgebung
     @State private var modell: HeuteModell?
@@ -23,7 +23,7 @@ struct HeuteTabView: View {
                 inhalt(stand, modell)
             }
         }
-        .navigationTitle("Heute")
+        .navigationTitle("Startseite")
         .navigationBarTitleDisplayMode(.automatic)
         .lumenHintergrund()
         .sheet(item: $blatt) { blatt in
@@ -46,12 +46,11 @@ struct HeuteTabView: View {
     }
 
     private func inhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
-        // Karten zum Wegwischen (Hinweise) wischen selbst waagerecht: dann gilt die Tagwahl-Geste nur auf der Leiste, sonst auf der ganzen Seite.
-        let ueberall = !s.istHeute || s.hinweise.isEmpty
-        return VStack(spacing: Abstand.l) {
+        // Die Hinweise-Karte (die einzige, die waagerecht wischte) steht nicht mehr auf der Startseite: die Tagwahl-Geste gilt auf der ganzen Seite.
+        VStack(spacing: Abstand.l) {
             HeuteTagLeiste(tag: s.tag, heute: Datum.text(umgebung.uhr()), blaettere: { blaettere($0) }, kalender: { blatt = .kalender },
                            zuHeute: { springe(zu: Datum.text(umgebung.uhr())) })
-                .simultaneousGesture(tagWischen, including: ueberall ? .subviews : .all)
+                .simultaneousGesture(tagWischen, including: .subviews)
             VStack(spacing: Abstand.l) {
                 if s.istHeute { heuteInhalt(s, m) } else { vergangenerTag(s, m) }
             }
@@ -62,7 +61,7 @@ struct HeuteTabView: View {
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
-        .simultaneousGesture(tagWischen, including: ueberall ? .all : .subviews)
+        .simultaneousGesture(tagWischen, including: .all)
     }
 
     /// Waagerecht wischen: nach links der nächste Tag, nach rechts der Tag davor (nur ein langer, klar waagerechter Zug).
@@ -75,19 +74,22 @@ struct HeuteTabView: View {
 
     @ViewBuilder
     private func heuteInhalt(_ s: HeuteStand, _ m: HeuteModell) -> some View {
+        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
+        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
+        habitsKarte(s, m)
+        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
+        if s.bereiche.gymAn, let letzte = letzteEinheit { LetzteEinheitKarte(einheit: letzte) }
         if s.hatGesundheit {
             Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
-        if s.bereiche.gymAn { PlanKarte(plan: s.plan) { starte(s.plan) } }
-        if !s.hinweise.isEmpty { HinweiseKarte(hinweise: s.hinweise, einzeln: true) { m.wischeHinweis($0) } }
-        if !s.einsichten.isEmpty { EinsichtenKarte(einsichten: s.einsichten) }
-        if s.hatGesundheit, s.bereiche.schlafAn { EnergieBank(energie: s.energie) { blatt = .energie } }
-        if s.hatGesundheit { SchritteKarte(schritte: s.schritte) { blatt = .schritte } }
-        WochenStreifen(woche: s.woche, bereiche: s.bereiche) { blatt = .tag($0) }
-        habitsKarte(s, m)
-        GewichtKarte(gewicht: s.gewicht) { blatt = .gewicht }
+    }
+
+    /// Das letzte beendete Training mit Daten; nil ohne.
+    private var letzteEinheit: LetzteEinheit? {
+        guard let training = umgebung.daten?.training else { return nil }
+        return LetzteEinheitLogik.bauen(sessions: training.sessions) { training.tag(id: $0) }
     }
 
     /// Ein vergangener Tag: nur die Karten, die ihre Werte für genau diesen Tag haben. Plan, Hinweise, Energie von jetzt und Partner fehlen
