@@ -67,8 +67,7 @@ enum KoerperLogik {
             let datum = Datum.addTage(heute, i)
             guard let tag = TrainingLogik.tag(plan, datum: datum), !tag.uebungen.isEmpty else { continue }
             let saetze = tag.uebungen.reduce(0) { $0 + $1.saetze.count }
-            let cardio = tag.uebungen.compactMap(\.minuten).reduce(0, +)
-            let minuten = (saetze * 4 + cardio + 4) / 5 * 5 // shortcut: 4 min pro Satz, auf 5 gerundet; genauer mit ZeitSchaetzung (Modul gym)
+            let minuten = ZeitSchaetzung.minuten(tag)
             let wann = i == 0 ? "Heute" : i == 1 ? "Morgen" : TrainingLogik.wochentagName[Datum.wochentag(datum) - 1]
             var meta = ["\(wann), \(tagMonat(datum))", "\(tag.uebungen.count) \(tag.uebungen.count == 1 ? "Übung" : "Übungen")"]
             if saetze > 0 { meta.append("\(saetze) Sätze") }

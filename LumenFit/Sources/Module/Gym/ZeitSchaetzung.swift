@@ -1,4 +1,4 @@
-// Quelle: Lovea Health/Zeit/ZeitSchaetzung.swift (plus `umfang`, in Lovea `GymStartLogik.umfang`: dieser Typ gehört dem Grundgerüst)
+// Quelle: Lovea Health/Zeit/ZeitSchaetzung.swift (plus `umfang`, in Lovea `GymStartLogik.umfang`: dieser Typ gehört dem Grundgerüst); Regel 10 min + 3,5 min je Satz seit 10.11.2026
 import Foundation
 
 /// Was die Zeitschätzung dem Tag rät, wenn er über das Studio-Fenster geht.
@@ -32,19 +32,14 @@ struct ZeitUrteil: Equatable, Sendable {
     }
 }
 
-/// Dauer eines Trainingstags aus Sätzen, Pausen und Wechseln.
-// ponytail: Alle Zahlen unten sind Schätzungen, nicht gemessen. Satz ca. 40 s, Pause aus dem Plan (sonst 90 s),
-// Wechsel zur nächsten Übung ca. 60 s. Gemessen wird erst, wenn am Gerät Abweichungen gemeldet werden.
+/// Dauer eines Trainingstags: 10 min Aufwärmen plus 3,5 min je Satz (Pause und Wechsel inklusive), Cardio-Minuten extra, auf 5 min gerundet.
+// ponytail: Die Zahlen sind die Regel aus dem Entwurf (5 Übungen × 3 Sätze = 65 min), nicht gemessen. Im Supersatz
+// teilen sich zwei Übungen die Pause: die zweite kostet je Runde nur ihre Arbeit (ca. 1 min).
 enum ZeitSchaetzung {
-    static let satzSekunden = 40
-    static let standardPauseSekunden = 90
-    static let wechselSekunden = 60
-
-    /// Pause nach einem Satz: die der Übung, sonst Standard (0 heißt im Plan "ohne Ziel", nicht "ohne Pause").
-    static func pause(_ u: PlanUebung) -> Int {
-        guard let p = u.pause, p > 0 else { return standardPauseSekunden }
-        return p
-    }
+    static let aufwaermSekunden = 600
+    static let satzSekunden = 210
+    static let supersatzZweiterSekunden = 60
+    static let kurzMinuten = 30
 
     /// Eine Übung allein oder ein Supersatz-Paar (`supersatz` an der ersten). Cardio zählt nie als Paar.
     private static func bloecke(_ uebungen: [PlanUebung]) -> [[PlanUebung]] {
@@ -63,28 +58,51 @@ enum ZeitSchaetzung {
         return aus
     }
 
-    /// Sekunden für einen Block. Paar: alle Sätze beider Übungen, aber nur eine Pause pro Runde.
+    /// Sekunden für einen Block ohne Aufwärmen. Paar: je Runde ein voller Satz, die übrigen Sätze nur ihre Arbeit.
     private static func sekunden(_ block: [PlanUebung]) -> Int {
-        if block.count == 1, let c = block.first, c.istCardio { return (c.minuten ?? 0) * 60 + wechselSekunden }
+        if block.count == 1, let c = block.first, c.istCardio { return (c.minuten ?? 0) * 60 }
         let runden = block.map { $0.saetze.count }.max() ?? 0
-        guard runden > 0 else { return 0 }
         let saetze = block.reduce(0) { $0 + $1.saetze.count }
-        let rast = block.map { ZeitSchaetzung.pause($0) }.max() ?? standardPauseSekunden
-        return saetze * satzSekunden + (runden - 1) * rast + wechselSekunden
+        return runden * satzSekunden + (saetze - runden) * supersatzZweiterSekunden
     }
 
-    private static func minuten(sekunden: Int) -> Int { (sekunden + 59) / 60 }
+    /// Auf 5 min gerundet (halbe nach oben); etwas Zeit ist mindestens 5 min, nichts ist 0.
+    private static func rund(sekunden: Int) -> Int {
+        guard sekunden > 0 else { return 0 }
+        return max(5, Int((Double(sekunden) / 300).rounded()) * 5)
+    }
 
-    /// "6 Übungen · etwa 60 min": Sätze, Pausen, Wechsel, auf 5 min gerundet.
+    /// "6 Übungen · etwa 75 min".
     static func umfang(_ tag: TrainingsTag) -> String {
-        let rund = max(5, Int((Double(minuten(tag)) / 5).rounded()) * 5)
-        return "\(tag.uebungen.count) \(tag.uebungen.count == 1 ? "Übung" : "Übungen") · etwa \(rund) min"
+        let n = tag.uebungen.count, min = minuten(tag)
+        return n == 1 ? String(localized: "1 Übung · etwa \(min) min") : String(localized: "\(n) Übungen · etwa \(min) min")
     }
 
-    static func sekunden(_ tag: TrainingsTag) -> Int { bloecke(tag.uebungen).reduce(0) { $0 + sekunden($1) } }
+    /// Aufwärmen nur, wenn es Sätze gibt (Cardio allein wärmt selbst auf).
+    static func sekunden(_ tag: TrainingsTag) -> Int {
+        let aufwaermen = tag.uebungen.contains { !$0.istCardio && !$0.saetze.isEmpty } ? aufwaermSekunden : 0
+        return aufwaermen + bloecke(tag.uebungen).reduce(0) { $0 + sekunden($1) }
+    }
 
-    /// Aufgerundet auf ganze Minuten. Leerer Tag: 0.
-    static func minuten(_ tag: TrainingsTag) -> Int { minuten(sekunden: sekunden(tag)) }
+    /// Auf 5 min gerundet. Leerer Tag: 0.
+    static func minuten(_ tag: TrainingsTag) -> Int { rund(sekunden: sekunden(tag)) }
+
+    /// Wie viele Sätze in `minuten` passen (Umkehrung ohne Rundung): 45 min = 10 Sätze.
+    static func saetze(inMinuten minuten: Int) -> Int { max(0, (minuten * 60 - aufwaermSekunden) / satzSekunden) }
+
+    /// Kurzversion "Kurz · 30 min": die ersten Übungen (Paare bleiben zusammen), solange die Schätzung höchstens
+    /// `kurzMinuten` ergibt; mindestens die erste Übung. Name und id bleiben, damit das Training zum Plantag zählt.
+    static func kurzversion(_ tag: TrainingsTag, minuten grenze: Int = kurzMinuten) -> TrainingsTag {
+        var kurz = tag
+        kurz.uebungen = []
+        for block in bloecke(tag.uebungen) {
+            var probe = kurz
+            probe.uebungen += block
+            guard kurz.uebungen.isEmpty || minuten(probe) <= grenze else { break }
+            kurz = probe
+        }
+        return kurz
+    }
 
     /// Das Zeitfenster aus dem Studio-Profil: nur mit fester Uhrzeit (`slotStart`), sonst gibt es nichts zu überschreiten.
     static func slot(_ profil: StudioProfil) -> Int? { profil.slotStart != nil && profil.dauer > 0 ? profil.dauer : nil }
@@ -94,7 +112,7 @@ enum ZeitSchaetzung {
     static func urteil(_ tag: TrainingsTag, slotMinuten: Int?) -> ZeitUrteil {
         let fenster = (slotMinuten ?? 0) > 0 ? slotMinuten : nil
         let gesamt = sekunden(tag)
-        let dauer = minuten(sekunden: gesamt)
+        let dauer = rund(sekunden: gesamt)
         guard let fenster, dauer > fenster else { return ZeitUrteil(minuten: dauer, slot: fenster, tipp: nil) }
         return ZeitUrteil(minuten: dauer, slot: fenster, tipp: tipp(tag, gesamt: gesamt, slot: fenster))
     }
@@ -108,16 +126,16 @@ enum ZeitSchaetzung {
             let spart = sekunden([a]) + sekunden([b]) - sekunden([a, b])
             if spart > (bestes?.spart ?? 0) { bestes = (a, b, spart) }
         }
-        if let bestes, minuten(sekunden: gesamt - bestes.spart) <= slot {
+        if let bestes, rund(sekunden: gesamt - bestes.spart) <= slot {
             return .supersatz(erste: bestes.a.anzeigeName, zweite: bestes.b.anzeigeName,
-                              spart: minuten(sekunden: gesamt) - minuten(sekunden: gesamt - bestes.spart))
+                              spart: rund(sekunden: gesamt) - rund(sekunden: gesamt - bestes.spart))
         }
         var rest = gesamt
         var namen: [String] = []
-        for block in paare.reversed() where minuten(sekunden: rest) > slot {
+        for block in paare.reversed() where rund(sekunden: rest) > slot {
             rest -= sekunden(block)
             namen.insert(contentsOf: block.map(\.anzeigeName), at: 0)
         }
-        return namen.isEmpty ? nil : .streichen(namen: namen, spart: minuten(sekunden: gesamt) - minuten(sekunden: rest))
+        return namen.isEmpty ? nil : .streichen(namen: namen, spart: rund(sekunden: gesamt) - rund(sekunden: rest))
     }
 }

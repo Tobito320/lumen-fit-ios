@@ -21,7 +21,7 @@ final class NaechstesTrainingTests: XCTestCase {
         XCTAssertEqual(v.art, .beine)
         XCTAssertEqual(v.titel, "Heute Beine, 45 Minuten")
         XCTAssertEqual(v.begruendung, "Beine sind zu 100 Prozent erholt, am meisten von allen.")
-        XCTAssertEqual(v.saetze, 11)
+        XCTAssertEqual(v.saetze, 10) // 45 min = 10 min Aufwärmen + 10 × 3,5 min
     }
 
     func testErholterPlantagGewinntMitBegruendung() throws {

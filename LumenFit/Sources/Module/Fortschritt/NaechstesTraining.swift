@@ -8,7 +8,7 @@ struct TrainingsVorschlag: Equatable, Sendable {
     let titel: String
     /// Ein Satz mit den echten Zahlen: "Beine sind zu 100 Prozent erholt, Brust und Schulter erst zu 55 Prozent."
     let begruendung: String
-    /// Richtwert Sätze, die in die Zeit passen (vier Minuten je Satz).
+    /// Richtwert Sätze, die in die Zeit passen (`ZeitSchaetzung.saetze(inMinuten:)`).
     let saetze: Int
 }
 
@@ -87,7 +87,7 @@ enum NaechstesTraining {
                 begruendung += " Dein Plan sieht \(geplant.name) vor, aber \(geplant.name) \(verb(geplant)) erst zu \(prozent[geplant] ?? 0) Prozent erholt."
             }
         }
-        return TrainingsVorschlag(art: gewaehlt, minuten: zeit, titel: "Heute \(gewaehlt.name), \(zeit) Minuten", begruendung: begruendung, saetze: zeit / 4)
+        return TrainingsVorschlag(art: gewaehlt, minuten: zeit, titel: "Heute \(gewaehlt.name), \(zeit) Minuten", begruendung: begruendung, saetze: ZeitSchaetzung.saetze(inMinuten: zeit))
     }
 
     /// "ist" für eine Gruppe, "sind" für mehrere ("Beine sind", "Bauch ist").
