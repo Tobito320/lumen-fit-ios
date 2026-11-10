@@ -221,11 +221,13 @@ final class VerbindenDienste {
         switch ereignis {
         case .trainingGestartet, .trainingBeendet, .satzFertig:
             if case .satzFertig(_, true) = ereignis { kopfhoerer.rekord() }
+            if case .trainingBeendet = ereignis { statsSenden(erzwingen: true) }
             bruecke.ereignis(ereignis)
             bruecke.schreibe()
         case .mahlzeitGespeichert, .habitGeaendert:
             bruecke.schreibe()
         case .einstellungenGeaendert:
+            statsSenden()
             await einstellungenGeaendert()
         case .profilGewechselt:
             await einstellungenGeaendert(immer: true)
@@ -234,6 +236,8 @@ final class VerbindenDienste {
             band.vergessen()
             umgebung.bruecke.loescheEigeneDateien()
             umgebung.konto.verbindungen.vergiss()
+            let stats = StatsDienst.von(umgebung)
+            Task { await stats.vergessen() }
             regeln = [:]
             wuensche = nil
             alarmTakt?.cancel()
@@ -246,6 +250,7 @@ final class VerbindenDienste {
             loveaWarAn = false
             alarmWarAn = true
         case .vordergrund:
+            statsSenden()
             await abruf()
             await umgebung.gesundheit.aktualisiere()
             bruecke.schreibe()
@@ -256,6 +261,12 @@ final class VerbindenDienste {
         case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .speichernFehlgeschlagen:
             break
         }
+    }
+
+    /// Stats: eigene Wahl und Zahlen zum Server, ohne auf das Netz zu warten. Der Dienst prüft selbst, ob es etwas zu senden gibt (privat nichts).
+    private func statsSenden(erzwingen: Bool = false) {
+        let stats = StatsDienst.von(umgebung)
+        Task { await stats.senden(erzwingen: erzwingen) }
     }
 
     /// Schlaf-Beleg (Diagnose): nur wenn der Server ihn für das Konto freigibt, höchstens einmal je Stunde. Ohne Warten auf das Netz.

@@ -59,6 +59,11 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var gewichtMitzaehlen = true
     var schritteMitzaehlen = true
     var creatinMitzaehlen = false
+    /// Stats: "Freunde sehen mich" und "Öffentlich in Alle" (nur nach "Akzeptieren und mitmachen"). Standard privat: nichts geht zum Server.
+    var statsFreunde = false
+    var statsOeffentlich = false
+    /// Spitzname für Stats "Alle"; nil, solange keiner gewählt ist.
+    var statsSpitzname: String?
 
     init() {}
 
@@ -117,6 +122,8 @@ struct Einstellungen: Codable, Equatable, Sendable {
         case thema, erscheinung, haptik, gewichtsEinheit, healthSchreiben, bandAktiv, bandBewusstAus, loveaVerbunden, alarmWeckt, mitteilungen, healthGefragt, nutzungAntwort, nutzungJaSeit, gymAn, essenAn, schlafAn, fastenAn, schlichtGesetzt
         // Profil und Einführung
         case trainingsErfahrung, trainingsZiele, trainingsOrte, trainingsMinuten, fokusMuskeln, gewichtMitzaehlen, schritteMitzaehlen, creatinMitzaehlen
+        // Stats
+        case statsFreunde, statsOeffentlich, statsSpitzname
     }
 
     init(from decoder: Decoder) throws {
@@ -148,6 +155,9 @@ struct Einstellungen: Codable, Equatable, Sendable {
         gewichtMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .gewichtMitzaehlen)) ?? true
         schritteMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .schritteMitzaehlen)) ?? true
         creatinMitzaehlen = (try? c.decodeIfPresent(Bool.self, forKey: .creatinMitzaehlen)) ?? false
+        statsFreunde = (try? c.decodeIfPresent(Bool.self, forKey: .statsFreunde)) ?? false
+        statsOeffentlich = (try? c.decodeIfPresent(Bool.self, forKey: .statsOeffentlich)) ?? false
+        statsSpitzname = (try? c.decodeIfPresent(String.self, forKey: .statsSpitzname)) ?? nil
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }

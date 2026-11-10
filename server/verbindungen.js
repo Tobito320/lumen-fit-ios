@@ -37,7 +37,7 @@ function codeNeu() {
 const codeNorm = (x) => (typeof x === "string" ? x.toUpperCase().replace(/[\s-]/g, "") : "");
 const codeHash = (code, h) => h.sha256(`code:${code}`);
 const istCode = (x) => !TOKEN_FORM.test(x ?? "") && CODE_FORM.test(codeNorm(x));
-export { tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS, codeNeu, codeHash }; // auch für die Link-Einladung in freunde.js
+export { tokenNeu, bytesHex, TOKEN_FORM, EINLADUNG_MS, codeNeu, codeHash, drosseln }; // auch für die Link-Einladung in freunde.js und für stats.js
 
 async function drosseln(env, schluessel, grenze = DROSSEL_JE_MINUTE, fensterMs = 60000) {
   const fenster = Math.floor(Date.now() / fensterMs);

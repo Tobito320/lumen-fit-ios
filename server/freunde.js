@@ -46,7 +46,7 @@ const nutzbar = (z, h) => !!z && z.status === "aktiv" && !z.o_gesperrt && !pausi
 const fragen = (n) => Array(n).fill("?").join(", ");
 
 // Namen: Profilname aus der Zusammenfassung der Person, sonst der Kontoname, höchstens 40 Zeichen. Eine Abfrage je 90 Konten (D1: höchstens 100 Parameter).
-async function namenLaden(env, ids) {
+export async function namenLaden(env, ids) {
   const liste = [...new Set(ids)];
   const namen = new Map();
   for (let i = 0; i < liste.length; i += 90) {

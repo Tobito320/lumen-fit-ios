@@ -7,6 +7,7 @@ import { postfachApp, postfachAdmin } from "./postfach.js";
 import { coach } from "./coach.js";
 import { verbindungen, autoVerbinden, partnerFuerLovea } from "./verbindungen.js";
 import { freunde, freundeSeite, freundeAdmin } from "./freunde.js";
+import { stats, statsAdmin } from "./stats.js"; // Stats (fitfreunde)
 import { NAMEN } from "./nutzung-namen.js";
 import { kontoLoeschen } from "./konto-loeschen.js";
 import { kontakt } from "./kontakt.js";
@@ -638,6 +639,8 @@ async function verwalten(request, url, env) {
     return json({ konto: id, belege: results.map((z) => ({ zeit: z.zeit, daten: lesen(z.daten) })) });
   }
   if (url.pathname === "/admin/freunde" && m === "GET") return freundeAdmin(url, env, { json, nein, lesen, ID_FORM });
+  // Stats (fitfreunde): Teilnehmer, Meldungen, Freigabe.
+  if (url.pathname === "/admin/stats" || url.pathname.startsWith("/admin/stats/")) return statsAdmin(request, url, env, { json, nein, koerper, istObjekt });
   if (url.pathname.startsWith("/admin/postfach")) {
     const r = await postfachAdmin(request, url, env, { json, nein, koerper, lesen, ID_FORM });
     if (r) return r;
@@ -714,6 +717,8 @@ export async function handleFetch(request, env, holen = (u, o) => (env.LOVEA ?? 
   }
   if (url.pathname === "/freunde" || url.pathname.startsWith("/freunde/")) return freunde(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt, sha256 });
   if (url.pathname.startsWith("/f/") && m === "GET") return freundeSeite(url, env, request);
+  // Stats (fitfreunde): Freunde und Alle, Melden, Blockieren.
+  if (url.pathname === "/stats" || url.pathname.startsWith("/stats/")) return stats(request, url, env, { kontoPruefen, json, nein, koerper, lesen, istObjekt });
   if (url.pathname === "/ki/foto" && m === "POST") return kiFoto(request, env, { kontoPruefen, zusammen, globaleConfig }, kiHolen);
   if (url.pathname === "/postfach" || url.pathname.startsWith("/postfach/")) return postfachApp(request, url, env, { kontoPruefen, json, nein, koerper, lesen });
   if (url.pathname.startsWith("/essen/") && m === "GET") return handleEssen(request, url, env, { kontoPruefen });

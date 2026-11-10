@@ -33,7 +33,12 @@ function fuellen(e) {
     sql("INSERT INTO drossel VALUES (?, 1, 1)", "einladung:" + k);
     sql("INSERT INTO schlaf_belege (konto, zeit, daten) VALUES (?, 't', '{}')", k);
     sql("INSERT INTO agent_postfach (konto, art, daten, erstellt) VALUES (?, 'gym.plan', '{}', 't')", k);
+    sql("INSERT INTO stats (konto, id, montag, aktualisiert) VALUES (?, ?, '2026-11-09', 't')", k, "s" + k);
+    sql("INSERT INTO drossel VALUES (?, 1, 1)", "stats:" + k);
   }
+  sql("INSERT INTO stats_meldungen VALUES (?, ?, 't', 0)", DU, ICH);
+  sql("INSERT INTO stats_meldungen VALUES (?, ?, 't', 0)", DU, ANDERS);
+  sql("INSERT INTO stats_blockiert VALUES (?, ?, 't')", ICH, DU);
   sql("INSERT INTO drossel VALUES ('coach:fehl', 1, 1)");
   sql("INSERT INTO verbindungen (id, a, b, status, erstellt, geaendert) VALUES ('v1', ?, ?, 'aktiv', 't', 't')", DU, ICH);
   sql("INSERT INTO verbindungen (id, a, b, status, erstellt, geaendert) VALUES ('v2', ?, ?, 'aktiv', 't', 't')", DU, ANDERS);
@@ -72,7 +77,7 @@ test("DELETE /konto: keine Zeile irgendeiner Tabelle nennt das Konto mehr, ander
     assert.deepEqual(nachher[tabelle], ohneMich, tabelle);
   }
   assert.ok(nachher.drossel.some((z) => z.schluessel === "coach:fehl"), "globale Drossel bleibt");
-  assert.equal(nachher.drossel.filter((z) => z.schluessel.endsWith(ANDERS)).length, 2, "ähnliche Kennung bleibt");
+  assert.equal(nachher.drossel.filter((z) => z.schluessel.endsWith(ANDERS)).length, 3, "ähnliche Kennung bleibt");
   // Verbindung des Partners zu mir ist weg, seine andere bleibt.
   assert.deepEqual(nachher.verbindungen.map((v) => v.id), ["v2"]);
   // Meine Herausforderung mit dir: abgebrochen, ohne meine Kennung, offene Einladung weg. Deine: ich bin raus. Nur meine: ganz weg.
