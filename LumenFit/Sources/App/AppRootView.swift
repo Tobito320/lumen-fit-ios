@@ -134,6 +134,13 @@ private struct TabsAnsicht: View {
     @Environment(AppUmgebung.self) private var umgebung
     /// Für die Mini-Leiste: dieselbe Sitzung wie im Training-Tab (`von` gibt immer die gesetzte zurück).
     @State private var sitzung: GymSitzung?
+    @AppStorage(CrewDienst.gesehenSchluessel) private var crewGesehen: Double = 0
+
+    /// Zahl am Tab Freunde: neue Reaktionen seit dem letzten Blick plus offene Einladungen (vorher an der Crew-Zeile im Training).
+    private var freundeNeu: Int {
+        let dienst = CrewDienst.von(umgebung)
+        return dienst.neue(seit: crewGesehen > 0 ? Date(timeIntervalSince1970: crewGesehen) : nil).count + dienst.einladungen.count
+    }
 
     var body: some View {
         @Bindable var router = umgebung.router
@@ -146,6 +153,7 @@ private struct TabsAnsicht: View {
                     }
                     .safeAreaInset(edge: .bottom) { miniLeiste }
                 }
+                .badge(tab == .freunde ? freundeNeu : 0)
             }
         }
         .lumenTabLeiste()

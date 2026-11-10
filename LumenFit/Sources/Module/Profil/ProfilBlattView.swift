@@ -28,7 +28,6 @@ struct ProfilBlattView: View {
                     NavigationLink { SchritteDetailView(eingebettet: true) } label: { ProfilListenZeile("Schritte heute", symbol: "figure.walk", wert: schritte) }
                 }
                 link("Health-Zugriff", .profilHealth, symbol: "heart.text.square.fill") { ProfilHealthZugriffView() }
-                link("Meilensteine", .profilMeilensteine, symbol: "star.fill") { MeilensteineView() }
                 // Band und AirPods gehören zum Schlaf-Schalter des Servers (`ServerConfig.schlafSichtbar`).
                 if umgebung.konto.schlafSichtbar { link("Geräte", .profilGeraete, symbol: "applewatch") { GeraeteView() } }
             }

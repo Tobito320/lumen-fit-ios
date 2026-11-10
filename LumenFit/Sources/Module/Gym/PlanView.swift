@@ -155,13 +155,7 @@ struct PlanView: View {
                     }
                 }
                 .buttonStyle(.plain)
-                Haarlinie()
-                NavigationLink { UebungsSucheView() } label: {
-                    GymZeile(titel: "Übungskatalog", untertitel: "\(UebungsKatalog.alle.count) Übungen mit Bild, Rekorden und Verlauf") {
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(palette.text2).accessibilityHidden(true)
-                    }
-                }
-                .buttonStyle(.plain)
+                // Der Übungskatalog steht als Zeile "Übungen" im Training-Tab (einmal, nicht doppelt).
             }
         }
     }

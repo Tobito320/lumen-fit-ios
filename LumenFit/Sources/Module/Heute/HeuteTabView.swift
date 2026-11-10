@@ -81,6 +81,11 @@ struct HeuteTabView: View {
         if s.bereiche.gymAn, let letzte = letzteEinheit { LetzteEinheitKarte(einheit: letzte) }
         if s.hatGesundheit {
             Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1)
+            // Energie und Tagesform bleiben erreichbar (nichts verschwindet ohne Wort des Besitzers), als eine Zeile statt der großen Karte.
+            ListenKarte {
+                Button { blatt = .energie } label: { ProfilListenZeile("Energie und Tagesform", symbol: "bolt.heart.fill") }
+                    .buttonStyle(.plain)
+            }
         } else if s.healthGeprueft {
             HeuteLeerKarte(modell: m)
         }
