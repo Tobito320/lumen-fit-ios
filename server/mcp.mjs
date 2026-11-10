@@ -3,6 +3,7 @@
 // Spricht nur mit /admin/* des Workers. Admin-Key: LUMENFIT_ADMIN_KEY_PFAD oder ~/.config/lumenfit/admin.key (Inhalt wird nie ausgegeben).
 // HTTP-Brücke: ~/.local/bin/mcp-lovea-http mit LOVEA_MCP=<dieses Skript> PORT=8935 (Dienst mcp-lumenfit).
 import { readFileSync } from "node:fs";
+import { execFile } from "node:child_process";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
@@ -85,21 +86,87 @@ export const WERKZEUGE = [
     description: "Der Gym-Plan, den die App des Kontos zuletzt gemeldet hat (Stand beim Start oder Vordergrund, mit Zeit). Die App meldet nur, wenn am Konto planMelden=true steht (lumenfit_konto_setzen einstellungen {planMelden:true}); sonst stand null.",
     inputSchema: { type: "object", properties: { umgebung, konto: kontoId }, required: ["konto"] },
   },
+  {
+    name: "lumenfit_verlauf",
+    description: "Ahmeds Training aus Lumen Fit (nur sein Konto, über /coach): letzte Einheiten (bis 30), je Übung bester Satz, e1RM und zuletzt, Serie in Wochen, im Gym gerade, Körpergewicht. Gesundheitsdaten: nur für Ahmed und seine Agenten, nichts weitergeben.",
+    inputSchema: { type: "object", properties: { umgebung } },
+  },
+  {
+    name: "lumenfit_uebungen",
+    description: "Übungskatalog von Lumen Fit durchsuchen (id und Name), z. B. zum Tauschen einer Übung im Plan.",
+    inputSchema: { type: "object", properties: { umgebung, suche: { type: "string", description: "Teil des Namens, z. B. \"bank\"" } }, required: ["suche"] },
+  },
+  {
+    name: "lumenfit_plan_vorschlag",
+    description: "Änderung an Ahmeds aktivem Plan als Vorschau (ändert nichts): kleine Änderungen [{tag (id, Name oder Wochentag), uebung (id oder Namensteil), kg?, wdh?, saetze?, liste?, minuten?}] oder ein ganzer plan. Antwort: Zeilen vorher → nachher und ein token (24 h, einmal). Erst nach Ahmeds Ja mit lumenfit_plan_anwenden anwenden. Leichter als lumenfit_plan_setzen, weil nur Geändertes mitkommt und es einen Rückweg gibt.",
+    inputSchema: { type: "object", properties: { umgebung, aenderungen: { type: "array", items: { type: "object" } }, plan: { type: "object" } } },
+  },
+  {
+    name: "lumenfit_plan_anwenden",
+    description: "Wendet das token aus lumenfit_plan_vorschlag oder lumenfit_plan_rueckgaengig an (nur nach Ahmeds klarem Ja). Die App übernimmt den Plan beim nächsten Öffnen. 409 heißt: Plan hat sich seitdem geändert, neu vorschlagen.",
+    inputSchema: { type: "object", properties: { umgebung, token: { type: "string" } }, required: ["token"] },
+  },
+  {
+    name: "lumenfit_plan_rueckgaengig",
+    description: "Vorschau zurück auf den Plan vor der letzten angewendeten Änderung (bis zu 10 Schritte). Gibt ein token, angewendet wird erst mit lumenfit_plan_anwenden.",
+    inputSchema: { type: "object", properties: { umgebung } },
+  },
+  {
+    name: "lumenfit_freunde",
+    description: "Freunde in Lumen Fit (nur Konto-IDs und Zahlen, keine Namen oder Werte; Namen über lumenfit_konten): je Konto Freunde, Anfragen, offene Einladungen, Herausforderungen, Reaktionen 30 Tage, letzte Aktivität; dazu Verbindungen (Status, sichtbare Bereiche) und Herausforderungen mit Teilnehmern. Optional nur ein Konto.",
+    inputSchema: { type: "object", properties: { umgebung, konto: kontoId } },
+  },
+  {
+    name: "lumenfit_einladen",
+    description: "TestFlight-Tester für Lumen Fit (App Store Connect API vom PC, Sekunden statt CI): status=true zeigt Builds mit Beta-Prüfung, Gruppe Freunde mit Public Link und Zählern (mit email: deren Status). Mit email und ohne status lädt ein: Tester anlegen, in Gruppe, neuesten Build zuordnen, Prüfung einreichen. Einladen schickt Apple eine Mail an die Person: nur auf Ahmeds Wort.",
+    inputSchema: { type: "object", properties: { email: { type: "string" }, status: { type: "boolean" }, gruppe: { type: "string", description: "Standard Freunde" } } },
+  },
 ];
 
-function standardKey() {
-  const pfade = [process.env.LUMENFIT_ADMIN_KEY_PFAD, join(homedir(), ".config", "lumenfit", "admin.key")].filter(Boolean);
+function standardKey(art = "admin") {
+  const pfade = [process.env[`LUMENFIT_${art.toUpperCase()}_KEY_PFAD`], join(homedir(), ".config", "lumenfit", `${art}.key`)].filter(Boolean);
   for (const p of pfade) {
     try { return readFileSync(p, "utf8").trim(); } catch {}
   }
-  throw new Error("Admin-Key nicht gefunden (~/.config/lumenfit/admin.key)");
+  throw new Error(`${art}-Key nicht gefunden (~/.config/lumenfit/${art}.key)`);
 }
 
-export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis = BASIS } = {}) {
+const EINLADEN = join(homedir(), ".local", "bin", "lumenfit-einladen");
+function einladenStarten(argv) {
+  return new Promise((res) => execFile(EINLADEN, argv, { timeout: 120000 }, (e, out, err) => res({ code: e ? (e.code ?? 1) : 0, text: `${out}${err}`.trim() })));
+}
+
+export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, coachKey, basis = BASIS, einladen = einladenStarten } = {}) {
   const w = WERKZEUGE.find((x) => x.name === name);
   if (!w) throw new Error(`Werkzeug unbekannt: ${name}`);
-  let pfad, methode = "GET", body;
-  if (name === "lumenfit_konten") pfad = "/admin/konten";
+  let pfad, methode = "GET", body, kopf = "X-Admin-Key";
+  if (name === "lumenfit_einladen") {
+    const email = typeof a.email === "string" ? a.email.trim() : "";
+    if (!a.status && !email) throw new Error("email oder status=true angeben");
+    const argv = a.status ? ["--status", ...(email ? [email] : [])] : [email];
+    if (a.gruppe) argv.push("--gruppe", String(a.gruppe));
+    const r = await einladen(argv);
+    if (r.code !== 0) throw new Error(`lumenfit-einladen Exit ${r.code}: ${r.text.slice(0, 1200)}`);
+    return { ok: true, ausgabe: r.text };
+  }
+  if (name.startsWith("lumenfit_plan_") && name !== "lumenfit_plan_lesen" && name !== "lumenfit_plan_setzen" || ["lumenfit_verlauf", "lumenfit_uebungen"].includes(name)) {
+    kopf = "X-Coach-Key";
+    if (name === "lumenfit_verlauf") pfad = "/coach/verlauf";
+    else if (name === "lumenfit_uebungen") {
+      if (typeof a.suche !== "string" || !a.suche.trim()) throw new Error("suche fehlt");
+      pfad = `/coach/uebungen?suche=${encodeURIComponent(a.suche.trim())}`;
+    }
+    else if (name === "lumenfit_plan_vorschlag") {
+      if (!a.plan && !Array.isArray(a.aenderungen)) throw new Error("aenderungen (Liste) oder plan angeben");
+      [pfad, methode, body] = ["/coach/vorschlag", "POST", a.plan ? { plan: a.plan } : { aenderungen: a.aenderungen }];
+    }
+    else if (name === "lumenfit_plan_anwenden") {
+      if (typeof a.token !== "string" || !a.token) throw new Error("token fehlt");
+      [pfad, methode, body] = ["/coach/anwenden", "POST", { token: a.token }];
+    }
+    else [pfad, methode, body] = ["/coach/rueckgaengig", "POST", {}];
+  }
+  else if (name === "lumenfit_konten") pfad = "/admin/konten";
   else if (name === "lumenfit_nutzung") pfad = "/admin/nutzung";
   else if (name === "lumenfit_fehler" || name === "lumenfit_auswertung") {
     pfad = name === "lumenfit_fehler" ? "/admin/fehler" : "/admin/auswertung";
@@ -108,6 +175,7 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
       pfad += `?tage=${a.tage}`;
     }
   }
+  else if (name === "lumenfit_freunde") pfad = `/admin/freunde${typeof a.konto === "string" && a.konto ? `?konto=${encodeURIComponent(a.konto)}` : ""}`;
   else if (name === "lumenfit_import_beleg") pfad = "/admin/import-beleg";
   else if (name === "lumenfit_schlaf_beleg") {
     if (typeof a.konto !== "string" || !a.konto) throw new Error("konto fehlt");
@@ -145,7 +213,7 @@ export async function werkzeugAufrufen(name, a = {}, { holen = fetch, key, basis
   if (!url) throw new Error("umgebung: test oder live");
   const r = await holen(url + pfad, {
     method: methode,
-    headers: { "X-Admin-Key": key ?? standardKey(), "content-type": "application/json" },
+    headers: { [kopf]: kopf === "X-Coach-Key" ? (coachKey ?? standardKey("coach")) : (key ?? standardKey()), "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await r.text();
@@ -160,7 +228,7 @@ async function antworten(msg) {
       protocolVersion: params?.protocolVersion ?? "2025-06-18",
       capabilities: { tools: {} },
       serverInfo: { name: "lumenfit", version: "1.0.0" },
-      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Fehler (lumenfit_fehler), Auswertung (lumenfit_auswertung), Schalter je Konto und global ändern, Konten sperren. Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
+      instructions: "Verwaltung des Lumen-Fit-Servers (Cloudflare-Worker): Konten ansehen, Nutzung je Konto (lumenfit_nutzung), Fehler (lumenfit_fehler), Auswertung (lumenfit_auswertung), Schalter je Konto und global ändern, Konten sperren. Ahmeds Plan klein ändern mit lumenfit_plan_vorschlag (Vorschau, token) und erst nach seinem Ja lumenfit_plan_anwenden, Rückweg lumenfit_plan_rueckgaengig; Training lumenfit_verlauf; Freunde lumenfit_freunde; Tester lumenfit_einladen (Einladen nur auf Ahmeds Wort). Änderungen wirken ohne App-Build. loveaVerbinden nur für Ahmed (lovea_person ahmed) und Annika (annika) setzen, sonst für niemanden.",
     };
   }
   if (method === "ping") return {};
