@@ -36,7 +36,7 @@ final class StartTempoTests: XCTestCase {
                 let s = "s\(i)", start = Datum.datum(tag).addingTimeInterval(17 * 3600)
                 raum.einreihen(TestDaten.op("gym.checkin", GymD(session: s, tag: "push", start: start), von: ich, zeit: start))
                 for u in 0..<5 {
-                    let saetze = (0..<3).map { PlanSatz(wdh: 8, kg: 40 + Double(u * 5 + i % 7), failure: false, ok: true) }
+                    let saetze = (0..<3).map { _ in PlanSatz(wdh: 8, kg: 40 + Double(u * 5 + i % 7), failure: false, ok: true) }
                     raum.einreihen(TestDaten.op("gym.uebung", GymD(session: s, plan: "p1", uebung: "u\(u)", status: "satz", saetze: saetze), von: ich, zeit: start + Double(u * 600)))
                     raum.einreihen(TestDaten.op("gym.uebung", GymD(session: s, plan: "p1", uebung: "u\(u)", status: "fertig", saetze: saetze), von: ich, zeit: start + Double(u * 600 + 500)))
                 }
