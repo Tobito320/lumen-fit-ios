@@ -307,7 +307,7 @@ test("Stats: Drossel je Konto", async () => {
   assert.equal((await ruf(env, "ich", "GET", "/stats")).status, 429);
 });
 
-test("Stats Schritte: PUT prüft Tag und Grenzen; ohne Schritte (alte App, Mitzählen aus) keine Zeile, privat löscht sie", async () => {
+test("Stats Schritte: PUT prüft Tag und Grenzen; ohne Schritte (alte App, keine Zustimmung, Zustimmung zurück) keine Zeile, privat löscht sie", async () => {
   const env = await welt("ich");
   const tagImMonat = Number(T().slice(8));
   const schlecht = [
@@ -323,7 +323,7 @@ test("Stats Schritte: PUT prüft Tag und Grenzen; ohne Schritte (alte App, Mitz�
   assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats_schritte"), 0);
   assert.equal((await setzen(env, "ich", werte(schritte(6240, 70000)))).status, 200);
   assert.deepEqual(schritteZeile(env, "ich"), { tag: T(), heute: 6240, monat: 70000 });
-  assert.equal((await setzen(env, "ich", werte())).status, 200, "Mitzählen aus");
+  assert.equal((await setzen(env, "ich", werte())).status, 200, "Schritte teilen zurückgenommen (oder Mitzählen aus): Upload ohne Felder");
   assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats_schritte"), 0);
   await setzen(env, "ich", werte(schritte(10, 10)));
   await setzen(env, "ich", { freunde: false, oeffentlich: false });

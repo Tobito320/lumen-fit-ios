@@ -5601,22 +5601,22 @@
         }
       }
     },
+    "Alle sehen deinen Spitznamen und deine Zahlen (Schritte nur mit „Schritte teilen“), nie deinen Namen, dein Gewicht oder andere Gesundheitsdaten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone sees your nickname and your numbers (steps only with “Share steps”), never your name, your weight or other health data."
+          }
+        }
+      }
+    },
     "Alle sehen deinen Spitznamen und deine Zahlen, nie deinen Namen, dein Gewicht oder Gesundheitsdaten." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Everyone sees your nickname and your numbers, never your name, your weight or health data."
-          }
-        }
-      }
-    },
-    "Alle sehen deinen Spitznamen, deine Zahlen und Schritte, nie deinen Namen, dein Gewicht oder andere Gesundheitsdaten." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everyone sees your nickname, your numbers and steps, never your name, your weight or other health data."
           }
         }
       }
@@ -9631,12 +9631,12 @@
         }
       }
     },
-    "Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie, dein schwerstes Gewicht je Übung und deine Schritte, wenn du Schritte mitzählst." : {
+    "Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie, dein schwerstes Gewicht je Übung und, nur mit „Schritte teilen“, deine Schritte." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your friends see your rank, your points, workouts, sets, streak, your heaviest weight per exercise and your steps if you track steps."
+            "value" : "Your friends see your rank, your points, workouts, sets, streak, your heaviest weight per exercise and, only with “Share steps”, your steps."
           }
         }
       }
@@ -9721,6 +9721,16 @@
         }
       }
     },
+    "Deine Schritte zeigen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show your steps?"
+          }
+        }
+      }
+    },
     "Deine Statistik" : {
       "localizations" : {
         "en" : {
@@ -9781,12 +9791,12 @@
         }
       }
     },
-    "Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie, wie lange du schon trainierst und deine Schritte (heute und im Monat), wenn du Schritte mitzählst." : {
+    "Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie, wie lange du schon trainierst und, nur mit „Schritte teilen“, deine Schritte von heute und diesem Monat." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your nickname, your points, workouts, sets, streak, how long you've been training and your steps (today and this month) if you track steps."
+            "value" : "Your nickname, your points, workouts, sets, streak, how long you've been training and, only with “Share steps”, your steps for today and this month."
           }
         }
       }
@@ -13957,6 +13967,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Friends"
+          }
+        }
+      }
+    },
+    "Freunde (und bei Mitmachen alle) sehen nur deine Schrittzahl von heute und diesem Monat." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friends (and everyone, if you join) only see your step count for today and this month."
+          }
+        }
+      }
+    },
+    "Freunde (und bei Mitmachen alle) sehen nur deine Schrittzahl von heute und diesem Monat. Ausschalten löscht sie sofort vom Server." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Friends (and everyone, if you join) only see your step count for today and this month. Turning this off deletes it from the server right away."
           }
         }
       }
@@ -27197,6 +27227,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Track steps to take part."
+          }
+        }
+      }
+    },
+    "Schritte teilen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share steps"
           }
         }
       }

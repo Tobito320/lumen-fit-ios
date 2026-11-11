@@ -16,21 +16,25 @@ final class AlteDateienLadenStatsTests: XCTestCase {
         XCTAssertFalse(werte.statsFreunde)
         XCTAssertFalse(werte.statsOeffentlich)
         XCTAssertNil(werte.statsSpitzname)
+        XCTAssertFalse(werte.statsSchritte, "Schritte teilen: alte Dateien und bestehende Mitmacher aus")
         XCTAssertNil(werte.trainingsErfahrung)
     }
 
     func testNeueDateiBehaeltStatsWahlUndUnbekanntesWirdNil() throws {
-        let werte = try laden(#"{"statsFreunde":true,"statsOeffentlich":true,"statsSpitzname":"Eisenfaust","trainingsErfahrung":"bisZweiJahre"}"#)
+        let werte = try laden(#"{"statsFreunde":true,"statsOeffentlich":true,"statsSpitzname":"Eisenfaust","statsSchritte":true,"trainingsErfahrung":"bisZweiJahre"}"#)
+        XCTAssertTrue(werte.statsSchritte)
         XCTAssertTrue(werte.statsFreunde)
         XCTAssertTrue(werte.statsOeffentlich)
         XCTAssertEqual(werte.statsSpitzname, "Eisenfaust")
         XCTAssertEqual(werte.trainingsErfahrung, .bisZweiJahre)
-        let fremd = try laden(#"{"trainingsErfahrung":"zehnJahre","statsFreunde":"ja"}"#)
+        let fremd = try laden(#"{"trainingsErfahrung":"zehnJahre","statsFreunde":"ja","statsSchritte":"ja"}"#)
+        XCTAssertFalse(fremd.statsSchritte)
         XCTAssertNil(fremd.trainingsErfahrung)
         XCTAssertFalse(fremd.statsFreunde)
         var e = Einstellungen()
         e.statsSpitzname = "Eisenfaust"
         e.trainingsErfahrung = .laenger
+        e.statsSchritte = true
         let zurueck = try JSONDecoder().decode(Einstellungen.self, from: JSONEncoder().encode(e))
         XCTAssertEqual(zurueck, e, "geschrieben und wieder gelesen")
     }

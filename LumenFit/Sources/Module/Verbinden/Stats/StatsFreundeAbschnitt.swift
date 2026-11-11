@@ -18,21 +18,29 @@ struct StatsFreundeAbschnitt: View {
         let mein = mass.wert(stats.eigene)
         let zeilen = StatsLogik.zeilen(ichName: String(localized: "Du"), ichWert: mein,
                                        andere: freunde.compactMap { f in mass.wert(f).map { (id: f.id, name: namen[f.id] ?? f.name, wert: $0) } })
-        let platz = StatsLogik.platz(zeilen)
         VStack(alignment: .leading, spacing: Abstand.l) {
-            StatsPlatzKarte(
-                gruppe: String(localized: "Deine Freunde"), rang: platz.rang, von: platz.von,
-                wert: mein.map { mass.wertText($0, jetzt: umgebung.uhr()) } ?? StatsTexte.schritteNichtDabei,
-                satz: mein == nil ? StatsTexte.schritteWie : StatsLogik.satzFreunde(zeilen, mass: mass), stimmung: platz.rang == 1 && zeilen.count > 1 ? .ziel : .anfeuern,
-                sichtSymbol: sichtbar ? "person.2.fill" : "lock.fill",
-                sichtText: sichtbar ? String(localized: "Deine Freunde sehen deinen Platz.") : String(localized: "Privat: Freunde sehen dich nicht."),
-                knopf: sichtbar ? String(localized: "Ausblenden") : String(localized: "Zeigen"),
-                aktion: { umgebung.daten?.einstellungen.aendere { $0.statsFreunde.toggle() } })
+            if mass.istSchritte, umgebung.daten?.einstellungen.werte.statsSchritte != true {
+                StatsSchritteTeilenKarte()
+            } else {
+                platzKarte(mein: mein, zeilen: zeilen)
+            }
             liste(zeilen)
             rekorde(freunde)
             mitFreunden
             einladenKnoepfe
         }
+    }
+
+    private func platzKarte(mein: Int?, zeilen: [CrewRang]) -> some View {
+        let platz = StatsLogik.platz(zeilen)
+        return StatsPlatzKarte(
+            gruppe: String(localized: "Deine Freunde"), rang: platz.rang, von: platz.von,
+            wert: mein.map { mass.wertText($0, jetzt: umgebung.uhr()) } ?? StatsTexte.schritteNichtDabei,
+            satz: mein == nil ? StatsTexte.schritteWie : StatsLogik.satzFreunde(zeilen, mass: mass), stimmung: platz.rang == 1 && zeilen.count > 1 ? .ziel : .anfeuern,
+            sichtSymbol: sichtbar ? "person.2.fill" : "lock.fill",
+            sichtText: sichtbar ? String(localized: "Deine Freunde sehen deinen Platz.") : String(localized: "Privat: Freunde sehen dich nicht."),
+            knopf: sichtbar ? String(localized: "Ausblenden") : String(localized: "Zeigen"),
+            aktion: { umgebung.daten?.einstellungen.aendere { $0.statsFreunde.toggle() } })
     }
 
     private func liste(_ zeilen: [CrewRang]) -> some View {

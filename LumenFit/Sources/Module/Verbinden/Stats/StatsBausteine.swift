@@ -173,3 +173,31 @@ enum StatsTexte {
     static var schritteNichtDabei: String { String(localized: "Schritte mitzählen, um mitzumachen.") }
     static var schritteWie: String { String(localized: "Profil > Präferenzen > Mitzählen: Schritte an und Apple Health erlauben.") }
 }
+
+/// Stats > Schritte ohne eigene Zustimmung (statt "Nicht dabei"): "Deine Schritte zeigen?" mit Knopf "Schritte teilen".
+/// Erst danach gehen Schritte zum Server; zurücknehmen in Profil > Stats (`StatsEinstellungBlatt`), dann löscht der Server sie.
+struct StatsSchritteTeilenKarte: View {
+    @Environment(AppUmgebung.self) private var umgebung
+    @Environment(\.palette) private var palette
+
+    var body: some View {
+        let e = umgebung.daten?.einstellungen.werte ?? Einstellungen()
+        ListenKarte {
+            VStack(alignment: .leading, spacing: Abstand.s) {
+                Text("Deine Schritte zeigen?").font(.headline).foregroundStyle(palette.text).accessibilityAddTraits(.isHeader)
+                Text("Freunde (und bei Mitmachen alle) sehen nur deine Schrittzahl von heute und diesem Monat.")
+                    .font(.subheadline).foregroundStyle(palette.text2).fixedSize(horizontal: false, vertical: true)
+                if !e.schritteMitzaehlen || !e.healthGefragt {
+                    Label(StatsTexte.schritteWie, systemImage: "info.circle")
+                        .font(.footnote).foregroundStyle(palette.text2).fixedSize(horizontal: false, vertical: true)
+                }
+                Button { umgebung.daten?.einstellungen.aendere { $0.statsSchritte = true } } label: {
+                    Text("Schritte teilen").frame(maxWidth: .infinity, minHeight: 50)
+                }
+                .buttonStyle(.lumenHauptknopf)
+                .padding(.top, Abstand.xs)
+            }
+            .padding(Abstand.l)
+        }
+    }
+}

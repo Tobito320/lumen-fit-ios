@@ -152,9 +152,10 @@ final class StatsLogikTests: XCTestCase {
 
     // MARK: Schritte
 
-    func testSchritteHeuteUndMonatNurMitMitzaehlenUndHealth() {
+    func testSchritteHeuteUndMonatNurMitZustimmungMitzaehlenUndHealth() {
         var e = Einstellungen()
         e.healthGefragt = true
+        e.statsSchritte = true
         let health = ["2026-10-31": 9_000, "2026-11-01": 4_000, "2026-11-11": 250_000, "2026-11-12": 6_240, "2026-11-13": 1_000]
         XCTAssertEqual(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), StatsSchritte(tag: "2026-11-12", heute: 6_240, monat: 110_240),
                        "Vormonat und Zukunft zählen nicht, ein Tag höchstens 100.000 (wie der Server)")
@@ -166,6 +167,10 @@ final class StatsLogikTests: XCTestCase {
         e.schritteMitzaehlen = true
         e.healthGefragt = false
         XCTAssertNil(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), "Health nie erlaubt")
+        e.healthGefragt = true
+        e.statsSchritte = false
+        XCTAssertNil(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), "ohne eigene Zustimmung \"Schritte teilen\" nichts")
+        XCTAssertFalse(Einstellungen().statsSchritte, "Standard aus")
     }
 
     func testMeldungMitSchrittenNurMitZustimmung() throws {
@@ -173,6 +178,8 @@ final class StatsLogikTests: XCTestCase {
         e.healthGefragt = true
         e.statsFreunde = true
         let health = ["2026-11-12": 6_240]
+        XCTAssertNil(StatsLogik.meldung(einstellungen: e, sessions: [], health: health, jetzt: jetzt).schritteTag, "Freunde sehen mich allein reicht nicht")
+        e.statsSchritte = true
         let m = StatsLogik.meldung(einstellungen: e, sessions: [], health: health, jetzt: jetzt)
         XCTAssertEqual(m.schritteTag, "2026-11-12")
         XCTAssertEqual(m.schritteHeute, 6_240)

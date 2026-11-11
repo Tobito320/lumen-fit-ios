@@ -27,14 +27,18 @@ struct StatsAlleAbschnitt: View {
         let platz = StatsLogik.platz(zeilen)
         let prozent = mein.flatMap { m in StatsLogik.prozent(mein: Double(m), andere: andere.map { Double($0.wert) }) }
         VStack(alignment: .leading, spacing: Abstand.l) {
-            StatsPlatzKarte(
-                gruppe: vergleich.jahr.map { String(localized: "Alle \(StatsLogik.jahrText($0))") } ?? String(localized: "Alle"),
-                rang: platz.rang, von: platz.von, wert: mein.map { mass.wertText($0, jetzt: umgebung.uhr()) } ?? StatsTexte.schritteNichtDabei,
-                satz: mein == nil ? StatsTexte.schritteWie : prozent.map { StatsLogik.satzAlle(prozent: $0, mass: mass, jahr: vergleich.jahr) }, stimmung: .bereit,
-                sichtSymbol: oeffentlich ? "globe" : "lock.fill",
-                sichtText: oeffentlich ? String(localized: "Öffentlich als „\(e.statsSpitzname ?? "")“") : String(localized: "Privat: nur du siehst dich in der Liste."),
-                knopf: oeffentlich ? String(localized: "Ändern") : String(localized: "Mitmachen"),
-                aktion: { if oeffentlich { einstellungOffen = true } else { mitmachen() } })
+            if mass.istSchritte, !e.statsSchritte {
+                StatsSchritteTeilenKarte()
+            } else {
+                StatsPlatzKarte(
+                    gruppe: vergleich.jahr.map { String(localized: "Alle \(StatsLogik.jahrText($0))") } ?? String(localized: "Alle"),
+                    rang: platz.rang, von: platz.von, wert: mein.map { mass.wertText($0, jetzt: umgebung.uhr()) } ?? StatsTexte.schritteNichtDabei,
+                    satz: mein == nil ? StatsTexte.schritteWie : prozent.map { StatsLogik.satzAlle(prozent: $0, mass: mass, jahr: vergleich.jahr) }, stimmung: .bereit,
+                    sichtSymbol: oeffentlich ? "globe" : "lock.fill",
+                    sichtText: oeffentlich ? String(localized: "Öffentlich als „\(e.statsSpitzname ?? "")“") : String(localized: "Privat: nur du siehst dich in der Liste."),
+                    knopf: oeffentlich ? String(localized: "Ändern") : String(localized: "Mitmachen"),
+                    aktion: { if oeffentlich { einstellungOffen = true } else { mitmachen() } })
+            }
             if oeffentlich, stats.antwort?.ich.ausgeblendet == true {
                 Label("Dein Eintrag ist für andere ausgeblendet, bis wir ihn geprüft haben.", systemImage: "eye.slash")
                     .font(.footnote).foregroundStyle(palette.text2)

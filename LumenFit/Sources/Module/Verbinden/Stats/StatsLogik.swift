@@ -192,10 +192,10 @@ enum StatsLogik {
     // MARK: Schritte
 
     /// Schritte aus Apple Health (Tagessummen, `GesundheitsStand.schritteAusHealth`; von Hand eingetragene zählen nicht): heute und seit dem 1.
-    /// des Monats, ein Tag höchstens `schritteJeTagGrenze`. Nur mit Mitzählen > Schritte und Health-Freigabe; ohne einen Tag mit Schritten in Health
-    /// (nicht erlaubt oder kein Gerät) nil.
+    /// des Monats, ein Tag höchstens `schritteJeTagGrenze`. Nur mit der eigenen Zustimmung "Schritte teilen", Mitzählen > Schritte und Health-Freigabe;
+    /// ohne einen Tag mit Schritten in Health (nicht erlaubt oder kein Gerät) nil.
     static func schritte(health: [String: Int], einstellungen e: Einstellungen, jetzt: Date) -> StatsSchritte? {
-        guard e.schritteMitzaehlen, e.healthGefragt, health.values.contains(where: { $0 > 0 }) else { return nil }
+        guard e.statsSchritte, e.schritteMitzaehlen, e.healthGefragt, health.values.contains(where: { $0 > 0 }) else { return nil }
         let heute = Datum.text(jetzt)
         let monat = heute.prefix(7)
         let tag = { (n: Int) in min(max(n, 0), Self.schritteJeTagGrenze) }
