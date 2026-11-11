@@ -389,6 +389,28 @@ final class HeuteModellTests: XCTestCase {
         XCTAssertEqual(m.stand?.stimmung, .ziel)
     }
 
+    func testGesternVerpasstBisNachgetragenOderAusgelassen() throws {
+        let u = try umgebung()
+        let daten = try XCTUnwrap(u.daten)
+        plan(daten, wochentag: 2)   // Dienstag, gestern
+        let m = HeuteModell(umgebung: u)
+        m.berechne()
+        let v = try XCTUnwrap(m.stand?.verpasst)
+        XCTAssertEqual(v.gestern, "2026-09-22")
+        XCTAssertEqual(v.tag.id, "t1")
+        m.wischeHinweis(v.id)
+        XCTAssertNil(m.stand?.verpasst, "Auslassen beantwortet die Karte für gestern")
+
+        let u2 = try umgebung()
+        let daten2 = try XCTUnwrap(u2.daten)
+        plan(daten2, wochentag: 2)
+        let start = Datum.datum("2026-09-22").addingTimeInterval(18 * 3600)
+        daten2.training.nachtragen(tag: "t1", start: start, ende: start.addingTimeInterval(3600))
+        let m2 = HeuteModell(umgebung: u2)
+        m2.berechne()
+        XCTAssertNil(m2.stand?.verpasst, "mit Einheit gestern keine Karte")
+    }
+
     // MARK: Mitternacht und Sommerzeit
 
     func testTagWechseltUmMitternachtUndLumiSchlaeftNachts() async throws {
