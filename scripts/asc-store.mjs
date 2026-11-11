@@ -181,6 +181,20 @@ async function pruefung(t, { app, version }) {
   console.log("Copyright, Freigabe manuell, Inhaltsrechte gesetzt");
 }
 
+async function anhang(datei, { version }) {
+  // Prüfanhang (z. B. Bildschirmaufnahme, Apple 2.1): hängt am appStoreReviewDetail der Version.
+  const d = (await holen(`/v1/appStoreVersions/${version.id}/appStoreReviewDetail`)).data;
+  const daten = fs.readFileSync(datei), name = path.basename(datei);
+  const a = (await api("POST", "/v1/appStoreReviewAttachments", { data: { type: "appStoreReviewAttachments", attributes: { fileName: name, fileSize: daten.length }, relationships: { appStoreReviewDetail: { data: { type: "appStoreReviewDetails", id: d.id } } } } })).data;
+  for (const op of a.attributes.uploadOperations) {
+    const r = await fetch(op.url, { method: op.method, headers: Object.fromEntries(op.requestHeaders.map((h) => [h.name, h.value])), body: daten.subarray(op.offset, op.offset + op.length) });
+    if (!r.ok) throw new Error(`Hochladen ${name} ${r.status}`);
+  }
+  const md5 = crypto.createHash("md5").update(daten).digest("hex");
+  await api("PATCH", `/v1/appStoreReviewAttachments/${a.id}`, { data: { type: "appStoreReviewAttachments", id: a.id, attributes: { uploaded: true, sourceFileChecksum: md5 } } });
+  console.log("Prüfanhang hochgeladen:", name, Math.round(daten.length / 1e6), "MB");
+}
+
 async function status() {
   const k = await kontext();
   const { app, info, version } = k;
@@ -249,6 +263,7 @@ try {
     const t = texte(fs.readFileSync(path.join(repo, "docs/store/texte.md"), "utf8"));
     pruefeGrenzen(t);
     if (!t.pruefhinweis) throw new Error("Prüfhinweis fehlt");
+    if ([...t.pruefhinweis].length > 4000) throw new Error(`Prüfhinweis zu lang: ${[...t.pruefhinweis].length} > 4000`);
     console.log("selbsttest ok", Object.fromEntries(["de-DE", "en-US"].map((l) => [l, [...t[l].description].length])));
   } else if (befehl === "status") await status();
   else {
@@ -263,7 +278,9 @@ try {
     } else if (befehl === "bilder" && arg) await bilder(path.resolve(arg), k);
     else if (befehl === "build" && arg) await buildSetzen(arg, k);
     else if (befehl === "einreichen") await einreichen(k);
-    else { console.error("Aufruf: status | metadaten | bilder <ordner> | build <nummer> | einreichen | selbsttest"); process.exit(2); }
+    else if (befehl === "pruefhinweis") await pruefung(t, k);
+    else if (befehl === "anhang" && arg) await anhang(path.resolve(arg), k);
+    else { console.error("Aufruf: status | metadaten | bilder <ordner> | build <nummer> | einreichen | pruefhinweis | anhang <datei> | selbsttest"); process.exit(2); }
   }
 } catch (e) {
   console.error(String(e.message || e));

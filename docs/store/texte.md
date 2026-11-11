@@ -54,8 +54,17 @@ https://lumen-fit.pages.dev/support.html
 https://lumen-fit.pages.dev/datenschutz.html
 
 ## Prüfhinweise für Apple (Englisch)
-Lumen Fit works without sign-in: the app creates a local profile on first launch (a few onboarding questions, then the plan). No demo account is needed. HealthKit is used to read steps, sleep and body weight and to write workouts and body weight, only after the user allows it. Friends and Stats: inviting works via QR code or link; the public "All" list is opt-in with a nickname, entries can be reported or blocked by long-pressing a name. Account deletion: Profile > Account > Delete account. The AI photo feature for meals asks for explicit consent before any photo is sent.
+1. SCREEN RECORDING: attached to this review (App Review attachments), recorded on a physical iPhone with the latest iOS, starting at app launch: today screen, starting and finishing a workout, progress, Stats with report/block, and the account deletion flow (Profile > Account > Delete account).
 
+2. PURPOSE AND AUDIENCE: Lumen Fit is a gym training planner for beginners and people with up to about two years of training. Problem: beginners don't know what to train, how long a session really takes and whether they are getting stronger. Value: eight short questions create a weekly plan; during the workout you check off sets and see last time's weight; progress, records and achievements show improvement. Free, no ads, no in-app purchases, no subscription.
+
+3. SETUP AND MAIN FEATURES: No login and no demo account needed. On first launch the app asks eight onboarding questions and creates a local profile and a plan. Main features: Today tab (plan for today, rings, weight), Workout tab (start workout, check off sets, finish), Progress tab (overview, weights, history, achievements), Stats tab (points with friends; the public "All" list is opt-in with a nickname; long-press a name to report or block), Profile tab (invite friends via QR code/link, settings, Account > Delete account deletes the server account and its data). Apple Health is optional and only used after the user allows it.
+
+4. EXTERNAL SERVICES: (a) Our own server on Cloudflare Workers (friends, stats, invites, contact form, account deletion); website on Cloudflare Pages (privacy policy, support). (b) OpenAI API, called through our server, only for the optional meal photo estimate and only after explicit in-app consent; neither our server nor OpenAI stores the photo or the answer. (c) Apple HealthKit (on device). (d) Open Food Facts for barcode product lookup. (e) Exercise images loaded on demand from the public ExerciseDB media server (static.exercisedb.dev). No analytics or ad SDKs, no tracking.
+
+5. REGIONS: The app works the same in all regions (German and English). It is not offered in mainland China.
+
+6. REGULATION: Not a medical device and no medical claims; the app is not in a regulated category. HealthKit data stays on the device unless the user explicitly shares a summary with a friend.
 ---
 
 # App Store page Lumen Fit (English, all other countries)
