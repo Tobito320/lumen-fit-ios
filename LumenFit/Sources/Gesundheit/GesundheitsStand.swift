@@ -30,6 +30,16 @@ final class GesundheitsStand {
     /// Ob die App nach Leserechten fragen darf (die Person hat Health im Onboarding oder unter Health-Zugriff erlaubt). Sonst liest sie nur,
     /// was schon erlaubt ist, und zeigt nie still beim Start das Health-Blatt (09.11.2026: Rechte erst bei der Nutzung).
     @ObservationIgnored private let darfFragen: @MainActor () -> Bool
+    /// Datei für den letzten Stand (im Profilordner, geht mit dem Profil weg). Der Start zeigt ihn sofort, bis Health antwortet (Startzeit 11.11.2026).
+    @ObservationIgnored private let vorratDatei: @MainActor () -> URL?
+
+    /// Was der Start aus der Datei zeigt, bis der erste Abruf da ist. Nur auf dem Gerät, nie gesendet.
+    private struct Vorrat: Codable {
+        var tage: [TagesWerte]
+        var naechte: [SchlafNacht]
+        var vitale: [VitalArt: [VitalMesswert]]
+        var gewichte: [GewichtsMesswert]
+    }
 
     /// `hand` liefert die Schritte von Hand je Tag (Ops `fit.schritte.hand` des aktiven Profils, `AppUmgebung` verdrahtet es). Die Band-Ops `fit.band.tag`
     /// zählen seit 10.11.2026 nicht mehr für die Schritte (die Daten bleiben gespeichert).
@@ -39,7 +49,9 @@ final class GesundheitsStand {
          importVerlauf: @escaping @MainActor () -> ImportVerlaufStand = { ImportVerlaufStand() },
          eigeneNaechte: @escaping @MainActor () -> SchlafEigeneQuellen = { SchlafEigeneQuellen() },
          typen: @escaping @MainActor () -> Set<HealthTyp> = { Set(HealthTyp.allCases) },
-         darfFragen: @escaping @MainActor () -> Bool = { true }) {
+         darfFragen: @escaping @MainActor () -> Bool = { true },
+         vorratDatei: @escaping @MainActor () -> URL? = { nil }) {
+        self.vorratDatei = vorratDatei
         self.typen = typen
         self.darfFragen = darfFragen
         self.eigeneNaechte = eigeneNaechte
@@ -131,6 +143,24 @@ final class GesundheitsStand {
         if gewollt.contains(.schlaf) { naechteGeholt = true }
         erstGeholt = true
         letzteAktualisierung = uhr()
+        sichereVorrat()
+    }
+
+    /// Füllt beim Start den letzten Stand aus der Datei (nur solange noch nichts geholt ist); der erste Abruf überschreibt ihn.
+    func ladeVorrat() {
+        guard !erstGeholt, healthTage.isEmpty, let datei = vorratDatei(), let daten = try? Data(contentsOf: datei),
+              let v = try? JSONDecoder().decode(Vorrat.self, from: daten) else { return }
+        healthTage = Dictionary(v.tage.map { ($0.tag, $0) }, uniquingKeysWith: { $1 })
+        healthNaechte = Dictionary(v.naechte.map { ($0.tag, $0) }, uniquingKeysWith: { $1 })
+        vitale = v.vitale
+        gewichte = v.gewichte
+    }
+
+    private func sichereVorrat() {
+        guard let datei = vorratDatei() else { return }
+        let v = Vorrat(tage: Array(healthTage.values), naechte: Array(healthNaechte.values), vitale: vitale, gewichte: gewichte)
+        guard let daten = try? JSONEncoder().encode(v) else { return }
+        try? daten.write(to: datei, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
     /// Ohne Schlaf-Bereich fragt die App Health nach keiner Nacht.

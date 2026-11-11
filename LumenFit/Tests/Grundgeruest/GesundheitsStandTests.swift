@@ -31,6 +31,22 @@ final class GesundheitsStandTests: XCTestCase {
         XCTAssertEqual(stand.tage.count, 60, "alte Tage bleiben stehen")
     }
 
+    func testDerStartZeigtDenLetztenStandAusDerDateiBisHealthAntwortet() async throws {
+        let datei = try tempOrdner().appendingPathComponent("health-vorrat.json")
+        let erster = GesundheitsStand(leser: FakeHealthLeser(tage: tage(3, schritte: 7000)), uhr: uhr.uhr, vorratDatei: { datei })
+        await erster.aktualisiere()
+
+        let leser = FakeHealthLeser(tage: tage(3, schritte: 9000))
+        let neu = GesundheitsStand(leser: leser, uhr: uhr.uhr, vorratDatei: { datei })
+        neu.ladeVorrat()
+        XCTAssertEqual(neu.tage[heute]?.schritte, 7000, "ohne Abfrage: der letzte Stand")
+        XCTAssertTrue(leser.tagesAbfragen.isEmpty)
+        XCTAssertNil(neu.letzteAktualisierung)
+        await neu.aktualisiere()
+        XCTAssertEqual(neu.tage[heute]?.schritte, 9000)
+        XCTAssertEqual(leser.tagesAbfragen[0].von, Datum.addTage(heute, -59), "der erste Abruf holt trotzdem 60 Tage")
+    }
+
     func testWerDenLaufendenAbrufTrifftWartetUndBekommtEinenFolgeabruf() async {
         let innen = FakeHealthLeser(tage: tage(5))
         let leser = GesundheitsMerkLeser(innen: innen)

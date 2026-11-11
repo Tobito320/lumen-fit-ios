@@ -78,7 +78,8 @@ final class AppUmgebung {
         self.profil = profile
         let anker = UmgebungsAnker()
         self.gesundheit = GesundheitsStand(leser: leser, uhr: uhr, hand: { anker.handSchritte() }, importVerlauf: { anker.importVerlauf() },
-                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() }, darfFragen: { anker.healthErlaubt() })
+                                         eigeneNaechte: { anker.eigeneNaechte() }, typen: { anker.healthTypen() }, darfFragen: { anker.healthErlaubt() },
+                                         vorratDatei: { anker.healthVorrat() })
         if let aktiv = profile.aktiv {
             neuinstallationErkannt = !FileManager.default.fileExists(atPath: Self.profilOrdner(ordner, aktiv.id).path)
         }
@@ -225,6 +226,8 @@ final class AppUmgebung {
     func healthTypen() -> Set<HealthTyp> { (umgebung?.bereicheWirksam ?? Einstellungen()).healthTypen }
 
     /// Die Person hat Health erlaubt (Onboarding oder Health-Zugriff): erst dann fragt der Stand nach Leserechten.
+    func healthVorrat() -> URL? { umgebung?.daten?.ordner.appendingPathComponent("health-vorrat.json") }
+
     func healthErlaubt() -> Bool { umgebung?.daten?.einstellungen.werte.healthGefragt == true }
 
     func importVerlauf() -> ImportVerlaufStand { umgebung?.daten?.importVerlauf.stand ?? ImportVerlaufStand() }

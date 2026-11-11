@@ -10,6 +10,7 @@ enum ModulStart {
         guard !imTestHost else { return }
         AbrufPlaner.registriere(umgebung)
         umgebung.beobachteHealth()
+        umgebung.gesundheit.ladeVorrat()   // letzter Health-Stand sofort, der Abruf läuft danach
         HeuteModul.start(umgebung)
         GymModul.start(umgebung)
         FortschrittModul.start(umgebung)
