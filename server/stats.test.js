@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fakeD1 } from "./fake-d1.js";
 import { handleFetch } from "./index.js";
-import { berlinMontag, statsKontoLoeschen } from "./stats.js";
+import { berlinMontag, berlinTag, statsKontoLoeschen } from "./stats.js";
 
 const SCHEMA = readFileSync(new URL("./schema.sql", import.meta.url), "utf8");
 const APP = "app-key-test";
@@ -46,12 +46,15 @@ const seite = (env, v, n) => (env.DB.roh.prepare("SELECT a FROM verbindungen WHE
 const einst = (env, v, n, e) => sql(env, `UPDATE verbindungen SET ${seite(env, v, n)}_einst = ? WHERE id = ?`, JSON.stringify(e), v);
 const plus = (tag, n) => { const d = new Date(`${tag}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const M = () => berlinMontag(Date.now());
+const T = () => berlinTag(Date.now());
 
 const REKORDE = { "2gPfomN": 150, "lv-ma-brustpresse-sitzend-schraeg": 32.5 };
 const werte = (extra = {}) => ({ freunde: true, oeffentlich: false, montag: M(), trainings: 3, sets: 40, rekordeNeu: 1, serie: 4, rekorde: REKORDE, ...extra });
 const oeffentlich = (spitzname, jahr = 1, extra = {}) => werte({ freunde: false, oeffentlich: true, spitzname, jahr, ...extra });
 const setzen = (env, k, body) => ruf(env, k, "PUT", "/stats", body);
 const lesen = async (env, k) => (await ruf(env, k, "GET", "/stats")).json;
+const schritte = (heute, monat, tag = T()) => ({ schritteTag: tag, schritteHeute: heute, schritteMonat: monat });
+const schritteZeile = (env, n) => ({ ...env.DB.roh.prepare("SELECT tag, heute, monat FROM stats_schritte WHERE konto = ?").get(KONTEN[n].id) });
 const PRIVAT = { freunde: false, oeffentlich: false, spitzname: null, ausgeblendet: false };
 
 test("Stats: Woche nach Berliner Zeit, auch bei Zeitumstellung", () => {
@@ -302,4 +305,62 @@ test("Stats: Drossel je Konto", async () => {
   assert.deepEqual((await setzen(env, "ich", werte())).json, { fehler: "zu_schnell" });
   for (let i = 0; i < 30; i++) assert.equal((await ruf(env, "ich", "GET", "/stats")).status, 200);
   assert.equal((await ruf(env, "ich", "GET", "/stats")).status, 429);
+});
+
+test("Stats Schritte: PUT prüft Tag und Grenzen; ohne Schritte (alte App, Mitzählen aus) keine Zeile, privat löscht sie", async () => {
+  const env = await welt("ich");
+  const tagImMonat = Number(T().slice(8));
+  const schlecht = [
+    schritte(100, 100, "2020-01-01"), schritte(100, 100, plus(T(), 2)), schritte(100, 100, plus(T(), -2)), schritte(100, 100, 20261111), { schritteTag: T() },
+    schritte(-1, 0), schritte(100001, 100001), schritte(1.5, 2), schritte(100, 99), schritte(100, tagImMonat * 100000 + 1), schritte("100", "100"),
+  ];
+  for (const b of schlecht) {
+    sql(env, "DELETE FROM drossel");
+    assert.equal((await setzen(env, "ich", werte(b))).status, 400, JSON.stringify(b));
+  }
+  assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats"), 0);
+  assert.equal((await setzen(env, "ich", werte())).status, 200, "alte App ohne Schritte");
+  assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats_schritte"), 0);
+  assert.equal((await setzen(env, "ich", werte(schritte(6240, 70000)))).status, 200);
+  assert.deepEqual(schritteZeile(env, "ich"), { tag: T(), heute: 6240, monat: 70000 });
+  assert.equal((await setzen(env, "ich", werte())).status, 200, "Mitzählen aus");
+  assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats_schritte"), 0);
+  await setzen(env, "ich", werte(schritte(10, 10)));
+  await setzen(env, "ich", { freunde: false, oeffentlich: false });
+  assert.equal(zahl(env, "SELECT COUNT(*) AS n FROM stats_schritte"), 0);
+});
+
+test("Stats Schritte: ein älterer Tag überschreibt keinen neueren", async () => {
+  const env = await welt("ich");
+  await setzen(env, "ich", werte(schritte(5000, 60000)));
+  await setzen(env, "ich", werte(schritte(9000, 9000, plus(T(), -1))));
+  assert.deepEqual(schritteZeile(env, "ich"), { tag: T(), heute: 5000, monat: 60000 });
+  await setzen(env, "ich", werte(schritte(5100, 60100)));
+  assert.deepEqual(schritteZeile(env, "ich"), { tag: T(), heute: 5100, monat: 60100 });
+});
+
+test("Stats Schritte: Freunde und Alle sehen heute und Monat, nur wer Schritte schickt und Freunden Schritte zeigt", async () => {
+  const env = await welt("ich", "du", "fremd", "vier");
+  const v = await verbinden(env, "ich", "du");
+  await setzen(env, "du", werte(schritte(6240, 70000)));
+  const freund = async () => (await lesen(env, "ich")).freunde[0];
+  assert.deepEqual(await freund(), { id: v, name: "Beispiel du", punkte: 75, trainings: 3, sets: 40, serie: 4, rekorde: REKORDE, schritteHeute: 6240, schritteMonat: 70000 });
+  await einst(env, v, "du", { zeigt: ["gym"] });
+  let f = await freund();
+  assert.ok(f && !("schritteHeute" in f) && !("schritteMonat" in f), "Gym ja, Schritte nein");
+  await einst(env, v, "ich", { ausblenden: ["schritte"] });
+  await einst(env, v, "du", {});
+  f = await freund();
+  assert.ok(f && !("schritteHeute" in f), "ich blende Schritte aus");
+  await einst(env, v, "ich", {});
+
+  await setzen(env, "fremd", oeffentlich("Stahlbiene", 1, schritte(12000, 150000)));
+  await setzen(env, "vier", oeffentlich("Eisenfaust", 1));
+  const alle = async () => Object.fromEntries((await lesen(env, "ich")).alle.map((e) => [e.name, [e.schritteHeute, e.schritteMonat]]));
+  assert.deepEqual(await alle(), { Stahlbiene: [12000, 150000], Eisenfaust: [undefined, undefined] });
+  // Letzter Stand von gestern: heute 0, der Monat nur im selben Monat; älter als der Monat: beides 0.
+  sql(env, "UPDATE stats_schritte SET tag = ? WHERE konto = ?", plus(T(), -1), KONTEN.fremd.id);
+  assert.deepEqual((await alle()).Stahlbiene, [0, plus(T(), -1).slice(0, 7) === T().slice(0, 7) ? 150000 : 0]);
+  sql(env, "UPDATE stats_schritte SET tag = ? WHERE konto = ?", plus(T(), -40), KONTEN.fremd.id);
+  assert.deepEqual((await alle()).Stahlbiene, [0, 0]);
 });
