@@ -30,8 +30,8 @@ final class EssenStore {
         self.uhr = uhr
         zieleDatei = ordner.map { JSONDatei<ErnaehrungsZiele>($0.appendingPathComponent("essen-ziele.json")) }
         if let z = zieleDatei?.lade() { gespeicherteZiele = z }
-        raum.beobachten(ErnaehrungFaltung.arten) { [weak self] op in self?.faltung.anwenden(op) }
-        raum.beobachten(FastenFaltung.arten) { [weak self] op in self?.fastenFaltung.anwenden(op) }
+        faltung = raum.falten(ErnaehrungFaltung.arten, ErnaehrungFaltung(), live: { [weak self] op in self?.faltung.anwenden(op) }) { $0.anwenden($1) }
+        fastenFaltung = raum.falten(FastenFaltung.arten, FastenFaltung(), live: { [weak self] op in self?.fastenFaltung.anwenden(op) }) { $0.anwenden($1) }
     }
 
     var ich: ProfilID { raum.profil }

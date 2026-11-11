@@ -10,10 +10,10 @@ final class ImportVerlaufStore {
 
     init(raum: LokalerRaum) {
         self.raum = raum
-        raum.beobachten(ImportVerlaufLogik.arten) { [weak self] op in
+        stand = raum.falten(ImportVerlaufLogik.arten, ImportVerlaufStand(), live: { [weak self] op in
             guard let self else { return }
             ImportVerlaufLogik.nimmAuf(op, in: &self.stand)
-        }
+        }) { ImportVerlaufLogik.nimmAuf($1, in: &$0) }
     }
 
     func stimmung(_ tag: String) -> ImportStimmung? { stand.stimmung[tag] }

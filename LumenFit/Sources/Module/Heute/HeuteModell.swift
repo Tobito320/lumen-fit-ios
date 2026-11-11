@@ -38,8 +38,9 @@ final class HeuteModell {
     }
 
     /// Rechnet jetzt und danach bei jedem passenden Ereignis neu. Läuft, solange der Tab sichtbar ist (`.task`).
-    func beobachte() async {
-        berechne()
+    /// `rechnen: false`, wenn gerade erst gerechnet wurde (Start: `lade` rechnet schon, ein dritter Durchgang kostete nur Zeit).
+    func beobachte(rechnen: Bool = true) async {
+        if rechnen { berechne() }
         for await ereignis in umgebung.ereignisse.strom() { await verarbeite(ereignis) }
     }
 

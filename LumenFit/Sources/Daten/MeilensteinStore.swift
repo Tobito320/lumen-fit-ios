@@ -15,8 +15,10 @@ final class MeilensteinStore {
         self.raum = raum
         self.ereignisse = ereignisse
         self.uhr = uhr
-        raum.beobachten([Self.art]) { [weak self] op in
+        stand = raum.falten([Self.art], [:], live: { [weak self] op in
             if let m = op.daten(MeilensteinStand.self) { self?.stand[m.id] = m }
+        }) { stand, op in
+            if let m = op.daten(MeilensteinStand.self) { stand[m.id] = m }
         }
     }
 

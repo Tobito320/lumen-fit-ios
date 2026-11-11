@@ -23,7 +23,7 @@ final class MeilensteinWaechter {
             for await ereignis in strom { self?.verarbeite(ereignis) }
         }
         umgebung.beiAbruf { [weak self] in self?.pruefeAlles() }
-        pruefeAlles()
+        Task { [weak self] in self?.pruefeAlles() }   // nach dem ersten Bild, nicht davor (Startzeit 11.11.2026)
     }
 
     private func verarbeite(_ ereignis: Ereignis) {

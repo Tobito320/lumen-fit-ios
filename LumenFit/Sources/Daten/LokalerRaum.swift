@@ -50,6 +50,15 @@ final class LokalerRaum {
 
     func ops(arten: Set<String>) -> [Op] { alle.filter { arten.contains($0.art) } }
 
+    /// Wie `beobachten`, aber der Bestand wird in einem lokalen Wert gefaltet und einmal zurückgegeben; danach kommen nur neue Ops an `f`.
+    /// Für Stores mit beobachtetem Zustand: beim Start sonst je Op ein Observation-Schreibzugriff (Startzeit 11.11.2026).
+    func falten<F>(_ arten: Set<String>, _ start: F, live f: @escaping (Op) -> Void, _ anwenden: (inout F, Op) -> Void) -> F {
+        var wert = start
+        for op in alle where arten.contains(op.art) { anwenden(&wert, op) }
+        beobachter.append((arten: arten, f: f))
+        return wert
+    }
+
     /// Wie viele Ops der Raum hat. Ops werden nur angehängt: gleiche Anzahl heißt gleicher Inhalt (Merk-Schlüssel für Leser, die alles durchgehen).
     var anzahl: Int { alle.count }
 

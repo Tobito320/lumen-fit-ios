@@ -22,11 +22,11 @@ final class TrainingStore {
         self.einstellungen = einstellungen
         self.ereignisse = ereignisse
         self.uhr = uhr
-        raum.beobachten(TrainingFaltung.arten) { [weak self] op in
+        faltung = raum.falten(TrainingFaltung.arten, TrainingFaltung(), live: { [weak self] op in
             self?.faltung.anwenden(op)
             self?.sessionsGemerkt = nil
-        }
-        raum.beobachten(CardioFaltung.arten) { [weak self] op in self?.cardioFaltung.anwenden(op) }
+        }) { $0.anwenden($1) }
+        cardioFaltung = raum.falten(CardioFaltung.arten, CardioFaltung(), live: { [weak self] op in self?.cardioFaltung.anwenden(op) }) { $0.anwenden($1) }
     }
 
     // MARK: - Lesen

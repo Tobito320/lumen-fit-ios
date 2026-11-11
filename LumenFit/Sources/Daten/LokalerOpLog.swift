@@ -54,6 +54,7 @@ struct LokalerOpLog: Sendable {
     }
 
     private static func eine(_ zeile: Data, _ decoder: JSONDecoder) -> Op? {
+        if let op = OpSchnellLeser.op(zeile) { return op }
         let roh = Data(zeile)
         decoder.userInfo[Op.zeileSchluessel] = roh   // Op schneidet `d` direkt aus den Bytes (Lovea Audit 1)
         return try? decoder.decode(Op.self, from: roh)
@@ -112,5 +113,179 @@ private final class OpAblage: @unchecked Sendable {
     func frei() {
         _ = puffer.deinitialize()
         puffer.deallocate()
+    }
+}
+
+/// Schneller Weg für eine Zeile aus `ops.jsonl`: liest `id`, `art`, `von`, `zeit` als einfache Strings und schneidet `d` roh heraus, ohne JSONDecoder
+/// und ohne ISO8601DateFormatter (der Start las 7500 Ops in 250 ms, fast alles im Decoder, Startzeit 11.11.2026). Alles Ungewöhnliche (Escape in
+/// einem der vier Felder, fehlendes Feld, abgeschnittene Zeile, anderes Datumsformat) gibt nil; dann dekodiert der JSONDecoder wie vorher.
+// shortcut: `d` wird nur auf Klammern und Strings geprüft, nicht voll validiert; ein kaputtes, aber ausgeglichenes `d` bleibt im Log statt in `.defekt`,
+// die Faltung überspringt es (daten() gibt nil). Volle Prüfung nur, falls je so eine Zeile auftaucht.
+enum OpSchnellLeser {
+    static func op(_ zeile: Data) -> Op? {
+        zeile.withUnsafeBytes { roh -> Op? in
+            let b = roh.bindMemory(to: UInt8.self)
+            var leser = Leser(b: b)
+            return leser.op()
+        }
+    }
+
+    private struct Leser {
+        let b: UnsafeBufferPointer<UInt8>
+        var i = 0
+
+        init(b: UnsafeBufferPointer<UInt8>) { self.b = b }
+
+        private static let anf = UInt8(ascii: "\""), rueck = UInt8(ascii: "\\")
+
+        mutating func leer() {
+            while i < b.count, b[i] == 0x20 || b[i] == 0x09 || b[i] == 0x0A || b[i] == 0x0D { i += 1 }
+        }
+
+        /// Ein String ohne Escape: der Bereich zwischen den Anführungszeichen, nil bei Escape oder Zeilenende.
+        mutating func einfacherString() -> Range<Int>? {
+            guard i < b.count, b[i] == Self.anf else { return nil }
+            let start = i + 1
+            var j = start
+            while j < b.count, b[j] != Self.anf {
+                if b[j] == Self.rueck { return nil }
+                j += 1
+            }
+            guard j < b.count else { return nil }
+            i = j + 1
+            return start..<j
+        }
+
+        /// Hinter das schließende Anführungszeichen des Strings, der bei `i` beginnt.
+        mutating func stringUeberspringen() -> Bool {
+            i += 1
+            while i < b.count, b[i] != Self.anf { i += b[i] == Self.rueck ? 2 : 1 }
+            guard i < b.count else { return false }
+            i += 1
+            return true
+        }
+
+        /// Überspringt einen beliebigen Wert; false, wenn die Zeile vorher endet.
+        mutating func ueberspringe() -> Bool {
+            guard i < b.count else { return false }
+            let c = b[i]
+            if c == Self.anf { return stringUeberspringen() }
+            if c == UInt8(ascii: "{") || c == UInt8(ascii: "[") {
+                var tiefe = 0
+                while i < b.count {
+                    let x = b[i]
+                    if x == Self.anf {
+                        guard stringUeberspringen() else { return false }
+                        continue
+                    }
+                    if x == UInt8(ascii: "{") || x == UInt8(ascii: "[") {
+                        tiefe += 1
+                    } else if x == UInt8(ascii: "}") || x == UInt8(ascii: "]") {
+                        tiefe -= 1
+                        if tiefe == 0 { i += 1; return true }
+                    }
+                    i += 1
+                }
+                return false
+            }
+            // Zahl, true, false, null
+            let start = i
+            while i < b.count, b[i] != UInt8(ascii: ","), b[i] != UInt8(ascii: "}"), b[i] != UInt8(ascii: "]"),
+                  b[i] != 0x20, b[i] != 0x09, b[i] != 0x0A, b[i] != 0x0D { i += 1 }
+            return i > start
+        }
+
+        func gleich(_ r: Range<Int>, _ text: StaticString) -> Bool {
+            text.withUTF8Buffer { t in
+                guard r.count == t.count else { return false }
+                for k in 0..<t.count where b[r.lowerBound + k] != t[k] { return false }
+                return true
+            }
+        }
+
+        func text(_ r: Range<Int>) -> String { String(decoding: UnsafeBufferPointer(rebasing: b[r]), as: UTF8.self) }
+
+        mutating func op() -> Op? {
+            var id: Range<Int>?, art: Range<Int>?, von: Range<Int>?, zeit: Range<Int>?, d: Range<Int>?
+            leer()
+            guard i < b.count, b[i] == UInt8(ascii: "{") else { return nil }
+            i += 1
+            leer()
+            while true {
+                guard let schluessel = einfacherString() else { return nil }
+                leer()
+                guard i < b.count, b[i] == UInt8(ascii: ":") else { return nil }
+                i += 1
+                leer()
+                if gleich(schluessel, "d") {
+                    let start = i
+                    guard ueberspringe() else { return nil }
+                    d = start..<i
+                } else if gleich(schluessel, "id") { guard let r = einfacherString() else { return nil }; id = r
+                } else if gleich(schluessel, "art") { guard let r = einfacherString() else { return nil }; art = r
+                } else if gleich(schluessel, "von") { guard let r = einfacherString() else { return nil }; von = r
+                } else if gleich(schluessel, "zeit") { guard let r = einfacherString() else { return nil }; zeit = r
+                } else {
+                    guard ueberspringe() else { return nil }
+                }
+                leer()
+                guard i < b.count else { return nil }
+                if b[i] == UInt8(ascii: ",") { i += 1; leer(); continue }
+                guard b[i] == UInt8(ascii: "}") else { return nil }
+                i += 1
+                break
+            }
+            leer()
+            guard i == b.count, let id, let art, let von, let zeit, let d, !d.isEmpty,
+                  let datum = OpSchnellLeser.datum(UnsafeBufferPointer(rebasing: b[zeit])) else { return nil }
+            return Op(id: text(id), art: text(art), von: ProfilID(rawValue: text(von)), zeit: datum, d: Data(buffer: UnsafeBufferPointer(rebasing: b[d])))
+        }
+    }
+
+    /// `YYYY-MM-DDTHH:MM:SS[.f...](Z|±HH:MM)`, wie `Op` es schreibt; sonst nil.
+    static func datum(_ t: UnsafeBufferPointer<UInt8>) -> Date? {
+        func zahl(_ von: Int, _ laenge: Int) -> Int? {
+            guard von + laenge <= t.count else { return nil }
+            var w = 0
+            for k in von..<(von + laenge) {
+                let c = t[k]
+                guard c >= 0x30, c <= 0x39 else { return nil }
+                w = w * 10 + Int(c - 0x30)
+            }
+            return w
+        }
+        guard t.count >= 20, t[4] == UInt8(ascii: "-"), t[7] == UInt8(ascii: "-"), t[10] == UInt8(ascii: "T"), t[13] == UInt8(ascii: ":"), t[16] == UInt8(ascii: ":"),
+              let jahr = zahl(0, 4), let monat = zahl(5, 2), let tag = zahl(8, 2), let stunde = zahl(11, 2), let minute = zahl(14, 2), let sekunde = zahl(17, 2),
+              (1...12).contains(monat), (1...31).contains(tag), stunde < 24, minute < 60, sekunde < 61 else { return nil }
+        var i = 19
+        var bruch = 0.0
+        if t[i] == UInt8(ascii: ".") {
+            i += 1
+            var faktor = 0.1
+            let start = i
+            while i < t.count, t[i] >= 0x30, t[i] <= 0x39 { bruch += Double(t[i] - 0x30) * faktor; faktor /= 10; i += 1 }
+            guard i > start else { return nil }
+        }
+        guard i < t.count else { return nil }
+        var versatz = 0
+        if t[i] == UInt8(ascii: "Z") {
+            i += 1
+        } else if t[i] == UInt8(ascii: "+") || t[i] == UInt8(ascii: "-") {
+            guard i + 6 == t.count, t[i + 3] == UInt8(ascii: ":"), let h = zahl(i + 1, 2), let m = zahl(i + 4, 2) else { return nil }
+            versatz = (h * 3600 + m * 60) * (t[i] == UInt8(ascii: "-") ? -1 : 1)
+            i += 6
+        } else {
+            return nil
+        }
+        guard i == t.count else { return nil }
+        // Tage seit 1970 aus dem Kalenderdatum (Howard Hinnant, days_from_civil)
+        let y = monat <= 2 ? jahr - 1 : jahr
+        let era = (y >= 0 ? y : y - 399) / 400
+        let yoe = y - era * 400
+        let doy = (153 * (monat + (monat > 2 ? -3 : 9)) + 2) / 5 + tag - 1
+        let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+        let tage = era * 146_097 + doe - 719_468
+        let sekunden = tage * 86_400 + stunde * 3600 + minute * 60 + sekunde - versatz
+        return Date(timeIntervalSince1970: TimeInterval(sekunden) + bruch)
     }
 }

@@ -18,7 +18,7 @@ final class HabitStore {
         self.ziele = ziele
         self.ereignisse = ereignisse
         self.uhr = uhr
-        raum.beobachten(Self.arten) { [weak self] op in self?.faltung.anwenden(op) }
+        faltung = raum.falten(Self.arten, HabitFaltung(), live: { [weak self] op in self?.faltung.anwenden(op) }) { $0.anwenden($1) }
     }
 
     var ich: ProfilID { raum.profil }

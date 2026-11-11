@@ -44,7 +44,7 @@ struct HeuteTabView: View {
             if sitzung == nil { sitzung = GymSitzung.von(umgebung) }
             m.berechne()
             await m.lade()
-            await m.beobachte()
+            await m.beobachte(rechnen: false)
         }
     }
 

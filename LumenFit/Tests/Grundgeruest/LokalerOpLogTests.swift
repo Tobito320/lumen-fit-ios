@@ -44,6 +44,35 @@ final class LokalerOpLogTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: datei.appendingPathExtension("defekt").path))
     }
 
+    func testSchnellerLeserGleichtDemJSONDecoder() throws {
+        let zeilen = [
+            #"{"id":"a","art":"habit.setzen","von":"p1","zeit":"2026-11-11T07:31:37.717Z","d":{"art":"wasser","datum":"2026-11-11","wert":3}}"#,
+            #"{"d":{"t":"x\"}y","l":[1,{"a":[2]}],"leer":{}},"zeit":"2026-02-28T23:59:59Z","von":"p1","art":"x","id":"b","seq":12,"f":[true,null]}"#,
+            #"{ "id" : "c", "art":"x", "von":"p1", "zeit":"2026-11-11T08:31:37.500+01:00", "d" : null }"#,
+            #"{"id":"e","art":"x","von":"p1","zeit":"2024-03-01T00:00:00.000-05:30","d":[1,2,"]"]}"#,
+        ]
+        for z in zeilen {
+            let daten = Data(z.utf8)
+            let decoder = JSONDecoder()
+            decoder.userInfo[Op.zeileSchluessel] = daten
+            let erwartet = try decoder.decode(Op.self, from: daten)
+            let schnell = try XCTUnwrap(OpSchnellLeser.op(daten), z)
+            XCTAssertEqual(schnell.id, erwartet.id)
+            XCTAssertEqual(schnell.art, erwartet.art)
+            XCTAssertEqual(schnell.von, erwartet.von)
+            XCTAssertEqual(schnell.d, erwartet.d, z)
+            XCTAssertEqual(schnell.zeit.timeIntervalSince1970, erwartet.zeit.timeIntervalSince1970, accuracy: 0.001, z)
+        }
+        let abgelehnt = [
+            #"{"id":"a","art":"x","von":"p","zeit":"2026-11-11T07:31:37Z","d":{"a":"#,
+            #"{"id":"a\"b","art":"x","von":"p","zeit":"2026-11-11T07:31:37Z","d":{}}"#,
+            #"{"id":"a","art":"x","von":"p","zeit":"2026-11-11T07:31:37Z"}"#,
+            #"{"id":"a","art":"x","von":"p","zeit":"11.11.2026","d":{}}"#,
+            #"{kaputt"#,
+        ]
+        for z in abgelehnt { XCTAssertNil(OpSchnellLeser.op(Data(z.utf8)), z) }
+    }
+
     func testFuegeAnMeldetAngehaengtDoppeltUndFehlgeschlagen() throws {
         let ordner = try tempOrdner()
         var log = LokalerOpLog(datei: ordner.appendingPathComponent("ops.jsonl"))
