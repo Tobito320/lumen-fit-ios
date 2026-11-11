@@ -2,7 +2,7 @@
 import SwiftUI
 
 /// Eine Einheit zum Nachlesen: Zeiten, Volumen, Sätze, Kalorien, Puls und jeder abgehakte Satz. Eine beendete Einheit lässt sich in den Zeiten und
-/// in den Sätzen korrigieren, mit Übungen ergänzen oder löschen (`EinheitZeitenBlatt`, `EinheitSaetzeBlatt`).
+/// in den Sätzen korrigieren, mit Übungen ergänzen (`EinheitZeitenBlatt`, `EinheitSaetzeBlatt`) und über das Menü oben löschen.
 struct EinheitNachlesenView: View {
     let sessionId: String
     @Environment(AppUmgebung.self) private var umgebung
@@ -14,6 +14,9 @@ struct EinheitNachlesenView: View {
     @State private var notizOffen = false
     @State private var notizText = ""
     @State private var hinzugefuegt = 0
+    @State private var loeschenFrage = false
+    @State private var geloescht = 0
+    @Environment(\.dismiss) private var schliessen
 
     var body: some View {
         if let training = umgebung.daten?.training, let s = training.sessions.first(where: { $0.id == sessionId }) {
@@ -61,6 +64,9 @@ struct EinheitNachlesenView: View {
                         notizText = s.notiz ?? ""
                         notizOffen = true
                     }
+                    Divider()
+                    // Besitzer 11.11.2026: "Man sollte Einheit auch löschen können" (stand versteckt im Blatt "Zeiten ändern")
+                    Button("Einheit löschen", systemImage: "trash", role: .destructive) { loeschenFrage = true }
                 } label: {
                     Image(systemName: "ellipsis.circle").frame(width: Abstand.tippflaeche, height: Abstand.tippflaeche)
                 }
@@ -77,7 +83,15 @@ struct EinheitNachlesenView: View {
             Button("Speichern") { training.notizAendern(s, notizText) }
             Button("Abbrechen", role: .cancel) {}
         }
+        .confirmationDialog("Einheit löschen?", isPresented: $loeschenFrage, titleVisibility: .visible) {
+            Button("Löschen", role: .destructive) {
+                training.loeschen(s)
+                geloescht += 1
+                schliessen()
+            }
+        }
         .haptik(.erfolg, bei: hinzugefuegt)
+        .haptik(.warnung, bei: geloescht)
     }
 
     // MARK: Teile

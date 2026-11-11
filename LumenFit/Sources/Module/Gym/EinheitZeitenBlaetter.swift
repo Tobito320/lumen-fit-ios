@@ -1,17 +1,15 @@
 // Quelle: Lovea Health/GymSession.swift (ZeitenBlatt, StartzeitBlatt, NachtragenBlatt; neu im Lumen-Design)
 import SwiftUI
 
-/// Zeiten einer beendeten Einheit ändern oder die Einheit löschen. Länger als drei Stunden fragt nach ("Warst du wirklich so lange im Gym?").
+/// Zeiten einer beendeten Einheit ändern (Löschen steht seit 11.11.2026 im Menü der Einheit). Länger als drei Stunden fragt nach ("Warst du wirklich so lange im Gym?").
 struct EinheitZeitenBlatt: View {
     let session: GymSession
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
     @State private var start: Date
     @State private var ende: Date
-    @State private var loeschenFrage = false
     @State private var langeStunden: Double?
     @State private var gesichert = 0
-    @State private var geloescht = 0
 
     /// `jetzt` kommt vom Aufrufer (`umgebung.uhr()`), damit das Ende ohne Wert einen Vorschlag hat.
     init(session: GymSession, jetzt: Date) {
@@ -29,23 +27,12 @@ struct EinheitZeitenBlatt: View {
                     DatePicker("Ausgecheckt", selection: $ende, in: start...max(start, jetzt))
                     LabeledContent("Dauer", value: TrainingLogik.dauerText(max(0, ende.timeIntervalSince(start))))
                 }
-                Section {
-                    Button("Einheit löschen", role: .destructive) { loeschenFrage = true }
-                        .frame(minHeight: Abstand.tippflaeche)
-                }
             }
             .navigationTitle(Datum.anzeige(Datum.text(session.start)))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Abbrechen") { schliessen() } }
                 ToolbarItem(placement: .confirmationAction) { Button("Sichern") { pruefen(jetzt) } }
-            }
-            .confirmationDialog("Einheit löschen?", isPresented: $loeschenFrage, titleVisibility: .visible) {
-                Button("Löschen", role: .destructive) {
-                    umgebung.daten?.training.loeschen(session)
-                    geloescht += 1
-                    schliessen()
-                }
             }
             .alert("Wirklich so lange?", isPresented: Binding(get: { langeStunden != nil }, set: { if !$0 { langeStunden = nil } })) {
                 Button("Ja, so lange") { sichern() }
@@ -55,7 +42,6 @@ struct EinheitZeitenBlatt: View {
             }
         }
         .haptik(.erfolg, bei: gesichert)
-        .haptik(.warnung, bei: geloescht)
     }
 
     private func pruefen(_ jetzt: Date) {
