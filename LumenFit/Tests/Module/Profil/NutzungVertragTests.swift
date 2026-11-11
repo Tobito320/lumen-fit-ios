@@ -74,6 +74,7 @@ final class NutzungVertragTests: XCTestCase {
             }
         }
         XCTAssertTrue(tempoNamen.contains("start"))
+        XCTAssertTrue(tempoNamen.contains("health"))
         for c in [nil, 400, 401, 403, 404, 409, 413, 418, 429, 500, 502, 503, 504] as [Int?] { XCTAssertTrue(status.contains(NutzungRoute.status(c)), "\(String(describing: c))") }
         for s in [0.1, 2, 9] as [Double] { XCTAssertTrue(tempoBucket.contains(NutzungMass.tempo(s))) }
         XCTAssertEqual(try liste(n, "dauer"), Set([10, 100, 600, 1200, 4000].map { NutzungMass.dauer($0) }))

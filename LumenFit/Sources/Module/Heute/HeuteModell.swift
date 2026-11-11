@@ -34,6 +34,7 @@ final class HeuteModell {
     func lade() async {
         await umgebung.gesundheit.aktualisiere()
         berechne()
+        umgebung.konto.nutzung.startdauer(NutzungMass.sekunden(ContinuousClock.now - NutzungStart.beginn), name: "health")
     }
 
     /// Rechnet jetzt und danach bei jedem passenden Ereignis neu. Läuft, solange der Tab sichtbar ist (`.task`).

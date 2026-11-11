@@ -324,7 +324,8 @@ export const NAMEN = {
       "partner_get",
       "verbindungen",
       "ki_foto",
-      "start"
+      "start",
+      "health"
     ],
     "bucket": [
       "lt1s",

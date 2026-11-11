@@ -193,7 +193,7 @@ final class NutzungSpeicher {
     private var zielErreicht: Set<String> = []
     private var gesehenInSitzung: Set<String> = []
     private var restGeprueft = false
-    private var startGemessen = false
+    private var startGemessen: Set<String> = []
     private var letzteSicherung: Date?
 
     init(ordner: URL, uhr: @escaping Uhr) {
@@ -286,11 +286,10 @@ final class NutzungSpeicher {
         sichere()
     }
 
-    /// Startzeit bis zur ersten Ansicht, einmal je Prozess.
-    func startdauer(_ sekunden: TimeInterval) {
-        guard an, !startGemessen else { return }
-        startGemessen = true
-        stand.zaehleMehr(.tempo, "start.\(NutzungMass.tempo(sekunden))", tag: heute)
+    /// Startzeit bis zur ersten Ansicht ("start") oder bis die ersten Health-Werte da sind ("health"), je einmal je Prozess.
+    func startdauer(_ sekunden: TimeInterval, name: String = "start") {
+        guard an, startGemessen.insert(name).inserted else { return }
+        stand.zaehleMehr(.tempo, "\(name).\(NutzungMass.tempo(sekunden))", tag: heute)
         sichere()
     }
 
