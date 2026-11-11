@@ -44,6 +44,7 @@ final class StartTempoTests: XCTestCase {
             }
         }
         let anzahl = raum.anzahl
+        let logDatei = try XCTUnwrap(saat.daten?.ordner).appendingPathComponent("ops.jsonl")
 
         // Start wie in der App, Schritt für Schritt
         let uhrStart = ContinuousClock.now
@@ -51,6 +52,8 @@ final class StartTempoTests: XCTestCase {
         var letzte = uhrStart
         func marke(_ name: String) { let n = ContinuousClock.now; marken.append((name, n - letzte)); letzte = n }
 
+        var log = LokalerOpLog(datei: logDatei)
+        XCTAssertEqual(log.lade().count, anzahl); marke("log")
         let u = umgebung(); marke("umgebung")
         let daten = try XCTUnwrap(u.daten); marke("datensatz")
         _ = daten.training.sessions; marke("sessions")

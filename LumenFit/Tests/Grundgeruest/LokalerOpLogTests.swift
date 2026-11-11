@@ -27,6 +27,23 @@ final class LokalerOpLogTests: XCTestCase {
         XCTAssertEqual(ops[0].zeit.timeIntervalSince1970, t0.timeIntervalSince1970, accuracy: 0.001)
     }
 
+    func testVieleZeilenAufAllenKernenBehaltenReihenfolgeDoppelteUndKaputte() throws {
+        let datei = try tempOrdner().appendingPathComponent("ops.jsonl")
+        var log = LokalerOpLog(datei: datei)
+        for i in 0..<1500 { XCTAssertTrue(log.haengeAn(op("o\(i)", wert: i))) }
+        var text = try Data(contentsOf: datei)
+        text.append(Data("{kaputt\n".utf8))
+        text.append(try JSONEncoder().encode(op("o7", wert: 7)))   // doppelte Id
+        text.append(Data("\n".utf8))
+        try text.write(to: datei)
+
+        var neu = LokalerOpLog(datei: datei)
+        let ops = neu.lade()
+        XCTAssertEqual(ops.map(\.id), (0..<1500).map { "o\($0)" })
+        XCTAssertEqual(ops.compactMap { $0.daten(Probe.self)?.wert }, Array(0..<1500))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: datei.appendingPathExtension("defekt").path))
+    }
+
     func testFuegeAnMeldetAngehaengtDoppeltUndFehlgeschlagen() throws {
         let ordner = try tempOrdner()
         var log = LokalerOpLog(datei: ordner.appendingPathComponent("ops.jsonl"))

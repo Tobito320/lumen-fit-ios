@@ -17,20 +17,46 @@ struct LokalerOpLog: Sendable {
     mutating func lade() -> [Op] {
         ids = []
         guard let daten = try? Data(contentsOf: datei), !daten.isEmpty else { return [] }
+        let zeilen = daten.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true)
         var ops: [Op] = []
         var defekt: [Data] = []
-        let decoder = JSONDecoder()
-        for zeile in daten.split(separator: UInt8(ascii: "\n"), omittingEmptySubsequences: true) {
-            let roh = Data(zeile)
-            decoder.userInfo[Op.zeileSchluessel] = roh   // Op schneidet `d` direkt aus den Bytes (Lovea Audit 1)
-            if let op = try? decoder.decode(Op.self, from: roh) {
+        for (i, op) in Self.dekodiere(zeilen).enumerated() {
+            if let op {
                 if ids.insert(op.id).inserted { ops.append(op) }
             } else {
-                defekt.append(roh)
+                defekt.append(Data(zeilen[i]))
             }
         }
         if !defekt.isEmpty { repariere(ops: ops, defekt: defekt) }
         return ops
+    }
+
+    /// Dekodiert jede Zeile für sich (nil = kaputt), in Dateireihenfolge. Ab ein paar hundert Zeilen auf allen Kernen:
+    /// der Start wartet auf diesen Schritt (Startzeit 11.11.2026: 7500 Ops brauchten im Simulator 580 ms bis zum ersten Bild).
+    static func dekodiere(_ zeilen: [Data]) -> [Op?] {
+        let n = zeilen.count
+        let teile = min(ProcessInfo.processInfo.activeProcessorCount, 8)
+        guard n >= 512, teile > 1 else {
+            let decoder = JSONDecoder()
+            return zeilen.map { eine($0, decoder) }
+        }
+        let ablage = OpAblage(anzahl: n)
+        defer { ablage.frei() }
+        DispatchQueue.concurrentPerform(iterations: teile) { t in
+            let decoder = JSONDecoder()
+            var i = t
+            while i < n {
+                ablage.puffer[i] = eine(zeilen[i], decoder)
+                i += teile
+            }
+        }
+        return Array(ablage.puffer)
+    }
+
+    private static func eine(_ zeile: Data, _ decoder: JSONDecoder) -> Op? {
+        let roh = Data(zeile)
+        decoder.userInfo[Op.zeileSchluessel] = roh   // Op schneidet `d` direkt aus den Bytes (Lovea Audit 1)
+        return try? decoder.decode(Op.self, from: roh)
     }
 
     /// Hängt eine Op an, mit Ergebnis: angehängt, doppelte `id` (nichts geschrieben, kein Fehler) oder Schreiben fehlgeschlagen.
@@ -73,5 +99,18 @@ struct LokalerOpLog: Sendable {
         var neu = Data()
         for op in ops { if let z = try? encoder.encode(op) { neu.append(z); neu.append(UInt8(ascii: "\n")) } }
         try? neu.write(to: datei, options: .atomic)
+    }
+}
+
+/// Ergebnisplätze für `dekodiere`: jeder Kern schreibt nur seine eigenen Indizes, deshalb ohne Sperre.
+private final class OpAblage: @unchecked Sendable {
+    let puffer: UnsafeMutableBufferPointer<Op?>
+    init(anzahl: Int) {
+        puffer = .allocate(capacity: anzahl)
+        puffer.initialize(repeating: nil)
+    }
+    func frei() {
+        _ = puffer.deinitialize()
+        puffer.deallocate()
     }
 }
