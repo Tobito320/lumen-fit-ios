@@ -23,8 +23,8 @@ struct StatsMitmachenBlatt: View {
                         .font(.footnote).foregroundStyle(palette.text2)
                 }
                 Section("Was andere sehen") {
-                    Text("Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie und wie lange du schon trainierst.")
-                    Text("Nie deinen Namen, dein Gewicht, deinen Körper oder Gesundheitsdaten. Deine Rekorde zählen nur ohne Namen in „Stärker als … %“.")
+                    Text("Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie, wie lange du schon trainierst und, nur mit „Schritte teilen“, deine Schritte von heute und diesem Monat.")
+                    Text("Nie deinen Namen, dein Gewicht, deinen Körper oder andere Gesundheitsdaten. Deine Rekorde zählen nur ohne Namen in „Stärker als … %“.")
                         .foregroundStyle(palette.text2)
                 }
                 Section {
@@ -83,7 +83,7 @@ struct StatsEinstellungBlatt: View {
                 Section {
                     Toggle("Freunde sehen mich", isOn: Binding(get: { e.statsFreunde }, set: { an in umgebung.daten?.einstellungen.aendere { $0.statsFreunde = an } }))
                 } footer: {
-                    Text("Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie und dein schwerstes Gewicht je Übung.")
+                    Text("Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie, dein schwerstes Gewicht je Übung und, nur mit „Schritte teilen“, deine Schritte.")
                 }
                 Section {
                     Toggle("Öffentlich in Alle", isOn: Binding(get: { oeffentlich }, set: { an in
@@ -94,7 +94,12 @@ struct StatsEinstellungBlatt: View {
                         LabeledContent("Spitzname", value: name)
                     }
                 } footer: {
-                    Text("Alle sehen deinen Spitznamen und deine Zahlen, nie deinen Namen, dein Gewicht oder Gesundheitsdaten.")
+                    Text("Alle sehen deinen Spitznamen und deine Zahlen (Schritte nur mit „Schritte teilen“), nie deinen Namen, dein Gewicht oder andere Gesundheitsdaten.")
+                }
+                Section {
+                    Toggle("Schritte teilen", isOn: Binding(get: { e.statsSchritte }, set: { an in umgebung.daten?.einstellungen.aendere { $0.statsSchritte = an } }))
+                } footer: {
+                    Text("Freunde (und bei Mitmachen alle) sehen nur deine Schrittzahl von heute und diesem Monat. Ausschalten löscht sie sofort vom Server.")
                 }
                 Section {
                     Text("Privat heißt: Deine Zahlen bleiben auf dem iPhone. Deinen Platz rechnet die App selbst aus. Ausschalten löscht deine Zahlen sofort vom Server.")

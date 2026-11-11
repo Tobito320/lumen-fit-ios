@@ -18,28 +18,34 @@ struct StatsAlleAbschnitt: View {
         let e = umgebung.daten?.einstellungen.werte ?? Einstellungen()
         let oeffentlich = e.statsOeffentlich && e.statsSpitzname != nil
         let eigene = stats.eigene
-        let vergleich = StatsLogik.vergleich(stats.antwort?.alle ?? [], jahr: eigene.jahr)
-        let mein = mass.wert(eigene.zahlen)
-        let zeilen = StatsLogik.zeilen(ichName: oeffentlich ? (e.statsSpitzname ?? String(localized: "Du")) : String(localized: "Du"), ichWert: mein,
-                                       andere: vergleich.andere.map { (id: $0.id, name: $0.name, wert: mass.wert($0)) })
+        // Rekorde nach Trainingsjahr; Schritte immer gegen alle.
+        let kohorte = StatsLogik.vergleich(stats.antwort?.alle ?? [], jahr: eigene.jahr)
+        let vergleich = mass.istSchritte ? StatsLogik.vergleich(stats.antwort?.alle ?? [], jahr: nil) : kohorte
+        let mein = mass.wert(eigene)
+        let andere = vergleich.andere.compactMap { a in mass.wert(a).map { (id: a.id, name: a.name, wert: $0) } }
+        let zeilen = StatsLogik.zeilen(ichName: oeffentlich ? (e.statsSpitzname ?? String(localized: "Du")) : String(localized: "Du"), ichWert: mein, andere: andere)
         let platz = StatsLogik.platz(zeilen)
-        let prozent = StatsLogik.prozent(mein: Double(mein), andere: vergleich.andere.map { Double(mass.wert($0)) })
+        let prozent = mein.flatMap { m in StatsLogik.prozent(mein: Double(m), andere: andere.map { Double($0.wert) }) }
         VStack(alignment: .leading, spacing: Abstand.l) {
-            StatsPlatzKarte(
-                gruppe: vergleich.jahr.map { String(localized: "Alle \(StatsLogik.jahrText($0))") } ?? String(localized: "Alle"),
-                rang: platz.rang, von: platz.von, wert: mass.wertText(mein),
-                satz: prozent.map { StatsLogik.satzAlle(prozent: $0, mass: mass, jahr: vergleich.jahr) }, stimmung: .bereit,
-                sichtSymbol: oeffentlich ? "globe" : "lock.fill",
-                sichtText: oeffentlich ? String(localized: "Öffentlich als „\(e.statsSpitzname ?? "")“") : String(localized: "Privat: nur du siehst dich in der Liste."),
-                knopf: oeffentlich ? String(localized: "Ändern") : String(localized: "Mitmachen"),
-                aktion: { if oeffentlich { einstellungOffen = true } else { mitmachen() } })
+            if mass.istSchritte, !e.statsSchritte {
+                StatsSchritteTeilenKarte()
+            } else {
+                StatsPlatzKarte(
+                    gruppe: vergleich.jahr.map { String(localized: "Alle \(StatsLogik.jahrText($0))") } ?? String(localized: "Alle"),
+                    rang: platz.rang, von: platz.von, wert: mein.map { mass.wertText($0, jetzt: umgebung.uhr()) } ?? StatsTexte.schritteNichtDabei,
+                    satz: mein == nil ? StatsTexte.schritteWie : prozent.map { StatsLogik.satzAlle(prozent: $0, mass: mass, jahr: vergleich.jahr) }, stimmung: .bereit,
+                    sichtSymbol: oeffentlich ? "globe" : "lock.fill",
+                    sichtText: oeffentlich ? String(localized: "Öffentlich als „\(e.statsSpitzname ?? "")“") : String(localized: "Privat: nur du siehst dich in der Liste."),
+                    knopf: oeffentlich ? String(localized: "Ändern") : String(localized: "Mitmachen"),
+                    aktion: { if oeffentlich { einstellungOffen = true } else { mitmachen() } })
+            }
             if oeffentlich, stats.antwort?.ich.ausgeblendet == true {
                 Label("Dein Eintrag ist für andere ausgeblendet, bis wir ihn geprüft haben.", systemImage: "eye.slash")
                     .font(.footnote).foregroundStyle(palette.text2)
             }
             liste(zeilen, oeffentlich: oeffentlich, eintraege: vergleich.andere)
-            rekorde(jahr: vergleich.jahr)
-            Text("Alle sehen nur Spitznamen und Zahlen, nie Namen, Gewicht, Körper oder Gesundheit. Melden oder Blockieren: lange auf einen Namen drücken.")
+            rekorde(jahr: kohorte.jahr)
+            Text("Alle sehen nur Spitznamen, Punkte und Schritte, nie Gewicht, Körper oder andere Gesundheitsdaten. Melden oder Blockieren: lange auf einen Namen drücken.")
                 .font(.footnote).foregroundStyle(palette.text2).fixedSize(horizontal: false, vertical: true)
         }
         .confirmationDialog(markierenTitel, isPresented: Binding(get: { markieren != nil }, set: { if !$0 { markieren = nil } }), titleVisibility: .visible,

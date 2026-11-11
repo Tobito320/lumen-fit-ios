@@ -34,6 +34,7 @@ function fuellen(e) {
     sql("INSERT INTO schlaf_belege (konto, zeit, daten) VALUES (?, 't', '{}')", k);
     sql("INSERT INTO agent_postfach (konto, art, daten, erstellt) VALUES (?, 'gym.plan', '{}', 't')", k);
     sql("INSERT INTO stats (konto, id, montag, aktualisiert) VALUES (?, ?, '2026-11-09', 't')", k, "s" + k);
+    sql("INSERT INTO stats_schritte VALUES (?, '2026-11-11', 6240, 70000)", k);
     sql("INSERT INTO drossel VALUES (?, 1, 1)", "stats:" + k);
   }
   sql("INSERT INTO stats_meldungen VALUES (?, ?, 't', 0)", DU, ICH);

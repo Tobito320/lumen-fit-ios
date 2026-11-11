@@ -14,6 +14,8 @@ const GRENZEN = [["trainings", 14], ["sets", 500], ["rekordeNeu", 100], ["serie"
 const MAX_REKORDE = 30;
 const MAX_KG = 1000;
 const MAX_JAHR = 10;
+// Schritte: höchstens so viele an einem Tag, der Monat höchstens Tag im Monat mal so viele.
+const MAX_SCHRITTE_TAG = 100_000;
 const TAG_MS = 86400_000;
 // Ab so vielen ungeprüften Meldungen verschiedener Konten ist ein Eintrag für alle ausgeblendet, bis die Verwaltung ihn freigibt.
 const AUSBLENDEN_AB = 3;
@@ -35,10 +37,14 @@ function plusTage(tag, n) {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
+// Kalendertag nach Berliner Zeit als YYYY-MM-DD (wie `Datum.text` in der App).
+export function berlinTag(ms) {
+  const t = Object.fromEntries(BERLIN.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
+  return `${t.year}-${t.month}-${t.day}`;
+}
 // Montag der Woche nach Berliner Zeit als YYYY-MM-DD.
 export function berlinMontag(ms) {
-  const t = Object.fromEntries(BERLIN.formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
-  const tag = `${t.year}-${t.month}-${t.day}`;
+  const tag = berlinTag(ms);
   return plusTage(tag, -((new Date(`${tag}T12:00:00Z`).getUTCDay() + 6) % 7));
 }
 
@@ -49,6 +55,23 @@ function zahlen(z, montag) {
   const [trainings, sets, neu] = aktuell ? [z.trainings, z.sets, z.rekorde_neu] : [0, 0, 0];
   return { punkte: 10 * trainings + sets + 5 * neu, trainings, sets, serie: aktuell || (vorwoche && z.trainings > 0) ? z.serie : 0 };
 }
+
+// Schritte aus der App (ab 1.0.1, alle drei Felder oder keins): Tag (Berlin, ein Tag Spielraum), heute, Summe seit dem 1. des Monats.
+// Ohne die Felder (alte App, Mitzählen > Schritte aus, keine Health-Freigabe): { wert: null }. Ungültig: null.
+function schrittePruefen(b, jetzt) {
+  if (b.schritteTag === undefined && b.schritteHeute === undefined && b.schritteMonat === undefined) return { wert: null };
+  const tag = b.schritteTag;
+  if (typeof tag !== "string" || ![-1, 0, 1].some((d) => berlinTag(jetzt + d * TAG_MS) === tag)) return null;
+  if (!ganz(b.schritteHeute, 0, MAX_SCHRITTE_TAG) || !ganz(b.schritteMonat, b.schritteHeute, Number(tag.slice(8)) * MAX_SCHRITTE_TAG)) return null;
+  return { wert: [tag, b.schritteHeute, b.schritteMonat] };
+}
+
+// Schritte, wie sie jetzt gelten: vom Stand eines früheren Tags zählt heute 0 und der Monat nur im selben Monat. Ohne Stand keine Felder.
+function schritteAus(z, tag) {
+  if (z.s_tag == null) return {};
+  return { schritteHeute: z.s_tag >= tag ? z.s_heute : 0, schritteMonat: z.s_tag.slice(0, 7) >= tag.slice(0, 7) ? z.s_monat : 0 };
+}
+const MIT_SCHRITTEN = "SELECT s.*, x.tag AS s_tag, x.heute AS s_heute, x.monat AS s_monat FROM stats s LEFT JOIN stats_schritte x ON x.konto = s.konto";
 
 function rekordePruefen(x, h) {
   if (!h.istObjekt(x)) return null;
@@ -70,6 +93,7 @@ async function setzen(k, request, env, h) {
   if (!h.istObjekt(b) || typeof b.freunde !== "boolean" || typeof b.oeffentlich !== "boolean") return h.nein(400, "freunde und oeffentlich: true oder false");
   if (!b.freunde && !b.oeffentlich) {
     await env.DB.prepare("DELETE FROM stats WHERE konto = ?").bind(k.id).run();
+    await env.DB.prepare("DELETE FROM stats_schritte WHERE konto = ?").bind(k.id).run();
     return h.json({ ok: true, ich: ICH_PRIVAT });
   }
   const jetzt = Date.now();
@@ -78,6 +102,8 @@ async function setzen(k, request, env, h) {
   for (const [f, max] of GRENZEN) if (!ganz(b[f], 0, max)) return h.nein(400, `${f}: 0 bis ${max}`);
   const rekorde = rekordePruefen(b.rekorde ?? {}, h);
   if (!rekorde) return h.nein(400, `rekorde: bis ${MAX_REKORDE} Übungen {id: kg}`);
+  const schritte = schrittePruefen(b, jetzt);
+  if (!schritte) return h.nein(400, `schritteTag (heute), schritteHeute (0 bis ${MAX_SCHRITTE_TAG}), schritteMonat (ab schritteHeute)`);
   let spitzname = null;
   let norm = null;
   let jahr = null;
@@ -111,35 +137,48 @@ async function setzen(k, request, env, h) {
     if (String(e?.message ?? e).includes("UNIQUE")) return h.nein(409, "spitzname_vergeben");
     throw e;
   }
+  if (schritte.wert) {
+    // Ein älterer Tag (Paket aus der Warteschlange) überschreibt keinen neueren.
+    await env.DB.prepare(
+      `INSERT INTO stats_schritte (konto, tag, heute, monat) VALUES (?, ?, ?, ?)
+       ON CONFLICT(konto) DO UPDATE SET tag = excluded.tag, heute = excluded.heute, monat = excluded.monat WHERE excluded.tag >= stats_schritte.tag`)
+      .bind(k.id, ...schritte.wert).run();
+  } else {
+    await env.DB.prepare("DELETE FROM stats_schritte WHERE konto = ?").bind(k.id).run();
+  }
   return h.json({ ok: true, ich: await ichAus(env, await zeile(env, k.id)) });
 }
 
 async function uebersicht(k, env, h) {
   if (!(await drosseln(env, `statslesen:${k.id}`, 30))) return h.nein(429, "zu_schnell");
   const montag = berlinMontag(Date.now());
+  const tag = berlinTag(Date.now());
 
-  // Freunde: aktive Verbindungen ohne Pause, die mir Gym zeigen und selbst "Freunde sehen mich" anhaben.
+  // Freunde: aktive Verbindungen ohne Pause, die mir Gym zeigen und selbst "Freunde sehen mich" anhaben. Schritte nur, wenn sie mir auch Schritte zeigen.
   const { results: verb } = await env.DB.prepare(
     "SELECT v.*, o.id AS o_id FROM verbindungen v JOIN konten o ON o.id = CASE WHEN v.a = ? THEN v.b ELSE v.a END WHERE (v.a = ? OR v.b = ?) AND v.status = 'aktiv' AND o.gesperrt = 0")
     .bind(k.id, k.id, k.id).all();
-  const vid = new Map(verb.filter((v) => erlaubteBereiche(v, v.a === k.id ? "a" : "b", h).includes("gym")).map((v) => [v.o_id, v.id]));
+  const vid = new Map(verb.map((v) => [v.o_id, { id: v.id, bereiche: erlaubteBereiche(v, v.a === k.id ? "a" : "b", h) }]).filter(([, e]) => e.bereiche.includes("gym")));
   let freunde = [];
   if (vid.size) {
-    const { results } = await env.DB.prepare(`SELECT * FROM stats WHERE freunde = 1 AND konto IN (${fragen(vid.size)})`).bind(...vid.keys()).all();
+    const { results } = await env.DB.prepare(`${MIT_SCHRITTEN} WHERE s.freunde = 1 AND s.konto IN (${fragen(vid.size)})`).bind(...vid.keys()).all();
     const name = await namenLaden(env, results.map((z) => z.konto));
-    freunde = results.map((z) => ({ id: vid.get(z.konto), name: name(z.konto), ...zahlen(z, montag), rekorde: h.lesen(z.rekorde) })).sort((a, b) => b.punkte - a.punkte);
+    freunde = results.map((z) => {
+      const e = vid.get(z.konto);
+      return { id: e.id, name: name(z.konto), ...zahlen(z, montag), rekorde: h.lesen(z.rekorde), ...(e.bereiche.includes("schritte") ? schritteAus(z, tag) : {}) };
+    }).sort((a, b) => b.punkte - a.punkte);
   }
 
   // Alle: Öffentliche aus dieser und der Vorwoche, ohne Gesperrte, für alle Ausgeblendete, von mir Gemeldete und Blockierte (beide Richtungen). Mich immer.
   const { results: oeff } = await env.DB.prepare(
-    `SELECT s.* FROM stats s JOIN konten k ON k.id = s.konto WHERE s.oeffentlich = 1 AND k.gesperrt = 0 AND (s.konto = ?1 OR (s.montag >= ?2
+    `${MIT_SCHRITTEN} JOIN konten k ON k.id = s.konto WHERE s.oeffentlich = 1 AND k.gesperrt = 0 AND (s.konto = ?1 OR (s.montag >= ?2
        AND s.konto NOT IN (SELECT an FROM stats_meldungen WHERE von = ?1)
        AND s.konto NOT IN (SELECT an FROM stats_blockiert WHERE von = ?1)
        AND s.konto NOT IN (SELECT von FROM stats_blockiert WHERE an = ?1)
        AND s.konto NOT IN (SELECT an FROM stats_meldungen WHERE geprueft = 0 GROUP BY an HAVING COUNT(*) >= ?3)))
      ORDER BY CASE WHEN s.montag >= ?4 THEN 10 * s.trainings + s.sets + 5 * s.rekorde_neu ELSE 0 END DESC, s.spitzname LIMIT ?5`)
     .bind(k.id, plusTage(montag, -7), AUSBLENDEN_AB, montag, MAX_ALLE).all();
-  const alle = oeff.map((z) => ({ id: z.id, name: z.spitzname, jahr: z.jahr, ...zahlen(z, montag), ich: z.konto === k.id }));
+  const alle = oeff.map((z) => ({ id: z.id, name: z.spitzname, jahr: z.jahr, ...zahlen(z, montag), ich: z.konto === k.id, ...schritteAus(z, tag) }));
 
   // kg nur als Verteilung je Übung, gesamt und je Trainingsjahr, ab MIN_VERTEILUNG Personen; ohne mich, Gesperrte und für alle Ausgeblendete.
   const { results: rek } = await env.DB.prepare(
@@ -218,9 +257,10 @@ export async function statsAdmin(request, url, env, h) {
   return h.nein(404, "not found");
 }
 
-// Konto löschen (DELETE /konto, Stufe 7): Zeile, Meldungen und Blockaden in beide Richtungen, Drossel-Einträge dieser Wege.
+// Konto löschen (DELETE /konto, Stufe 7): Zeile, Schritte, Meldungen und Blockaden in beide Richtungen, Drossel-Einträge dieser Wege.
 export async function statsKontoLoeschen(env, konto) {
   await env.DB.prepare("DELETE FROM stats WHERE konto = ?1").bind(konto).run();
+  await env.DB.prepare("DELETE FROM stats_schritte WHERE konto = ?1").bind(konto).run();
   await env.DB.prepare("DELETE FROM stats_meldungen WHERE von = ?1 OR an = ?1").bind(konto).run();
   await env.DB.prepare("DELETE FROM stats_blockiert WHERE von = ?1 OR an = ?1").bind(konto).run();
   await env.DB.prepare("DELETE FROM drossel WHERE schluessel IN ('stats:' || ?1, 'statslesen:' || ?1, 'stats_meldungen:' || ?1, 'stats_blockiert:' || ?1)").bind(konto).run();

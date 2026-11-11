@@ -167,6 +167,15 @@ CREATE TABLE IF NOT EXISTS stats (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS stats_spitzname ON stats (spitzname_norm) WHERE spitzname_norm IS NOT NULL;
 CREATE INDEX IF NOT EXISTS stats_oeffentlich ON stats (oeffentlich, montag);
+-- Stats Schritte (1.0.1): letzter Stand je Konto aus Apple Health, nur solange es eine Zeile in stats gibt und Mitzählen > Schritte an ist.
+-- tag: Kalendertag (Berlin) des Stands, heute: Schritte an dem Tag, monat: Summe vom 1. des Monats bis zu dem Tag. Eigene Tabelle statt neuer
+-- Spalten, damit schema.sql auf der bestehenden D1 ohne ALTER läuft.
+CREATE TABLE IF NOT EXISTS stats_schritte (
+  konto TEXT PRIMARY KEY,
+  tag TEXT NOT NULL,
+  heute INTEGER NOT NULL,
+  monat INTEGER NOT NULL
+);
 -- Stats "Alle": Meldungen und Blockaden (von, an: Konto-Ids). Ab 3 ungeprüften Meldungen für alle ausgeblendet; geprueft = 1 nach Freigabe in der Verwaltung.
 CREATE TABLE IF NOT EXISTS stats_meldungen (
   von TEXT NOT NULL,

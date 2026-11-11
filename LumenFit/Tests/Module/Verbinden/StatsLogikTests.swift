@@ -150,6 +150,87 @@ final class StatsLogikTests: XCTestCase {
         XCTAssertTrue(a.ich.freunde)
     }
 
+    // MARK: Schritte
+
+    func testSchritteHeuteUndMonatNurMitZustimmungMitzaehlenUndHealth() {
+        var e = Einstellungen()
+        e.healthGefragt = true
+        e.statsSchritte = true
+        let health = ["2026-10-31": 9_000, "2026-11-01": 4_000, "2026-11-11": 250_000, "2026-11-12": 6_240, "2026-11-13": 1_000]
+        XCTAssertEqual(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), StatsSchritte(tag: "2026-11-12", heute: 6_240, monat: 110_240),
+                       "Vormonat und Zukunft zählen nicht, ein Tag höchstens 100.000 (wie der Server)")
+        XCTAssertEqual(StatsLogik.schritte(health: ["2026-11-01": 3_000], einstellungen: e, jetzt: jetzt), StatsSchritte(tag: "2026-11-12", heute: 0, monat: 3_000))
+        XCTAssertNil(StatsLogik.schritte(health: [:], einstellungen: e, jetzt: jetzt), "keine Schritte in Health: keine Freigabe")
+        XCTAssertNil(StatsLogik.schritte(health: ["2026-11-12": 0], einstellungen: e, jetzt: jetzt))
+        e.schritteMitzaehlen = false
+        XCTAssertNil(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), "Mitzählen > Schritte aus")
+        e.schritteMitzaehlen = true
+        e.healthGefragt = false
+        XCTAssertNil(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), "Health nie erlaubt")
+        e.healthGefragt = true
+        e.statsSchritte = false
+        XCTAssertNil(StatsLogik.schritte(health: health, einstellungen: e, jetzt: jetzt), "ohne eigene Zustimmung \"Schritte teilen\" nichts")
+        XCTAssertFalse(Einstellungen().statsSchritte, "Standard aus")
+    }
+
+    func testMeldungMitSchrittenNurMitZustimmung() throws {
+        var e = Einstellungen()
+        e.healthGefragt = true
+        e.statsFreunde = true
+        let health = ["2026-11-12": 6_240]
+        XCTAssertNil(StatsLogik.meldung(einstellungen: e, sessions: [], health: health, jetzt: jetzt).schritteTag, "Freunde sehen mich allein reicht nicht")
+        e.statsSchritte = true
+        let m = StatsLogik.meldung(einstellungen: e, sessions: [], health: health, jetzt: jetzt)
+        XCTAssertEqual(m.schritteTag, "2026-11-12")
+        XCTAssertEqual(m.schritteHeute, 6_240)
+        XCTAssertEqual(m.schritteMonat, 6_240)
+        XCTAssertEqual(m.ohneSchritte, StatsLogik.meldung(einstellungen: e, sessions: [], jetzt: jetzt), "ohne Health-Schritte dieselbe Meldung ohne Felder")
+        XCTAssertNotEqual(m, m.ohneSchritte)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let json = String(decoding: try encoder.encode(m), as: UTF8.self)
+        XCTAssertTrue(json.contains(#""schritteHeute":6240,"schritteMonat":6240,"schritteTag":"2026-11-12""#), json)
+        XCTAssertFalse(String(decoding: try encoder.encode(m.ohneSchritte), as: UTF8.self).contains("schritte"))
+        e.statsFreunde = false
+        XCTAssertEqual(StatsLogik.meldung(einstellungen: e, sessions: [], health: health, jetzt: jetzt), .aus, "privat: keine Schritte")
+    }
+
+    func testSchritteAlsMassInChipsTextenUndListe() {
+        XCTAssertEqual(StatsMass.chips, [.schritteHeute, .punkte, .trainings, .sets, .serie], "Schritte zuerst")
+        XCTAssertEqual(StatsMass.chips.map(\.titel), ["Schritte", "Punkte", "Trainings", "Sets", "Serie"])
+        XCTAssertTrue(StatsMass.schritteMonat.istSchritte)
+        XCTAssertFalse(StatsMass.punkte.istSchritte)
+        XCTAssertEqual(StatsMass.schritteHeute.wertText(6_240, jetzt: jetzt), "6.240 Schritte heute")
+        XCTAssertEqual(StatsMass.schritteMonat.wertText(187_300, jetzt: jetzt), "187.300 Schritte im November")
+        XCTAssertEqual(StatsMass.punkte.wertText(57, jetzt: jetzt), "57 Punkte diese Woche")
+        let f = StatsFreund(id: "a", name: "F", punkte: 1, trainings: 1, sets: 1, serie: 1, rekorde: [:], schritteHeute: 5_000, schritteMonat: 80_000)
+        XCTAssertEqual(StatsMass.schritteHeute.wert(f), 5_000)
+        XCTAssertEqual(StatsMass.schritteMonat.wert(f), 80_000)
+        XCTAssertNil(StatsMass.schritteHeute.wert(eintrag("x", punkte: 3)), "ohne Schritte nicht in der Schritte-Liste")
+        XCTAssertEqual(StatsMass.punkte.wert(eintrag("x", punkte: 3)), 3)
+        var eigene = StatsEigene()
+        eigene.zahlen.sets = 7
+        XCTAssertNil(StatsMass.schritteHeute.wert(eigene))
+        XCTAssertEqual(StatsMass.sets.wert(eigene), 7)
+        eigene.schritte = StatsSchritte(tag: "2026-11-12", heute: 10, monat: 20)
+        XCTAssertEqual(StatsMass.schritteMonat.wert(eigene), 20)
+
+        let z = StatsLogik.zeilen(ichName: "Du", ichWert: 5_000, andere: [(id: "a", name: "F", wert: 6_239)])
+        XCTAssertEqual(StatsLogik.satzFreunde(z, mass: .schritteHeute), "Noch 1.240 Schritte bis Platz 1.")
+        XCTAssertEqual(StatsLogik.satzFreunde(StatsLogik.zeilen(ichName: "Du", ichWert: 5, andere: [(id: "a", name: "F", wert: 5), (id: "b", name: "G", wert: 6)]), mass: .schritteMonat),
+                       "Noch 2 Schritte bis Platz 1.")
+        XCTAssertEqual(StatsLogik.satzFreunde(StatsLogik.zeilen(ichName: "Du", ichWert: 5, andere: [(id: "a", name: "F", wert: 5)]), mass: .schritteHeute), "Du führst. Bleib dran.")
+        XCTAssertEqual(StatsLogik.satzAlle(prozent: 71, mass: .schritteMonat, jahr: nil), "Mehr Schritte als 71 % der Leute.")
+        let ohne = StatsLogik.zeilen(ichName: "Du", ichWert: nil, andere: [(id: "a", name: "F", wert: 10)])
+        XCTAssertEqual(ohne.map(\.id), ["a"], "ohne eigene Schritte stehe ich nicht drin")
+        XCTAssertNil(StatsLogik.platz(ohne).rang)
+        XCTAssertNil(StatsLogik.satzFreunde(ohne, mass: .schritteHeute))
+        let genug = (0..<12).map { eintrag("j\($0)", punkte: $0) }
+        XCTAssertNil(StatsLogik.vergleich(genug, jahr: nil).jahr, "Schritte vergleichen mit allen, nicht nach Trainingsjahr")
+        XCTAssertEqual(StatsLogik.vergleich(genug, jahr: nil).andere.count, 12)
+        XCTAssertEqual(StatsLogik.zahl(187_300), "187.300")
+    }
+
     // MARK: Spitzname und Texte
 
     func testSpitznameWieDerServerSoweitDasGeraetEsWeiss() {

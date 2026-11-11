@@ -64,6 +64,9 @@ struct Einstellungen: Codable, Equatable, Sendable {
     var statsOeffentlich = false
     /// Spitzname für Stats "Alle"; nil, solange keiner gewählt ist.
     var statsSpitzname: String?
+    /// Stats "Schritte teilen" (eigene Zustimmung, ab 1.0.1): erst dann gehen Schritte heute und im Monat zum Server. Standard aus, auch für alle,
+    /// die schon mitmachen.
+    var statsSchritte = false
 
     init() {}
 
@@ -123,7 +126,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         // Profil und Einführung
         case trainingsErfahrung, trainingsZiele, trainingsOrte, trainingsMinuten, fokusMuskeln, gewichtMitzaehlen, schritteMitzaehlen, creatinMitzaehlen
         // Stats
-        case statsFreunde, statsOeffentlich, statsSpitzname
+        case statsFreunde, statsOeffentlich, statsSpitzname, statsSchritte
     }
 
     init(from decoder: Decoder) throws {
@@ -158,6 +161,7 @@ struct Einstellungen: Codable, Equatable, Sendable {
         statsFreunde = (try? c.decodeIfPresent(Bool.self, forKey: .statsFreunde)) ?? false
         statsOeffentlich = (try? c.decodeIfPresent(Bool.self, forKey: .statsOeffentlich)) ?? false
         statsSpitzname = (try? c.decodeIfPresent(String.self, forKey: .statsSpitzname)) ?? nil
+        statsSchritte = (try? c.decodeIfPresent(Bool.self, forKey: .statsSchritte)) ?? false
         // Mindestens ein Bereich bleibt an: eine Datei mit allem aus (von Hand oder aus einem Fehler) zeigt wieder alles.
         if !(gymAn || essenAn || schlafAn) { gymAn = true; essenAn = true; schlafAn = true }
     }
