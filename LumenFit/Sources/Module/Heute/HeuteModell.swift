@@ -336,7 +336,11 @@ final class HeuteModell {
                            lumiSatz: fortschritt ?? satzAnzeige,
                            planWoche: HeuteKartenLogik.planWoche(heute: heute, plan: daten.training.plan, gymTage: gymTage),
                            serieWochen: MeilensteinPruefung.serieWochen(tage: gymTage, heute: heute),
-                           einheitHeute: trainiert ? GymTageLogik.einheit(am: heute, in: sessions)?.id : nil)
+                           einheitHeute: trainiert ? GymTageLogik.einheit(am: heute, in: sessions)?.id : nil,
+                           verpasst: istHeute && bereiche.gymAn
+                               ? GymVerpasstLogik.karte(plan: daten.training.plan, heute: heute, gymTage: gymTage, laeuft: daten.training.laufende(jetzt: jetzt) != nil,
+                                                        beantwortet: k.hinweise.ids)
+                               : nil)
     }
 
     /// Die Lage für `LumiLogik`: Rekord, Dauer und Anstrengung (RPE) nur aus den Einheiten von heute; der Rekord wird nur gesucht, wenn heute trainiert wurde.

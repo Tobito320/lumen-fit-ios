@@ -200,10 +200,12 @@ enum GymAnzeige {
 }
 
 /// Die Sätze einer Übung in einer beendeten Einheit korrigieren oder nachtragen: Gewicht und Wiederholungen mit Plus und Minus, Haken, Typ, Satz
-/// dazu oder löschen. Gesendet wird beim Sichern (ein Op), nicht bei jedem Tipp.
+/// dazu oder löschen. Gesendet wird beim Sichern (ein Op), nicht bei jedem Tipp. Mit `uebernehmen` (Nachtragen vor dem Speichern, Karte "Gestern verpasst")
+/// gehen die Sätze nur an den Aufrufer, nichts wird gesendet.
 struct EinheitSaetzeBlatt: View {
     let sessionId: String
     let uebung: WorkoutUebung
+    var uebernehmen: (([PlanSatz]) -> Void)?
     @Environment(AppUmgebung.self) private var umgebung
     @Environment(\.dismiss) private var schliessen
     @Environment(\.palette) private var palette
@@ -213,9 +215,10 @@ struct EinheitSaetzeBlatt: View {
     @State private var gesichert = 0
     @State private var geaendert = 0
 
-    init(sessionId: String, uebung: WorkoutUebung) {
+    init(sessionId: String, uebung: WorkoutUebung, uebernehmen: (([PlanSatz]) -> Void)? = nil) {
         self.sessionId = sessionId
         self.uebung = uebung
+        self.uebernehmen = uebernehmen
         _saetze = State(initialValue: uebung.saetze)
     }
 
@@ -311,7 +314,7 @@ struct EinheitSaetzeBlatt: View {
     }
 
     private func sichern() {
-        umgebung.daten?.training.saetzeSenden(sessionId, uebung.planUebung, saetze)
+        if let uebernehmen { uebernehmen(saetze) } else { umgebung.daten?.training.saetzeSenden(sessionId, uebung.planUebung, saetze) }
         gesichert += 1
         schliessen()
     }

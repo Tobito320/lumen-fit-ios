@@ -16,7 +16,10 @@ struct HeuteTabView: View {
     @State private var einheit: String?
     @State private var alleEintraege = false
     @State private var sitzung: GymSitzung?
+    @State private var toast: ToastInhalt?
+    @State private var erledigt = 0
     @Namespace private var zoom
+    @Environment(\.bewegungAus) private var bewegungAus
 
     var body: some View {
         ScrollView {
@@ -38,6 +41,8 @@ struct HeuteTabView: View {
         .navigationDestination(item: $einheit) { EinheitNachlesenView(sessionId: $0) }
         .navigationDestination(isPresented: $alleEintraege) { PartnerKoerperWeiche { MessungenView() } }
         .haptik(.start, bei: start)
+        .haptik(.erfolg, bei: erledigt)
+        .lumenToast($toast)
         .task(id: umgebung.profil.aktiv?.id) {
             let m = modell ?? HeuteModell(umgebung: umgebung)
             modell = m
@@ -54,6 +59,12 @@ struct HeuteTabView: View {
                 Ringplatte(stand: s, stufe: umgebung.daten?.meilensteine.stufe ?? 1) { blatt = .schritte }
             } else if s.healthGeprueft {
                 HeuteLeerKarte(modell: m)
+            }
+            if let v = s.verpasst, sitzung?.sessionId == nil {
+                GymVerpasstKarte(verpasst: v, nachtragen: { blatt = .nachtragen(v) }, nachholen: { nachholen(v, auf: $0) },
+                                 auslassen: { auslassen(v, m) })
+                    .id(v.id)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             }
             if s.bereiche.gymAn {
                 PlanKarte(plan: s.plan, woche: s.planWoche, serieWochen: s.serieWochen, laeuft: sitzung?.sessionId != nil, einheitHeute: s.einheitHeute,
@@ -72,6 +83,7 @@ struct HeuteTabView: View {
         }
         .padding(.horizontal, Abstand.l)
         .padding(.bottom, Abstand.xl)
+        .animation(bewegungAus ? nil : Feder.weich, value: s.verpasst?.id)
     }
 
     @ViewBuilder
@@ -84,7 +96,27 @@ struct HeuteTabView: View {
         case .gewichtZiel: HeuteGewichtZielBlatt(gewicht: s.gewicht) { modell?.setzeGewichtsziel($0) }
         case .habits: HabitVerwaltungView()
         case .tag(let tag): HeuteTagView(tag: tag)
+        case .nachtragen(let v):
+            GymVerpasstNachtragBlatt(verpasst: v) { melde(String(localized: "\(v.name) vom \(v.wochentag) eingetragen"), erfolg: true) }
         }
+    }
+
+    /// "Ja, Freitag": der verpasste Plantag liegt nur diese Woche auf dem freien Tag (`WochenLogik.verlegen`), der Plan selbst bleibt.
+    private func nachholen(_ v: GymVerpasst, auf datum: String) {
+        guard umgebung.daten?.training.verlegen(von: v.gestern, auf: datum) == true else { return }
+        modell?.berechne()
+        melde(String(localized: "\(v.name) am \(GymVerpasstLogik.wochentag(datum)) eingeplant"), erfolg: true)
+    }
+
+    /// "Auslassen": die Karte für gestern ist beantwortet, sonst ändert sich nichts.
+    private func auslassen(_ v: GymVerpasst, _ m: HeuteModell) {
+        m.wischeHinweis(v.id)
+        melde(String(localized: "Ok, \(v.name) fällt diese Woche aus"), erfolg: false)
+    }
+
+    private func melde(_ titel: String, erfolg: Bool) {
+        toast = ToastInhalt(titel: titel, zeile: nil, stimmung: erfolg ? .ziel : .ruhetag)
+        if erfolg { erledigt += 1 }
     }
 
     /// Der Knopf der Plan-Karte: Training starten (Modul gym), ohne Plan in den Plan-Bereich.
@@ -102,6 +134,7 @@ struct HeuteTabView: View {
 enum HeuteBlatt: Identifiable {
     case schritte, gewicht, gewichtZiel, habits
     case tag(String)
+    case nachtragen(GymVerpasst)
 
     var id: String {
         switch self {
@@ -110,6 +143,7 @@ enum HeuteBlatt: Identifiable {
         case .gewichtZiel: "gewichtZiel"
         case .habits: "habits"
         case .tag(let tag): "tag-\(tag)"
+        case .nachtragen(let v): "nachtragen-\(v.gestern)"
         }
     }
 }

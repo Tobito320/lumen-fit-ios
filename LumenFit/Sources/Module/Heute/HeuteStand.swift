@@ -40,6 +40,8 @@ struct HeuteStand {
     var serieWochen = 0
     /// Die heutige Einheit (für "Einheit ansehen" nach dem Training); nil ohne.
     var einheitHeute: String?
+    /// Gestern laut Plan trainieren, aber keine Einheit (Karte "Gestern verpasst"); nur heute und mit Gym.
+    var verpasst: GymVerpasst?
 }
 
 struct HeuteEnergiePunkt: Identifiable, Equatable {
