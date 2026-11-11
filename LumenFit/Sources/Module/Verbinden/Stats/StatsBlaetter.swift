@@ -23,8 +23,8 @@ struct StatsMitmachenBlatt: View {
                         .font(.footnote).foregroundStyle(palette.text2)
                 }
                 Section("Was andere sehen") {
-                    Text("Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie und wie lange du schon trainierst.")
-                    Text("Nie deinen Namen, dein Gewicht, deinen Körper oder Gesundheitsdaten. Deine Rekorde zählen nur ohne Namen in „Stärker als … %“.")
+                    Text("Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie, wie lange du schon trainierst und deine Schritte (heute und im Monat), wenn du Schritte mitzählst.")
+                    Text("Nie deinen Namen, dein Gewicht, deinen Körper oder andere Gesundheitsdaten. Deine Rekorde zählen nur ohne Namen in „Stärker als … %“.")
                         .foregroundStyle(palette.text2)
                 }
                 Section {
@@ -83,7 +83,7 @@ struct StatsEinstellungBlatt: View {
                 Section {
                     Toggle("Freunde sehen mich", isOn: Binding(get: { e.statsFreunde }, set: { an in umgebung.daten?.einstellungen.aendere { $0.statsFreunde = an } }))
                 } footer: {
-                    Text("Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie und dein schwerstes Gewicht je Übung.")
+                    Text("Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie, dein schwerstes Gewicht je Übung und deine Schritte, wenn du Schritte mitzählst.")
                 }
                 Section {
                     Toggle("Öffentlich in Alle", isOn: Binding(get: { oeffentlich }, set: { an in
@@ -94,7 +94,7 @@ struct StatsEinstellungBlatt: View {
                         LabeledContent("Spitzname", value: name)
                     }
                 } footer: {
-                    Text("Alle sehen deinen Spitznamen und deine Zahlen, nie deinen Namen, dein Gewicht oder Gesundheitsdaten.")
+                    Text("Alle sehen deinen Spitznamen, deine Zahlen und Schritte, nie deinen Namen, dein Gewicht oder andere Gesundheitsdaten.")
                 }
                 Section {
                     Text("Privat heißt: Deine Zahlen bleiben auf dem iPhone. Deinen Platz rechnet die App selbst aus. Ausschalten löscht deine Zahlen sofort vom Server.")

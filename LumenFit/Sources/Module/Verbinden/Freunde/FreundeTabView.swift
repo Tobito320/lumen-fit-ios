@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Der Tab Stats (neues Design 10.11.2026, vorher Freunde; Rohwert bleibt `freunde`): Freunde | Alle (Standard Freunde), Chips Punkte, Trainings,
+/// Der Tab Stats (neues Design 10.11.2026, vorher Freunde; Rohwert bleibt `freunde`): Freunde | Alle (Standard Freunde), Chips Schritte (Standard, Heute | Monat), Punkte, Trainings,
 /// Sets, Serie, Platz-Karte mit Lumi und Liste. Standard privat: die eigenen Zahlen bleiben auf dem Gerät (`StatsDienst`). Unter Freunde wohnt
 /// alles von vorher: Für dich, Trainingspartner, Herausforderungen, Rekorde der Freunde, Freunde mit Code eingeben und Verwalten, Einladen
 /// (nichts fällt weg, es ist umsortiert). Wurzel des Tabs ohne eigenen NavigationStack (den gibt das Tab-Gerüst).
@@ -9,7 +9,7 @@ struct FreundeTabView: View {
     @Environment(\.palette) private var palette
     @AppStorage(CrewDienst.gesehenSchluessel) private var gesehen: Double = 0
     @State private var alle = false
-    @State private var mass: StatsMass = .punkte
+    @State private var mass: StatsMass = .schritteHeute
     /// Der Stand von "gesehen" beim Öffnen: alles danach ist für diesen Besuch "neu" markiert.
     @State private var gesehenBeimOeffnen: Double?
     @State private var aktionFehler: String?

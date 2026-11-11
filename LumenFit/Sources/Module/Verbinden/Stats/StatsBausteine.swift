@@ -1,15 +1,29 @@
 import SwiftUI
 
-/// Die Chips Punkte, Trainings, Sets, Serie; die gewählte in Lime.
+/// Die Chips Schritte, Punkte, Trainings, Sets, Serie (seitlich wischbar); die gewählte in Lime. Bei Schritte darunter Heute | Monat.
 struct StatsChips: View {
     @Binding var mass: StatsMass
     @Environment(\.palette) private var palette
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Abstand.s) {
+            ScrollView(.horizontal, showsIndicators: false) { chips }
+            if mass.istSchritte {
+                Picker("Zeitraum", selection: $mass) {
+                    Text("Heute").tag(StatsMass.schritteHeute)
+                    Text("Monat").tag(StatsMass.schritteMonat)
+                }
+                .pickerStyle(.segmented)
+            }
+        }
+    }
+
+    private var chips: some View {
         HStack(spacing: Abstand.s) {
-            ForEach(StatsMass.allCases) { m in
-                let an = m == mass
-                Button { mass = m } label: {
+            ForEach(StatsMass.chips) { m in
+                let an = m == mass || (m.istSchritte && mass.istSchritte)
+                // Schritte nochmal antippen behält Heute oder Monat.
+                Button { if !an { mass = m } } label: {
                     Text(m.titel)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(an ? palette.aufAkzentFlaeche : palette.text)
@@ -29,7 +43,8 @@ struct StatsChips: View {
 /// Die Karte oben: Lumi, für wen der Platz gilt, "Platz 3 von 4", der eigene Wert, ein Satz; darunter die Zeile, wer mich sieht, mit Knopf.
 struct StatsPlatzKarte: View {
     let gruppe: String
-    let rang: Int
+    /// nil: ich stehe nicht in der Liste (Schritte nicht mitgezählt).
+    let rang: Int?
     let von: Int
     let wert: String
     let satz: String?
@@ -50,9 +65,13 @@ struct StatsPlatzKarte: View {
                 LumiView(stimmung: stimmung, groesse: 64)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(gruppe).font(.footnote).foregroundStyle(palette.text2)
-                    HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
-                        Text("Platz \(rang)").font(.title2.weight(.bold)).foregroundStyle(palette.text)
-                        Text("von \(von)").font(.subheadline).foregroundStyle(palette.text2)
+                    if let rang {
+                        HStack(alignment: .firstTextBaseline, spacing: Abstand.xs) {
+                            Text("Platz \(rang)").font(.title2.weight(.bold)).foregroundStyle(palette.text)
+                            Text("von \(von)").font(.subheadline).foregroundStyle(palette.text2)
+                        }
+                    } else {
+                        Text("Nicht dabei").font(.title2.weight(.bold)).foregroundStyle(palette.text)
                     }
                     Text(wert).font(.subheadline).foregroundStyle(palette.text2)
                     if let satz { Text(satz).font(.subheadline.weight(.semibold)).foregroundStyle(palette.text).fixedSize(horizontal: false, vertical: true) }
@@ -98,7 +117,7 @@ struct StatsZeileView: View {
                 if let untertitel { Text(untertitel).font(.caption).foregroundStyle(palette.text2) }
             }
             Spacer(minLength: Abstand.s)
-            Text("\(zeile.wert)").font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
+            Text(StatsLogik.zahl(zeile.wert)).font(.subheadline.weight(.semibold)).monospacedDigit().foregroundStyle(palette.text)
         }
         .padding(.horizontal, Abstand.l)
         .padding(.vertical, Abstand.s)
@@ -147,4 +166,10 @@ struct StatsKopf: View {
         }
         .padding(.top, Abstand.s)
     }
+}
+
+/// Texte, wenn ich bei Schritte nicht in der Liste stehe (Mitzählen > Schritte aus oder keine Health-Freigabe).
+enum StatsTexte {
+    static var schritteNichtDabei: String { String(localized: "Schritte mitzählen, um mitzumachen.") }
+    static var schritteWie: String { String(localized: "Profil > Präferenzen > Mitzählen: Schritte an und Apple Health erlauben.") }
 }

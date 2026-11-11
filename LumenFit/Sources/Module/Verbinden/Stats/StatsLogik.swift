@@ -11,11 +11,19 @@ struct StatsUebungKg: Equatable, Sendable {
     var kg: Double
 }
 
-/// Was die Seite vom Gerät braucht, einmal gerechnet (nicht in jedem `body`): Zahlen dieser Woche, Trainingsjahr, Hauptübungen.
+/// Eigene Schritte für Stats: Kalendertag (Berlin), Schritte an dem Tag und Summe vom 1. des Monats bis zu dem Tag.
+struct StatsSchritte: Equatable, Sendable {
+    var tag: String
+    var heute: Int
+    var monat: Int
+}
+
+/// Was die Seite vom Gerät braucht, einmal gerechnet (nicht in jedem `body`): Zahlen dieser Woche, Trainingsjahr, Hauptübungen, Schritte (nil = nicht dabei).
 struct StatsEigene: Equatable, Sendable {
     var zahlen = StatsZahlen()
     var jahr = 1
     var hauptuebungen: [StatsUebungKg] = []
+    var schritte: StatsSchritte?
 }
 
 /// Reine Regeln für Stats: Plätze, Prozent, Ausschnitt der Liste, Trainingsjahr, Rekorde im Vergleich, Spitzname, was zum Server geht.
@@ -27,17 +35,24 @@ enum StatsLogik {
     static let oben = 5
     /// So viele Übungen gehen mit ihrem schwersten Gewicht zum Server (die am meisten gemachten).
     static let hauptuebungenGrenze = 20
+    /// Mehr Schritte an einem Tag zählen nicht (gleiche Grenze wie `server/stats.js`).
+    static let schritteJeTagGrenze = 100_000
+
+    /// Zahl mit Tausenderpunkt ("187.300").
+    static func zahl(_ n: Int) -> String { n.formatted(.number.locale(Datum.anzeigeLocale)) }
 
     // MARK: Plätze
 
     /// Ich und die anderen als Rangliste: höherer Wert vorn, gleicher Wert gleicher Platz, ich zuerst unter Gleichen (`CrewLogik.raenge`).
-    static func zeilen(ichName: String, ichWert: Int, andere: [(id: String, name: String, wert: Int)]) -> [CrewRang] {
-        CrewLogik.raenge([CrewRang(id: CrewRang.eigeneId, name: ichName, wert: ichWert, rang: 0, ich: true)]
+    /// Ohne eigenen Wert (Schritte nicht mitgezählt) stehe ich nicht drin.
+    static func zeilen(ichName: String, ichWert: Int?, andere: [(id: String, name: String, wert: Int)]) -> [CrewRang] {
+        CrewLogik.raenge((ichWert.map { [CrewRang(id: CrewRang.eigeneId, name: ichName, wert: $0, rang: 0, ich: true)] } ?? [])
             + andere.map { CrewRang(id: $0.id, name: $0.name, wert: $0.wert, rang: 0, ich: false) })
     }
 
-    static func platz(_ zeilen: [CrewRang]) -> (rang: Int, von: Int) {
-        (zeilen.first(where: \.ich)?.rang ?? 1, max(zeilen.count, 1))
+    /// Mein Platz; nil, wenn ich nicht in der Liste stehe.
+    static func platz(_ zeilen: [CrewRang]) -> (rang: Int?, von: Int) {
+        (zeilen.first(where: \.ich)?.rang, max(zeilen.count, 1))
     }
 
     /// Satz unter dem Platz bei Freunden: wie viel bis zum nächsten Platz fehlt, oder dass ich vorn bin. Allein: nil.
@@ -51,6 +66,8 @@ enum StatsLogik {
         case .trainings: return n == 1 ? String(localized: "Noch 1 Training bis Platz \(k).") : String(localized: "Noch \(n) Trainings bis Platz \(k).")
         case .sets: return n == 1 ? String(localized: "Noch 1 Set bis Platz \(k).") : String(localized: "Noch \(n) Sets bis Platz \(k).")
         case .serie: return n == 1 ? String(localized: "Noch 1 Woche bis Platz \(k).") : String(localized: "Noch \(n) Wochen bis Platz \(k).")
+        case .schritteHeute, .schritteMonat:
+            return n == 1 ? String(localized: "Noch 1 Schritt bis Platz \(k).") : String(localized: "Noch \(zahl(n)) Schritte bis Platz \(k).")
         }
     }
 
@@ -78,6 +95,7 @@ enum StatsLogik {
             case .trainings: return String(localized: "Öfter dabei als \(p) % der Leute \(gruppe).")
             case .sets: return String(localized: "Mehr Sets als \(p) % der Leute \(gruppe).")
             case .serie: return String(localized: "Längere Serie als \(p) % der Leute \(gruppe).")
+            case .schritteHeute, .schritteMonat: return String(localized: "Mehr Schritte als \(p) % der Leute \(gruppe).")
             }
         }
         switch mass {
@@ -85,6 +103,7 @@ enum StatsLogik {
         case .trainings: return String(localized: "Öfter dabei als \(p) % der Leute.")
         case .sets: return String(localized: "Mehr Sets als \(p) % der Leute.")
         case .serie: return String(localized: "Längere Serie als \(p) % der Leute.")
+        case .schritteHeute, .schritteMonat: return String(localized: "Mehr Schritte als \(p) % der Leute.")
         }
     }
 
@@ -121,8 +140,10 @@ enum StatsLogik {
     }
 
     /// Mit wem Alle vergleicht: mit denen im selben Trainingsjahr, wenn es genug sind, sonst mit allen (jahr nil). Der eigene Eintrag fällt raus.
-    static func vergleich(_ alle: [StatsEintrag], jahr: Int) -> (andere: [StatsEintrag], jahr: Int?) {
+    /// Ohne Jahr (Schritte) immer mit allen.
+    static func vergleich(_ alle: [StatsEintrag], jahr: Int?) -> (andere: [StatsEintrag], jahr: Int?) {
         let andere = alle.filter { !$0.ich }
+        guard let jahr else { return (andere, nil) }
         let gleich = andere.filter { min($0.jahr ?? 1, 5) == jahr }
         if gleich.count >= kohorteAb { return (gleich, jahr) }
         return (andere, nil)
@@ -168,18 +189,35 @@ enum StatsLogik {
         return nil
     }
 
+    // MARK: Schritte
+
+    /// Schritte aus Apple Health (Tagessummen, `GesundheitsStand.schritteAusHealth`; von Hand eingetragene zählen nicht): heute und seit dem 1.
+    /// des Monats, ein Tag höchstens `schritteJeTagGrenze`. Nur mit Mitzählen > Schritte und Health-Freigabe; ohne einen Tag mit Schritten in Health
+    /// (nicht erlaubt oder kein Gerät) nil.
+    static func schritte(health: [String: Int], einstellungen e: Einstellungen, jetzt: Date) -> StatsSchritte? {
+        guard e.schritteMitzaehlen, e.healthGefragt, health.values.contains(where: { $0 > 0 }) else { return nil }
+        let heute = Datum.text(jetzt)
+        let monat = heute.prefix(7)
+        let tag = { (n: Int) in min(max(n, 0), Self.schritteJeTagGrenze) }
+        let summe = health.filter { $0.key.hasPrefix(monat) && $0.key <= heute }.values.reduce(0) { $0 + tag($1) }
+        return StatsSchritte(tag: heute, heute: tag(health[heute] ?? 0), monat: summe)
+    }
+
     // MARK: Zum Server
 
     /// Was `PUT /stats` bekommt. Privat (beide aus): nur die zwei Schalter, der Server löscht dann alles. Öffentlich nur mit Spitzname.
-    static func meldung(einstellungen e: Einstellungen, sessions: [GymSession], jetzt: Date) -> StatsMeldung {
+    /// Schritte nur nach `schritte(health:einstellungen:jetzt:)`, sonst fehlen die Felder (der Server löscht dann die alten).
+    static func meldung(einstellungen e: Einstellungen, sessions: [GymSession], health: [String: Int] = [:], jetzt: Date) -> StatsMeldung {
         let oeffentlich = e.statsOeffentlich && e.statsSpitzname != nil
         guard e.statsFreunde || oeffentlich else { return .aus }
         let z = StatsPunkte.zahlen(sessions, jetzt: jetzt)
+        let s = schritte(health: health, einstellungen: e, jetzt: jetzt)
         return StatsMeldung(
             freunde: e.statsFreunde, oeffentlich: oeffentlich, spitzname: oeffentlich ? e.statsSpitzname : nil,
             jahr: oeffentlich ? trainingsjahr(sessions: sessions, erfahrung: e.trainingsErfahrung, jetzt: jetzt) : nil,
             montag: Datum.wochenstart(Datum.text(jetzt)), trainings: min(z.trainings, 14), sets: min(z.sets, 500), rekordeNeu: min(z.rekorde, 100),
-            serie: min(z.serie, 520), rekorde: Dictionary(hauptuebungen(sessions).map { ($0.id, $0.kg) }, uniquingKeysWith: { a, _ in a }))
+            serie: min(z.serie, 520), rekorde: Dictionary(hauptuebungen(sessions).map { ($0.id, $0.kg) }, uniquingKeysWith: { a, _ in a }),
+            schritteTag: s?.tag, schritteHeute: s?.heute, schritteMonat: s?.monat)
     }
 
     // MARK: Spitzname

@@ -411,6 +411,26 @@
         }
       }
     },
+    "%@ Schritte heute" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ steps today"
+          }
+        }
+      }
+    },
+    "%@ Schritte im %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ steps in %2$@"
+          }
+        }
+      }
+    },
     "%@ Stunden" : {
       "localizations" : {
         "en" : {
@@ -5591,12 +5611,32 @@
         }
       }
     },
+    "Alle sehen deinen Spitznamen, deine Zahlen und Schritte, nie deinen Namen, dein Gewicht oder andere Gesundheitsdaten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone sees your nickname, your numbers and steps, never your name, your weight or other health data."
+          }
+        }
+      }
+    },
     "Alle sehen nur Spitznamen und Zahlen, nie Namen, Gewicht, Körper oder Gesundheit. Melden oder Blockieren: lange auf einen Namen drücken." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Everyone sees only nicknames and numbers, never names, weight, body or health. Report or Block: long-press a name."
+          }
+        }
+      }
+    },
+    "Alle sehen nur Spitznamen, Punkte und Schritte, nie Gewicht, Körper oder andere Gesundheitsdaten. Melden oder Blockieren: lange auf einen Namen drücken." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everyone sees only nicknames, points and steps, never weight, body or other health data. Report or Block: long-press a name."
           }
         }
       }
@@ -9591,6 +9631,16 @@
         }
       }
     },
+    "Deine Freunde sehen deinen Platz, deine Punkte, Trainings, Sets, Serie, dein schwerstes Gewicht je Übung und deine Schritte, wenn du Schritte mitzählst." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your friends see your rank, your points, workouts, sets, streak, your heaviest weight per exercise and your steps if you track steps."
+          }
+        }
+      }
+    },
     "Deine Freunde sehen deinen Platz." : {
       "localizations" : {
         "en" : {
@@ -9727,6 +9777,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Your nickname, your points, workouts, sets, streak and how long you've been training."
+          }
+        }
+      }
+    },
+    "Deinen Spitznamen, deine Punkte, Trainings, Sets, Serie, wie lange du schon trainierst und deine Schritte (heute und im Monat), wenn du Schritte mitzählst." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your nickname, your points, workouts, sets, streak, how long you've been training and your steps (today and this month) if you track steps."
           }
         }
       }
@@ -20321,6 +20381,26 @@
         }
       }
     },
+    "Mehr Schritte als %lld %% der Leute %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More steps than %lld %% of people %@."
+          }
+        }
+      }
+    },
+    "Mehr Schritte als %lld %% der Leute." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More steps than %lld %% of people."
+          }
+        }
+      }
+    },
     "Mehr Sets als %lld %% der Leute %@." : {
       "localizations" : {
         "en" : {
@@ -21931,6 +22011,16 @@
         }
       }
     },
+    "Nicht dabei" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not taking part"
+          }
+        }
+      }
+    },
     "Nicht erlauben" : {
       "localizations" : {
         "en" : {
@@ -22161,6 +22251,16 @@
         }
       }
     },
+    "Nie deinen Namen, dein Gewicht, deinen Körper oder andere Gesundheitsdaten. Deine Rekorde zählen nur ohne Namen in „Stärker als … %“." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never your name, your weight, your body or other health data. Your records only count without a name in “Stronger than … %”."
+          }
+        }
+      }
+    },
     "Nimm eine %@-Übung in die nächste Einheit." : {
       "localizations" : {
         "en" : {
@@ -22217,6 +22317,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%@ points to go until **%@**"
+          }
+        }
+      }
+    },
+    "Noch %@ Schritte bis Platz %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ steps to go until rank %2$lld."
           }
         }
       }
@@ -22337,6 +22447,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "1 point to go until rank %lld."
+          }
+        }
+      }
+    },
+    "Noch 1 Schritt bis Platz %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 step to go until rank %lld."
           }
         }
       }
@@ -24981,6 +25101,16 @@
         }
       }
     },
+    "Profil > Präferenzen > Mitzählen: Schritte an und Apple Health erlauben." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile > Preferences > Track: turn on Steps and allow Apple Health."
+          }
+        }
+      }
+    },
     "Profil anlegen" : {
       "localizations" : {
         "en" : {
@@ -27057,6 +27187,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Steps today and on each day this week."
+          }
+        }
+      }
+    },
+    "Schritte mitzählen, um mitzumachen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Track steps to take part."
           }
         }
       }

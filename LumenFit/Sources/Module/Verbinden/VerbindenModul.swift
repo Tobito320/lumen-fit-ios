@@ -258,6 +258,7 @@ final class VerbindenDienste {
         case .healthAktualisiert:
             bruecke.schreibe()   // neue Schritte oder Nächte (Band-Sync, von Hand) gleich an Lovea, nicht erst beim nächsten Öffnen; ohne Änderung schreibt die Brücke nichts
             schlafBelegAnstossen()   // auch nach einem Band-Sync mit neuen Nächten oder Schritten
+            statsSenden()   // neue Schritte für Stats (privat nichts; nur Schritte neu: höchstens alle 10 Minuten)
         case .gewichtGespeichert, .meilensteinErreicht, .partnerAktualisiert, .speichernFehlgeschlagen:
             break
         }

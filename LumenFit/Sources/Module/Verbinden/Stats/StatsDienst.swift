@@ -9,7 +9,7 @@ final class StatsDienst {
     nonisolated static let dateiName = "stats-server.json"
     /// So oft holt das Öffnen der Seite höchstens neu.
     nonisolated static let pause: TimeInterval = 60
-    /// So oft geht dieselbe Meldung höchstens noch einmal hoch (Vordergrund); eine neue Wahl oder neue Zahlen gehen gleich.
+    /// So oft geht dieselbe Meldung höchstens noch einmal hoch (Vordergrund); eine neue Wahl oder neue Zahlen gehen gleich, neue Schritte allein erst danach.
     nonisolated static let sendePause: TimeInterval = 600
 
     private(set) var antwort: StatsAntwort?
@@ -58,10 +58,15 @@ final class StatsDienst {
     }
 
     private var sessions: [GymSession] { umgebung.daten?.training.sessions ?? [] }
+    /// Schritte je Tag nur aus Apple Health (ohne die von Hand), für Stats Schritte.
+    private var healthSchritte: [String: Int] { umgebung.gesundheit.schritteAusHealth }
 
     /// Rechnet die eigenen Zahlen neu (nur bei Änderung wird die Seite neu gezeichnet).
     func eigeneRechnen() {
-        let neu = StatsLogik.eigene(sessions: sessions, erfahrung: umgebung.daten?.einstellungen.werte.trainingsErfahrung, jetzt: umgebung.uhr())
+        let e = umgebung.daten?.einstellungen.werte
+        let jetzt = umgebung.uhr()
+        var neu = StatsLogik.eigene(sessions: sessions, erfahrung: e?.trainingsErfahrung, jetzt: jetzt)
+        neu.schritte = e.flatMap { StatsLogik.schritte(health: healthSchritte, einstellungen: $0, jetzt: jetzt) }
         if neu != eigene { eigene = neu }
     }
 
@@ -102,10 +107,12 @@ final class StatsDienst {
         guard let e = umgebung.daten?.einstellungen.werte, let profil = umgebung.daten?.profil, umgebung.konto.gehoertZuProfil(profil),
               let k = umgebung.konto.registrierteKennung() else { return }
         let jetzt = umgebung.uhr()
-        let m = StatsLogik.meldung(einstellungen: e, sessions: sessions, jetzt: jetzt)
+        let m = StatsLogik.meldung(einstellungen: e, sessions: sessions, health: healthSchritte, jetzt: jetzt)
         let obenNichts = !(antwort?.ich.freunde ?? false) && !(antwort?.ich.oeffentlich ?? false)
         if m == .aus, obenNichts, (gesendet?.meldung ?? .aus) == .aus { return }
-        if !erzwingen, let g = gesendet, g.meldung == m, jetzt >= g.zeit, jetzt.timeIntervalSince(g.zeit) < Self.sendePause { return }
+        // Nur neue Schritte warten die Pause ab; Schritte an oder aus (Mitzählen, Health) gehen wie eine neue Wahl gleich.
+        if !erzwingen, let g = gesendet, g.meldung.ohneSchritte == m.ohneSchritte, (g.meldung.schritteTag == nil) == (m.schritteTag == nil),
+           jetzt >= g.zeit, jetzt.timeIntervalSince(g.zeit) < Self.sendePause { return }
         guard let ich = await put(m, kennung: k).ich else { return }
         gesendet = (jetzt, m)
         aendere { $0.ich = ich }
@@ -123,7 +130,7 @@ final class StatsDienst {
         e.statsOeffentlich = true
         e.statsSpitzname = name
         let jetzt = umgebung.uhr()
-        let m = StatsLogik.meldung(einstellungen: e, sessions: sessions, jetzt: jetzt)
+        let m = StatsLogik.meldung(einstellungen: e, sessions: sessions, health: healthSchritte, jetzt: jetzt)
         let r = await put(m, kennung: k)
         guard let ich = r.ich else { return StatsLogik.fehlerText(r.fehler) }
         gesendet = (jetzt, m)
