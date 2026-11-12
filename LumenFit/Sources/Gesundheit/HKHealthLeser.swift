@@ -11,7 +11,7 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
 
     // MARK: - Typen
 
-    private static func lesetypen(_ typ: HealthTyp) -> [HKObjectType] {
+    static func lesetypen(_ typ: HealthTyp) -> [HKObjectType] {
         switch typ {
         case .schritte: [HKQuantityType(.stepCount)]
         case .distanz: [HKQuantityType(.distanceWalkingRunning)]
@@ -30,12 +30,15 @@ final class HKHealthLeser: HealthLeser, @unchecked Sendable {
         }
     }
 
-    /// Fragt die Leserechte (nur beim ersten Mal erscheint das Blatt). Das Ergebnis sagt nur, dass gefragt wurde, nicht was erlaubt ist.
+    /// Fragt die Leserechte, je Typ nur einmal für immer (`HealthFrageGedaechtnis`). Das Ergebnis sagt nur, dass gefragt wurde, nicht was erlaubt ist.
     func zugriff(fuer typen: Set<HealthTyp>) async -> HealthZugriff {
         guard HKHealthStore.isHealthDataAvailable() else { return .nichtVerfuegbar }
-        let lesen = Set(typen.flatMap(Self.lesetypen))
+        let lesen = Set(typen.flatMap(Self.lesetypen)).filter { !HealthFrageGedaechtnis.gefragt(HealthFrageGedaechtnis.lesen($0)) }
+        guard !lesen.isEmpty else { return .angefragt }
         do {
             try await speicher.requestAuthorization(toShare: [], read: lesen)
+            // Erst nach Erfolg merken: ein Fehler (Health gesperrt im Hintergrund) darf die einzige Frage nicht verbrauchen.
+            HealthFrageGedaechtnis.merke(lesen.map { HealthFrageGedaechtnis.lesen($0) })
             return .angefragt
         } catch { return .nichtVerfuegbar }
     }

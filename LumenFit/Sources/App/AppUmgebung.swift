@@ -214,6 +214,10 @@ final class AppUmgebung {
                                    uhr: { Date() }, kontoZugang: KontoZugang.lade(),
                                    alarmBruecke: LoveaBruecke(ordner: AppGruppe.eigeneWurzel(), ordnerName: AppGruppe.alarmOrdnerName))
         umgebung.sperreWeitereProfile()
+        // Update vom 12.11.2026: wer Health schon erlaubt hat, wurde für seine Bereiche schon gefragt; sonst käme jedes offene Blatt noch einmal.
+        if let werte = umgebung.daten?.einstellungen.werte, werte.healthGefragt {
+            HealthFrageGedaechtnis.uebernimmAltbestand(HealthFrageGedaechtnis.alleKennungen(fuer: werte.healthTypen))
+        }
         return umgebung
     }
 }

@@ -2,8 +2,8 @@ import Foundation
 import HealthKit
 import os
 
-/// Schreibt Krafttraining und Gewicht nach Health. Fragt die Schreibrechte erst beim ersten Speichern, je Typ, und nur solange die Person noch
-/// nicht entschieden hat: ein weggewischtes Blatt kommt höchstens einmal je Lauf wieder, "Nicht erlauben" nie (Ändern geht in Health).
+/// Schreibt Krafttraining und Gewicht nach Health. Fragt die Schreibrechte erst beim ersten Speichern, je Typ nur einmal für immer
+/// (`HealthFrageGedaechtnis`, auch ein weggewischtes Blatt kommt nie wieder; Ändern geht in Health).
 // @unchecked Sendable: HKHealthStore ist thread-sicher, aber im SDK nicht als Sendable markiert; `gefragt` liegt unter einem Lock.
 final class HKHealthSchreiber: HealthSchreiber, @unchecked Sendable {
     private let speicher = HKHealthStore()
@@ -20,7 +20,9 @@ final class HKHealthSchreiber: HealthSchreiber, @unchecked Sendable {
         case .sharingDenied: return false
         default: break
         }
-        guard gefragt.withLock({ $0.insert(typ.identifier).inserted }) else { return false }
+        let kennung = HealthFrageGedaechtnis.schreiben(typ)
+        guard !HealthFrageGedaechtnis.gefragt(kennung), gefragt.withLock({ $0.insert(typ.identifier).inserted }) else { return false }
+        HealthFrageGedaechtnis.merke([kennung])
         do {
             try await speicher.requestAuthorization(toShare: [typ], read: [])
             return speicher.authorizationStatus(for: typ) == .sharingAuthorized

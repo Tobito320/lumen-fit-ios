@@ -46,9 +46,13 @@ private final class GymPulsSitzung: NSObject, HKLiveWorkoutBuilderDelegate, @unc
     /// App-Ende, wird sie fortgesetzt statt eine zweite daneben zu starten.
     static func starten(melden: @escaping @Sendable (Int?, Int?, Int?) -> Void) async throws -> GymPulsSitzung {
         let store = HKHealthStore()
-        let lesen: Set<HKObjectType> = [HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned)]
-        let schreiben: Set<HKSampleType> = [HKObjectType.workoutType(), HKQuantityType(.activeEnergyBurned)]
-        try await store.requestAuthorization(toShare: schreiben, read: lesen)
+        let lesen = HealthFrageGedaechtnis.pulsLesen, schreiben = HealthFrageGedaechtnis.pulsSchreiben
+        let kennungen = lesen.map { HealthFrageGedaechtnis.lesen($0) } + schreiben.map { HealthFrageGedaechtnis.schreiben($0) }
+        // Das Blatt nur beim ersten Einschalten, nie bei jedem Training (Wunsch 12.11.2026); ohne Erlaubnis scheitert die Sitzung unten still.
+        if !kennungen.allSatisfy({ HealthFrageGedaechtnis.gefragt($0) }) {
+            HealthFrageGedaechtnis.merke(kennungen)
+            try await store.requestAuthorization(toShare: schreiben, read: lesen)
+        }
         let einstellung = HKWorkoutConfiguration()
         einstellung.activityType = .traditionalStrengthTraining
         einstellung.locationType = .indoor
