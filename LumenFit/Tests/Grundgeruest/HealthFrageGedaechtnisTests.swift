@@ -7,7 +7,7 @@ final class HealthFrageGedaechtnisTests: XCTestCase {
     private func ablage() -> UserDefaults {
         let name = "health-gedaechtnis-\(UUID().uuidString)"
         let a = UserDefaults(suiteName: name)!
-        addTeardownBlock { a.removePersistentDomain(forName: name) }
+        addTeardownBlock { UserDefaults.standard.removePersistentDomain(forName: name) }
         return a
     }
 
